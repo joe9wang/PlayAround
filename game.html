@@ -4,14 +4,149 @@
 <head>
   <meta charset="UTF-8" />
   <title>プレイアラウンド - ゲーム画面</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; overflow: hidden; }
+    #upload-bar {
+      height: 10vh; background: #eee; text-align: center;
+      line-height: 10vh; border-bottom: 2px solid #ccc; cursor: pointer;
+    }
+    #main { height: 90vh; display: flex; flex-direction: row; }
+    #control-panel {
+      width: 20vw; background: #f5f5f5; padding: 10px;
+      box-sizing: border-box; overflow-y: auto; border-right: 2px solid #ccc;
+    }
+    #field {
+      flex: 3; background: #fff; position: relative;
+      overflow: hidden; transform-origin: center center;
+    }
+    #selected-card {
+      width: 30vw; background: #f9f9f9; border-left: 2px solid #ccc;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #selected-card img {
+      max-width: 90%; max-height: 90%;
+      border: 3px solid red; border-radius: 5px;
+    }
+    .card {
+      position: absolute; width: 100px; height: 140px;
+      object-fit: cover; user-select: none; cursor: grab;
+    }
+  </style>
 </head>
 <body>
-  <h2>読み込み中...</h2>
+  <div id="upload-bar" onclick="document.getElementById('fileInput').click()">
+    カード画像をクリック or ドラッグ＆ドロップで追加
+    <input type="file" id="fileInput" style="display:none;" accept="image/*" />
+  </div>
+  <div id="main">
+    <div id="control-panel">
+      <button onclick="flipCards(true)">裏返す</button><br />
+      <button onclick="flipCards(false)">表にする</button><br />
+      <button onclick="shuffleCards()">シャッフル</button><br />
+      <button onclick="alignCards()">整列</button><br />
+      <button onclick="shiftCards(0,-50)">上にずらす</button><br />
+      <button onclick="shiftCards(0,50)">下にずらす</button><br />
+      <button onclick="shiftCards(-50,0)">左にずらす</button><br />
+      <button onclick="shiftCards(50,0)">右にずらす</button><br />
+    </div>
+    <div id="field"></div>
+    <div id="selected-card"></div>
+  </div>
+
   <script>
-    const params = new URLSearchParams(location.search);
-    const room = params.get("room");
-    const player = params.get("player");
-    document.body.innerHTML = `<h1>ようこそ ${player} - ルーム: ${room}</h1><p>ゲーム画面はこのあと追加されます。</p>`;
+    let selectedCard = null;
+    let zIndexCounter = 1;
+
+    document.getElementById("fileInput").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = document.createElement("img");
+        img.src = event.target.result;
+        img.className = "card";
+        img.style.left = "200px";
+        img.style.top = "200px";
+        img.style.zIndex = zIndexCounter++;
+        img.draggable = false;
+        img.addEventListener("mousedown", startDrag);
+        img.addEventListener("click", () => selectCard(img));
+        document.getElementById("field").appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function selectCard(card) {
+      selectedCard = card;
+      const viewer = document.getElementById("selected-card");
+      viewer.innerHTML = "";
+      const copy = card.cloneNode();
+      viewer.appendChild(copy);
+    }
+
+    function flipCards(toBack) {
+      const cards = document.querySelectorAll(".card");
+      cards.forEach(card => {
+        card.style.filter = toBack ? "brightness(0) invert(1)" : "none";
+      });
+    }
+
+    function shuffleCards() {
+      const cards = document.querySelectorAll(".card");
+      const baseX = 300, baseY = 300;
+      for (let card of cards) {
+        card.style.left = (baseX + Math.random() * 30) + "px";
+        card.style.top = (baseY + Math.random() * 30) + "px";
+        card.style.zIndex = zIndexCounter++;
+      }
+    }
+
+    function alignCards() {
+      const cards = document.querySelectorAll(".card");
+      let x = 100, y = 100;
+      for (let card of cards) {
+        card.style.left = `${x}px`;
+        card.style.top = `${y}px`;
+        card.style.zIndex = zIndexCounter++;
+        x += 110;
+      }
+    }
+
+    function shiftCards(dx, dy) {
+      const cards = document.querySelectorAll(".card");
+      cards.forEach(card => {
+        const x = parseInt(card.style.left || "0");
+        const y = parseInt(card.style.top || "0");
+        card.style.left = `${x + dx}px`;
+        card.style.top = `${y + dy}px`;
+      });
+    }
+
+    let dragging = null;
+    function startDrag(e) {
+      dragging = e.target;
+      dragging.style.zIndex = zIndexCounter++;
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const origX = parseInt(dragging.style.left || "0");
+      const origY = parseInt(dragging.style.top || "0");
+
+      function onMouseMove(ev) {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        dragging.style.left = `${origX + dx}px`;
+        dragging.style.top = `${origY + dy}px`;
+      }
+
+      function onMouseUp() {
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+        dragging = null;
+      }
+
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    }
   </script>
 </body>
 </html>
