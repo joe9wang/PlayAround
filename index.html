@@ -3,18 +3,24 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>1対1カード対戦ゲーム</title>
+  <title>複数ルーム対応カードゲーム</title>
   <style>
-    body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
+    body { font-family: sans-serif; text-align: center; background: #f4f4f4; }
     #opponent-area, #my-area { margin: 30px; }
     img.card { height: 100px; margin: 10px; cursor: pointer; border-radius: 8px; }
-    #player-select button { margin: 20px; padding: 10px 20px; font-size: 16px; }
+    input, button { font-size: 16px; padding: 10px; margin: 5px; }
   </style>
 </head>
 <body>
-  <h1>カードバトル</h1>
+  <h1>1対1カード対戦ゲーム</h1>
 
-  <div id="player-select">
+  <div id="room-select">
+    <p>ルームIDを入力して参加</p>
+    <input type="text" id="room-id" placeholder="例: room123">
+    <button onclick="joinRoom()">ルームに入る</button>
+  </div>
+
+  <div id="player-select" style="display:none;">
     <p>プレイヤーを選んでください</p>
     <button onclick="selectPlayer('player1')">プレイヤー1</button>
     <button onclick="selectPlayer('player2')">プレイヤー2</button>

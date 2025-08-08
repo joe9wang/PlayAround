@@ -1,15 +1,22 @@
 
-# 1対1 オンラインカード対戦ゲーム（Vercel + Firebase）
+# 複数ルーム対応 1対1カード対戦ゲーム（Firebase + Vercel）
 
-## セットアップ方法
+## ✅ 概要
+このプロジェクトは Firebase Firestore と Vercel を使って、
+上下対戦形式・複数ルーム対応のカードゲームを構築するテンプレートです。
 
-1. Firebase プロジェクトを作成し、Firestore を「テストモード」で有効化
-2. `firebaseConfig.js` に自分の設定を記入
-3. このプロジェクトを GitHub にアップロード
-4. Vercel に連携してデプロイ
+## 🛠 セットアップ手順
 
-## 使用技術
+1. Firebase プロジェクトを作成
+2. Firestore を「テストモード」で有効化
+3. `firebaseConfig.js` に設定を入力
+4. GitHubにアップロード → Vercelと連携して公開
 
-- Vercel (HTML/JSホスティング)
-- Firebase Firestore（リアルタイム通信）
-- モジュール読み込み型 Firebase SDK（v10）
+## 🎮 使い方
+
+1. ルームIDを入力（例: room123）
+2. プレイヤー1または2を選ぶ
+3. 手札からカードを選ぶと、相手にもリアルタイムで表示されます
+
+## 🔐 注意
+- 公開時は Firestore のルールを適切に設定してください
