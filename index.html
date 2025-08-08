@@ -1,51 +1,91 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>プレイアラウンド - ルーム選択</title>
-  <style>
-    body { font-family: sans-serif; background: #f0f0f0; text-align: center; margin-top: 50px; }
-    input, select, button {
-      font-size: 16px; padding: 10px; margin: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プレイアラウンド</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>プレイアラウンド</h1>
-  <p>ルーム番号を入力して、プレイヤーを選んでください。</p>
-  <input type="text" id="roomId" placeholder="ルームID (例: room123)" />
-  <select id="playerId">
-    <option value="player1">プレイヤー1</option>
-    <option value="player2">プレイヤー2</option>
-    <option value="player3">プレイヤー3</option>
-    <option value="player4">プレイヤー4</option>
-  </select>
-  <br />
-  <button onclick="enterRoom()">入室する</button>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-    import { firebaseConfig } from "./firebaseConfig.js";
+  <div id="login-screen" class="screen active">
+    <h1>プレイアラウンド</h1>
+    <label for="room-id-input">部屋番号:</label>
+    <input type="text" id="room-id-input" placeholder="部屋番号を入力">
+    <button id="join-room-button">入室</button>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    <div id="player-selection" style="display: none;">
+        <h2>プレイヤー選択（最大4人）</h2>
+        <button onclick="selectPlayer(1)">プレイヤー1</button>
+        <button onclick="selectPlayer(2)">プレイヤー2</button>
+        <button onclick="selectPlayer(3)">プレイヤー3</button>
+        <button onclick="selectPlayer(4)">プレイヤー4</button>
+    </div>
+  </div>
 
-    window.enterRoom = async function() {
-      const roomId = document.getElementById("roomId").value.trim();
-      const playerId = document.getElementById("playerId").value;
-      if (!roomId) {
-        alert("ルームIDを入力してください。");
-        return;
-      }
 
-      const playerRef = doc(db, "games", roomId, "players", playerId);
-      await setDoc(playerRef, { joined: true }, { merge: true });
+  <div id="play-screen" class="screen" style="display: none;">
+    <div id="upload-area">
+      📥 カード画像をクリック or ドラッグ＆ドロップで追加 
+      <input type="file" id="file-input" multiple accept="image/*" /> 
+    </div>
 
-      // プレイヤー情報をURLに含めて次画面へ遷移
-      location.href = `game.html?room=${roomId}&player=${playerId}`;
-    }
-  </script>
+    <div class="main-content">
+      <div id="sidebar">
+        <h2>操作パネル</h2>
+        <button onclick="faceDownAll()">🂠 裏返す</button> [cite: 60]
+        <button onclick="faceUpAll()">🂡 表にする</button> [cite: 60]
+        <button onclick="shuffleDecks()">🌀 シャッフル（P1のみ）</button> [cite: 60]
+        <button onclick="alignDecks()">📏 整列</button> [cite: 60]
+        <button onclick="shiftAllCards(0, -160)">⬆ 上にずらす</button> [cite: 60]
+        <button onclick="shiftAllCards(0, 160)">⬇ 下にずらす</button> [cite: 60]
+        <button onclick="shiftAllCards(-120, 0)">⬅ 左にずらす</button> [cite: 60]
+        <button onclick="shiftAllCards(120, 0)">➡ 右にずらす</button> [cite: 60]
+      </div>
+
+      <div id="container">
+        <div id="field">
+          <div class="player-area player-1">
+            <div class="play-area">
+              <div class="deck-area"></div>
+              <div class="main-play-area"></div>
+            </div>
+            <div class="hand-area"></div>
+          </div>
+          <div class="player-area player-2">
+            <div class="play-area">
+              <div class="deck-area"></div>
+              <div class="main-play-area"></div>
+            </div>
+            <div class="hand-area"></div>
+          </div>
+          <div class="player-area player-3">
+            <div class="play-area">
+              <div class="deck-area"></div>
+              <div class="main-play-area"></div>
+            </div>
+            <div class="hand-area"></div>
+          </div>
+          <div class="player-area player-4">
+            <div class="play-area">
+              <div class="deck-area"></div>
+              <div class="main-play-area"></div>
+            </div>
+            <div class="hand-area"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="preview">
+        <h2>選択中のカード</h2> [cite: 63]
+        <img id="preview-img" src="" alt="プレビュー画像" /> [cite: 63]
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
