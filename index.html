@@ -2,41 +2,97 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>複数ルーム対応カードゲーム</title>
+  <meta charset="UTF-8" />
+  <title>4人対戦カードゲーム</title>
   <style>
     body { font-family: sans-serif; text-align: center; background: #f4f4f4; }
-    #opponent-area, #my-area { margin: 30px; }
-    img.card { height: 100px; margin: 10px; cursor: pointer; border-radius: 8px; }
-    input, button { font-size: 16px; padding: 10px; margin: 5px; }
+    #login-area, #select-area, #game-area { margin: 20px auto; width: 90%; max-width: 800px; }
+    .hidden { display: none; }
+    .card { height: 100px; margin: 10px; cursor: pointer; border-radius: 8px; }
+    .zone { border: 2px dashed #ccc; min-height: 120px; margin: 10px 0; padding: 10px; }
   </style>
 </head>
 <body>
-  <h1>1対1カード対戦ゲーム</h1>
+  <h1>4人対戦カードゲーム（ルーム制）</h1>
 
-  <div id="room-select">
-    <p>ルームIDを入力して参加</p>
-    <input type="text" id="room-id" placeholder="例: room123">
-    <button onclick="joinRoom()">ルームに入る</button>
+  <div id="login-area">
+    <p>ルームIDを入力：</p>
+    <input type="text" id="room-id" placeholder="room123" />
+    <button onclick="enterRoom()">ルームに入る</button>
   </div>
 
-  <div id="player-select" style="display:none;">
-    <p>プレイヤーを選んでください</p>
+  <div id="select-area" class="hidden">
+    <p>プレイヤーを選択：</p>
     <button onclick="selectPlayer('player1')">プレイヤー1</button>
     <button onclick="selectPlayer('player2')">プレイヤー2</button>
+    <button onclick="selectPlayer('player3')">プレイヤー3</button>
+    <button onclick="selectPlayer('player4')">プレイヤー4</button>
   </div>
 
-  <div id="game-area" style="display:none;">
-    <div id="opponent-area">
-      <h2>相手のカード</h2>
-      <img id="opponent-card" src="" class="card">
-    </div>
-    <div id="my-area">
-      <h2>あなたの手札</h2>
-      <div id="my-hand"></div>
-    </div>
+  <div id="game-area" class="hidden">
+    <h2>あなたの手札</h2>
+    <div id="my-hand"></div>
+    <h2>他プレイヤーのカード</h2>
+    <div id="others"></div>
   </div>
 
-  <script type="module" src="./js/app.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { firebaseConfig } from "./firebaseConfig.js";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let roomId = "";
+    let playerId = "";
+
+    window.enterRoom = function () {
+      roomId = document.getElementById("room-id").value.trim();
+      if (!roomId) return alert("ルームIDを入力してください");
+      document.getElementById("login-area").classList.add("hidden");
+      document.getElementById("select-area").classList.remove("hidden");
+    };
+
+    window.selectPlayer = function (id) {
+      playerId = id;
+      document.getElementById("select-area").classList.add("hidden");
+      document.getElementById("game-area").classList.remove("hidden");
+      setupGame();
+    };
+
+    function setupGame() {
+      const hand = ["fire", "water", "wind"];
+      const handDiv = document.getElementById("my-hand");
+      hand.forEach(card => {
+        const img = document.createElement("img");
+        img.src = `images/${card}.png`;
+        img.className = "card";
+        img.onclick = () => {
+          setDoc(doc(db, "games", roomId), { [playerId]: card }, { merge: true });
+          img.remove();
+        };
+        handDiv.appendChild(img);
+      });
+
+      const ref = doc(db, "games", roomId);
+      onSnapshot(ref, (snap) => {
+        const data = snap.data();
+        const others = document.getElementById("others");
+        others.innerHTML = "";
+        ["player1", "player2", "player3", "player4"].forEach(pid => {
+          if (pid !== playerId && data?.[pid]) {
+            const div = document.createElement("div");
+            div.textContent = pid + ": ";
+            const img = document.createElement("img");
+            img.src = `images/${data[pid]}.png`;
+            img.className = "card";
+            div.appendChild(img);
+            others.appendChild(div);
+          }
+        });
+      });
+    }
+  </script>
 </body>
 </html>
