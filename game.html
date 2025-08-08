@@ -1,0 +1,17 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>プレイアラウンド - ゲーム画面</title>
+</head>
+<body>
+  <h2>読み込み中...</h2>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const room = params.get("room");
+    const player = params.get("player");
+    document.body.innerHTML = `<h1>ようこそ ${player} - ルーム: ${room}</h1><p>ゲーム画面はこのあと追加されます。</p>`;
+  </script>
+</body>
+</html>
