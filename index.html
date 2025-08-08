@@ -1,13 +1,35 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>オンラインカードゲーム</title>
+  <title>1対1カード対戦ゲーム</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
+    #opponent-area, #my-area { margin: 30px; }
+    img.card { height: 100px; margin: 10px; cursor: pointer; border-radius: 8px; }
+    #player-select button { margin: 20px; padding: 10px 20px; font-size: 16px; }
+  </style>
 </head>
 <body>
-  <h1>カードをクリックして出す</h1>
-  <div id="my-hand"></div>
-  <div id="opponent-hand"></div>
+  <h1>カードバトル</h1>
+
+  <div id="player-select">
+    <p>プレイヤーを選んでください</p>
+    <button onclick="selectPlayer('player1')">プレイヤー1</button>
+    <button onclick="selectPlayer('player2')">プレイヤー2</button>
+  </div>
+
+  <div id="game-area" style="display:none;">
+    <div id="opponent-area">
+      <h2>相手のカード</h2>
+      <img id="opponent-card" src="" class="card">
+    </div>
+    <div id="my-area">
+      <h2>あなたの手札</h2>
+      <div id="my-hand"></div>
+    </div>
+  </div>
 
   <script type="module" src="./js/app.js"></script>
 </body>

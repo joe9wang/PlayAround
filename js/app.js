@@ -1,32 +1,36 @@
-// Firebase 初期化
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
+import { firebaseConfig } from "../firebaseConfig.js";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+let playerRole = "";
 
-const roomId = "game-room-001";
-const handRef = doc(db, "games", roomId);
+window.selectPlayer = function(role) {
+  playerRole = role;
+  document.getElementById("player-select").style.display = "none";
+  document.getElementById("game-area").style.display = "block";
 
-document.querySelector("#my-hand").innerHTML = ['🔥', '💧', '🌪️'].map(card => {
-  return `<button onclick="play('${card}')">${card}</button>`;
-}).join('');
+  const roomRef = doc(db, "games", "room-001");
+  onSnapshot(roomRef, (docSnap) => {
+    const data = docSnap.data();
+    const opponentKey = playerRole === "player1" ? "player2_card" : "player1_card";
+    const opponentCard = data?.[opponentKey] || "";
+    document.getElementById("opponent-card").src = opponentCard ? "./images/" + opponentCard + ".png" : "";
+  });
 
-window.play = async (card) => {
-  await setDoc(handRef, { latestCard: card });
+  const cards = ["fire", "water", "wind"];
+  const myHand = document.getElementById("my-hand");
+  myHand.innerHTML = "";
+  cards.forEach(card => {
+    const img = document.createElement("img");
+    img.src = "./images/" + card + ".png";
+    img.className = "card";
+    img.onclick = () => {
+      setDoc(doc(db, "games", "room-001"), { [playerRole + "_card"]: card }, { merge: true });
+      img.remove(); // remove from hand after playing
+    };
+    myHand.appendChild(img);
+  });
 };
-
-onSnapshot(handRef, (docSnap) => {
-  if (docSnap.exists()) {
-    document.querySelector("#opponent-hand").textContent = "相手のカード：" + docSnap.data().latestCard;
-  }
-});
