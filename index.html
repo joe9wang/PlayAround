@@ -285,6 +285,40 @@
     signInAnonymously(auth).catch(console.error);
     onAuthStateChanged(auth, (user) => { if(user){ CURRENT_UID = user.uid; }});
 
+
+// カードサイズ（CSSと合わせる）
+const CARD_W = 120;
+const CARD_H = 160;
+
+/** 指定席のデッキエリアのフィールド座標系での境界を返す */
+function getDeckBoundsForSeat(seat){
+  const deck = document.querySelector(`.player-${seat} .deck-area`);
+  if(!deck) return null;
+
+  const deckRect  = deck.getBoundingClientRect();
+  const fieldRect = field.getBoundingClientRect();
+
+  // field にかかっている transform(translate+scale) を逆変換して、フィールド座標へ
+  const minX = (deckRect.left - fieldRect.left - panOffsetX) / zoom;
+  const minY = (deckRect.top  - fieldRect.top  - panOffsetY) / zoom;
+  const width  = deckRect.width  / zoom;
+  const height = deckRect.height / zoom;
+
+  return { minX, minY, width, height };
+}
+
+/** デッキ内にカードが収まるランダム座標（左上）を返す */
+function randomPointInDeck(seat){
+  const b = getDeckBoundsForSeat(seat);
+  if(!b) return { x: Math.random()*500|0, y: Math.random()*500|0 }; // フォールバック
+  const maxX = Math.max(b.minX, b.minX + b.width  - CARD_W);
+  const maxY = Math.max(b.minY, b.minY + b.height - CARD_H);
+  const x = b.minX + Math.random() * (maxX - b.minX);
+  const y = b.minY + Math.random() * (maxY - b.minY);
+  return { x: Math.round(x), y: Math.round(y) };
+}
+
+
     function subscribeRoomList(){
       const qRooms = query(collection(db, 'rooms'), orderBy('updatedAt', 'desc'), limit(50));
       onSnapshot(qRooms, snap => {
@@ -580,30 +614,43 @@ card.addEventListener("click", e => {
       });
     }
 
-    async function createCardRemote({ imageUrl }){
-      if(!CURRENT_ROOM) return;
-      const baseX = Math.random()*500|0, baseY = Math.random()*500|0;
-      try{
-        const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-          x: baseX, y: baseY, zIndex: 1,
-          faceUp: true,
-          imageUrl,
-          ownerUid: CURRENT_UID,
-          ownerSeat: CURRENT_PLAYER, // ★追加：座席も保存
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-        // 自分の画面には即時反映（ただし onSnapshot と二重生成しない）
-        markLocal(ref.id);
-        let el = cardDomMap.get(ref.id) || document.querySelector(`[data-card-id="${ref.id}"]`);
-        if(!el){
-          el = createCardDom(ref.id, imageUrl, { x:baseX, y:baseY, zIndex:1, faceUp:true, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER });
-          cardDomMap.set(ref.id, el);
-          field.appendChild(el);
-        }
-        applyCardState(el, { x:baseX, y:baseY, zIndex:1, faceUp:true, imageUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER });
-      }catch(e){ console.error('createCardRemote', e); }
+async function createCardRemote({ imageUrl }){
+  if(!CURRENT_ROOM) return;
+
+  // ★ 自分の席のデッキエリア内でランダム座標を決定
+  const { x: baseX, y: baseY } = randomPointInDeck(CURRENT_PLAYER);
+
+  try{
+    const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+      x: baseX, y: baseY, zIndex: 1,
+      faceUp: true,
+      imageUrl,
+      ownerUid: CURRENT_UID,
+      ownerSeat: CURRENT_PLAYER,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+
+    // ローカル即時反映（重複防止のため markLocal）
+    markLocal(ref.id);
+    let el = cardDomMap.get(ref.id) || document.querySelector(`[data-card-id="${ref.id}"]`);
+    if(!el){
+      el = createCardDom(ref.id, imageUrl, {
+        x: baseX, y: baseY, zIndex: 1, faceUp: true,
+        ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
+      });
+      cardDomMap.set(ref.id, el);
+      field.appendChild(el);
     }
+    applyCardState(el, {
+      x: baseX, y: baseY, zIndex: 1, faceUp: true,
+      imageUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
+    });
+  }catch(e){ console.error('createCardRemote', e); }
+}
+
+
+
 
     function makeDraggable(card){
       let offsetX=0, offsetY=0, isDragging=false;
