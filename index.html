@@ -528,20 +528,40 @@ createRoomBtn.addEventListener('click', async () => {
       return (Date.now() - hb) > 60000;
     }
 
-    function renderSeatAvailability(){
-      seatButtons.forEach(btn => {
-        const seat = parseInt(btn.dataset.seat, 10);
-        const note = btn.querySelector('.seat-note');
-        const data = currentSeatMap[seat];
-        const taken = data && !isSeatStale(data) && data.claimedByUid && data.claimedByUid !== CURRENT_UID;
-        const mine  = data && !isSeatStale(data) && data.claimedByUid === CURRENT_UID;
-        btn.disabled = taken;
-        note.textContent = taken ? (data.displayName ? `${data.displayName}` : '使用中') : (mine ? 'あなた' : '空席');
-        btn.classList.toggle('active', CURRENT_PLAYER === seat);
-      });
-      renderFieldLabels();
-      validateLobby();
+function renderSeatAvailability(){
+  seatButtons.forEach(btn => {
+    const seat = parseInt(btn.dataset.seat, 10);
+    const note = btn.querySelector('.seat-note');
+    const data = currentSeatMap[seat];
+
+    // 現在生きている占有かどうか（ハートビートで判定）
+    const occupied = !!(data && !isSeatStale(data) && data.claimedByUid);
+
+    if (occupied) {
+      // 占有中：プレイヤー名のみ（黒文字）
+      note.textContent = data.displayName || '';
+      note.style.color = '#000';
+    } else {
+      // 空席：青字で「空き」
+      note.textContent = '空き';
+      note.style.color = 'blue';
     }
+
+    // 空席のみボタンを押せるようにする
+    btn.disabled = occupied;
+
+    // 自分が現在選択済みの席を視覚的にハイライト（任意）
+    btn.classList.toggle('active', CURRENT_PLAYER === seat);
+  });
+
+  // フィールドのラベル（P{n} 名前（ホスト））も毎回更新
+  renderFieldLabels();
+
+  // ロビーの開始ボタンの有効/無効を再評価
+  validateLobby();
+}
+
+
 
 // ★ ラベル描画：ホスト表記は hostUid の座席だけに付与（フォールバック無し）
 function renderFieldLabels(){
@@ -601,17 +621,22 @@ function renderFieldLabels(){
       unsubscribeSeats = () => unsubs.forEach(fn => fn());
     }
 
-    function validateLobby(){
-      if (ACTIVE_MODE === 'create') {
-        startBtn.disabled = true; // 右は「作成」で即参加
-        return;
-      }
-      const roomOk = !!(joinRoomInput.value||'').trim();
-      const seatOk = !!CURRENT_PLAYER;
-      const nameNow = (playerNameInput.value||'').trim();
-      const nameOk = nameNow.length > 0 && nameNow.length <= 24;
-      startBtn.disabled = !(roomOk && seatOk && nameOk);
-    }
+function validateLobby(){
+  if (ACTIVE_MODE === 'create') {
+    // 右側のホスト作成は「作成」ボタンで即参加なので、開始ボタンは常に無効
+    startBtn.disabled = true;
+    return;
+  }
+  // 左側（既存ルームに参加）
+  const roomOk = !!(joinRoomInput.value||'').trim();
+  const seatOk = !!CURRENT_PLAYER; // 空席に座れていれば true（= claimSeat 済み）
+  const nameNow = (playerNameInput.value||'').trim();
+  const nameOk = nameNow.length > 0 && nameNow.length <= 24;
+
+  // 余計な制限は不要：部屋が指定され、空席に座れて、名前が入っていれば開始できる
+  startBtn.disabled = !(roomOk && seatOk && nameOk);
+}
+
 
 // ★ 左の席ボタン：右側の名前が入っていれば警告しない（自動コピー）＋楽観更新
 seatButtons.forEach(btn => {
