@@ -290,7 +290,7 @@
 const CARD_W = 120;
 const CARD_H = 160;
 
-/** 指定席のデッキエリアのフィールド座標系での境界を返す */
+/** 指定席のデッキエリアのフィールド座標系での境界を返す（※修正版） */
 function getDeckBoundsForSeat(seat){
   const deck = document.querySelector(`.player-${seat} .deck-area`);
   if(!deck) return null;
@@ -305,6 +305,36 @@ function getDeckBoundsForSeat(seat){
   const height = deckRect.height / zoom;
 
   return { minX, minY, width, height };
+}
+
+
+/** 矩形内（フィールド座標）に中心点があるカード一覧を返す */
+function getCardsInsideRect(rect){
+  const cards = [];
+  document.querySelectorAll('.card').forEach(el => {
+    const id = el.dataset.cardId;
+    const left = parseFloat(el.style.left) || 0;
+    const top  = parseFloat(el.style.top)  || 0;
+    const cx = left + CARD_W/2;
+    const cy = top  + CARD_H/2;
+    if(
+      cx >= rect.minX && cx <= rect.minX + rect.width &&
+      cy >= rect.minY && cy <= rect.minY + rect.height
+    ){
+      cards.push({ id, el });
+    }
+  });
+  return cards;
+}
+
+
+/** フィッシャー–イェーツでシャッフル */
+function shuffleArray(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = (Math.random()* (i+1))|0;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 
@@ -703,7 +733,43 @@ async function createCardRemote({ imageUrl }){
     window.toggleFieldSizeOptions = function(){ fieldSizeOptions.style.display = fieldSizeOptions.style.display==="none"?"block":"none"; }
     window.setFieldSize = function(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
     window.alignDecks = function(){ /* 表示のみ */ }
-    window.shuffleDecks = function(){ /* 表示のみ */ }
+    window.shuffleDecks = async function(){
+  if(!CURRENT_ROOM || !CURRENT_PLAYER) return;
+
+  // 1) P1のデッキ範囲を取得し、その中にあるカードを集める
+  const srcBounds = getDeckBoundsForSeat(1); // ←常に「P1のデッキにあるカード」が対象
+  if(!srcBounds){ alert('P1のデッキエリアが見つかりません'); return; }
+  const targets = getCardsInsideRect(srcBounds);
+  if(targets.length === 0) return;
+
+  // 2) 乱択順にする
+  shuffleArray(targets);
+
+  // 3) 送り先（押した人の席）のデッキ中央座標を計算
+  const dstBounds = getDeckBoundsForSeat(CURRENT_PLAYER);
+  if(!dstBounds){ alert('あなたのデッキエリアが見つかりません'); return; }
+  const centerX = Math.round(dstBounds.minX + (dstBounds.width  - CARD_W)/2);
+  const centerY = Math.round(dstBounds.minY + (dstBounds.height - CARD_H)/2);
+
+  // 4) 全カードを同一点に重ねる（裏表は変更しない）。重なり順だけ zIndex で表現
+  //    ※ onSnapshot との競合を避けるため、updateCard 内で markLocal 済み
+  const baseZ = getMaxZIndex() + 1;
+  let z = baseZ;
+  for(const { id, el } of targets){
+    // 先にローカルも動かして体感を上げる（後でDB更新）
+    el.style.left = `${centerX}px`;
+    el.style.top  = `${centerY}px`;
+    el.style.zIndex = z++;
+
+    await updateCard(id, {
+      x: centerX,
+      y: centerY,
+      zIndex: parseInt(el.style.zIndex) || z, // 念のため
+      updatedAt: serverTimestamp()
+    });
+  }
+};
+
 
     function bindPanZoomHandlers(){
       field.addEventListener("wheel", e => { if(e.ctrlKey) return; e.preventDefault(); const rect=field.getBoundingClientRect(); const cx=e.clientX-rect.left; const cy=e.clientY-rect.top; const scale=0.1; const old=zoom; zoom += e.deltaY<0?scale:-scale; zoom = Math.max(0.3, Math.min(zoom, 3)); const sx=(cx - panOffsetX)/old; const sy=(cy - panOffsetY)/old; panOffsetX = cx - sx*zoom; panOffsetY = cy - sy*zoom; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }, {passive:false});
