@@ -656,21 +656,14 @@ function validateLobby(){
   const roomOk  = !!(joinRoomInput.value||'').trim();
   const nameNow = (playerNameInput.value||'').trim();
   const nameOk  = nameNow.length > 0 && nameNow.length <= 24;
-  const seatOk  = !!CURRENT_PLAYER;
+  const seatOk  = !!CURRENT_PLAYER;  // ← 座席が選ばれているかだけを見る
 
-  // 選択された席が現在「空席」かどうかを判定
-  let selectedSeatEmpty = false;
-  if (seatOk) {
-    const data = currentSeatMap[CURRENT_PLAYER];
-    selectedSeatEmpty =
-      !data ||                 // docがない
-      isSeatStale(data) ||     // 心拍が古い（離席扱い）
-      !data.claimedByUid;      // 予約者なし
-  }
-
-  // ★ 空席が選ばれていれば Start を押せる
-  startBtn.disabled = !(roomOk && nameOk && seatOk && selectedSeatEmpty);
+  // ★ 空席判定は不要：席ボタン自体が occupied を押せなくしているため
+  //   占有チェックは start クリック時の claimSeat(Transaction) で行う
+  startBtn.disabled = !(roomOk && nameOk && seatOk);
 }
+
+
 
 // ★ 左の席ボタン：右側の名前が入っていれば警告しない（自動コピー）
 seatButtons.forEach(btn => {
