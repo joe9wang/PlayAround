@@ -592,6 +592,10 @@ function renderSeatAvailability(){
 
 // ★ ラベル描画：ホスト表記は hostUid の座席だけに付与（非ホスト席は出さない）
 function renderFieldLabels(){
+  const hostUid = (CURRENT_ROOM_META && typeof CURRENT_ROOM_META.hostUid === 'string')
+    ? CURRENT_ROOM_META.hostUid
+    : null;
+
   for (const s of [1,2,3,4]) {
     const area   = document.querySelector(`.player-${s}`);
     const seatEl = area?.querySelector('.player-label .label-seat');
@@ -603,10 +607,7 @@ function renderFieldLabels(){
     const seatData = currentSeatMap[s] || null;
     const displayName = seatData?.displayName || '';
 
-    const isHostSeat = !!(
-      CURRENT_ROOM_META?.hostUid &&
-      seatData?.claimedByUid === CURRENT_ROOM_META.hostUid
-    );
+    const isHostSeat = !!(hostUid && seatData?.claimedByUid === hostUid);
 
     // 非ホスト席は「P{n} 名前」だけ／ホスト席だけ（ホスト）を付ける
     nameEl.textContent = displayName
@@ -615,7 +616,6 @@ function renderFieldLabels(){
   }
 }
 
-
     function detachSeatsListener(){ if(unsubscribeSeats){ unsubscribeSeats(); unsubscribeSeats = null; } }
 
     function loadSeatStatus(){
@@ -623,10 +623,14 @@ function renderFieldLabels(){
 
       if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
       const roomId = (joinRoomInput.value||'').trim();
-      if(!roomId){ 
-        CURRENT_ROOM_META = null; 
-        renderSeatAvailability();
-        return; 
+      
+      // ★ 前ルームのホスト情報が残って誤表示しないように、いったんクリアして即描画リセット
+      CURRENT_ROOM_META = null;
+      renderFieldLabels();
+      
+      if(!roomId){
+        // ルーム未指定なら何も購読しない
+        return;
       }
 
       // ルームdoc購読（ホスト情報など）
@@ -646,6 +650,7 @@ function renderFieldLabels(){
       }));
       unsubscribeSeats = () => unsubs.forEach(fn => fn());
     }
+
 
 function validateLobby(){
   // 右側（create）モードのときは Start は使わない
