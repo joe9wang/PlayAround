@@ -290,6 +290,34 @@
 const CARD_W = 120;
 const CARD_H = 160;
 
+
+
+/** 汎用：フィールド座標の矩形内判定（中心点で判定） */
+function isCenterInsideRect(x, y, rect){
+  const cx = x + CARD_W / 2;
+  const cy = y + CARD_H / 2;
+  return (
+    cx >= rect.minX && cx <= rect.minX + rect.width &&
+    cy >= rect.minY && cy <= rect.minY + rect.height
+  );
+}
+
+
+/** 指定席の手札エリア境界（フィールド座標）を取得 */
+function getHandBoundsForSeat(seat){
+  const hand = document.querySelector(`.player-${seat} .hand-area`);
+  if(!hand) return null;
+  const handRect  = hand.getBoundingClientRect();
+  const fieldRect = field.getBoundingClientRect();
+  // transform-origin: 0 0 の translate+scale を逆変換してフィールド座標へ
+  const minX = (handRect.left - fieldRect.left) / zoom;
+  const minY = (handRect.top  - fieldRect.top ) / zoom;
+  const width  = handRect.width  / zoom;
+  const height = handRect.height / zoom;
+  return { minX, minY, width, height };
+}
+
+
 /** 指定席のデッキエリアのフィールド座標系での境界を返す（※修正版） */
 function getDeckBoundsForSeat(seat){
   const deck = document.querySelector(`.player-${seat} .deck-area`);
@@ -604,8 +632,6 @@ card.addEventListener("click", e => {
         (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me'
       );
 
-
-
       card.style.left = `${data.x||0}px`;
       card.style.top  = `${data.y||0}px`;
       card.style.zIndex = data.zIndex || 1;
@@ -616,6 +642,31 @@ card.addEventListener("click", e => {
         else { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
         if(data.imageUrl && img.src !== data.imageUrl){ img.src = data.imageUrl; }
       }
+      
+      try {
+  const viewerSeat = CURRENT_PLAYER;               // 今見ている人の席
+  const x = parseFloat(card.style.left) || 0;      // カード左上（フィールド座標）
+  const y = parseFloat(card.style.top)  || 0;
+
+  // 4人分の手札境界を調べて、どの手札エリアにあるかを見る
+  let insideSeat = null;
+  for (const s of [1,2,3,4]) {
+    const hb = getHandBoundsForSeat(s);
+    if (hb && isCenterInsideRect(x, y, hb)) { insideSeat = s; break; }
+  }
+
+  // もし“誰かの手札エリア”にあり、かつ閲覧者がその席でないなら強制的に裏表示
+  if (insideSeat && String(viewerSeat) !== String(insideSeat)) {
+    const img = card.querySelector('img');
+    if (img) {
+      img.style.display = 'none';
+      card.style.backgroundColor = '#000';
+    }
+  }
+} catch(_) {}
+      
+      
+      
     }
 
     async function updateCard(cardId, patch){
