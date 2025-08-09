@@ -298,14 +298,15 @@ function getDeckBoundsForSeat(seat){
   const deckRect  = deck.getBoundingClientRect();
   const fieldRect = field.getBoundingClientRect();
 
-  // field にかかっている transform(translate+scale) を逆変換して、フィールド座標へ
-  const minX = (deckRect.left - fieldRect.left - panOffsetX) / zoom;
-  const minY = (deckRect.top  - fieldRect.top  - panOffsetY) / zoom;
+  // 画面座標 → フィールド座標（transform-origin: 0 0 前提）
+  const minX = (deckRect.left - fieldRect.left) / zoom;
+  const minY = (deckRect.top  - fieldRect.top)  / zoom;
   const width  = deckRect.width  / zoom;
   const height = deckRect.height / zoom;
 
   return { minX, minY, width, height };
 }
+
 
 /** デッキ内にカードが収まるランダム座標（左上）を返す */
 function randomPointInDeck(seat){
