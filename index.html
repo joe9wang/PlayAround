@@ -51,6 +51,21 @@
     .room-item:last-child{ border-bottom:0; }
     .room-id{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
     #spacer{ height:40px; clear:both; }
+    
+    .player-label {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-size: 22px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 8px;
+    border-radius: 4px;
+    pointer-events: none; /* カード操作に干渉しない */
+    }
+    
+    
   </style>
 </head>
 <body>
@@ -130,33 +145,40 @@
   <div id="container">
     <div id="field">
       <div class="player-area player-1">
-        <div class="play-area">
-          <div class="deck-area"></div>
-          <div class="main-play-area"></div>
-        </div>
-        <div class="hand-area"></div>
-      </div>
-      <div class="player-area player-2">
-        <div class="play-area">
-          <div class="deck-area"></div>
-          <div class="main-play-area"></div>
-        </div>
-        <div class="hand-area"></div>
-      </div>
-      <div class="player-area player-3">
-        <div class="play-area">
-          <div class="deck-area"></div>
-          <div class="main-play-area"></div>
-        </div>
-        <div class="hand-area"></div>
-      </div>
-      <div class="player-area player-4">
-        <div class="play-area">
-          <div class="deck-area"></div>
-          <div class="main-play-area"></div>
-        </div>
-        <div class="hand-area"></div>
-      </div>
+  <div class="player-label">P1</div>
+  <div class="play-area">
+    <div class="deck-area"></div>
+    <div class="main-play-area"></div>
+  </div>
+  <div class="hand-area"></div>
+</div>
+
+<div class="player-area player-2">
+  <div class="player-label">P2</div>
+  <div class="play-area">
+    <div class="deck-area"></div>
+    <div class="main-play-area"></div>
+  </div>
+  <div class="hand-area"></div>
+</div>
+
+<div class="player-area player-3">
+  <div class="player-label">P3</div>
+  <div class="play-area">
+    <div class="deck-area"></div>
+    <div class="main-play-area"></div>
+  </div>
+  <div class="hand-area"></div>
+</div>
+
+<div class="player-area player-4">
+  <div class="player-label">P4</div>
+  <div class="play-area">
+    <div class="deck-area"></div>
+    <div class="main-play-area"></div>
+  </div>
+  <div class="hand-area"></div>
+</div>
     </div>
   </div>
 
