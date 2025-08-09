@@ -560,36 +560,37 @@ function renderSeatAvailability(){
     const note = btn.querySelector('.seat-note');
     const data = currentSeatMap[seat];
 
-    // 現在生きている占有かどうか（ハートビートで判定）
     const occupied = !!(data && !isSeatStale(data) && data.claimedByUid);
 
     if (occupied) {
-      // 占有中：プレイヤー名のみ（黒文字）
-      note.textContent = data.displayName || '';
+      const isHostSeat = !!(
+        CURRENT_ROOM_META?.hostUid &&
+        data.claimedByUid === CURRENT_ROOM_META.hostUid
+      );
+      note.textContent = isHostSeat
+        ? `${data.displayName || ''}（ホスト）`
+        : (data.displayName || '');
       note.style.color = '#000';
     } else {
-      // 空席：青字で「空き」
       note.textContent = '空き';
       note.style.color = 'blue';
     }
 
-    // 空席のみボタンを押せるようにする
+    // 空席のみ押せる
     btn.disabled = occupied;
 
-    // 自分が現在選択済みの席を視覚的にハイライト（任意）
+    // 見た目ハイライト（選択中）
     btn.classList.toggle('active', CURRENT_PLAYER === seat);
   });
 
-  // フィールドのラベル（P{n} 名前（ホスト））も毎回更新
   renderFieldLabels();
-
-  // ロビーの開始ボタンの有効/無効を再評価
   validateLobby();
 }
 
 
 
-// ★ ラベル描画：ホスト表記は hostUid の座席だけに付与（フォールバック無し）
+
+// ★ ラベル描画：ホスト表記は hostUid の座席だけに付与（非ホスト席は出さない）
 function renderFieldLabels(){
   for (const s of [1,2,3,4]) {
     const area   = document.querySelector(`.player-${s}`);
@@ -602,13 +603,12 @@ function renderFieldLabels(){
     const seatData = currentSeatMap[s] || null;
     const displayName = seatData?.displayName || '';
 
-    // ルーム作成者（hostUid）が「この席を占有」している時だけ（ホスト）を付ける
     const isHostSeat = !!(
       CURRENT_ROOM_META?.hostUid &&
       seatData?.claimedByUid === CURRENT_ROOM_META.hostUid
     );
 
-    // フォールバック表示（hostDisplayNameなど）はしない：必ず座席のdisplayNameだけ
+    // 非ホスト席は「P{n} 名前」だけ／ホスト席だけ（ホスト）を付ける
     nameEl.textContent = displayName
       ? `${displayName}${isHostSeat ? '（ホスト）' : ''}`
       : '';
