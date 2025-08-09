@@ -374,34 +374,58 @@
       return { x: Math.round(x), y: Math.round(y) };
     }
 
-    function subscribeRoomList(){
-      const qRooms = query(collection(db, 'rooms'), where('public', '==', true), limit(50));
-      onSnapshot(qRooms, snap => {
-        const docs = snap.docs.slice().sort((a,b) => {
-          const au = a.data().updatedAt?.toMillis?.() ?? 0;
-          const bu = b.data().updatedAt?.toMillis?.() ?? 0;
-          return bu - au;
-        });
-        roomListDiv.innerHTML = '';
-        docs.forEach(docSnap => {
-          const data = docSnap.data() || {};
-          const item = document.createElement('div'); item.className = 'room-item';
-          const left = document.createElement('div');
-          left.innerHTML = `
-            <div class="room-id">${docSnap.id}</div>
-            <div style="font-size:12px; color:#555;">${(data.title||'（無題）')}</div>
-          `;
-          const right = document.createElement('div');
-          const btn = document.createElement('button');
-          btn.className = 'btn secondary';
-          btn.textContent = '参加';
-          btn.onclick = () => { joinRoomInput.value = docSnap.id; ACTIVE_MODE='join'; loadSeatStatus(); };
-          right.appendChild(btn);
-          item.appendChild(left); item.appendChild(right);
-          roomListDiv.appendChild(item);
-        });
-      });
-    }
+function subscribeRoomList(){
+  const qRooms = query(collection(db, 'rooms'), where('public', '==', true), limit(50));
+
+  onSnapshot(qRooms, snap => {
+    const docs = snap.docs.slice().sort((a,b) => {
+      const au = a.data().updatedAt?.toMillis?.() ?? 0;
+      const bu = b.data().updatedAt?.toMillis?.() ?? 0;
+      return bu - au;
+    });
+
+    roomListDiv.innerHTML = '';
+
+    docs.forEach(docSnap => {
+      const data = docSnap.data() || {};
+
+      const item = document.createElement('div');
+      item.className = 'room-item';
+      item.style.cursor = 'pointer';
+
+      const left = document.createElement('div');
+      left.innerHTML = `
+        <div class="room-id">${docSnap.id}</div>
+        <div style="font-size:12px; color:#555;">${(data.title||'（無題）')}</div>
+      `;
+
+      const right = document.createElement('div');
+      const btn = document.createElement('button');
+      btn.setAttribute('type', 'button');                   // ← submit誤動作防止
+      btn.className = 'btn secondary';
+      btn.textContent = '参加';
+
+      const selectRoom = (ev) => {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+        joinRoomInput.value = docSnap.id;                   // 左フォームに反映
+        ACTIVE_MODE = 'join';
+        loadSeatStatus();                                   // 座席状況を読み込み
+        // ユーザーの視線誘導
+        setTimeout(() => { joinRoomInput.focus(); joinRoomInput.scrollIntoView({behavior:'smooth', block:'center'}); }, 0);
+      };
+
+      btn.addEventListener('click', selectRoom);
+      item.addEventListener('click', selectRoom);           // 行全体もクリック可
+
+      right.appendChild(btn);
+      item.appendChild(left);
+      item.appendChild(right);
+      roomListDiv.appendChild(item);
+    });
+  });
+}
+
+
     subscribeRoomList();
 
     function ensureAuthReady(){
@@ -519,27 +543,32 @@ createRoomBtn.addEventListener('click', async () => {
       validateLobby();
     }
 
-    // ★ ラベル描画の安定化：seat/host両方から判定、購読のたびに必ず更新
-    function renderFieldLabels(){
-      for (const s of [1,2,3,4]) {
-        const area   = document.querySelector(`.player-${s}`);
-        const seatEl = area?.querySelector('.player-label .label-seat');
-        const nameEl = area?.querySelector('.player-label .label-name');
-        if(!seatEl || !nameEl) continue;
+// ★ ラベル描画：ホスト表記は hostUid の座席だけに付与（フォールバック無し）
+function renderFieldLabels(){
+  for (const s of [1,2,3,4]) {
+    const area   = document.querySelector(`.player-${s}`);
+    const seatEl = area?.querySelector('.player-label .label-seat');
+    const nameEl = area?.querySelector('.player-label .label-name');
+    if(!seatEl || !nameEl) continue;
 
-        seatEl.textContent = `P${s}`;
+    seatEl.textContent = `P${s}`;
 
-        const seatData = currentSeatMap[s] || null;
-        const nameFromSeat = seatData?.displayName || '';
-        const isHostByUid  = !!(CURRENT_ROOM_META?.hostUid && seatData?.claimedByUid === CURRENT_ROOM_META.hostUid);
+    const seatData = currentSeatMap[s] || null;
+    const displayName = seatData?.displayName || '';
 
-        // ホスト名のフォールバック（座席名が空の瞬間でも一応表示）
-        const fallbackHostName = (isHostByUid && CURRENT_ROOM_META?.hostDisplayName) ? CURRENT_ROOM_META.hostDisplayName : '';
-        const finalName = nameFromSeat || fallbackHostName;
+    // ルーム作成者（hostUid）が「この席を占有」している時だけ（ホスト）を付ける
+    const isHostSeat = !!(
+      CURRENT_ROOM_META?.hostUid &&
+      seatData?.claimedByUid === CURRENT_ROOM_META.hostUid
+    );
 
-        nameEl.textContent = finalName ? `${finalName}${isHostByUid ? '（ホスト）' : ''}` : '';
-      }
-    }
+    // フォールバック表示（hostDisplayNameなど）はしない：必ず座席のdisplayNameだけ
+    nameEl.textContent = displayName
+      ? `${displayName}${isHostSeat ? '（ホスト）' : ''}`
+      : '';
+  }
+}
+
 
     function detachSeatsListener(){ if(unsubscribeSeats){ unsubscribeSeats(); unsubscribeSeats = null; } }
 
