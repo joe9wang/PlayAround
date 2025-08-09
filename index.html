@@ -413,8 +413,13 @@
       card.className = "card";
       card.dataset.cardId = cardId;
       card.dataset.ownerUid = state?.ownerUid || '';
-      card.setAttribute('data-owner', (card.dataset.ownerUid && card.dataset.ownerUid !== CURRENT_UID) ? 'other' : 'me');
-
+      card.dataset.ownerSeat = state?.ownerSeat ? String(state.ownerSeat) : '';
+      
+      // 見た目ヒント：座席が自分と違うなら other
+      card.setAttribute('data-owner',
+      (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me'
+      );
+      
       const img = document.createElement("img");
       img.src = imageSrc; card.appendChild(img);
 
@@ -422,7 +427,7 @@
 
       card.addEventListener("contextmenu", async e => {
         e.preventDefault();
-        if (card.dataset.ownerUid !== CURRENT_UID) return;
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return; // ★座席一致のみOK
         const faceUp = !(card.dataset.faceUp === 'true');
         await updateCard(cardId, { faceUp, updatedAt: serverTimestamp() });
       });
@@ -441,12 +446,7 @@
 
         // ★ オーナーのプレイヤー番号と自分のプレイヤー番号を表示
         let ownerPlayerNum = "?";
-        for (let seat = 1; seat <= 4; seat++) {
-          const seatData = currentSeatMap[seat];
-          if (seatData && seatData.claimedByUid === card.dataset.ownerUid) {
-            ownerPlayerNum = `P${seat}`;
-            break;
-          }
+        if (card.dataset.ownerSeat) ownerPlayerNum = `P${card.dataset.ownerSeat}`;
         }
         previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
       });
@@ -456,8 +456,14 @@
     
     
     function applyCardState(card, data){
+
       card.dataset.ownerUid = data.ownerUid || '';
-      card.setAttribute('data-owner', (data.ownerUid && data.ownerUid !== CURRENT_UID) ? 'other' : 'me');
+      card.dataset.ownerSeat = (data.ownerSeat!=null) ? String(data.ownerSeat) : '';
+      card.setAttribute('data-owner',
+        (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me'
+      );
+
+
 
       card.style.left = `${data.x||0}px`;
       card.style.top  = `${data.y||0}px`;
@@ -507,6 +513,7 @@
           faceUp: true,
           imageUrl,
           ownerUid: CURRENT_UID,
+          ownerSeat: CURRENT_PLAYER, // ★追加：座席も保存
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
@@ -514,11 +521,11 @@
         markLocal(ref.id);
         let el = cardDomMap.get(ref.id) || document.querySelector(`[data-card-id="${ref.id}"]`);
         if(!el){
-          el = createCardDom(ref.id, imageUrl, { x:baseX, y:baseY, zIndex:1, faceUp:true, ownerUid: CURRENT_UID });
+          el = createCardDom(ref.id, imageUrl, { x:baseX, y:baseY, zIndex:1, faceUp:true, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER });
           cardDomMap.set(ref.id, el);
           field.appendChild(el);
         }
-        applyCardState(el, { x:baseX, y:baseY, zIndex:1, faceUp:true, imageUrl, ownerUid: CURRENT_UID });
+        applyCardState(el, { x:baseX, y:baseY, zIndex:1, faceUp:true, imageUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER });
       }catch(e){ console.error('createCardRemote', e); }
     }
 
@@ -526,7 +533,7 @@
       let offsetX=0, offsetY=0, isDragging=false;
       card.addEventListener("mousedown", e => {
         if(e.button!==0) return;
-        if (card.dataset.ownerUid !== CURRENT_UID) return; // 自分のカード以外は不可
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return; // ★座席一致のみOK
         const rect = field.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
         const mouseY = (e.clientY - rect.top - panOffsetY) / zoom;
@@ -557,14 +564,14 @@
 
     window.faceDownAll = async function(){
       for(const [id, el] of cardDomMap){
-        if (el.dataset.ownerUid !== CURRENT_UID) continue;
+        if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
         await updateCard(id, { faceUp: false, updatedAt: serverTimestamp() });
       }
       previewImg.src = ""; previewImg.style.display = "none";
     }
     window.faceUpAll = async function(){
       for(const [id, el] of cardDomMap){
-        if (el.dataset.ownerUid !== CURRENT_UID) continue;
+        if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
         await updateCard(id, { faceUp: true, updatedAt: serverTimestamp() });
       }
     }
