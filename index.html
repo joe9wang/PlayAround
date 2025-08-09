@@ -141,7 +141,7 @@
           <div class="deck-area"></div>
           <div class="main-play-area"></div>
         </div>
-        <div class="手エリア hand-area"></div>
+        <div class="hand-area"></div>
       </div>
       <div class="player-area player-3">
         <div class="play-area">
@@ -432,25 +432,26 @@
         await updateCard(cardId, { faceUp, updatedAt: serverTimestamp() });
       });
 
-      card.addEventListener("click", e => {
-        e.stopPropagation();
-        if (selectedCard) selectedCard.classList.remove("selected");
-        card.classList.add("selected");
-        selectedCard = card;
-        const imgEl = card.querySelector('img');
-        if (imgEl && imgEl.style.display !== "none") {
-          previewImg.src = imgEl.src; previewImg.style.display = "block";
-        } else {
-          previewImg.src = ""; previewImg.style.display = "none";
-        }
+card.addEventListener("click", e => {
+  e.stopPropagation();
+  if (selectedCard) selectedCard.classList.remove("selected");
+  card.classList.add("selected");
+  selectedCard = card;
 
-        // ★ オーナーのプレイヤー番号と自分のプレイヤー番号を表示
-        let ownerPlayerNum = "?";
-        if (card.dataset.ownerSeat) ownerPlayerNum = `P${card.dataset.ownerSeat}`;
-        }
-        previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
-      });
+  const imgEl = card.querySelector('img');
+  if (imgEl && imgEl.style.display !== "none") {
+    previewImg.src = imgEl.src;
+    previewImg.style.display = "block";
+  } else {
+    previewImg.src = "";
+    previewImg.style.display = "none";
+  }
 
+  // ★ プレビュー情報：オーナー座席 & 自分の座席
+  let ownerPlayerNum = "?";
+  if (card.dataset.ownerSeat) ownerPlayerNum = `P${card.dataset.ownerSeat}`;
+  previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
+});
       return card;
     }
     
