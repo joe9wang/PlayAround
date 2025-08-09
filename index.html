@@ -31,11 +31,12 @@
     #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; } #preview-img{ width:100%; height:auto; border-radius:10px; display:none; }
 
     #lobby{ position:fixed; inset:0; background:rgba(0,0,0,.58); display:flex; align-items:center; justify-content:center; z-index:9999; }
-    .lobby-card{ width:min(820px, 96vw); background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:18px; box-sizing:border-box; }
+    .lobby-card{ width:min(920px, 96vw); background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:18px; box-sizing:border-box; }
     .lobby-grid{ display:grid; grid-template-columns: 1.15fr 1fr; gap:14px; }
     .lobby-title{ font-size:20px; font-weight:700; margin:4px 0 12px; text-align:center; }
     .lobby-section{ border:1px solid #e3e3e3; border-radius:12px; padding:12px; }
     .lobby-label{ display:block; font-size:12px; color:#555; margin-bottom:6px; }
+    .lobby-subtitle{ font-weight:700; margin:0 0 8px; }
     .row{ display:flex; gap:8px; align-items:center; }
     .field{ flex:1; padding:10px 12px; font-size:16px; border:1px solid #bbb; border-radius:10px; }
     .btn{ padding:10px 12px; border-radius:10px; border:0; background:#0a7; color:#fff; font-weight:700; cursor:pointer; opacity:.95; }
@@ -53,40 +54,32 @@
     #spacer{ height:40px; clear:both; }
     
     .player-label {
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    font-size: 22px;
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0.95);
-    background: rgba(0, 0, 0, 0.4);
-    padding: 2px 8px;
-    border-radius: 4px;
-    pointer-events: none; /* カード操作に干渉しない */
-    z-index: 10; /* ★これを追加：他要素より前に出す */
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      font-size: 22px;
+      font-weight: bold;
+      color: rgba(255, 255, 255, 0.95);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 10;
     }
-    
-  .zone-label {
-    position: absolute;
-    right: 4px;
-    bottom: 4px;
-    font-size: 12px;
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0.95);
-    background: rgba(0, 0, 0, 0.4);
-    padding: 1px 6px;
-    border-radius: 4px;
-    pointer-events: none;
-    z-index: 5;
-  }
-
-.deck-area, .main-play-area, .hand-area {
-  position: relative; /* 子要素の絶対配置のため */
-}
-    
-    
-    
-    
+    .zone-label {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      color: rgba(255, 255, 255, 0.95);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 1px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .deck-area, .main-play-area, .hand-area { position: relative; }
   </style>
 </head>
 <body>
@@ -99,7 +92,9 @@
     <div class="lobby-card">
       <div class="lobby-title">プレイアラウンドへようこそ</div>
       <div class="lobby-grid">
+        <!-- 左：既存ルームに参加（非ホスト） -->
         <section class="lobby-section">
+          <div class="lobby-subtitle">既存ルームに参加（非ホスト）</div>
           <label class="lobby-label">参加するルームID</label>
           <div class="row" style="margin-bottom:8px;">
             <input id="join-room-id" type="text" class="field" placeholder="例: room-alpha / 1234" />
@@ -125,48 +120,45 @@
           </div>
         </section>
 
-<section class="lobby-section">
-  <label class="lobby-label">新しいルームを作成</label>
-  <div class="row" style="margin-bottom:8px;">
-    <input id="new-room-id" type="text" class="field" placeholder="作成するID（例: room-xyz）" />
-  </div>
-  <div class="row" style="margin-bottom:12px;">
-    <input id="new-room-title" type="text" class="field" placeholder="タイトル（任意）" />
-    <button id="create-room-btn" class="btn">作成</button>
-  </div>
-  
-  <!-- 作成者のプレイヤー名 -->
-  <div class="row" style="margin-bottom:12px;">
-    <input id="new-player-name" type="text" class="field" placeholder="作成者のプレイヤー名（例: Alice）" />
-  </div>
-  
+        <!-- 右：新しいルームを作成して参加（ホスト） -->
+        <section class="lobby-section">
+          <div class="lobby-subtitle">新しいルームを作成して参加（ホスト）</div>
+          <label class="lobby-label">新しいルームを作成</label>
+          <div class="row" style="margin-bottom:8px;">
+            <input id="new-room-id" type="text" class="field" placeholder="作成するID（例: room-xyz）" />
+          </div>
+          <div class="row" style="margin-bottom:12px;">
+            <input id="new-room-title" type="text" class="field" placeholder="タイトル（任意）" />
+            <button id="create-room-btn" class="btn">作成</button>
+          </div>
 
-  <!-- 公開/非公開 選択 -->
-  <label class="lobby-label">公開設定</label>
-  <div class="row" style="gap:12px; margin-bottom:12px;">
-    <label class="row" style="gap:6px; align-items:center;">
-      <input type="radio" name="room-visibility" id="room-public" value="public" checked />
-      <span>公開</span>
-    </label>
-    <label class="row" style="gap:6px; align-items:center;">
-      <input type="radio" name="room-visibility" id="room-private" value="private" />
-      <span>非公開</span>
-    </label>
-  </div>
+          <div class="row" style="margin-bottom:12px;">
+            <input id="new-player-name" type="text" class="field" placeholder="作成者のプレイヤー名（例: Alice）" />
+          </div>
 
-  <!-- 作成後に参加する座席選択 -->
-  <label class="lobby-label">作成後に参加する座席</label>
-  <div class="seat-grid" id="create-seat-grid">
-    <button class="seat-btn" data-create-seat="1">P1</button>
-    <button class="seat-btn" data-create-seat="2">P2</button>
-    <button class="seat-btn" data-create-seat="3">P3</button>
-    <button class="seat-btn" data-create-seat="4">P4</button>
-  </div>
+          <label class="lobby-label">公開設定</label>
+          <div class="row" style="gap:12px; margin-bottom:12px;">
+            <label class="row" style="gap:6px; align-items:center;">
+              <input type="radio" name="room-visibility" id="room-public" value="public" checked />
+              <span>公開</span>
+            </label>
+            <label class="row" style="gap:6px; align-items:center;">
+              <input type="radio" name="room-visibility" id="room-private" value="private" />
+              <span>非公開</span>
+            </label>
+          </div>
 
-  <label class="lobby-label" style="margin-top:10px;">公開ルーム一覧（新しい順）</label>
-  <div id="room-list" class="room-list"></div>
-</section>
+          <label class="lobby-label">作成後に参加する座席</label>
+          <div class="seat-grid" id="create-seat-grid">
+            <button class="seat-btn" data-create-seat="1">P1</button>
+            <button class="seat-btn" data-create-seat="2">P2</button>
+            <button class="seat-btn" data-create-seat="3">P3</button>
+            <button class="seat-btn" data-create-seat="4">P4</button>
+          </div>
 
+          <label class="lobby-label" style="margin-top:10px;">公開ルーム一覧（新しい順）</label>
+          <div id="room-list" class="room-list"></div>
+        </section>
       </div>
     </div>
   </div>
@@ -193,90 +185,65 @@
 
   <div id="container">
     <div id="field">
-    
       <div class="player-area player-1">
         <div class="player-label">
           <span class="label-seat">P1</span> <span class="label-name"></span>
         </div>
-      <div class="play-area">
-        <div class="deck-area">
-          <div class="zone-label">デッキエリア</div>
+        <div class="play-area">
+          <div class="deck-area"><div class="zone-label">デッキエリア</div></div>
+          <div class="main-play-area"><div class="zone-label">プレイエリア</div></div>
         </div>
-      <div class="main-play-area">
-        <div class="zone-label">プレイエリア</div>
+        <div class="hand-area"><div class="zone-label">手札エリア</div></div>
       </div>
-    </div>
-      <div class="hand-area">
-        <div class="zone-label">手札エリア</div>
-      </div>
-    </div>
 
       <div class="player-area player-2">
         <div class="player-label">
           <span class="label-seat">P2</span> <span class="label-name"></span>
         </div>
-      <div class="play-area">
-        <div class="deck-area">
-          <div class="zone-label">デッキエリア</div>
+        <div class="play-area">
+          <div class="deck-area"><div class="zone-label">デッキエリア</div></div>
+          <div class="main-play-area"><div class="zone-label">プレイエリア</div></div>
         </div>
-      <div class="main-play-area">
-        <div class="zone-label">プレイエリア</div>
+        <div class="hand-area"><div class="zone-label">手札エリア</div></div>
       </div>
-    </div>
-      <div class="hand-area">
-        <div class="zone-label">手札エリア</div>
-      </div>
-    </div>
-    
+
       <div class="player-area player-3">
         <div class="player-label">
           <span class="label-seat">P3</span> <span class="label-name"></span>
         </div>
-      <div class="play-area">
-        <div class="deck-area">
-          <div class="zone-label">デッキエリア</div>
+        <div class="play-area">
+          <div class="deck-area"><div class="zone-label">デッキエリア</div></div>
+          <div class="main-play-area"><div class="zone-label">プレイエリア</div></div>
         </div>
-      <div class="main-play-area">
-        <div class="zone-label">プレイエリア</div>
+        <div class="hand-area"><div class="zone-label">手札エリア</div></div>
       </div>
-    </div>
-      <div class="hand-area">
-        <div class="zone-label">手札エリア</div>
-      </div>
-    </div>
-    
+
       <div class="player-area player-4">
         <div class="player-label">
           <span class="label-seat">P4</span> <span class="label-name"></span>
         </div>
-      <div class="play-area">
-        <div class="deck-area">
-          <div class="zone-label">デッキエリア</div>
+        <div class="play-area">
+          <div class="deck-area"><div class="zone-label">デッキエリア</div></div>
+          <div class="main-play-area"><div class="zone-label">プレイエリア</div></div>
         </div>
-      <div class="main-play-area">
-        <div class="zone-label">プレイエリア</div>
+        <div class="hand-area"><div class="zone-label">手札エリア</div></div>
       </div>
     </div>
-      <div class="hand-area">
-        <div class="zone-label">手札エリア</div>
-      </div>
-    </div>    
   </div>
-</div>
+
   <div id="preview">
     <h2>選択中のカード</h2>
     <img id="preview-img" src="" alt="プレビュー画像" />
     <div id="preview-info"></div>
   </div>
-  
+
   <div id="spacer"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, query, orderBy, limit, addDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, limit, addDoc, updateDoc, where, query } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
-    // ★あなたの Firebase プロジェクト設定に差し替え済み
     const firebaseConfig = {
       apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
       authDomain: "cardgame-f484c.firebaseapp.com",
@@ -285,7 +252,6 @@
       messagingSenderId: "248859224605",
       appId: "1:248859224605:web:1320093856bc1861c174f4"
     };
-    
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -303,20 +269,17 @@
     const newRoomIdInput = document.getElementById('new-room-id');
     const newRoomTitleInput = document.getElementById('new-room-title');
     const newPlayerNameInput = document.getElementById('new-player-name');
-    
     const createRoomBtn = document.getElementById('create-room-btn');
     const roomListDiv = document.getElementById('room-list');
-    
-    // ルーム作成時の座席選択UI
-const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
-let CREATE_SELECTED_SEAT = null;
 
-createSeatButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    CREATE_SELECTED_SEAT = parseInt(btn.dataset.createSeat, 10);
-    createSeatButtons.forEach(b => b.classList.toggle('active', b === btn));
-  });
-});
+    const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
+    let CREATE_SELECTED_SEAT = null;
+    createSeatButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        CREATE_SELECTED_SEAT = parseInt(btn.dataset.createSeat, 10);
+        createSeatButtons.forEach(b => b.classList.toggle('active', b === btn));
+      });
+    });
 
     let CURRENT_ROOM = null;
     let CURRENT_ROOM_META = null;
@@ -324,245 +287,196 @@ createSeatButtons.forEach(btn => {
     let CURRENT_PLAYER = null; // 1..4
     let CURRENT_UID = null;
 
+    // ← どちらのフォームを使っているか
+    let ACTIVE_MODE = 'join'; // 'join' | 'create'
+
     signInAnonymously(auth).catch(console.error);
     onAuthStateChanged(auth, (user) => { if(user){ CURRENT_UID = user.uid; }});
 
+    // モード切替（左フォームを触ったら join、右フォームなら create）
+    joinRoomInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
+    playerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
+    seatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'join'; validateLobby(); }));
 
-// カードサイズ（CSSと合わせる）
-const CARD_W = 120;
-const CARD_H = 160;
+    newRoomIdInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
+    newRoomTitleInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
+    newPlayerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
+    createSeatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'create'; validateLobby(); }));
 
+    // カードサイズ
+    const CARD_W = 120;
+    const CARD_H = 160;
 
-
-/** 汎用：フィールド座標の矩形内判定（中心点で判定） */
-function isCenterInsideRect(x, y, rect){
-  const cx = x + CARD_W / 2;
-  const cy = y + CARD_H / 2;
-  return (
-    cx >= rect.minX && cx <= rect.minX + rect.width &&
-    cy >= rect.minY && cy <= rect.minY + rect.height
-  );
-}
-
-
-/** 指定席の手札エリア境界（フィールド座標）を取得 */
-function getHandBoundsForSeat(seat){
-  const hand = document.querySelector(`.player-${seat} .hand-area`);
-  if(!hand) return null;
-  const handRect  = hand.getBoundingClientRect();
-  const fieldRect = field.getBoundingClientRect();
-  // transform-origin: 0 0 の translate+scale を逆変換してフィールド座標へ
-  const minX = (handRect.left - fieldRect.left) / zoom;
-  const minY = (handRect.top  - fieldRect.top ) / zoom;
-  const width  = handRect.width  / zoom;
-  const height = handRect.height / zoom;
-  return { minX, minY, width, height };
-}
-
-
-/** 指定席のデッキエリアのフィールド座標系での境界を返す（※修正版） */
-function getDeckBoundsForSeat(seat){
-  const deck = document.querySelector(`.player-${seat} .deck-area`);
-  if(!deck) return null;
-
-  const deckRect  = deck.getBoundingClientRect();
-  const fieldRect = field.getBoundingClientRect();
-
-  // 画面座標 → フィールド座標（transform-origin: 0 0 前提）
-  const minX = (deckRect.left - fieldRect.left) / zoom;
-  const minY = (deckRect.top  - fieldRect.top)  / zoom;
-  const width  = deckRect.width  / zoom;
-  const height = deckRect.height / zoom;
-
-  return { minX, minY, width, height };
-}
-
-
-/** 矩形内（フィールド座標）に中心点があるカード一覧を返す */
-function getCardsInsideRect(rect){
-  const cards = [];
-  document.querySelectorAll('.card').forEach(el => {
-    const id = el.dataset.cardId;
-    const left = parseFloat(el.style.left) || 0;
-    const top  = parseFloat(el.style.top)  || 0;
-    const cx = left + CARD_W/2;
-    const cy = top  + CARD_H/2;
-    if(
-      cx >= rect.minX && cx <= rect.minX + rect.width &&
-      cy >= rect.minY && cy <= rect.minY + rect.height
-    ){
-      cards.push({ id, el });
+    function isCenterInsideRect(x, y, rect){
+      const cx = x + CARD_W / 2;
+      const cy = y + CARD_H / 2;
+      return cx >= rect.minX && cx <= rect.minX + rect.width && cy >= rect.minY && cy <= rect.minY + rect.height;
     }
-  });
-  return cards;
-}
 
+    function getHandBoundsForSeat(seat){
+      const hand = document.querySelector(`.player-${seat} .hand-area`);
+      if(!hand) return null;
+      const handRect  = hand.getBoundingClientRect();
+      const fieldRect = field.getBoundingClientRect();
+      const minX = (handRect.left - fieldRect.left) / zoom;
+      const minY = (handRect.top  - fieldRect.top ) / zoom;
+      const width  = handRect.width  / zoom;
+      const height = handRect.height / zoom;
+      return { minX, minY, width, height };
+    }
 
-/** フィッシャー–イェーツでシャッフル */
-function shuffleArray(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j = (Math.random()* (i+1))|0;
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
+    function getDeckBoundsForSeat(seat){
+      const deck = document.querySelector(`.player-${seat} .deck-area`);
+      if(!deck) return null;
+      const deckRect  = deck.getBoundingClientRect();
+      const fieldRect = field.getBoundingClientRect();
+      const minX = (deckRect.left - fieldRect.left) / zoom;
+      const minY = (deckRect.top  - fieldRect.top)  / zoom;
+      const width  = deckRect.width  / zoom;
+      const height = deckRect.height / zoom;
+      return { minX, minY, width, height };
+    }
 
+    function getCardsInsideRect(rect){
+      const cards = [];
+      document.querySelectorAll('.card').forEach(el => {
+        const id = el.dataset.cardId;
+        const left = parseFloat(el.style.left) || 0;
+        const top  = parseFloat(el.style.top)  || 0;
+        const cx = left + CARD_W/2;
+        const cy = top  + CARD_H/2;
+        if(cx >= rect.minX && cx <= rect.minX + rect.width && cy >= rect.minY && cy <= rect.minY + rect.height){
+          cards.push({ id, el });
+        }
+      });
+      return cards;
+    }
 
-/** デッキ内にカードが収まるランダム座標（左上）を返す */
-function randomPointInDeck(seat){
-  const b = getDeckBoundsForSeat(seat);
-  if(!b) return { x: Math.random()*500|0, y: Math.random()*500|0 }; // フォールバック
-  const maxX = Math.max(b.minX, b.minX + b.width  - CARD_W);
-  const maxY = Math.max(b.minY, b.minY + b.height - CARD_H);
-  const x = b.minX + Math.random() * (maxX - b.minX);
-  const y = b.minY + Math.random() * (maxY - b.minY);
-  return { x: Math.round(x), y: Math.round(y) };
-}
+    function shuffleArray(arr){
+      for(let i=arr.length-1;i>0;i--){
+        const j = (Math.random()* (i+1))|0;
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
 
+    function randomPointInDeck(seat){
+      const b = getDeckBoundsForSeat(seat);
+      if(!b) return { x: Math.random()*500|0, y: Math.random()*500|0 };
+      const maxX = Math.max(b.minX, b.minX + b.width  - CARD_W);
+      const maxY = Math.max(b.minY, b.minY + b.height - CARD_H);
+      const x = b.minX + Math.random() * (maxX - b.minX);
+      const y = b.minY + Math.random() * (maxY - b.minY);
+      return { x: Math.round(x), y: Math.round(y) };
+    }
 
-function subscribeRoomList(){
-  const qRooms = query(
-    collection(db, 'rooms'),
-    where('public', '==', true),
-    limit(50)
-  );
-
-  onSnapshot(qRooms, snap => {
-    // クライアント側で updatedAt 降順に並べ替え
-    const docs = snap.docs.slice().sort((a,b) => {
-      const au = a.data().updatedAt?.toMillis?.() ?? 0;
-      const bu = b.data().updatedAt?.toMillis?.() ?? 0;
-      return bu - au;
-    });
-
-    roomListDiv.innerHTML = '';
-    docs.forEach(docSnap => {
-      const data = docSnap.data() || {};
-      const item = document.createElement('div'); item.className = 'room-item';
-      const left = document.createElement('div');
-      left.innerHTML = `
-        <div class="room-id">${docSnap.id}</div>
-        <div style="font-size:12px; color:#555;">${(data.title||'（無題）')}</div>
-      `;
-      const right = document.createElement('div');
-      const btn = document.createElement('button');
-      btn.className = 'btn secondary';
-      btn.textContent = '参加';
-      btn.onclick = () => { joinRoomInput.value = docSnap.id; loadSeatStatus(); };
-      right.appendChild(btn);
-      item.appendChild(left); item.appendChild(right);
-      roomListDiv.appendChild(item);
-    });
-  });
-}
-
-
+    function subscribeRoomList(){
+      const qRooms = query(collection(db, 'rooms'), where('public', '==', true), limit(50));
+      onSnapshot(qRooms, snap => {
+        const docs = snap.docs.slice().sort((a,b) => {
+          const au = a.data().updatedAt?.toMillis?.() ?? 0;
+          const bu = b.data().updatedAt?.toMillis?.() ?? 0;
+          return bu - au;
+        });
+        roomListDiv.innerHTML = '';
+        docs.forEach(docSnap => {
+          const data = docSnap.data() || {};
+          const item = document.createElement('div'); item.className = 'room-item';
+          const left = document.createElement('div');
+          left.innerHTML = `
+            <div class="room-id">${docSnap.id}</div>
+            <div style="font-size:12px; color:#555;">${(data.title||'（無題）')}</div>
+          `;
+          const right = document.createElement('div');
+          const btn = document.createElement('button');
+          btn.className = 'btn secondary';
+          btn.textContent = '参加';
+          btn.onclick = () => { joinRoomInput.value = docSnap.id; ACTIVE_MODE='join'; loadSeatStatus(); };
+          right.appendChild(btn);
+          item.appendChild(left); item.appendChild(right);
+          roomListDiv.appendChild(item);
+        });
+      });
+    }
     subscribeRoomList();
 
+    function ensureAuthReady(){
+      return new Promise((resolve) => {
+        if (CURRENT_UID) return resolve();
+        const off = onAuthStateChanged(auth, (u) => {
+          if (u) { CURRENT_UID = u.uid; off(); resolve(); }
+        });
+      });
+    }
 
+    // ── CREATE（右）：作成→即参加（ホスト）
+    createRoomBtn.addEventListener('click', async () => {
+      ACTIVE_MODE = 'create';
+      await ensureAuthReady();
 
+      const id = (newRoomIdInput.value||'').trim();
+      const title = (newRoomTitleInput.value||'').trim();
+      const isPublic = document.getElementById('room-public').checked;
+      const creatorName = (newPlayerNameInput.value || '').trim();
 
-function ensureAuthReady(){
-  return new Promise((resolve) => {
-    if (CURRENT_UID) return resolve();
-    const off = onAuthStateChanged(auth, (u) => {
-      if (u) { CURRENT_UID = u.uid; off(); resolve(); }
+      if(!id){ alert('ルームIDを入力してください'); return; }
+      if(!creatorName){ alert('作成者のプレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
+      if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
+
+      try{
+        await setDoc(doc(db, `rooms/${id}`), {
+          title: title || null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          public: !!isPublic,
+          hostUid: CURRENT_UID,
+          hostDisplayName: creatorName
+        }, { merge: true });
+
+        // 左フォームにも名前反映
+        playerNameInput.value = creatorName;
+
+        // ルーム購読と座席確保 → 即開始
+        joinRoomInput.value = id;
+        loadSeatStatus();
+
+        const ok = await claimSeat(id, CREATE_SELECTED_SEAT);
+        if(!ok){
+          alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`);
+          return;
+        }
+        CURRENT_PLAYER = CREATE_SELECTED_SEAT;
+        seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
+        startSession(id, CREATE_SELECTED_SEAT);
+
+      }catch(e){
+        console.error(e);
+        alert('ルーム作成に失敗しました');
+      }
     });
-  });
-}
-
-
-
-
-
-
-
-
-createRoomBtn.addEventListener('click', async () => {
-  await ensureAuthReady(); // ★ 追加：UIDが確実にある状態にする
-  const id = (newRoomIdInput.value||'').trim();
-  if(!id){ alert('ルームIDを入力してください'); return; }
-
-  const title = (newRoomTitleInput.value||'').trim();
-  const isPublic = document.getElementById('room-public').checked;
-  const creatorName = (newPlayerNameInput.value || '').trim();
-
-  try{
-    // ルーム作成（hostUid/hostDisplayName を確実に保存）
-    await setDoc(doc(db, `rooms/${id}`), {
-      title: title || null,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      public: !!isPublic,
-      hostUid: CURRENT_UID,                 // ★ 必ずUIDを入れる
-      hostDisplayName: creatorName || null,
-    }, { merge: true });
-    
-    // 左側の参加フォームにも名前を反映（claimSeat がこれを読むため）
-    if (creatorName) {
-      playerNameInput.value = creatorName;
-    }
-
-    // 入力したIDで座席状況を読み込み
-    joinRoomInput.value = id;
-    loadSeatStatus();
-
-    // 座席選択されていれば、その席を確保して即参加
-    if (CREATE_SELECTED_SEAT) {
-      if(!CURRENT_UID){
-        alert('認証準備中です。数秒後にもう一度お試しください。');
-        return;
-      }
-      const ok = await claimSeat(id, CREATE_SELECTED_SEAT);
-      if(!ok){
-        alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`);
-        return;
-      }
-      CURRENT_PLAYER = CREATE_SELECTED_SEAT;
-      seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
-      startSession(id, CREATE_SELECTED_SEAT);
-    } else {
-      alert('ルームを作成しました。座席を選んで「開始」を押してください。');
-    }
-
-  }catch(e){
-    console.error(e);
-    alert('ルーム作成に失敗しました');
-  }
-});
-
 
     let unsubscribeSeats = null;
     joinRoomInput.addEventListener('change', loadSeatStatus);
 
-// ルームID欄に入力 → Enter でも座席状況が読み込まれるように
-joinRoomInput.addEventListener('keydown', (e) => { 
-  if (e.key === 'Enter') loadSeatStatus();
-});
+    // Enterで座席状況ロード
+    joinRoomInput.addEventListener('keydown', (e) => { 
+      if (e.key === 'Enter') loadSeatStatus();
+    });
 
-
-playerNameInput.addEventListener('change', async () => {
-  const newName = (playerNameInput.value || '').trim();
-  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return;
-
-  // 自分が座っている席だけ更新
-  const seatRef = doc(db, `rooms/${CURRENT_ROOM}/seats/${CURRENT_PLAYER}`);
-  await setDoc(seatRef, {
-    displayName: newName,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-});
-
+    // 参加フォームで名前変更 → 自分の席に反映
+    playerNameInput.addEventListener('change', async () => {
+      const newName = (playerNameInput.value || '').trim();
+      if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return;
+      const seatRef = doc(db, `rooms/${CURRENT_ROOM}/seats/${CURRENT_PLAYER}`);
+      await setDoc(seatRef, { displayName: newName, updatedAt: serverTimestamp() }, { merge: true });
+    });
 
     const currentSeatMap = {1:null,2:null,3:null,4:null};
     function isSeatStale(data){
       if(!data || !data.heartbeatAt) return true;
       const hb = data.heartbeatAt?.toMillis ? data.heartbeatAt.toMillis() : 0;
-      return (Date.now() - hb) > 60000; // 60秒
+      return (Date.now() - hb) > 60000;
     }
-
-
-
 
     function renderSeatAvailability(){
       seatButtons.forEach(btn => {
@@ -578,79 +492,78 @@ playerNameInput.addEventListener('change', async () => {
       renderFieldLabels();
       validateLobby();
     }
-    
-    
-   function renderFieldLabels(){
-  for (const s of [1,2,3,4]) {
-    const area   = document.querySelector(`.player-${s}`);
-    const seatEl = area?.querySelector('.player-label .label-seat');
-    const nameEl = area?.querySelector('.player-label .label-name');
-    if(!seatEl || !nameEl) continue;
 
-    seatEl.textContent = `P${s}`;
+    function renderFieldLabels(){
+      for (const s of [1,2,3,4]) {
+        const area   = document.querySelector(`.player-${s}`);
+        const seatEl = area?.querySelector('.player-label .label-seat');
+        const nameEl = area?.querySelector('.player-label .label-name');
+        if(!seatEl || !nameEl) continue;
 
-    const seatData = currentSeatMap[s] || null;
-    const name     = seatData?.displayName || '';
-    const isHost   = !!(CURRENT_ROOM_META?.hostUid && seatData?.claimedByUid === CURRENT_ROOM_META.hostUid);
+        seatEl.textContent = `P${s}`;
 
-    nameEl.textContent = name ? `${name}${isHost ? '（ホスト）' : ''}` : '';
-  }
-}
-    
-    
+        const seatData = currentSeatMap[s] || null;
+        const name     = seatData?.displayName || '';
+        const isHost   = !!(CURRENT_ROOM_META?.hostUid && seatData?.claimedByUid === CURRENT_ROOM_META.hostUid);
+
+        nameEl.textContent = name ? `${name}${isHost ? '（ホスト）' : ''}` : '';
+      }
+    }
 
     function detachSeatsListener(){ if(unsubscribeSeats){ unsubscribeSeats(); unsubscribeSeats = null; } }
 
-
-
     function loadSeatStatus(){
-  detachSeatsListener();
+      detachSeatsListener();
 
-  if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
-  const roomId = (joinRoomInput.value||'').trim();
-  if(!roomId){ 
-    CURRENT_ROOM_META = null; 
-    renderSeatAvailability();
-    return; 
-  }
+      if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
+      const roomId = (joinRoomInput.value||'').trim();
+      if(!roomId){ 
+        CURRENT_ROOM_META = null; 
+        renderSeatAvailability();
+        return; 
+      }
 
-  // ルームdoc購読（ホスト情報など）
-  unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
-    CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
-    renderFieldLabels(); // ホスト表記更新
-  });
+      // ルームdoc購読（ホスト情報など）
+      unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
+        CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
+        renderFieldLabels();
+      });
 
-  // ルームの更新時刻だけ軽く更新（存在しなくてもOK）
-  setDoc(doc(db, `rooms/${roomId}`), { updatedAt: serverTimestamp() }, { merge: true }).catch(()=>{});
+      // 軽く更新時刻だけ
+      setDoc(doc(db, `rooms/${roomId}`), { updatedAt: serverTimestamp() }, { merge: true }).catch(()=>{});
 
-  // 座席doc購読
-  const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
-  const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
-    currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
-    renderSeatAvailability();
-  }));
-  unsubscribeSeats = () => unsubs.forEach(fn => fn());
-}
+      // 座席doc購読
+      const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
+      const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
+        currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
+        renderSeatAvailability();
+      }));
+      unsubscribeSeats = () => unsubs.forEach(fn => fn());
+    }
 
-
-
+    // モード別：開始ボタンの活性制御
     function validateLobby(){
+      if (ACTIVE_MODE === 'create') {
+        startBtn.disabled = true; // 右は「作成」で即参加するため、左の開始は使わない
+        return;
+      }
       const roomOk = !!(joinRoomInput.value||'').trim();
       const seatOk = !!CURRENT_PLAYER;
-      const nameOk = (playerNameInput.value||'').trim().length <= 24;
+      const nameNow = (playerNameInput.value||'').trim();
+      const nameOk = nameNow.length > 0 && nameNow.length <= 24;
       startBtn.disabled = !(roomOk && seatOk && nameOk);
     }
 
+    // join：座席選択
     seatButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
-      
+        ACTIVE_MODE = 'join';
         const nameNow = (playerNameInput.value || '').trim();
         if (!nameNow) {
           alert('先に「プレイヤー名」を入力してください。');
           playerNameInput.focus();
           return;
         }
-
         const seat = parseInt(btn.dataset.seat, 10);
         const roomId = (joinRoomInput.value||'').trim();
         if(!roomId || !CURRENT_UID){ return; }
@@ -713,7 +626,7 @@ playerNameInput.addEventListener('change', async () => {
     }
     function stopHeartbeat(){ if(heartbeatTimer){ clearInterval(heartbeatTimer); heartbeatTimer = null; } }
 
-    /* ===================== カード同期（オーナー制御 + 複製防止） ===================== */
+    // ===== カード同期 =====
     const field = document.getElementById("field");
     const previewImg = document.getElementById("preview-img");
     const previewInfo = document.getElementById("preview-info");
@@ -724,13 +637,12 @@ playerNameInput.addEventListener('change', async () => {
     let zoom = 1, panOffsetX = 0, panOffsetY = 0, selectedCard = null;
 
     const cardDomMap = new Map();
-    // ローカル由来の変更を短時間覚えて、onSnapshot の反映重複を抑止
     const localChangeMap = new Map();
     function markLocal(id){ localChangeMap.set(id, Date.now()); setTimeout(()=>localChangeMap.delete(id), 800); }
     function isLocalRecent(id){ const t = localChangeMap.get(id); return t && (Date.now() - t < 800); }
 
     let unsubscribeCards = null;
-    let handlersBound = false; // 二重バインド防止
+    let handlersBound = false;
 
     function startSession(roomId, playerId){
       CURRENT_ROOM = roomId; CURRENT_PLAYER = playerId;
@@ -740,7 +652,7 @@ playerNameInput.addEventListener('change', async () => {
       window.addEventListener('beforeunload', () => { stopHeartbeat(); releaseSeat(roomId, playerId); });
       initializePlayField();
       subscribeCards();
-      renderFieldLabels(); // ★ 追加：開始直後にも更新
+      renderFieldLabels();
     }
 
     function subscribeCards(){
@@ -760,11 +672,8 @@ playerNameInput.addEventListener('change', async () => {
     }
 
     function upsertCardFromRemote(id, data){
-      // 既存DOMを参照（Mapに無くてもDOM上にある可能性）
       let el = cardDomMap.get(id) || document.querySelector(`[data-card-id="${id}"]`);
       const exists = !!el;
-
-      // 直近ローカル作成/更新のものは、新規DOMを作らず（状態適用のみ）
       if (!exists && !isLocalRecent(id)) {
         el = createCardDom(id, data.imageUrl, data);
         cardDomMap.set(id, el);
@@ -773,19 +682,14 @@ playerNameInput.addEventListener('change', async () => {
       if (el) applyCardState(el, data);
     }
 
-    // createCardDom 内のクリックイベントを修正
     function createCardDom(cardId, imageSrc, state){
       const card = document.createElement("div");
       card.className = "card";
       card.dataset.cardId = cardId;
       card.dataset.ownerUid = state?.ownerUid || '';
       card.dataset.ownerSeat = state?.ownerSeat ? String(state.ownerSeat) : '';
-      
-      // 見た目ヒント：座席が自分と違うなら other
-      card.setAttribute('data-owner',
-      (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me'
-      );
-      
+      card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
+
       const img = document.createElement("img");
       img.src = imageSrc; card.appendChild(img);
 
@@ -793,42 +697,37 @@ playerNameInput.addEventListener('change', async () => {
 
       card.addEventListener("contextmenu", async e => {
         e.preventDefault();
-        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return; // ★座席一致のみOK
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
         const faceUp = !(card.dataset.faceUp === 'true');
         await updateCard(cardId, { faceUp, updatedAt: serverTimestamp() });
       });
 
-card.addEventListener("click", e => {
-  e.stopPropagation();
-  if (selectedCard) selectedCard.classList.remove("selected");
-  card.classList.add("selected");
-  selectedCard = card;
+      card.addEventListener("click", e => {
+        e.stopPropagation();
+        if (selectedCard) selectedCard.classList.remove("selected");
+        card.classList.add("selected");
+        selectedCard = card;
 
-  const imgEl = card.querySelector('img');
-  if (imgEl && imgEl.style.display !== "none") {
-    previewImg.src = imgEl.src;
-    previewImg.style.display = "block";
-  } else {
-    previewImg.src = "";
-    previewImg.style.display = "none";
-  }
+        const imgEl = card.querySelector('img');
+        if (imgEl && imgEl.style.display !== "none") {
+          previewImg.src = imgEl.src;
+          previewImg.style.display = "block";
+        } else {
+          previewImg.src = "";
+          previewImg.style.display = "none";
+        }
 
-  // ★ プレビュー情報：オーナー座席 & 自分の座席
-  let ownerPlayerNum = "?";
-  if (card.dataset.ownerSeat) ownerPlayerNum = `P${card.dataset.ownerSeat}`;
-  previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
-});
+        let ownerPlayerNum = "?";
+        if (card.dataset.ownerSeat) ownerPlayerNum = `P${card.dataset.ownerSeat}`;
+        previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
+      });
       return card;
     }
-    
-    
-    function applyCardState(card, data){
 
+    function applyCardState(card, data){
       card.dataset.ownerUid = data.ownerUid || '';
       card.dataset.ownerSeat = (data.ownerSeat!=null) ? String(data.ownerSeat) : '';
-      card.setAttribute('data-owner',
-        (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me'
-      );
+      card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
 
       card.style.left = `${data.x||0}px`;
       card.style.top  = `${data.y||0}px`;
@@ -840,31 +739,21 @@ card.addEventListener("click", e => {
         else { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
         if(data.imageUrl && img.src !== data.imageUrl){ img.src = data.imageUrl; }
       }
-      
+
       try {
-  const viewerSeat = CURRENT_PLAYER;               // 今見ている人の席
-  const x = parseFloat(card.style.left) || 0;      // カード左上（フィールド座標）
-  const y = parseFloat(card.style.top)  || 0;
-
-  // 4人分の手札境界を調べて、どの手札エリアにあるかを見る
-  let insideSeat = null;
-  for (const s of [1,2,3,4]) {
-    const hb = getHandBoundsForSeat(s);
-    if (hb && isCenterInsideRect(x, y, hb)) { insideSeat = s; break; }
-  }
-
-  // もし“誰かの手札エリア”にあり、かつ閲覧者がその席でないなら強制的に裏表示
-  if (insideSeat && String(viewerSeat) !== String(insideSeat)) {
-    const img = card.querySelector('img');
-    if (img) {
-      img.style.display = 'none';
-      card.style.backgroundColor = '#000';
-    }
-  }
-} catch(_) {}
-      
-      
-      
+        const viewerSeat = CURRENT_PLAYER;
+        const x = parseFloat(card.style.left) || 0;
+        const y = parseFloat(card.style.top)  || 0;
+        let insideSeat = null;
+        for (const s of [1,2,3,4]) {
+          const hb = getHandBoundsForSeat(s);
+          if (hb && isCenterInsideRect(x, y, hb)) { insideSeat = s; break; }
+        }
+        if (insideSeat && String(viewerSeat) !== String(insideSeat)) {
+          const img = card.querySelector('img');
+          if (img) { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
+        }
+      } catch(_) {}
     }
 
     async function updateCard(cardId, patch){
@@ -894,49 +783,41 @@ card.addEventListener("click", e => {
       });
     }
 
-async function createCardRemote({ imageUrl }){
-  if(!CURRENT_ROOM) return;
-
-  // ★ 自分の席のデッキエリア内でランダム座標を決定
-  const { x: baseX, y: baseY } = randomPointInDeck(CURRENT_PLAYER);
-
-  try{
-    const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-      x: baseX, y: baseY, zIndex: 1,
-      faceUp: true,
-      imageUrl,
-      ownerUid: CURRENT_UID,
-      ownerSeat: CURRENT_PLAYER,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-
-    // ローカル即時反映（重複防止のため markLocal）
-    markLocal(ref.id);
-    let el = cardDomMap.get(ref.id) || document.querySelector(`[data-card-id="${ref.id}"]`);
-    if(!el){
-      el = createCardDom(ref.id, imageUrl, {
-        x: baseX, y: baseY, zIndex: 1, faceUp: true,
-        ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
-      });
-      cardDomMap.set(ref.id, el);
-      field.appendChild(el);
+    async function createCardRemote({ imageUrl }){
+      if(!CURRENT_ROOM) return;
+      const { x: baseX, y: baseY } = randomPointInDeck(CURRENT_PLAYER);
+      try{
+        const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+          x: baseX, y: baseY, zIndex: 1,
+          faceUp: true,
+          imageUrl,
+          ownerUid: CURRENT_UID,
+          ownerSeat: CURRENT_PLAYER,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        markLocal(ref.id);
+        let el = cardDomMap.get(ref.id) || document.querySelector(`[data-card-id="${ref.id}"]`);
+        if(!el){
+          el = createCardDom(ref.id, imageUrl, {
+            x: baseX, y: baseY, zIndex: 1, faceUp: true,
+            ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
+          });
+          cardDomMap.set(ref.id, el);
+          field.appendChild(el);
+        }
+        applyCardState(el, {
+          x: baseX, y: baseY, zIndex: 1, faceUp: true,
+          imageUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
+        });
+      }catch(e){ console.error('createCardRemote', e); }
     }
-    applyCardState(el, {
-      x: baseX, y: baseY, zIndex: 1, faceUp: true,
-      imageUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
-    });
-  }catch(e){ console.error('createCardRemote', e); }
-}
-
-
-
 
     function makeDraggable(card){
       let offsetX=0, offsetY=0, isDragging=false;
       card.addEventListener("mousedown", e => {
         if(e.button!==0) return;
-        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return; // ★座席一致のみOK
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
         const rect = field.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
         const mouseY = (e.clientY - rect.top - panOffsetY) / zoom;
@@ -983,47 +864,49 @@ async function createCardRemote({ imageUrl }){
     window.setFieldSize = function(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
     window.alignDecks = function(){ /* 表示のみ */ }
     window.shuffleDecks = async function(){
-  if(!CURRENT_ROOM || !CURRENT_PLAYER) return;
-
-  // 1) P1のデッキ範囲を取得し、その中にあるカードを集める
-  const srcBounds = getDeckBoundsForSeat(CURRENT_PLAYER); // ←押した人のデッキが対象
-  if(!srcBounds){ alert('あなたのデッキエリアが見つかりません'); return; }
-  const targets = getCardsInsideRect(srcBounds);
-  if(targets.length === 0) return;
-
-  // 2) 乱択順にする
-  shuffleArray(targets);
-
-  // 3) 送り先（押した人の席）のデッキ中央座標を計算
-  const dstBounds = getDeckBoundsForSeat(CURRENT_PLAYER);
-  if(!dstBounds){ alert('あなたのデッキエリアが見つかりません'); return; }
-  const centerX = Math.round(dstBounds.minX + (dstBounds.width  - CARD_W)/2);
-  const centerY = Math.round(dstBounds.minY + (dstBounds.height - CARD_H)/2);
-
-  // 4) 全カードを同一点に重ねる（裏表は変更しない）。重なり順だけ zIndex で表現
-  //    ※ onSnapshot との競合を避けるため、updateCard 内で markLocal 済み
-  const baseZ = getMaxZIndex() + 1;
-  let z = baseZ;
-  for(const { id, el } of targets){
-    // 先にローカルも動かして体感を上げる（後でDB更新）
-    el.style.left = `${centerX}px`;
-    el.style.top  = `${centerY}px`;
-    el.style.zIndex = z++;
-
-    await updateCard(id, {
-      x: centerX,
-      y: centerY,
-      zIndex: parseInt(el.style.zIndex) || z, // 念のため
-      updatedAt: serverTimestamp()
-    });
-  }
-};
-
+      if(!CURRENT_ROOM || !CURRENT_PLAYER) return;
+      const srcBounds = getDeckBoundsForSeat(CURRENT_PLAYER);
+      if(!srcBounds){ alert('あなたのデッキエリアが見つかりません'); return; }
+      const targets = getCardsInsideRect(srcBounds);
+      if(targets.length === 0) return;
+      shuffleArray(targets);
+      const dstBounds = getDeckBoundsForSeat(CURRENT_PLAYER);
+      if(!dstBounds){ alert('あなたのデッキエリアが見つかりません'); return; }
+      const centerX = Math.round(dstBounds.minX + (dstBounds.width  - CARD_W)/2);
+      const centerY = Math.round(dstBounds.minY + (dstBounds.height - CARD_H)/2);
+      const baseZ = getMaxZIndex() + 1;
+      let z = baseZ;
+      for(const { id, el } of targets){
+        el.style.left = `${centerX}px`;
+        el.style.top  = `${centerY}px`;
+        el.style.zIndex = z++;
+        await updateCard(id, { x: centerX, y: centerY, zIndex: parseInt(el.style.zIndex) || z, updatedAt: serverTimestamp() });
+      }
+    };
 
     function bindPanZoomHandlers(){
-      field.addEventListener("wheel", e => { if(e.ctrlKey) return; e.preventDefault(); const rect=field.getBoundingClientRect(); const cx=e.clientX-rect.left; const cy=e.clientY-rect.top; const scale=0.1; const old=zoom; zoom += e.deltaY<0?scale:-scale; zoom = Math.max(0.3, Math.min(zoom, 3)); const sx=(cx - panOffsetX)/old; const sy=(cy - panOffsetY)/old; panOffsetX = cx - sx*zoom; panOffsetY = cy - sy*zoom; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }, {passive:false});
-      field.addEventListener("mousedown", e => { if(e.target.closest(".card")) return; let panning=true; let sx=e.clientX, sy=e.clientY; const onMove=e2=>{ if(!panning) return; const dx=e2.clientX-sx; const dy=e2.clientY-sy; panOffsetX+=dx; panOffsetY+=dy; sx=e2.clientX; sy=e2.clientY; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }; const onUp=()=>{ panning=false; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); }; document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp); });
-      field.addEventListener("click", () => { if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; } });
+      field.addEventListener("wheel", e => {
+        if(e.ctrlKey) return;
+        e.preventDefault();
+        const rect=field.getBoundingClientRect();
+        const cx=e.clientX-rect.left; const cy=e.clientY-rect.top;
+        const scale=0.1; const old=zoom;
+        zoom += e.deltaY<0?scale:-scale; zoom = Math.max(0.3, Math.min(zoom, 3));
+        const sx=(cx - panOffsetX)/old; const sy=(cy - panOffsetY)/old;
+        panOffsetX = cx - sx*zoom; panOffsetY = cy - sy*zoom;
+        field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
+      }, {passive:false});
+      field.addEventListener("mousedown", e => {
+        if(e.target.closest(".card")) return;
+        let panning=true; let sx=e.clientX, sy=e.clientY;
+        const onMove=e2=>{ if(!panning) return; const dx=e2.clientX-sx; const dy=e2.clientY-sy; panOffsetX+=dx; panOffsetY+=dy; sx=e2.clientX; sy=e2.clientY; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; };
+        const onUp=()=>{ panning=false; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      });
+      field.addEventListener("click", () => {
+        if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; }
+      });
     }
 
     function initializePlayField(){
