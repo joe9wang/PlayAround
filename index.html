@@ -123,6 +123,7 @@
         <!-- 右：新しいルームを作成して参加（ホスト） -->
         <section class="lobby-section">
           <div class="lobby-subtitle">新しいルームを作成して参加（ホスト）</div>
+
           <label class="lobby-label">新しいルームを作成</label>
           <div class="row" style="margin-bottom:8px;">
             <input id="new-room-id" type="text" class="field" placeholder="作成するID（例: room-xyz）" />
@@ -132,8 +133,11 @@
             <button id="create-room-btn" class="btn">作成</button>
           </div>
 
+          <!-- ★ ここを左と同じ「プレイヤー名 / 色」に変更 -->
+          <label class="lobby-label">プレイヤー名 / 色</label>
           <div class="row" style="margin-bottom:12px;">
-            <input id="new-player-name" type="text" class="field" placeholder="作成者のプレイヤー名（例: Alice）" />
+            <input id="new-player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
+            <input id="new-player-color" type="color" value="#22aaff" title="プレイヤーカラー" />
           </div>
 
           <label class="lobby-label">公開設定</label>
@@ -269,6 +273,7 @@
     const newRoomIdInput = document.getElementById('new-room-id');
     const newRoomTitleInput = document.getElementById('new-room-title');
     const newPlayerNameInput = document.getElementById('new-player-name');
+    const newPlayerColorInput = document.getElementById('new-player-color');
     const createRoomBtn = document.getElementById('create-room-btn');
     const roomListDiv = document.getElementById('room-list');
 
@@ -287,13 +292,12 @@
     let CURRENT_PLAYER = null; // 1..4
     let CURRENT_UID = null;
 
-    // ← どちらのフォームを使っているか
     let ACTIVE_MODE = 'join'; // 'join' | 'create'
 
     signInAnonymously(auth).catch(console.error);
     onAuthStateChanged(auth, (user) => { if(user){ CURRENT_UID = user.uid; }});
 
-    // モード切替（左フォームを触ったら join、右フォームなら create）
+    // モード切替
     joinRoomInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
     playerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
     seatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'join'; validateLobby(); }));
@@ -301,6 +305,7 @@
     newRoomIdInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     newRoomTitleInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     newPlayerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
+    newPlayerColorInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     createSeatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'create'; validateLobby(); }));
 
     // カードサイズ
@@ -418,9 +423,10 @@
       const title = (newRoomTitleInput.value||'').trim();
       const isPublic = document.getElementById('room-public').checked;
       const creatorName = (newPlayerNameInput.value || '').trim();
+      const creatorColor = (newPlayerColorInput.value || '#22aaff');
 
       if(!id){ alert('ルームIDを入力してください'); return; }
-      if(!creatorName){ alert('作成者のプレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
+      if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
       if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
 
       try{
@@ -433,8 +439,9 @@
           hostDisplayName: creatorName
         }, { merge: true });
 
-        // 左フォームにも名前反映
+        // 左フォームにも反映（claimSeat が参照）
         playerNameInput.value = creatorName;
+        playerColorInput.value = creatorColor;
 
         // ルーム購読と座席確保 → 即開始
         joinRoomInput.value = id;
@@ -457,13 +464,10 @@
 
     let unsubscribeSeats = null;
     joinRoomInput.addEventListener('change', loadSeatStatus);
-
-    // Enterで座席状況ロード
     joinRoomInput.addEventListener('keydown', (e) => { 
       if (e.key === 'Enter') loadSeatStatus();
     });
 
-    // 参加フォームで名前変更 → 自分の席に反映
     playerNameInput.addEventListener('change', async () => {
       const newName = (playerNameInput.value || '').trim();
       if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return;
@@ -541,10 +545,9 @@
       unsubscribeSeats = () => unsubs.forEach(fn => fn());
     }
 
-    // モード別：開始ボタンの活性制御
     function validateLobby(){
       if (ACTIVE_MODE === 'create') {
-        startBtn.disabled = true; // 右は「作成」で即参加するため、左の開始は使わない
+        startBtn.disabled = true; // 右は「作成」で即参加
         return;
       }
       const roomOk = !!(joinRoomInput.value||'').trim();
@@ -554,7 +557,6 @@
       startBtn.disabled = !(roomOk && seatOk && nameOk);
     }
 
-    // join：座席選択
     seatButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
         ACTIVE_MODE = 'join';
