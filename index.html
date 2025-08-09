@@ -2,13 +2,13 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>プレイアラウンド v16（Firebaseロビー同期）</title>
+  <title>プレイアラウンド v17（ロビー拡張 + ルール対応）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif; margin:0; background:#eee; overflow:hidden; }
     h1 { background:#444; color:#fff; padding:1em; text-align:center; margin:0; height:var(--header-h); box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:1rem; position:relative; }
-    #session-indicator { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#ddd; font-size:12px; opacity:.9; }
+    #session-indicator { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#ddd; font-size:12px; }
     #upload-area { padding:16px; text-align:center; background:#fff; cursor:pointer; border-bottom:2px solid #ccc; user-select:none; }
     #file-input { display:none; }
     #sidebar { width:var(--sidebar-w); height:calc(100vh - var(--header-h) - 120px); float:left; background:#fff; border-right:2px solid #aaa; box-shadow:2px 0 5px rgba(0,0,0,.2); padding:10px; box-sizing:border-box; }
@@ -28,24 +28,28 @@
     .card.selected{ border:3px solid red; }
     #preview{ width:var(--preview-w); height:calc(100vh - var(--header-h) - 120px); float:right; background:#fff; border-left:2px solid #aaa; box-shadow:-2px 0 5px rgba(0,0,0,.2); padding:10px; box-sizing:border-box; }
     #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; } #preview-img{ width:100%; height:auto; border-radius:10px; display:none; }
-    #lobby{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999; }
-    .lobby-card{ width:min(560px, 92vw); background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:20px 20px 16px; box-sizing:border-box; }
+
+    /* ロビー */
+    #lobby{ position:fixed; inset:0; background:rgba(0,0,0,.58); display:flex; align-items:center; justify-content:center; z-index:9999; }
+    .lobby-card{ width:min(820px, 96vw); background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:18px; box-sizing:border-box; }
+    .lobby-grid{ display:grid; grid-template-columns: 1.15fr 1fr; gap:14px; }
     .lobby-title{ font-size:20px; font-weight:700; margin:4px 0 12px; text-align:center; }
-    .lobby-desc{ font-size:13px; color:#444; text-align:center; }
-    .lobby-field{ margin:16px 0 8px; }
+    .lobby-section{ border:1px solid #e3e3e3; border-radius:12px; padding:12px; }
     .lobby-label{ display:block; font-size:12px; color:#555; margin-bottom:6px; }
-    .lobby-row{ display:flex; gap:8px; }
-    #room-id{ flex:1; padding:10px 12px; font-size:16px; border:1px solid #bbb; border-radius:10px; }
-    .seat-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
+    .row{ display:flex; gap:8px; align-items:center; }
+    .field{ flex:1; padding:10px 12px; font-size:16px; border:1px solid #bbb; border-radius:10px; }
+    .btn{ padding:10px 12px; border-radius:10px; border:0; background:#0a7; color:#fff; font-weight:700; cursor:pointer; opacity:.95; }
+    .btn:disabled{ background:#9ab; cursor:not-allowed; opacity:.7; }
+    .btn.secondary{ background:#eee; color:#333; border:1px solid #ccc; }
+    .seat-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-top:8px; }
     .seat-btn{ padding:12px 0; border-radius:10px; border:1px solid #bbb; background:#fafafa; cursor:pointer; font-weight:600; position:relative; }
     .seat-btn.active{ outline:3px solid #0a7; background:#e9fff7; }
     .seat-btn[disabled]{ background:#eee; color:#888; border-color:#ddd; cursor:not-allowed; }
     .seat-note{ position:absolute; inset:auto 8px 6px auto; font-size:10px; color:#666; }
-    .lobby-actions{ display:flex; gap:8px; margin-top:14px; }
-    .btn{ flex:1; padding:12px 10px; border-radius:10px; border:0; background:#0a7; color:#fff; font-weight:700; cursor:pointer; opacity:.95; }
-    .btn:disabled{ background:#9ab; cursor:not-allowed; opacity:.7; }
-    .btn.secondary{ background:#eee; color:#333; border:1px solid #ccc; }
-    #spacer{ height:40px; clear:both; }
+    .room-list{ max-height:320px; overflow:auto; border:1px solid #e5e5e5; border-radius:10px; }
+    .room-item{ display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #f0f0f0; }
+    .room-item:last-child{ border-bottom:0; }
+    .room-id{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
   </style>
 </head>
 <body>
@@ -58,28 +62,49 @@
   <div id="lobby" aria-modal="true" role="dialog">
     <div class="lobby-card">
       <div class="lobby-title">プレイアラウンドへようこそ</div>
-      <div class="lobby-desc">ルーム番号を入力し、プレイヤーを選択してください。（最大4人）<br>同じルームでは他の人が選択済みの座席は選べません。</div>
+      <div class="lobby-grid">
+        <!-- 左：参加/座席 -->
+        <section class="lobby-section">
+          <label class="lobby-label">参加するルームID</label>
+          <div class="row" style="margin-bottom:8px;">
+            <input id="join-room-id" type="text" class="field" placeholder="例: room-alpha / 1234" />
+            <button id="join-room-load" class="btn secondary">読み込み</button>
+          </div>
 
-      <div class="lobby-field">
-        <label class="lobby-label" for="room-id">ルーム番号（半角英数・ハイフン可）</label>
-        <div class="lobby-row">
-          <input id="room-id" type="text" placeholder="例: 1234 / room-Alpha" autocomplete="off" />
-        </div>
-      </div>
+          <label class="lobby-label">プレイヤー名 / 色</label>
+          <div class="row" style="margin-bottom:8px;">
+            <input id="player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
+            <input id="player-color" type="color" value="#22aaff" title="プレイヤーカラー" />
+          </div>
 
-      <div class="lobby-field">
-        <span class="lobby-label">プレイヤーを選択</span>
-        <div class="seat-grid">
-          <button class="seat-btn" data-seat="1">P1 <span class="seat-note"></span></button>
-          <button class="seat-btn" data-seat="2">P2 <span class="seat-note"></span></button>
-          <button class="seat-btn" data-seat="3">P3 <span class="seat-note"></span></button>
-          <button class="seat-btn" data-seat="4">P4 <span class="seat-note"></span></button>
-        </div>
-      </div>
+          <label class="lobby-label">座席を選択</label>
+          <div class="seat-grid">
+            <button class="seat-btn" data-seat="1">P1 <span class="seat-note"></span></button>
+            <button class="seat-btn" data-seat="2">P2 <span class="seat-note"></span></button>
+            <button class="seat-btn" data-seat="3">P3 <span class="seat-note"></span></button>
+            <button class="seat-btn" data-seat="4">P4 <span class="seat-note"></span></button>
+          </div>
 
-      <div class="lobby-actions">
-        <button id="start-btn" class="btn" disabled>開始</button>
-        <button id="clear-btn" class="btn secondary">クリア</button>
+          <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
+            <button id="start-btn" class="btn" disabled>開始</button>
+            <button id="clear-btn" class="btn secondary">クリア</button>
+          </div>
+        </section>
+
+        <!-- 右：ルーム新規作成 & 一覧 -->
+        <section class="lobby-section">
+          <label class="lobby-label">新しいルームを作成</label>
+          <div class="row" style="margin-bottom:8px;">
+            <input id="new-room-id" type="text" class="field" placeholder="作成するID（例: room-xyz）" />
+          </div>
+          <div class="row" style="margin-bottom:12px;">
+            <input id="new-room-title" type="text" class="field" placeholder="タイトル（任意）" />
+            <button id="create-room-btn" class="btn">作成</button>
+          </div>
+
+          <label class="lobby-label">公開ルーム一覧（新しい順）</label>
+          <div id="room-list" class="room-list"></div>
+        </section>
       </div>
     </div>
   </div>
@@ -150,13 +175,12 @@
 
   <div id="spacer"></div>
 
-  <!-- Firebase v10 CDN（必要に応じてバージョンは固定推奨） -->
+  <!-- Firebase CDN -->
   <script type="module">
-    /* ---------------------- Firebase 初期化 ---------------------- */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
-    // TODO: あなたの Firebase プロジェクト設定で置き換え
     const firebaseConfig = {
       apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
       authDomain: "cardgame-f484c.firebaseapp.com",
@@ -166,166 +190,182 @@
       appId: "1:248859224605:web:1320093856bc1861c174f4"
     };
 
+
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
 
-    /* ---------------------- ロビー状態同期の考え方 ----------------------
-      - コレクション構成（最小形）
-         rooms/{roomId}
-           seats/{seatId: "1"|"2"|"3"|"4"}
-             { claimedBy, claimedAt, heartbeatAt }
-
-      - 座席確保はトランザクションで「空席のみ確保」
-      - 退室/タブ閉じ時は best-effort で seat を開放
-      - ハートビートで生存検知（デフォ 10秒）。60秒以上更新が無い seat は陳腐化として再取得可（ルールと実装で担保）
-    --------------------------------------------------------------- */
-
-    /* ---------------------- セッション管理 ---------------------- */
-    let CURRENT_ROOM = null; // 文字列
-    let CURRENT_PLAYER = null; // 1..4 の数値
-    const CLIENT_ID_KEY = 'playaround_client_id_v1';
-    const clientId = getOrCreateClientId();
-
-    function getOrCreateClientId(){
-      const k = localStorage.getItem(CLIENT_ID_KEY);
-      if(k) return k;
-      const v = crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random());
-      localStorage.setItem(CLIENT_ID_KEY, v);
-      return v;
-    }
-
-    /* ---------------------- ロビーUI参照 ---------------------- */
+    // ====== ロビーUI参照 ======
     const lobby = document.getElementById('lobby');
-    const roomInput = document.getElementById('room-id');
+    const joinRoomInput = document.getElementById('join-room-id');
+    const joinRoomLoadBtn = document.getElementById('join-room-load');
+    const playerNameInput = document.getElementById('player-name');
+    const playerColorInput = document.getElementById('player-color');
+    const seatButtons = Array.from(document.querySelectorAll('.seat-btn'));
     const startBtn = document.getElementById('start-btn');
     const clearBtn = document.getElementById('clear-btn');
-    const seatButtons = Array.from(document.querySelectorAll('.seat-btn'));
     const sessionIndicator = document.getElementById('session-indicator');
 
-    let unsubscribeSeats = null;
-    let heartbeatTimer = null;
+    const newRoomIdInput = document.getElementById('new-room-id');
+    const newRoomTitleInput = document.getElementById('new-room-title');
+    const createRoomBtn = document.getElementById('create-room-btn');
+    const roomListDiv = document.getElementById('room-list');
 
-    // ルーム入力で座席一覧を購読
-    roomInput.addEventListener('input', () => {
-      const room = roomInput.value.trim();
-      detachSeatsListener();
-      if(!room) { renderSeatAvailability({}); validateLobby(); return; }
-      attachSeatsListener(room);
+    // ====== セッション状態 ======
+    let CURRENT_ROOM = null; // string
+    let CURRENT_PLAYER = null; // 1..4
+    let CURRENT_UID = null; // auth.uid
+
+    const CLIENT_ID_KEY = 'playaround_client_id_v1';
+    function getOrCreateClientId(){ const k = localStorage.getItem(CLIENT_ID_KEY); if(k) return k; const v = crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random()); localStorage.setItem(CLIENT_ID_KEY, v); return v; }
+    const clientId = getOrCreateClientId();
+
+    // 匿名サインイン
+    signInAnonymously(auth).catch(console.error);
+    onAuthStateChanged(auth, (user) => { if(user){ CURRENT_UID = user.uid; } });
+
+    // ====== ルーム一覧購読 ======
+    function subscribeRoomList(){
+      const q = query(collection(db, 'rooms'), orderBy('updatedAt', 'desc'), limit(50));
+      onSnapshot(q, snap => {
+        roomListDiv.innerHTML = '';
+        snap.forEach(docSnap => {
+          const data = docSnap.data() || {};
+          const item = document.createElement('div'); item.className = 'room-item';
+          const left = document.createElement('div'); left.innerHTML = `<div class="room-id">${docSnap.id}</div><div style="font-size:12px; color:#555;">${(data.title||'（無題）')}</div>`;
+          const right = document.createElement('div');
+          const btn = document.createElement('button'); btn.className = 'btn secondary'; btn.textContent = '参加'; btn.onclick = () => { joinRoomInput.value = docSnap.id; loadSeatStatus(); };
+          right.appendChild(btn);
+          item.appendChild(left); item.appendChild(right);
+          roomListDiv.appendChild(item);
+        });
+      });
+    }
+    subscribeRoomList();
+
+    // ルーム作成
+    createRoomBtn.addEventListener('click', async () => {
+      const id = (newRoomIdInput.value||'').trim(); if(!id){ alert('ルームIDを入力してください'); return; }
+      const title = (newRoomTitleInput.value||'').trim();
+      try{
+        await setDoc(doc(db, `rooms/${id}`), { title: title || null, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), public: true }, { merge: true });
+        joinRoomInput.value = id; loadSeatStatus();
+      }catch(e){ console.error(e); alert('ルーム作成に失敗しました'); }
     });
 
-    function attachSeatsListener(roomId){
-      const seatsPath = doc(db, `rooms/${roomId}`);
-      // 部屋ドキュメントが無い場合でも座席サブコレクションを読むため、個別 onSnapshot は seat ごとに行う
-      const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
-      const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
-        const seatMap = currentSeatMap;
-        seatMap[idx+1] = snap.exists() ? snap.data() : null;
-        renderSeatAvailability(seatMap);
-      }));
-      unsubscribeSeats = () => unsubs.forEach(fn => fn());
-    }
+    // 参加側：座席状態の購読
+    let unsubscribeSeats = null;
+    joinRoomLoadBtn.addEventListener('click', loadSeatStatus);
+    joinRoomInput.addEventListener('change', loadSeatStatus);
 
-    function detachSeatsListener(){
-      if(unsubscribeSeats){ unsubscribeSeats(); unsubscribeSeats = null; }
-    }
-
-    // 現在の座席状態キャッシュ
-    const currentSeatMap = { 1:null, 2:null, 3:null, 4:null };
-
+    const currentSeatMap = {1:null,2:null,3:null,4:null};
     function isSeatStale(data){
-      if(!data || !data.heartbeatAt) return true; // 情報なしは空きとみなす
-      const now = Date.now();
-      const hb = data.heartbeatAt?.toMillis ? data.heartbeatAt.toMillis() : (typeof data.heartbeatAt === 'number' ? data.heartbeatAt : 0);
-      return (now - hb) > 60000; // 60秒以上更新が無ければ陳腐化
+      if(!data || !data.heartbeatAt) return true;
+      const hb = data.heartbeatAt?.toMillis ? data.heartbeatAt.toMillis() : 0;
+      return (Date.now() - hb) > 60000; // 60秒
     }
 
-    function renderSeatAvailability(seatMap){
+    function renderSeatAvailability(){
       seatButtons.forEach(btn => {
         const seat = parseInt(btn.dataset.seat, 10);
         const note = btn.querySelector('.seat-note');
-        const data = seatMap[seat];
-        const taken = data && !isSeatStale(data) && data.claimedBy && data.claimedBy !== clientId;
-        const mine = data && !isSeatStale(data) && data.claimedBy === clientId;
-        btn.disabled = taken; // 他人が占有している場合のみ無効化
-        note.textContent = taken ? '使用中' : (mine ? 'あなた' : '空席');
+        const data = currentSeatMap[seat];
+        const taken = data && !isSeatStale(data) && data.claimedByUid && data.claimedByUid !== CURRENT_UID;
+        const mine  = data && !isSeatStale(data) && data.claimedByUid === CURRENT_UID;
+        btn.disabled = taken;
+        note.textContent = taken ? (data.displayName ? `${data.displayName}` : '使用中') : (mine ? 'あなた' : '空席');
+        btn.style.borderColor = data && data.color ? data.color : '#bbb';
         btn.classList.toggle('active', CURRENT_PLAYER === seat);
       });
       validateLobby();
     }
 
+    function detachSeatsListener(){ if(unsubscribeSeats){ unsubscribeSeats(); unsubscribeSeats = null; } }
+
+    function loadSeatStatus(){
+      detachSeatsListener();
+      const roomId = (joinRoomInput.value||'').trim();
+      if(!roomId){ renderSeatAvailability(); return; }
+      // ルーム doc を軽く触って updatedAt を更新
+      setDoc(doc(db, `rooms/${roomId}`), { updatedAt: serverTimestamp() }, { merge: true }).catch(()=>{});
+      const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
+      const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
+        currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
+        renderSeatAvailability();
+      }));
+      unsubscribeSeats = () => unsubs.forEach(fn => fn());
+    }
+
     function validateLobby(){
-      const roomOk = !!roomInput.value.trim();
+      const roomOk = !!(joinRoomInput.value||'').trim();
       const seatOk = !!CURRENT_PLAYER;
-      startBtn.disabled = !(roomOk && seatOk);
+      const nameOk = (playerNameInput.value||'').trim().length <= 24;
+      startBtn.disabled = !(roomOk && seatOk && nameOk);
     }
 
     seatButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
         const seat = parseInt(btn.dataset.seat, 10);
-        const roomId = roomInput.value.trim();
-        if(!roomId) { CURRENT_PLAYER = null; validateLobby(); return; }
+        const roomId = (joinRoomInput.value||'').trim();
+        if(!roomId || !CURRENT_UID){ return; }
         const ok = await claimSeat(roomId, seat);
         if(ok){ CURRENT_PLAYER = seat; } else { CURRENT_PLAYER = null; alert(`P${seat} は使用中です。`); }
-        validateLobby();
+        renderSeatAvailability();
       });
     });
 
     clearBtn.addEventListener('click', () => {
-      roomInput.value = '';
+      joinRoomInput.value = '';
       CURRENT_PLAYER = null;
-      renderSeatAvailability({1:null,2:null,3:null,4:null});
+      renderSeatAvailability();
       detachSeatsListener();
-      validateLobby();
-      roomInput.focus();
+      joinRoomInput.focus();
     });
 
     startBtn.addEventListener('click', async () => {
-      const room = roomInput.value.trim();
-      if(!room || !CURRENT_PLAYER) return;
-      // 念のためもう一度確保を試みる（競合対策）
+      const room = (joinRoomInput.value||'').trim();
+      if(!room || !CURRENT_PLAYER || !CURRENT_UID) return;
       const ok = await claimSeat(room, CURRENT_PLAYER);
-      if(!ok){ alert('開始直前に座席が埋まりました。別の座席を選択してください。'); return; }
+      if(!ok){ alert('開始直前に座席が埋まりました'); return; }
       startSession(room, CURRENT_PLAYER);
     });
 
     async function claimSeat(roomId, seat){
       const seatRef = doc(db, `rooms/${roomId}/seats/${seat}`);
-      try {
+      const displayName = (playerNameInput.value||'').trim();
+      const color = playerColorInput.value || '#22aaff';
+      try{
         const success = await runTransaction(db, async (tx) => {
           const snap = await tx.get(seatRef);
           if(!snap.exists()){
-            tx.set(seatRef, { claimedBy: clientId, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() });
+            tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() });
             return true;
           }
           const data = snap.data();
           const stale = isSeatStale(data);
-          if(!data.claimedBy || stale || data.claimedBy === clientId){
-            tx.set(seatRef, { claimedBy: clientId, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() });
+          if(!data.claimedByUid || stale || data.claimedByUid === CURRENT_UID){
+            tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() });
             return true;
           }
           return false;
         });
         return success;
-      } catch(e){
-        console.error('claimSeat error', e);
-        return false;
-      }
+      }catch(e){ console.error('claimSeat error', e); return false; }
     }
 
     async function releaseSeat(roomId, seat){
-      if(!roomId || !seat) return;
-      try { await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`)); } catch(e){ console.warn('releaseSeat error', e); }
+      try{ await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`)); }catch(e){ console.warn('releaseSeat error', e); }
     }
 
+    let heartbeatTimer = null;
     function startHeartbeat(roomId, seat){
       stopHeartbeat();
       heartbeatTimer = setInterval(async () => {
-        try {
-          await setDoc(doc(db, `rooms/${roomId}/seats/${seat}`), { claimedBy: clientId, heartbeatAt: serverTimestamp() }, { merge:true });
-        } catch(e){ console.warn('heartbeat failed', e); }
-      }, 10000); // 10秒
+        try{
+          await setDoc(doc(db, `rooms/${roomId}/seats/${seat}`), { claimedByUid: CURRENT_UID, heartbeatAt: serverTimestamp() }, { merge: true });
+        }catch(e){ console.warn('heartbeat failed', e); }
+      }, 10000);
     }
-
     function stopHeartbeat(){ if(heartbeatTimer){ clearInterval(heartbeatTimer); heartbeatTimer = null; } }
 
     function startSession(roomId, playerId){
@@ -334,11 +374,10 @@
       lobby.style.display = 'none';
       startHeartbeat(roomId, playerId);
       window.addEventListener('beforeunload', () => { stopHeartbeat(); releaseSeat(roomId, playerId); });
-      // 既存機能の起動
       initializePlayField();
     }
 
-    /* ---------------------- ここから従来の ver14 機能 ---------------------- */
+    // ========= ここから従来機能 =========
     const uploadArea = document.getElementById("upload-area");
     const fileInput = document.getElementById("file-input");
     const field = document.getElementById("field");
@@ -360,19 +399,14 @@
     function handleFiles(files){
       [...files].forEach(file => {
         if(!file.type.startsWith("image/")) return;
-        const reader = new FileReader();
-        reader.onload = e => createCard(e.target.result);
-        reader.readAsDataURL(file);
+        const reader = new FileReader(); reader.onload = e => createCard(e.target.result); reader.readAsDataURL(file);
       });
     }
 
     function createCard(imageSrc){
-      const card = document.createElement("div");
-      card.className = "card";
-      card.style.left = `${Math.random() * 500}px`;
-      card.style.top = `${Math.random() * 500}px`;
-      const img = document.createElement("img");
-      img.src = imageSrc; card.appendChild(img); field.appendChild(card);
+      const card = document.createElement("div"); card.className = "card";
+      card.style.left = `${Math.random() * 500}px`; card.style.top = `${Math.random() * 500}px`;
+      const img = document.createElement("img"); img.src = imageSrc; card.appendChild(img); field.appendChild(card);
       makeDraggable(card);
       card.addEventListener("contextmenu", e => { e.preventDefault(); const up = img.style.display !== "none"; img.style.display = up?"none":"block"; card.style.backgroundColor = up?"#000":"#fff"; });
       card.addEventListener("click", e => { e.stopPropagation(); if(selectedCard) selectedCard.classList.remove("selected"); card.classList.add("selected"); selectedCard = card; if(img && img.style.display !== "none"){ previewImg.src = img.src; previewImg.style.display = "block"; } else { previewImg.src = ""; previewImg.style.display = "none"; } });
@@ -388,7 +422,7 @@
         offsetX = mouseX - parseFloat(card.style.left);
         offsetY = mouseY - parseFloat(card.style.top);
         isDragging = true; card.style.cursor = "grabbing"; card.style.zIndex = getMaxZIndex()+1;
-        const onMove = e => { if(!isDragging) return; const x=(e.clientX - rect.left - panOffsetX)/zoom; const y=(e.clientY - rect.top - panOffsetY)/zoom; card.style.left = `${x - offsetX}px`; card.style.top = `${y - offsetY}px`; };
+        const onMove = e2 => { if(!isDragging) return; const x=(e2.clientX - rect.left - panOffsetX)/zoom; const y=(e2.clientY - rect.top - panOffsetY)/zoom; card.style.left = `${x - offsetX}px`; card.style.top = `${y - offsetY}px`; };
         const onUp = () => { isDragging = false; card.style.cursor = "grab"; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
         document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp);
       });
@@ -397,40 +431,13 @@
     function getMaxZIndex(){ let max=0; document.querySelectorAll(".card").forEach(c=>{ const z=parseInt(c.style.zIndex)||0; if(z>max) max=z; }); return max; }
     function faceDownAll(){ document.querySelectorAll(".card").forEach(card=>{ const img=card.querySelector("img"); if(img) img.style.display="none"; card.style.backgroundColor="#000"; }); previewImg.src=""; previewImg.style.display="none"; }
     function faceUpAll(){ document.querySelectorAll(".card").forEach(card=>{ const img=card.querySelector("img"); if(img) img.style.display="block"; card.style.backgroundColor="#fff"; }); }
-
-    function shuffleDecks(){
-      const cards = Array.from(document.querySelectorAll(".card"));
-      const player1DeckArea = document.querySelector(".player-1 .deck-area");
-      if(!player1DeckArea) return;
-      const rect = player1DeckArea.getBoundingClientRect();
-      const fieldRect = field.getBoundingClientRect();
-      const minX = (rect.left - fieldRect.left + field.scrollLeft) / zoom;
-      const minY = (rect.top - fieldRect.top + field.scrollTop) / zoom;
-      const maxX = minX + rect.width / zoom;
-      const maxY = minY + rect.height / zoom;
-      const deckCards = cards.filter(card => { const left=parseFloat(card.style.left)||0; const top=parseFloat(card.style.top)||0; return left>=minX && left<=maxX && top>=minY && top<=maxY; });
-      const shuffled = deckCards.sort(()=>Math.random()-0.5);
-      const baseX = minX + 10; const baseY = minY + 10;
-      shuffled.forEach((card,i)=>{ card.style.left=`${baseX}px`; card.style.top=`${baseY}px`; card.style.zIndex=i+1; });
-    }
-
-    function alignDecks(){
-      const cards = Array.from(document.querySelectorAll(".card"));
-      let x=20,y=20; const maxW = window.innerWidth - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w')) + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--preview-w'))) - 40;
-      cards.forEach(card=>{ card.style.left=`${x}px`; card.style.top=`${y}px`; card.style.zIndex=1; x+=140; if(x>maxW){ x=20; y+=180; } });
-    }
-
+    function shuffleDecks(){ const cards = Array.from(document.querySelectorAll(".card")); const player1DeckArea = document.querySelector(".player-1 .deck-area"); if(!player1DeckArea) return; const rect = player1DeckArea.getBoundingClientRect(); const fieldRect = field.getBoundingClientRect(); const minX = (rect.left - fieldRect.left + field.scrollLeft) / zoom; const minY = (rect.top - fieldRect.top + field.scrollTop) / zoom; const maxX = minX + rect.width / zoom; const maxY = minY + rect.height / zoom; const deckCards = cards.filter(card => { const left=parseFloat(card.style.left)||0; const top=parseFloat(card.style.top)||0; return left>=minX && left<=maxX && top>=minY && top<=maxY; }); const shuffled = deckCards.sort(()=>Math.random()-0.5); const baseX = minX + 10; const baseY = minY + 10; shuffled.forEach((card,i)=>{ card.style.left=`${baseX}px`; card.style.top=`${baseY}px`; card.style.zIndex=i+1; }); }
+    function alignDecks(){ const cards = Array.from(document.querySelectorAll(".card")); let x=20,y=20; const maxW = window.innerWidth - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w')) + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--preview-w'))) - 40; cards.forEach(card=>{ card.style.left=`${x}px`; card.style.top=`${y}px`; card.style.zIndex=1; x+=140; if(x>maxW){ x=20; y+=180; } }); }
     function toggleFieldSizeOptions(){ const el=document.getElementById("field-size-options"); el.style.display = el.style.display==="none"?"block":"none"; }
     function setFieldSize(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
     function shiftAllCards(dx,dy){ document.querySelectorAll(".card").forEach(card=>{ const left=parseFloat(card.style.left)||0; const top=parseFloat(card.style.top)||0; card.style.left=`${left+dx}px`; card.style.top=`${top+dy}px`; }); }
+    function bindPanZoomHandlers(){ field.addEventListener("wheel", e => { if(e.ctrlKey) return; e.preventDefault(); const rect=field.getBoundingClientRect(); const cx=e.clientX-rect.left; const cy=e.clientY-rect.top; const scale=0.1; const old=zoom; zoom += e.deltaY<0?scale:-scale; zoom = Math.max(0.3, Math.min(zoom, 3)); const sx=(cx - panOffsetX)/old; const sy=(cy - panOffsetY)/old; panOffsetX = cx - sx*zoom; panOffsetY = cy - sy*zoom; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }, {passive:false}); field.addEventListener("mousedown", e => { if(e.target.closest(".card")) return; let panning=true; let sx=e.clientX, sy=e.clientY; const onMove=e2=>{ if(!panning) return; const dx=e2.clientX-sx; const dy=e2.clientY-sy; panOffsetX+=dx; panOffsetY+=dy; sx=e2.clientX; sy=e2.clientY; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }; const onUp=()=>{ panning=false; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); }; document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp); }); field.addEventListener("click", () => { if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; } }); }
 
-    function bindPanZoomHandlers(){
-      field.addEventListener("wheel", e => { if(e.ctrlKey) return; e.preventDefault(); const rect=field.getBoundingClientRect(); const cx=e.clientX-rect.left; const cy=e.clientY-rect.top; const scale=0.1; const old=zoom; zoom += e.deltaY<0?scale:-scale; zoom = Math.max(0.3, Math.min(zoom, 3)); const sx=(cx - panOffsetX)/old; const sy=(cy - panOffsetY)/old; panOffsetX = cx - sx*zoom; panOffsetY = cy - sy*zoom; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }, {passive:false});
-      field.addEventListener("mousedown", e => { if(e.target.closest(".card")) return; let panning=true; let sx=e.clientX, sy=e.clientY; const onMove=e2=>{ if(!panning) return; const dx=e2.clientX-sx; const dy=e2.clientY-sy; panOffsetX+=dx; panOffsetY+=dy; sx=e2.clientX; sy=e2.clientY; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }; const onUp=()=>{ panning=false; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); }; document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp); });
-      field.addEventListener("click", () => { if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; } });
-    }
-
-    // 自動起動はしない：ロビーから開始
   </script>
 </body>
 </html>
