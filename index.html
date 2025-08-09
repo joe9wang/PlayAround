@@ -318,6 +318,8 @@
     let CURRENT_UID = null;
 
     let ACTIVE_MODE = 'join'; // 'join' | 'create'
+    // このクライアントが「このルームを作成した本人」かどうか
+    let IS_ROOM_CREATOR = false;
 
     signInAnonymously(auth).catch(console.error);
     onAuthStateChanged(auth, (user) => { if(user){ CURRENT_UID = user.uid; }});
@@ -489,6 +491,9 @@ createRoomBtn.addEventListener('click', async () => {
       hostUid: CURRENT_UID,
       hostDisplayName: creatorName
     }, { merge: true });
+    
+    IS_ROOM_CREATOR = true; // ここで「このタブは作成者」と確定
+
 
     // ★★ 楽観更新：購読(onSnapshot)を待たずにローカルへ即反映
     CURRENT_ROOM_META = {
@@ -629,6 +634,7 @@ function renderFieldLabels(){
       
       // ★ 前ルームのホスト情報が残って誤表示しないように、いったんクリアして即描画リセット
       CURRENT_ROOM_META = null;
+      IS_ROOM_CREATOR = false; // ルーム切替時は「作成者でない」から再開
       renderFieldLabels();
       
       if(!roomId){
@@ -752,15 +758,6 @@ startBtn.addEventListener('click', async (ev) => {
     if (!ok) {
       alert('開始直前に座席が埋まりました。別の席を選んでください。');
       return;
-    }
-    
-    
-    // 自分がホスト本人なら、今座った席をホスト席として記録
-    if (CURRENT_ROOM_META?.hostUid && CURRENT_ROOM_META.hostUid === CURRENT_UID) {
-      await setDoc(doc(db, `rooms/${room}`), {
-          hostSeat: seat,
-          updatedAt: serverTimestamp()
-      }, { merge: true });
     }
     
     
