@@ -80,6 +80,28 @@
       z-index: 5;
     }
     .deck-area, .main-play-area, .hand-area { position: relative; }
+    
+    
+    /* ホスト側の座席選択のハイライトを強化 */
+#create-seat-grid .seat-btn.active{
+  outline: 3px solid #0a7;
+  background: #e9fff7;
+  box-shadow: 0 0 0 3px rgba(0,170,119,.15) inset;
+}
+
+#create-seat-picked {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #0a7;
+  font-weight: 700;
+}
+
+.seat-btn:focus-visible{
+  outline: 3px solid #66aaff;
+}
+    
+    
+    
   </style>
 </head>
 <body>
@@ -115,8 +137,8 @@
           </div>
 
           <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
-            <button id="start-btn" class="btn" disabled>開始</button>
-            <button id="clear-btn" class="btn secondary">クリア</button>
+            <button id="start-btn" type="button" class="btn" disabled>開始</button>
+            <button id="clear-btn" type="button" class="btn secondary">クリア</button>
           </div>
         </section>
 
@@ -153,6 +175,7 @@
 
           <label class="lobby-label">作成後に参加する座席</label>
           <div class="seat-grid" id="create-seat-grid">
+            <div id="create-seat-picked">未選択</div>
             <button class="seat-btn" data-create-seat="1">P1</button>
             <button class="seat-btn" data-create-seat="2">P2</button>
             <button class="seat-btn" data-create-seat="3">P3</button>
@@ -282,6 +305,8 @@
       btn.addEventListener('click', () => {
         CREATE_SELECTED_SEAT = parseInt(btn.dataset.createSeat, 10);
         createSeatButtons.forEach(b => b.classList.toggle('active', b === btn));
+        const picked = document.getElementById('create-seat-picked');
+        if (picked) picked.textContent = `選択中: P${CREATE_SELECTED_SEAT}`;
       });
     });
 
@@ -694,6 +719,16 @@ seatButtons.forEach(btn => {
 
 
    startBtn.addEventListener('click', async () => {
+   
+   
+   //必ず認証が完了してから進める
+  await ensureAuthReady();
+  if (!CURRENT_UID) {
+    alert('認証の初期化に時間がかかっています。数秒後に再度お試しください。');
+    return;
+  }
+   
+   
   const room = (joinRoomInput.value||'').trim();
   if(!room || !CURRENT_PLAYER || !CURRENT_UID) return;
 
