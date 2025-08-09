@@ -66,6 +66,26 @@
     z-index: 10; /* ★これを追加：他要素より前に出す */
     }
     
+  .zone-label {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(0, 0, 0, 0.4);
+    padding: 1px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+.deck-area, .main-play-area, .hand-area {
+  position: relative; /* 子要素の絶対配置のため */
+}
+    
+    
+    
     
   </style>
 </head>
@@ -145,44 +165,75 @@
 
   <div id="container">
     <div id="field">
+    
       <div class="player-area player-1">
-  <div class="player-label">P1</div>
-  <div class="play-area">
-    <div class="deck-area"></div>
-    <div class="main-play-area"></div>
-  </div>
-  <div class="hand-area"></div>
-</div>
-
-<div class="player-area player-2">
-  <div class="player-label">P2</div>
-  <div class="play-area">
-    <div class="deck-area"></div>
-    <div class="main-play-area"></div>
-  </div>
-  <div class="hand-area"></div>
-</div>
-
-<div class="player-area player-3">
-  <div class="player-label">P3</div>
-  <div class="play-area">
-    <div class="deck-area"></div>
-    <div class="main-play-area"></div>
-  </div>
-  <div class="hand-area"></div>
-</div>
-
-<div class="player-area player-4">
-  <div class="player-label">P4</div>
-  <div class="play-area">
-    <div class="deck-area"></div>
-    <div class="main-play-area"></div>
-  </div>
-  <div class="hand-area"></div>
-</div>
+        <div class="player-label">
+          <span class="label-seat">P1</span> <span class="label-name"></span>
+        </div>
+      <div class="play-area">
+        <div class="deck-area">
+          <div class="zone-label">デッキエリア</div>
+        </div>
+      <div class="main-play-area">
+        <div class="zone-label">プレイエリア</div>
+      </div>
     </div>
-  </div>
+      <div class="hand-area">
+        <div class="zone-label">手札エリア</div>
+      </div>
+    </div>
 
+      <div class="player-area player-2">
+        <div class="player-label">
+          <span class="label-seat">P2</span> <span class="label-name"></span>
+        </div>
+      <div class="play-area">
+        <div class="deck-area">
+          <div class="zone-label">デッキエリア</div>
+        </div>
+      <div class="main-play-area">
+        <div class="zone-label">プレイエリア</div>
+      </div>
+    </div>
+      <div class="hand-area">
+        <div class="zone-label">手札エリア</div>
+      </div>
+    </div>
+    
+      <div class="player-area player-3">
+        <div class="player-label">
+          <span class="label-seat">P3</span> <span class="label-name"></span>
+        </div>
+      <div class="play-area">
+        <div class="deck-area">
+          <div class="zone-label">デッキエリア</div>
+        </div>
+      <div class="main-play-area">
+        <div class="zone-label">プレイエリア</div>
+      </div>
+    </div>
+      <div class="hand-area">
+        <div class="zone-label">手札エリア</div>
+      </div>
+    </div>
+    
+      <div class="player-area player-4">
+        <div class="player-label">
+          <span class="label-seat">P4</span> <span class="label-name"></span>
+        </div>
+      <div class="play-area">
+        <div class="deck-area">
+          <div class="zone-label">デッキエリア</div>
+        </div>
+      <div class="main-play-area">
+        <div class="zone-label">プレイエリア</div>
+      </div>
+    </div>
+      <div class="hand-area">
+        <div class="zone-label">手札エリア</div>
+      </div>
+    </div>
+    
   <div id="preview">
     <h2>選択中のカード</h2>
     <img id="preview-img" src="" alt="プレビュー画像" />
