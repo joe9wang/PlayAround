@@ -414,52 +414,74 @@
     }
 
     // ── CREATE（右）：作成→即参加（ホスト）
-    createRoomBtn.addEventListener('click', async () => {
-      ACTIVE_MODE = 'create';
-      await ensureAuthReady();
+// ── CREATE（右）：作成→即参加（ホスト）
+createRoomBtn.addEventListener('click', async () => {
+  ACTIVE_MODE = 'create';
+  await ensureAuthReady();
 
-      const id = (newRoomIdInput.value||'').trim();
-      const title = (newRoomTitleInput.value||'').trim();
-      const isPublic = document.getElementById('room-public').checked;
-      const creatorName = (newPlayerNameInput.value || '').trim();
-      const creatorColor = (newPlayerColorInput.value || '#22aaff');
+  const id = (newRoomIdInput.value||'').trim();
+  const title = (newRoomTitleInput.value||'').trim();
+  const isPublic = document.getElementById('room-public').checked;
+  const creatorName  = (newPlayerNameInput.value || '').trim();
+  const creatorColor = (newPlayerColorInput.value || '#22aaff');
 
-      if(!id){ alert('ルームIDを入力してください'); return; }
-      if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
-      if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
+  if(!id){ alert('ルームIDを入力してください'); return; }
+  if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
+  if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
 
-      try{
-        await setDoc(doc(db, `rooms/${id}`), {
-          title: title || null,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          public: !!isPublic,
-          hostUid: CURRENT_UID,
-          hostDisplayName: creatorName
-        }, { merge: true });
+  try{
+    // ルーム作成
+    await setDoc(doc(db, `rooms/${id}`), {
+      title: title || null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      public: !!isPublic,
+      hostUid: CURRENT_UID,
+      hostDisplayName: creatorName
+    }, { merge: true });
 
-        // 左フォームにも反映（claimSeat が参照）
-        playerNameInput.value  = creatorName;
-        playerColorInput.value = creatorColor;
+    // ★★ 楽観更新：購読(onSnapshot)を待たずにローカルへ即反映
+    CURRENT_ROOM_META = {
+      ...(CURRENT_ROOM_META || {}),
+      hostUid: CURRENT_UID,
+      hostDisplayName: creatorName
+    };
+    renderFieldLabels();
 
-        // ルーム購読と座席確保 → 即開始
-        joinRoomInput.value = id;
-        loadSeatStatus();
+    // 左フォームへも反映（claimSeatが参照）
+    playerNameInput.value  = creatorName;
+    playerColorInput.value = creatorColor;
 
-        const ok = await claimSeat(id, CREATE_SELECTED_SEAT);
-        if(!ok){
-          alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`);
-          return;
-        }
-        CURRENT_PLAYER = CREATE_SELECTED_SEAT;
-        seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
-        startSession(id, CREATE_SELECTED_SEAT);
+    // 以降、座席確保 → 即開始
+    joinRoomInput.value = id;
+    loadSeatStatus();
 
-      }catch(e){
-        console.error(e);
-        alert('ルーム作成に失敗しました');
-      }
-    });
+    const ok = await claimSeat(id, CREATE_SELECTED_SEAT);
+    if(!ok){
+      alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`);
+      return;
+    }
+
+    // ★★ 楽観更新：自分の座席の表示名も即ローカル反映
+    currentSeatMap[CREATE_SELECTED_SEAT] = {
+      ...(currentSeatMap[CREATE_SELECTED_SEAT] || {}),
+      claimedByUid: CURRENT_UID,
+      displayName: creatorName
+    };
+    renderFieldLabels();
+
+    CURRENT_PLAYER = CREATE_SELECTED_SEAT;
+    seatButtons.forEach(b =>
+      b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER)
+    );
+    startSession(id, CREATE_SELECTED_SEAT);
+
+  }catch(e){
+    console.error(e);
+    alert('ルーム作成に失敗しました');
+  }
+});
+
 
     let unsubscribeSeats = null;
     joinRoomInput.addEventListener('change', loadSeatStatus);
@@ -562,39 +584,57 @@
       startBtn.disabled = !(roomOk && seatOk && nameOk);
     }
 
-    // ★ 左の席ボタン：右側の名前が入っていれば警告しない（自動コピー）
-    seatButtons.forEach(btn => {
-      btn.addEventListener('click', async () => {
-        ACTIVE_MODE = 'join';
+// ★ 左の席ボタン：右側の名前が入っていれば警告しない（自動コピー）＋楽観更新
+seatButtons.forEach(btn => {
+  btn.addEventListener('click', async () => {
+    ACTIVE_MODE = 'join';
 
-        // まず左の名前
-        let nameNow = (playerNameInput.value || '').trim();
+    // まず左の名前
+    let nameNow = (playerNameInput.value || '').trim();
 
-        // 左が空だが右が入っていれば自動反映して続行（警告なし）
-        if (!nameNow) {
-          const rightName  = (newPlayerNameInput.value || '').trim();
-          const rightColor = (newPlayerColorInput.value || '');
-          if (rightName) {
-            playerNameInput.value  = rightName;   // ★ 自動コピー
-            if (rightColor) playerColorInput.value = rightColor;
-            nameNow = rightName;
-          }
-        }
+    // 左が空だが右に入力があれば自動コピー
+    if (!nameNow) {
+      const rightName  = (newPlayerNameInput.value || '').trim();
+      const rightColor = (newPlayerColorInput.value || '');
+      if (rightName) {
+        playerNameInput.value  = rightName;
+        if (rightColor) playerColorInput.value = rightColor;
+        nameNow = rightName;
+      }
+    }
 
-        if (!nameNow) {
-          alert('先に「プレイヤー名」を入力してください。');
-          playerNameInput.focus();
-          return;
-        }
+    if (!nameNow) {
+      alert('先に「プレイヤー名」を入力してください。');
+      playerNameInput.focus();
+      return;
+    }
 
-        const seat = parseInt(btn.dataset.seat, 10);
-        const roomId = (joinRoomInput.value||'').trim();
-        if(!roomId || !CURRENT_UID){ return; }
-        const ok = await claimSeat(roomId, seat);
-        if(ok){ CURRENT_PLAYER = seat; } else { CURRENT_PLAYER = null; alert(`P${seat} は使用中です。`); }
-        renderSeatAvailability();
-      });
-    });
+    const seat = parseInt(btn.dataset.seat, 10);
+    const roomId = (joinRoomInput.value||'').trim();
+    if(!roomId || !CURRENT_UID){ return; }
+
+    const ok = await claimSeat(roomId, seat);
+
+    if(ok){
+      CURRENT_PLAYER = seat;
+
+      // ★★ 楽観更新：自席のdisplayNameを即ローカルへ反映
+      currentSeatMap[seat] = {
+        ...(currentSeatMap[seat] || {}),
+        claimedByUid: CURRENT_UID,
+        displayName: nameNow
+      };
+      renderFieldLabels();
+
+    } else {
+      CURRENT_PLAYER = null;
+      alert(`P${seat} は使用中です。`);
+    }
+
+    renderSeatAvailability();
+  });
+});
+
 
     clearBtn.addEventListener('click', () => {
       joinRoomInput.value = '';
