@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>プレイアラウンド v19（オーナー紐づけ + 操作ロック + 複製防止）</title>
+  <title>プレイアラウンド v19（オーナー紐づけ + 操作ロック + 複製防止 + プレビューにオーナー表示）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; }
@@ -163,8 +163,9 @@
   <div id="preview">
     <h2>選択中のカード</h2>
     <img id="preview-img" src="" alt="プレビュー画像" />
+    <div id="preview-info"></div>
   </div>
-
+  
   <div id="spacer"></div>
 
   <script type="module">
@@ -182,6 +183,7 @@
       appId: "1:248859224605:web:1320093856bc1861c174f4"
     };
     
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -349,6 +351,7 @@
     /* ===================== カード同期（オーナー制御 + 複製防止） ===================== */
     const field = document.getElementById("field");
     const previewImg = document.getElementById("preview-img");
+    const previewInfo = document.getElementById("preview-info");
     const uploadArea = document.getElementById("upload-area");
     const fileInput = document.getElementById("file-input");
     const fieldSizeOptions = document.getElementById("field-size-options");
@@ -404,6 +407,7 @@
       if (el) applyCardState(el, data);
     }
 
+    // createCardDom 内のクリックイベントを修正
     function createCardDom(cardId, imageSrc, state){
       const card = document.createElement("div");
       card.className = "card";
@@ -429,13 +433,28 @@
         card.classList.add("selected");
         selectedCard = card;
         const imgEl = card.querySelector('img');
-        if (imgEl && imgEl.style.display !== "none") { previewImg.src = imgEl.src; previewImg.style.display = "block"; }
-        else { previewImg.src = ""; previewImg.style.display = "none"; }
+        if (imgEl && imgEl.style.display !== "none") {
+          previewImg.src = imgEl.src; previewImg.style.display = "block";
+        } else {
+          previewImg.src = ""; previewImg.style.display = "none";
+        }
+
+        // ★ オーナーのプレイヤー番号と自分のプレイヤー番号を表示
+        let ownerPlayerNum = "?";
+        for (let seat = 1; seat <= 4; seat++) {
+          const seatData = currentSeatMap[seat];
+          if (seatData && seatData.claimedByUid === card.dataset.ownerUid) {
+            ownerPlayerNum = `P${seat}`;
+            break;
+          }
+        }
+        previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
       });
 
       return card;
     }
-
+    
+    
     function applyCardState(card, data){
       card.dataset.ownerUid = data.ownerUid || '';
       card.setAttribute('data-owner', (data.ownerUid && data.ownerUid !== CURRENT_UID) ? 'other' : 'me');
