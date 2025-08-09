@@ -622,70 +622,64 @@ function renderFieldLabels(){
     }
 
 function validateLobby(){
+  // 右側（create）モードのときは Start は使わない
   if (ACTIVE_MODE === 'create') {
-    // 右側のホスト作成は「作成」ボタンで即参加なので、開始ボタンは常に無効
     startBtn.disabled = true;
     return;
   }
-  // 左側（既存ルームに参加）
-  const roomOk = !!(joinRoomInput.value||'').trim();
-  const seatOk = !!CURRENT_PLAYER; // 空席に座れていれば true（= claimSeat 済み）
-  const nameNow = (playerNameInput.value||'').trim();
-  const nameOk = nameNow.length > 0 && nameNow.length <= 24;
 
-  // 余計な制限は不要：部屋が指定され、空席に座れて、名前が入っていれば開始できる
-  startBtn.disabled = !(roomOk && seatOk && nameOk);
+  const roomOk  = !!(joinRoomInput.value||'').trim();
+  const nameNow = (playerNameInput.value||'').trim();
+  const nameOk  = nameNow.length > 0 && nameNow.length <= 24;
+  const seatOk  = !!CURRENT_PLAYER;
+
+  // 選択された席が現在「空席」かどうかを判定
+  let selectedSeatEmpty = false;
+  if (seatOk) {
+    const data = currentSeatMap[CURRENT_PLAYER];
+    selectedSeatEmpty =
+      !data ||                 // docがない
+      isSeatStale(data) ||     // 心拍が古い（離席扱い）
+      !data.claimedByUid;      // 予約者なし
+  }
+
+  // ★ 空席が選ばれていれば Start を押せる
+  startBtn.disabled = !(roomOk && nameOk && seatOk && selectedSeatEmpty);
 }
 
-
-// ★ 左の席ボタン：右側の名前が入っていれば警告しない（自動コピー）＋楽観更新
+// ★ 左の席ボタン：右側の名前が入っていれば警告しない（自動コピー）
 seatButtons.forEach(btn => {
-  btn.addEventListener('click', async () => {
+  btn.addEventListener('click', () => {
     ACTIVE_MODE = 'join';
 
-    // まず左の名前
+    // 左の名前が空なら右から自動コピー（あれば）
     let nameNow = (playerNameInput.value || '').trim();
-
-    // 左が空だが右に入力があれば自動コピー
     if (!nameNow) {
       const rightName  = (newPlayerNameInput.value || '').trim();
       const rightColor = (newPlayerColorInput.value || '');
       if (rightName) {
-        playerNameInput.value  = rightName;
+        playerNameInput.value  = rightName;   // 自動コピー
         if (rightColor) playerColorInput.value = rightColor;
         nameNow = rightName;
       }
     }
-
     if (!nameNow) {
       alert('先に「プレイヤー名」を入力してください。');
       playerNameInput.focus();
       return;
     }
 
+    // ★ ここではDBに触らない（確保しない）— 選択だけ
     const seat = parseInt(btn.dataset.seat, 10);
-    const roomId = (joinRoomInput.value||'').trim();
-    if(!roomId || !CURRENT_UID){ return; }
+    CURRENT_PLAYER = seat;
 
-    const ok = await claimSeat(roomId, seat);
+    // 見た目（activeクラス）更新
+    seatButtons.forEach(b =>
+      b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER)
+    );
 
-    if(ok){
-      CURRENT_PLAYER = seat;
-
-      // ★★ 楽観更新：自席のdisplayNameを即ローカルへ反映
-      currentSeatMap[seat] = {
-        ...(currentSeatMap[seat] || {}),
-        claimedByUid: CURRENT_UID,
-        displayName: nameNow
-      };
-      renderFieldLabels();
-
-    } else {
-      CURRENT_PLAYER = null;
-      alert(`P${seat} は使用中です。`);
-    }
-
-    renderSeatAvailability();
+    // Startボタンの活性/非活性を再評価
+    validateLobby();
   });
 });
 
