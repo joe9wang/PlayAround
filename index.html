@@ -540,6 +540,20 @@ joinRoomInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') loadSeatStatus();
 });
 
+
+playerNameInput.addEventListener('change', async () => {
+  const newName = (playerNameInput.value || '').trim();
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return;
+
+  // 自分が座っている席だけ更新
+  const seatRef = doc(db, `rooms/${CURRENT_ROOM}/seats/${CURRENT_PLAYER}`);
+  await setDoc(seatRef, {
+    displayName: newName,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+});
+
+
     const currentSeatMap = {1:null,2:null,3:null,4:null};
     function isSeatStale(data){
       if(!data || !data.heartbeatAt) return true;
@@ -629,6 +643,14 @@ joinRoomInput.addEventListener('keydown', (e) => {
 
     seatButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
+      
+        const nameNow = (playerNameInput.value || '').trim();
+        if (!nameNow) {
+          alert('先に「プレイヤー名」を入力してください。');
+          playerNameInput.focus();
+          return;
+        }
+
         const seat = parseInt(btn.dataset.seat, 10);
         const roomId = (joinRoomInput.value||'').trim();
         if(!roomId || !CURRENT_UID){ return; }
