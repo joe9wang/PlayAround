@@ -1,0 +1,182 @@
+/* 全体・共通スタイル */
+body {
+  font-family: sans-serif; [cite: 12]
+  margin: 0; [cite: 12]
+  background: #eee; [cite: 12]
+  overflow: hidden; [cite: 12]
+}
+
+h1 {
+  background: #444; [cite: 13]
+  color: white; [cite: 13]
+  padding: 1em; [cite: 13]
+  text-align: center; [cite: 13]
+  margin: 0; [cite: 13]
+}
+
+.main-content {
+  display: flex;
+  height: calc(100vh - 200px); /* 10vhのヘッダーと90vhのメインの比率を1:10として計算 */
+}
+
+/* 上部ヘッダー「カード画像アップロードパネル」のスタイル */
+#upload-area {
+  padding: 20px; [cite: 14]
+  text-align: center; [cite: 14]
+  background: white; [cite: 14]
+  cursor: pointer; [cite: 14]
+  border-bottom: 2px solid #ccc; [cite: 15]
+  height: 10vh; /* メイン画面との高さ比率1:10を考慮 */
+}
+
+#file-input {
+  display: none; [cite: 16]
+}
+
+/* 左側サイドバー「操作パネル」のスタイル */
+#sidebar {
+  width: 20%; /* メイン画面との横幅比率1:3:1.5を考慮 */
+  height: 90vh;
+  float: left;
+  background: #fff; [cite: 17]
+  border-right: 2px solid #aaa; [cite: 17]
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2); [cite: 17]
+  padding: 10px; [cite: 18]
+  box-sizing: border-box; [cite: 18]
+}
+
+#sidebar h2 {
+  font-size: 14px; [cite: 19]
+  text-align: center; [cite: 19]
+  margin-top: 20px; [cite: 19]
+  margin-bottom: 10px; [cite: 19]
+}
+
+#sidebar button {
+  width: 100%; [cite: 20]
+  margin-bottom: 10px; [cite: 20]
+  padding: 10px; [cite: 20]
+  font-size: 14px; [cite: 20]
+  cursor: pointer; [cite: 20]
+}
+
+/* 中央「ゲームフィールド」のスタイル */
+#container {
+  width: 60%; /* メイン画面との横幅比率1:3:1.5を考慮 */
+  height: 90vh;
+  overflow: hidden; [cite: 23]
+  position: relative; [cite: 23]
+  float: left; [cite: 24]
+}
+
+#field {
+  position: absolute; [cite: 25]
+  transform-origin: 0 0; [cite: 25]
+  background: none; [cite: 25]
+  width: 2000px; /* 初期値 */
+  height: 2000px; /* 初期値 */
+}
+
+/* プレイヤーエリア */
+.player-area {
+  position: absolute; [cite: 26]
+  width: 50%; [cite: 26]
+  height: 50%; [cite: 26]
+  border: 5px dashed #666; [cite: 27]
+  box-sizing: border-box; [cite: 27]
+}
+
+.player-1 { top: 0; left: 0; } [cite: 28]
+.player-2 { top: 0; left: 50%; } [cite: 29]
+.player-3 { top: 50%; left: 0; } [cite: 29]
+.player-4 { top: 50%; left: 50%; } [cite: 30]
+
+/* プレイヤーエリア内のゾーン */
+.play-area {
+  position: relative; [cite: 31]
+  left: 0; [cite: 31]
+  width: 100%; [cite: 32]
+  height: 80%; /* 手札ゾーンとの比率1:4を考慮 */
+  display: flex; [cite: 32]
+  flex-direction: row; [cite: 32]
+  z-index: 0; [cite: 32]
+}
+
+.deck-area {
+  width: 30%; /* プレイゾーンとの比率7:3を考慮 */
+  background: #add8e6; /* 薄い青色 */
+}
+
+.main-play-area {
+  width: 70%; /* プレイゾーンとの比率7:3を考慮 */
+  background: #90ee90; /* 薄い緑色 */
+}
+
+.hand-area {
+  position: relative; [cite: 35]
+  bottom: 0; [cite: 35]
+  left: 0; [cite: 35]
+  width: 100%; [cite: 36]
+  height: 20%; /* 手札ゾーンとの比率1:4を考慮 */
+  background: #d2b48c; /* 薄い茶色 */
+  z-index: 0; [cite: 36]
+}
+
+/* カードのスタイル */
+.card {
+  width: 120px; [cite: 51]
+  height: 160px; [cite: 51]
+  position: absolute; [cite: 51]
+  border: 2px solid #333; [cite: 51]
+  border-radius: 10px; [cite: 51]
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4); [cite: 51]
+  background: #fff; [cite: 51]
+  cursor: grab; [cite: 52]
+  user-select: none; [cite: 52]
+  transition: border 0.2s; [cite: 52]
+  z-index: 1; [cite: 52]
+}
+
+.card img {
+  width: 100%; [cite: 53]
+  height: 100%; [cite: 53]
+  border-radius: 10px; [cite: 53]
+  object-fit: cover; [cite: 53]
+  pointer-events: none; [cite: 54]
+  user-select: none; [cite: 54]
+}
+
+.card.selected {
+  border: 3px solid red; [cite: 55]
+}
+
+.card-back {
+  background: #000;
+  border: 2px solid #fff;
+  border-radius: 10px;
+}
+
+/* 右側サイドバー「プレビューパネル」のスタイル */
+#preview {
+  width: 20%; /* メイン画面との横幅比率1:3:1.5を考慮 */
+  height: 90vh;
+  float: right;
+  background: #fff; [cite: 56]
+  border-left: 2px solid #aaa; [cite: 56]
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2); [cite: 57]
+  padding: 10px; [cite: 57]
+  box-sizing: border-box; [cite: 57]
+}
+
+#preview h2 {
+  font-size: 14px; [cite: 58]
+  margin: 0 0 10px; [cite: 58]
+  text-align: center; [cite: 58]
+}
+
+#preview-img {
+  width: 100%; [cite: 59]
+  height: auto; [cite: 59]
+  border-radius: 10px; [cite: 59]
+  display: none; [cite: 59]
+}
