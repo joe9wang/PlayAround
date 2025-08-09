@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>プレイアラウンド v19（オーナー紐づけ + 操作ロック + 複製防止 + プレビューにオーナー表示）</title>
+  <title>プレイアラウンド v19（ラベル安定化+ホスト座席選択の警告改善）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; }
@@ -133,7 +133,6 @@
             <button id="create-room-btn" class="btn">作成</button>
           </div>
 
-          <!-- ★ ここを左と同じ「プレイヤー名 / 色」に変更 -->
           <label class="lobby-label">プレイヤー名 / 色</label>
           <div class="row" style="margin-bottom:12px;">
             <input id="new-player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
@@ -440,7 +439,7 @@
         }, { merge: true });
 
         // 左フォームにも反映（claimSeat が参照）
-        playerNameInput.value = creatorName;
+        playerNameInput.value  = creatorName;
         playerColorInput.value = creatorColor;
 
         // ルーム購読と座席確保 → 即開始
@@ -468,6 +467,7 @@
       if (e.key === 'Enter') loadSeatStatus();
     });
 
+    // 左フォームの名前変更→自席docに反映
     playerNameInput.addEventListener('change', async () => {
       const newName = (playerNameInput.value || '').trim();
       if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return;
@@ -497,6 +497,7 @@
       validateLobby();
     }
 
+    // ★ ラベル描画の安定化：seat/host両方から判定、購読のたびに必ず更新
     function renderFieldLabels(){
       for (const s of [1,2,3,4]) {
         const area   = document.querySelector(`.player-${s}`);
@@ -507,10 +508,14 @@
         seatEl.textContent = `P${s}`;
 
         const seatData = currentSeatMap[s] || null;
-        const name     = seatData?.displayName || '';
-        const isHost   = !!(CURRENT_ROOM_META?.hostUid && seatData?.claimedByUid === CURRENT_ROOM_META.hostUid);
+        const nameFromSeat = seatData?.displayName || '';
+        const isHostByUid  = !!(CURRENT_ROOM_META?.hostUid && seatData?.claimedByUid === CURRENT_ROOM_META.hostUid);
 
-        nameEl.textContent = name ? `${name}${isHost ? '（ホスト）' : ''}` : '';
+        // ホスト名のフォールバック（座席名が空の瞬間でも一応表示）
+        const fallbackHostName = (isHostByUid && CURRENT_ROOM_META?.hostDisplayName) ? CURRENT_ROOM_META.hostDisplayName : '';
+        const finalName = nameFromSeat || fallbackHostName;
+
+        nameEl.textContent = finalName ? `${finalName}${isHostByUid ? '（ホスト）' : ''}` : '';
       }
     }
 
@@ -530,7 +535,7 @@
       // ルームdoc購読（ホスト情報など）
       unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
         CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
-        renderFieldLabels();
+        renderFieldLabels(); // ★ ホスト情報到着時にも更新
       });
 
       // 軽く更新時刻だけ
@@ -540,7 +545,7 @@
       const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
         currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
-        renderSeatAvailability();
+        renderSeatAvailability();          // ★ 各席更新のたびにラベルも更新
       }));
       unsubscribeSeats = () => unsubs.forEach(fn => fn());
     }
@@ -557,15 +562,31 @@
       startBtn.disabled = !(roomOk && seatOk && nameOk);
     }
 
+    // ★ 左の席ボタン：右側の名前が入っていれば警告しない（自動コピー）
     seatButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
         ACTIVE_MODE = 'join';
-        const nameNow = (playerNameInput.value || '').trim();
+
+        // まず左の名前
+        let nameNow = (playerNameInput.value || '').trim();
+
+        // 左が空だが右が入っていれば自動反映して続行（警告なし）
+        if (!nameNow) {
+          const rightName  = (newPlayerNameInput.value || '').trim();
+          const rightColor = (newPlayerColorInput.value || '');
+          if (rightName) {
+            playerNameInput.value  = rightName;   // ★ 自動コピー
+            if (rightColor) playerColorInput.value = rightColor;
+            nameNow = rightName;
+          }
+        }
+
         if (!nameNow) {
           alert('先に「プレイヤー名」を入力してください。');
           playerNameInput.focus();
           return;
         }
+
         const seat = parseInt(btn.dataset.seat, 10);
         const roomId = (joinRoomInput.value||'').trim();
         if(!roomId || !CURRENT_UID){ return; }
@@ -651,10 +672,19 @@
       sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: P${CURRENT_PLAYER}`;
       lobby.style.display = 'none';
       startHeartbeat(roomId, playerId);
+
+      // ★ 念のため：開始直後にも seat/room を購読してラベル反映を安定化
+      if (joinRoomInput.value.trim() !== CURRENT_ROOM) {
+        joinRoomInput.value = CURRENT_ROOM;
+        loadSeatStatus();
+      } else {
+        // 既に購読済みでも最新を描画
+        renderFieldLabels();
+      }
+
       window.addEventListener('beforeunload', () => { stopHeartbeat(); releaseSeat(roomId, playerId); });
       initializePlayField();
       subscribeCards();
-      renderFieldLabels();
     }
 
     function subscribeCards(){
