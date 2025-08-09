@@ -711,37 +711,54 @@ seatButtons.forEach(btn => {
     });
 
 
-   startBtn.addEventListener('click', async () => {
-   
-   
-   //必ず認証が完了してから進める
+startBtn.addEventListener('click', async (ev) => {
+  ev.preventDefault();
+  ACTIVE_MODE = 'join';
+
+  // まずは必ず認証を完了させる（ここが無いと UID 未確定で無言リターンになりがち）
   await ensureAuthReady();
-  if (!CURRENT_UID) {
-    alert('認証の初期化に時間がかかっています。数秒後に再度お試しください。');
-    return;
-  }
-   
-   
-  const room = (joinRoomInput.value||'').trim();
-  if(!room || !CURRENT_PLAYER || !CURRENT_UID) return;
 
-  const ok = await claimSeat(room, CURRENT_PLAYER);
-  if(!ok){ alert('開始直前に座席が埋まりました'); return; }
-
-  // ★ 即時ローカル反映（スナップショット前でもラベルに名前が出る）
+  const room = (joinRoomInput.value || '').trim();
   const seat = CURRENT_PLAYER;
   const nameNow  = (playerNameInput.value || '').trim();
   const colorNow = playerColorInput.value || '#22aaff';
-  currentSeatMap[seat] = {
-    claimedByUid: CURRENT_UID,
-    displayName: nameNow,
-    color: colorNow,
-    // heartbeatAt 等はサーバ側で付与されるので省略OK
-  };
-  renderSeatAvailability(); // ← 内部で renderFieldLabels() も呼ばれる
 
-  // ★ そのまま開始（startSessionの中でloadSeatStatusを必ず張り直す）
-  startSession(room, seat);
+  // 入力バリデーション（失敗時は理由を明示）
+  if (!room) { alert('ルームIDを入力してください'); return; }
+  if (!nameNow) { alert('プレイヤー名を入力してください'); return; }
+  if (!seat) { alert('座席を選択してください'); return; }
+
+  // 二重押しガード
+  startBtn.disabled = true;
+  startBtn.textContent = '開始中…';
+
+  try {
+    // 空席かどうかは claimSeat のトランザクションが厳密判定
+    const ok = await claimSeat(room, seat);
+    if (!ok) {
+      alert('開始直前に座席が埋まりました。別の席を選んでください。');
+      return;
+    }
+
+    // 楽観反映：スナップショット到着前でもラベルに自分の名前を出す
+    currentSeatMap[seat] = {
+      ...(currentSeatMap[seat] || {}),
+      claimedByUid: CURRENT_UID,
+      displayName: nameNow,
+      color: colorNow
+    };
+    renderSeatAvailability();
+
+    // ゲーム開始（ロビーを閉じるのは startSession 内）
+    startSession(room, seat);
+  } catch (e) {
+    console.error(e);
+    alert('開始に失敗しました。ネットワークを確認して再度お試しください。');
+  } finally {
+    // 成功時はロビーが閉じるので見えないが、失敗時のために戻しておく
+    startBtn.disabled = false;
+    startBtn.textContent = '開始';
+  }
 });
 
 
