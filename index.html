@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>プレイアラウンド v19（オーナー紐づけ + 自分だけ操作）</title>
+  <title>プレイアラウンド v19（オーナー紐づけ + 操作ロック + 複製防止）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; }
@@ -141,7 +141,7 @@
           <div class="deck-area"></div>
           <div class="main-play-area"></div>
         </div>
-        <div class="hand-area"></div>
+        <div class="手エリア hand-area"></div>
       </div>
       <div class="player-area player-3">
         <div class="play-area">
@@ -181,6 +181,7 @@
       messagingSenderId: "248859224605",
       appId: "1:248859224605:web:1320093856bc1861c174f4"
     };
+    
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -345,7 +346,7 @@
     }
     function stopHeartbeat(){ if(heartbeatTimer){ clearInterval(heartbeatTimer); heartbeatTimer = null; } }
 
-    /* ===================== カード同期（オーナー制御） ===================== */
+    /* ===================== カード同期（オーナー制御 + 複製防止） ===================== */
     const field = document.getElementById("field");
     const previewImg = document.getElementById("preview-img");
     const uploadArea = document.getElementById("upload-area");
@@ -355,9 +356,13 @@
     let zoom = 1, panOffsetX = 0, panOffsetY = 0, selectedCard = null;
 
     const cardDomMap = new Map();
-    const localChangeSet = new Set();
+    // ローカル由来の変更を短時間覚えて、onSnapshot の反映重複を抑止
+    const localChangeMap = new Map();
+    function markLocal(id){ localChangeMap.set(id, Date.now()); setTimeout(()=>localChangeMap.delete(id), 800); }
+    function isLocalRecent(id){ const t = localChangeMap.get(id); return t && (Date.now() - t < 800); }
 
     let unsubscribeCards = null;
+    let handlersBound = false; // 二重バインド防止
 
     function startSession(roomId, playerId){
       CURRENT_ROOM = roomId; CURRENT_PLAYER = playerId;
@@ -386,37 +391,38 @@
     }
 
     function upsertCardFromRemote(id, data){
-      if(localChangeSet.has(id)) return;
-      let el = cardDomMap.get(id);
-      if(!el){
+      // 既存DOMを参照（Mapに無くてもDOM上にある可能性）
+      let el = cardDomMap.get(id) || document.querySelector(`[data-card-id="${id}"]`);
+      const exists = !!el;
+
+      // 直近ローカル作成/更新のものは、新規DOMを作らず（状態適用のみ）
+      if (!exists && !isLocalRecent(id)) {
         el = createCardDom(id, data.imageUrl, data);
         cardDomMap.set(id, el);
         field.appendChild(el);
       }
-      applyCardState(el, data);
+      if (el) applyCardState(el, data);
     }
 
     function createCardDom(cardId, imageSrc, state){
       const card = document.createElement("div");
       card.className = "card";
       card.dataset.cardId = cardId;
-      // ★オーナーUIDをDOMに保持（自分のカード判定用）
       card.dataset.ownerUid = state?.ownerUid || '';
+      card.setAttribute('data-owner', (card.dataset.ownerUid && card.dataset.ownerUid !== CURRENT_UID) ? 'other' : 'me');
 
       const img = document.createElement("img");
       img.src = imageSrc; card.appendChild(img);
 
       makeDraggable(card);
 
-      // 右クリックで表裏反転（自分のカードのみ）
       card.addEventListener("contextmenu", async e => {
         e.preventDefault();
-        if (card.dataset.ownerUid !== CURRENT_UID) return; // 他人のカードは無視
+        if (card.dataset.ownerUid !== CURRENT_UID) return;
         const faceUp = !(card.dataset.faceUp === 'true');
         await updateCard(cardId, { faceUp, updatedAt: serverTimestamp() });
       });
 
-      // 左クリックで選択 & プレビュー
       card.addEventListener("click", e => {
         e.stopPropagation();
         if (selectedCard) selectedCard.classList.remove("selected");
@@ -431,9 +437,7 @@
     }
 
     function applyCardState(card, data){
-      // DOMにもオーナーUIDを反映
       card.dataset.ownerUid = data.ownerUid || '';
-      // 見た目のヒントとして他人カードに cursor:not-allowed を付与
       card.setAttribute('data-owner', (data.ownerUid && data.ownerUid !== CURRENT_UID) ? 'other' : 'me');
 
       card.style.left = `${data.x||0}px`;
@@ -451,9 +455,8 @@
     async function updateCard(cardId, patch){
       if(!CURRENT_ROOM) return;
       const ref = doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`);
-      localChangeSet.add(cardId);
+      markLocal(cardId);
       try { await updateDoc(ref, patch); } catch(e){ console.error('updateCard', e); }
-      setTimeout(() => localChangeSet.delete(cardId), 300);
     }
 
     function bindUploadHandlers(){
@@ -484,17 +487,19 @@
           x: baseX, y: baseY, zIndex: 1,
           faceUp: true,
           imageUrl,
-          ownerUid: CURRENT_UID, // ★作成者を保存
+          ownerUid: CURRENT_UID,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-        // 自分の画面には即時反映
-        localChangeSet.add(ref.id);
-        const el = createCardDom(ref.id, imageUrl, { x:baseX, y:baseY, zIndex:1, faceUp:true, ownerUid: CURRENT_UID });
-        cardDomMap.set(ref.id, el);
-        field.appendChild(el);
+        // 自分の画面には即時反映（ただし onSnapshot と二重生成しない）
+        markLocal(ref.id);
+        let el = cardDomMap.get(ref.id) || document.querySelector(`[data-card-id="${ref.id}"]`);
+        if(!el){
+          el = createCardDom(ref.id, imageUrl, { x:baseX, y:baseY, zIndex:1, faceUp:true, ownerUid: CURRENT_UID });
+          cardDomMap.set(ref.id, el);
+          field.appendChild(el);
+        }
         applyCardState(el, { x:baseX, y:baseY, zIndex:1, faceUp:true, imageUrl, ownerUid: CURRENT_UID });
-        setTimeout(()=>localChangeSet.delete(ref.id), 300);
       }catch(e){ console.error('createCardRemote', e); }
     }
 
@@ -502,8 +507,7 @@
       let offsetX=0, offsetY=0, isDragging=false;
       card.addEventListener("mousedown", e => {
         if(e.button!==0) return;
-        // 自分のカード以外はドラッグ不可
-        if (card.dataset.ownerUid !== CURRENT_UID) return;
+        if (card.dataset.ownerUid !== CURRENT_UID) return; // 自分のカード以外は不可
         const rect = field.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
         const mouseY = (e.clientY - rect.top - panOffsetY) / zoom;
@@ -532,7 +536,6 @@
 
     function getMaxZIndex(){ let max=0; document.querySelectorAll(".card").forEach(c=>{ const z=parseInt(c.style.zIndex)||0; if(z>max) max=z; }); return max; }
 
-    // 一括表裏：自分のカードのみ対象
     window.faceDownAll = async function(){
       for(const [id, el] of cardDomMap){
         if (el.dataset.ownerUid !== CURRENT_UID) continue;
@@ -547,7 +550,6 @@
       }
     }
 
-    // 表示調整（同期しない）
     window.toggleFieldSizeOptions = function(){ fieldSizeOptions.style.display = fieldSizeOptions.style.display==="none"?"block":"none"; }
     window.setFieldSize = function(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
     window.alignDecks = function(){ /* 表示のみ */ }
@@ -559,7 +561,14 @@
       field.addEventListener("click", () => { if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; } });
     }
 
-    function initializePlayField(){ setFieldSize('small'); bindUploadHandlers(); bindPanZoomHandlers(); }
+    function initializePlayField(){
+      setFieldSize('small');
+      if (!handlersBound) {
+        bindUploadHandlers();
+        bindPanZoomHandlers();
+        handlersBound = true;
+      }
+    }
   </script>
 </body>
 </html>
