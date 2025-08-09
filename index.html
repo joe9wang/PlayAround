@@ -692,13 +692,30 @@ seatButtons.forEach(btn => {
       joinRoomInput.focus();
     });
 
-    startBtn.addEventListener('click', async () => {
-      const room = (joinRoomInput.value||'').trim();
-      if(!room || !CURRENT_PLAYER || !CURRENT_UID) return;
-      const ok = await claimSeat(room, CURRENT_PLAYER);
-      if(!ok){ alert('開始直前に座席が埋まりました'); return; }
-      startSession(room, CURRENT_PLAYER);
-    });
+
+   startBtn.addEventListener('click', async () => {
+  const room = (joinRoomInput.value||'').trim();
+  if(!room || !CURRENT_PLAYER || !CURRENT_UID) return;
+
+  const ok = await claimSeat(room, CURRENT_PLAYER);
+  if(!ok){ alert('開始直前に座席が埋まりました'); return; }
+
+  // ★ 即時ローカル反映（スナップショット前でもラベルに名前が出る）
+  const seat = CURRENT_PLAYER;
+  const nameNow  = (playerNameInput.value || '').trim();
+  const colorNow = playerColorInput.value || '#22aaff';
+  currentSeatMap[seat] = {
+    claimedByUid: CURRENT_UID,
+    displayName: nameNow,
+    color: colorNow,
+    // heartbeatAt 等はサーバ側で付与されるので省略OK
+  };
+  renderSeatAvailability(); // ← 内部で renderFieldLabels() も呼ばれる
+
+  // ★ そのまま開始（startSessionの中でloadSeatStatusを必ず張り直す）
+  startSession(room, seat);
+});
+
 
     async function claimSeat(roomId, seat){
       const seatRef = doc(db, `rooms/${roomId}/seats/${seat}`);
@@ -761,14 +778,9 @@ seatButtons.forEach(btn => {
       lobby.style.display = 'none';
       startHeartbeat(roomId, playerId);
 
-      // ★ 念のため：開始直後にも seat/room を購読してラベル反映を安定化
-      if (joinRoomInput.value.trim() !== CURRENT_ROOM) {
-        joinRoomInput.value = CURRENT_ROOM;
-        loadSeatStatus();
-      } else {
-        // 既に購読済みでも最新を描画
-        renderFieldLabels();
-      }
+      // ★ 開始直後は必ず seat/room の購読を張り直す（ラベル確実反映）
+      joinRoomInput.value = CURRENT_ROOM;
+      loadSeatStatus();
 
       window.addEventListener('beforeunload', () => { stopHeartbeat(); releaseSeat(roomId, playerId); });
       initializePlayField();
