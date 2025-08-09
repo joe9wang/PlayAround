@@ -511,6 +511,16 @@ createRoomBtn.addEventListener('click', async () => {
       alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`);
       return;
     }
+    
+      // ホストの座席番号を記録
+      await setDoc(doc(db, `rooms/${id}`), {
+        hostSeat: CREATE_SELECTED_SEAT,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    
+    
+    
+    
 
     // ★★ 楽観更新：自分の座席の表示名も即ローカル反映
     currentSeatMap[CREATE_SELECTED_SEAT] = {
@@ -563,13 +573,8 @@ function renderSeatAvailability(){
     const occupied = !!(data && !isSeatStale(data) && data.claimedByUid);
 
     if (occupied) {
-      const isHostSeat = !!(
-        CURRENT_ROOM_META?.hostUid &&
-        data.claimedByUid === CURRENT_ROOM_META.hostUid
-      );
-      note.textContent = isHostSeat
-        ? `${data.displayName || ''}（ホスト）`
-        : (data.displayName || '');
+      const isHostSeat = (CURRENT_ROOM_META?.hostSeat === seat);
+      note.textContent = (data.displayName || '') + (isHostSeat ? '（ホスト）' : '');
       note.style.color = '#000';
     } else {
       note.textContent = '空き';
@@ -592,9 +597,6 @@ function renderSeatAvailability(){
 
 // ★ ラベル描画：ホスト表記は hostUid の座席だけに付与（非ホスト席は出さない）
 function renderFieldLabels(){
-  const hostUid = (CURRENT_ROOM_META && typeof CURRENT_ROOM_META.hostUid === 'string')
-    ? CURRENT_ROOM_META.hostUid
-    : null;
 
   for (const s of [1,2,3,4]) {
     const area   = document.querySelector(`.player-${s}`);
@@ -607,7 +609,8 @@ function renderFieldLabels(){
     const seatData = currentSeatMap[s] || null;
     const displayName = seatData?.displayName || '';
 
-    const isHostSeat = !!(hostUid && seatData?.claimedByUid === hostUid);
+    const isHostSeat = (CURRENT_ROOM_META?.hostSeat === s);
+
 
     // 非ホスト席は「P{n} 名前」だけ／ホスト席だけ（ホスト）を付ける
     nameEl.textContent = displayName
@@ -750,6 +753,17 @@ startBtn.addEventListener('click', async (ev) => {
       alert('開始直前に座席が埋まりました。別の席を選んでください。');
       return;
     }
+    
+    
+    // 自分がホスト本人なら、今座った席をホスト席として記録
+    if (CURRENT_ROOM_META?.hostUid && CURRENT_ROOM_META.hostUid === CURRENT_UID) {
+      await setDoc(doc(db, `rooms/${room}`), {
+          hostSeat: seat,
+          updatedAt: serverTimestamp()
+      }, { merge: true });
+    }
+    
+    
 
     // 楽観反映（スナップショット前でもラベルに名前を出す）
     currentSeatMap[seat] = {
