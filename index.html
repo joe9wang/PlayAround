@@ -134,6 +134,12 @@
     <input id="new-room-title" type="text" class="field" placeholder="タイトル（任意）" />
     <button id="create-room-btn" class="btn">作成</button>
   </div>
+  
+  <!-- 作成者のプレイヤー名 -->
+  <div class="row" style="margin-bottom:12px;">
+    <input id="new-player-name" type="text" class="field" placeholder="作成者のプレイヤー名（例: Alice）" />
+  </div>
+  
 
   <!-- 公開/非公開 選択 -->
   <label class="lobby-label">公開設定</label>
@@ -296,6 +302,8 @@
 
     const newRoomIdInput = document.getElementById('new-room-id');
     const newRoomTitleInput = document.getElementById('new-room-title');
+    const newPlayerNameInput = document.getElementById('new-player-name');
+    
     const createRoomBtn = document.getElementById('create-room-btn');
     const roomListDiv = document.getElementById('room-list');
     
@@ -311,6 +319,8 @@ createSeatButtons.forEach(btn => {
 });
 
     let CURRENT_ROOM = null;
+    let CURRENT_ROOM_META = null;
+    let unsubscribeRoomDoc = null;
     let CURRENT_PLAYER = null; // 1..4
     let CURRENT_UID = null;
 
@@ -450,17 +460,25 @@ function subscribeRoomList(){
 
   const title = (newRoomTitleInput.value||'').trim();
   const isPublic = document.getElementById('room-public').checked; // true=公開, false=非公開
+  const creatorName = (newPlayerNameInput.value || '').trim();
 
   try{
-    // ルーム作成（公開/非公開を保存）
+    // ルーム作成（公開/非公開 + ホスト情報を保存）
     await setDoc(doc(db, `rooms/${id}`), {
       title: title || null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      public: !!isPublic
+      public: !!isPublic,
+      hostUid: CURRENT_UID || null,
+      hostDisplayName: creatorName || null
     }, { merge: true });
 
-    // 画面左の参加フォームへ反映して座席状況を読み込み
+    // 左側の参加フォームにも名前を反映（claimSeat がこれを読むため）
+    if (creatorName) {
+      playerNameInput.value = creatorName;
+    }
+
+    // 入力したIDで座席状況を読み込み
     joinRoomInput.value = id;
     loadSeatStatus();
 
@@ -479,7 +497,6 @@ function subscribeRoomList(){
       seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
       startSession(id, CREATE_SELECTED_SEAT);
     } else {
-      // 座席未選択なら作成だけ（のちほど左側で座席を選んで開始）
       alert('ルームを作成しました。座席を選んで「開始」を押してください。');
     }
 
@@ -519,13 +536,49 @@ joinRoomInput.addEventListener('keydown', (e) => {
         note.textContent = taken ? (data.displayName ? `${data.displayName}` : '使用中') : (mine ? 'あなた' : '空席');
         btn.classList.toggle('active', CURRENT_PLAYER === seat);
       });
+      renderFieldLabels();
       validateLobby();
     }
+    
+    
+    function renderFieldLabels(){
+  // 各プレイヤー領域のラベルに displayName を挿入し、ホストなら（ホスト）を付ける
+  for (const s of [1,2,3,4]) {
+    const area = document.querySelector(`.player-${s}`);
+    if (!area) continue;
+
+    const nameEl = area.querySelector('.player-label .label-name');
+    if (!nameEl) continue;
+
+    const data = currentSeatMap[s];
+    const name = (data && data.displayName) ? data.displayName : '';
+    const isHost = !!(CURRENT_ROOM_META && CURRENT_ROOM_META.hostUid && data && CURRENT_ROOM_META.hostUid === data.claimedByUid);
+
+    nameEl.textContent = name ? (isHost ? `${name}（ホスト）` : name) : '';
+  }
+}
+    
+    
 
     function detachSeatsListener(){ if(unsubscribeSeats){ unsubscribeSeats(); unsubscribeSeats = null; } }
 
     function loadSeatStatus(){
       detachSeatsListener();
+      
+      if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
+      const roomId = (joinRoomInput.value||'').trim();
+      if(!roomId){ 
+        CURRENT_ROOM_META = null; 
+        renderSeatAvailability();
+        return; 
+      }
+      
+      // ルームdoc購読（ホスト情報など）
+      unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
+        CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
+        renderFieldLabels(); // ホスト表記更新
+      });
+      
       const roomId = (joinRoomInput.value||'').trim();
       if(!roomId){ renderSeatAvailability(); return; }
       setDoc(doc(db, `rooms/${roomId}`), { updatedAt: serverTimestamp() }, { merge: true }).catch(()=>{});
