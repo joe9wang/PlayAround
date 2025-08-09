@@ -287,7 +287,8 @@
     const joinRoomInput = document.getElementById('join-room-id');
     const playerNameInput = document.getElementById('player-name');
     const playerColorInput = document.getElementById('player-color');
-    const seatButtons = Array.from(document.querySelectorAll('.seat-btn'));
+    // 左の「既存ルームに参加（非ホスト）」の座席ボタンだけを拾う
+    const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
     const startBtn = document.getElementById('start-btn');
     const clearBtn = document.getElementById('clear-btn');
     const sessionIndicator = document.getElementById('session-indicator');
@@ -715,32 +716,37 @@ startBtn.addEventListener('click', async (ev) => {
   ev.preventDefault();
   ACTIVE_MODE = 'join';
 
-  // まずは必ず認証を完了させる（ここが無いと UID 未確定で無言リターンになりがち）
+  // 認証が確定するまで待機（UID未確定で無言returnにならないように）
   await ensureAuthReady();
+  if (!CURRENT_UID) {
+    alert('認証の初期化に時間がかかっています。数秒後に再度お試しください。');
+    return;
+  }
 
-  const room = (joinRoomInput.value || '').trim();
-  const seat = CURRENT_PLAYER;
-  const nameNow  = (playerNameInput.value || '').trim();
+  const room    = (joinRoomInput.value || '').trim();
+  const seat    = CURRENT_PLAYER;
+  const nameNow = (playerNameInput.value || '').trim();
   const colorNow = playerColorInput.value || '#22aaff';
 
-  // 入力バリデーション（失敗時は理由を明示）
-  if (!room) { alert('ルームIDを入力してください'); return; }
+  // 明示的なバリデーション
+  if (!room)  { alert('ルームIDを入力してください'); return; }
   if (!nameNow) { alert('プレイヤー名を入力してください'); return; }
-  if (!seat) { alert('座席を選択してください'); return; }
+  if (!seat)  { alert('座席を選択してください'); return; }
 
   // 二重押しガード
+  const oldText = startBtn.textContent;
   startBtn.disabled = true;
   startBtn.textContent = '開始中…';
 
   try {
-    // 空席かどうかは claimSeat のトランザクションが厳密判定
+    // 空席かどうかはトランザクションで厳密判定
     const ok = await claimSeat(room, seat);
     if (!ok) {
       alert('開始直前に座席が埋まりました。別の席を選んでください。');
       return;
     }
 
-    // 楽観反映：スナップショット到着前でもラベルに自分の名前を出す
+    // 楽観反映（スナップショット前でもラベルに名前を出す）
     currentSeatMap[seat] = {
       ...(currentSeatMap[seat] || {}),
       claimedByUid: CURRENT_UID,
@@ -749,15 +755,15 @@ startBtn.addEventListener('click', async (ev) => {
     };
     renderSeatAvailability();
 
-    // ゲーム開始（ロビーを閉じるのは startSession 内）
+    // ゲーム開始（ロビーは startSession 内で閉じる）
     startSession(room, seat);
   } catch (e) {
     console.error(e);
-    alert('開始に失敗しました。ネットワークを確認して再度お試しください。');
+    alert('開始に失敗しました。ネットワーク状態を確認してもう一度お試しください。');
   } finally {
-    // 成功時はロビーが閉じるので見えないが、失敗時のために戻しておく
+    // 成功時はロビーが閉じるので見えませんが、失敗時のために戻す
     startBtn.disabled = false;
-    startBtn.textContent = '開始';
+    startBtn.textContent = oldText;
   }
 });
 
