@@ -329,9 +329,26 @@
     
     function isHostAlive(roomMeta){
       if(!roomMeta?.hostUid) return false;
-      const t = roomMeta.hostHeartbeatAt?.toMillis?.() ?? 0;
-      return (Date.now() - t) < HOST_STALE_MS;
-    }
+ const now = Date.now();
+ const t = roomMeta.hostHeartbeatAt?.toMillis?.() ?? 0;
+ if (now - t < HOST_STALE_MS) return true;
+
+ // フォールバック1: ホスト席の heartbeat
+ const hostSeat = roomMeta.hostSeat;
+ if (hostSeat) {
+   const d = currentSeatMap[hostSeat];
+   const hb = d?.heartbeatAt?.toMillis?.();
+   if (hb && (now - hb) < SEAT_STALE_MS) return true;
+ }
+
+ // フォールバック2: どの席でも hostUid が握っていれば OK
+ for (const s of [1,2,3,4]) {
+   const d = currentSeatMap[s];
+   const hb = d?.heartbeatAt?.toMillis?.();
+   if (d?.claimedByUid === roomMeta.hostUid && hb && (now - hb) < SEAT_STALE_MS) return true;
+ }
+ return false;    
+ }
     
     
     
@@ -541,6 +558,8 @@ createRoomBtn.addEventListener('click', async () => {
     }, { merge: true });
     
     IS_ROOM_CREATOR = true; // ここで「このタブは作成者」と確定
+    startHostHeartbeat(id); // ← ロビーにいる間もホストHBを打つ
+
 
 
     // ★★ 楽観更新：購読(onSnapshot)を待たずにローカルへ即反映
@@ -614,7 +633,7 @@ createRoomBtn.addEventListener('click', async () => {
     function isSeatStale(data){
       if(!data || !data.heartbeatAt) return true;
       const hb = data.heartbeatAt?.toMillis ? data.heartbeatAt.toMillis() : 0;
-      return (Date.now() - hb) > 60000;
+      return (Date.now() - hb) > SEAT_STALE_MS;
     }
 
 function renderSeatAvailability(){
@@ -705,6 +724,7 @@ function renderFieldLabels(){
       unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
         CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
         IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+        if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
         renderFieldLabels(); // ★ ホスト情報到着時にも更新
         startHostWatch();        // メタが入手できたら監視開始
         
