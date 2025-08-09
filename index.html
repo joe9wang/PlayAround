@@ -2,15 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>プレイアラウンド v18（ロビー + カード操作同期）</title>
+  <title>プレイアラウンド v19（オーナー紐づけ + 自分だけ操作）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    /* =====================================================
-     *  スタイル（UIレイアウト）
-     *  - 本質的なロジックは <script type="module"> 内
-     *  - 左：操作パネル、中央：フィールド、右：プレビュー
-     *  - 上：ヘッダー、最上面：ロビー（モーダル）
-     * ===================================================== */
     :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif; margin:0; background:#eee; overflow:hidden; }
     h1 { background:#444; color:#fff; padding:1em; text-align:center; margin:0; height:var(--header-h); box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:1rem; position:relative; }
@@ -30,12 +24,12 @@
     .deck-area{ width:33.33%; background:#f90; } .main-play-area{ width:66.66%; background:#2d8; }
     .hand-area{ position:relative; bottom:0; left:0; width:100%; height:33.33%; background:#228be6; z-index:0; }
     .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; }
+    .card[data-owner="other"]{ cursor:not-allowed; opacity:.95; }
     .card img{ width:100%; height:100%; border-radius:10px; object-fit:cover; pointer-events:none; user-select:none; }
     .card.selected{ border:3px solid red; }
     #preview{ width:var(--preview-w); height:calc(100vh - var(--header-h) - 120px); float:right; background:#fff; border-left:2px solid #aaa; box-shadow:-2px 0 5px rgba(0,0,0,.2); padding:10px; box-sizing:border-box; }
     #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; } #preview-img{ width:100%; height:auto; border-radius:10px; display:none; }
 
-    /* ロビー（初期の部屋選択 + 座席選択 + ルーム一覧） */
     #lobby{ position:fixed; inset:0; background:rgba(0,0,0,.58); display:flex; align-items:center; justify-content:center; z-index:9999; }
     .lobby-card{ width:min(820px, 96vw); background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:18px; box-sizing:border-box; }
     .lobby-grid{ display:grid; grid-template-columns: 1.15fr 1fr; gap:14px; }
@@ -60,27 +54,15 @@
   </style>
 </head>
 <body>
-  <!-- =====================================================
-       画面ヘッダー（現在のルーム/プレイヤー表示）
-       - ログイン後に startSession で値を更新
-  ====================================================== -->
   <h1>
     画像で遊べるカードデッキゲーム（4人用）
     <span id="session-indicator">ROOM: - / PLAYER: -</span>
   </h1>
 
-  <!-- =====================================================
-       ロビー（モーダル）
-       - 参加するルームID入力
-       - プレイヤー名/色 指定
-       - 座席選択（P1〜P4）
-       - 右側で ルーム作成 / ルーム一覧
-  ====================================================== -->
   <div id="lobby" aria-modal="true" role="dialog">
     <div class="lobby-card">
       <div class="lobby-title">プレイアラウンドへようこそ</div>
       <div class="lobby-grid">
-        <!-- 左：参加/座席 -->
         <section class="lobby-section">
           <label class="lobby-label">参加するルームID</label>
           <div class="row" style="margin-bottom:8px;">
@@ -108,7 +90,6 @@
           </div>
         </section>
 
-        <!-- 右：ルーム新規作成 & 一覧 -->
         <section class="lobby-section">
           <label class="lobby-label">新しいルームを作成</label>
           <div class="row" style="margin-bottom:8px;">
@@ -126,24 +107,17 @@
     </div>
   </div>
 
-  <!-- =====================================================
-       上部：アップロードエリア
-       - クリック/ドラッグ&ドロップで画像ファイルを投入
-       - 画像は v18 では Data URL として Firestore に保存（体験用）
-  ====================================================== -->
   <div id="upload-area">
     📥 カード画像をクリック or ドラッグ＆ドロップで追加
     <input type="file" id="file-input" multiple accept="image/*" />
   </div>
 
-  <!-- 左：操作パネル / 中央：フィールド / 右：プレビュー -->
   <div id="sidebar">
     <h2>操作パネル</h2>
-    <!-- ★注意: v18現状は全カードに作用します。自分のカード限定にしたい場合はJS側で ownerUid チェックを追加してください。 -->
-    <button onclick="faceDownAll()">🂠 裏返す（自分のカード）</button>
-    <button onclick="faceUpAll()">🂡 表にする（自分のカード）</button>
-    <button onclick="shuffleDecks()">🌀 シャッフル（P1のみ・表示上のみ）</button>
-    <button onclick="alignDecks()">📏 整列（表示上のみ）</button>
+    <button onclick="faceDownAll()">🂠 裏返す（自分のカードのみ）</button>
+    <button onclick="faceUpAll()">🂡 表にする（自分のカードのみ）</button>
+    <button onclick="shuffleDecks()">🌀 シャッフル（表示のみ）</button>
+    <button onclick="alignDecks()">📏 整列（表示のみ）</button>
 
     <button onclick="toggleFieldSizeOptions()">🖼 フィールドサイズ変更</button>
     <div id="field-size-options">
@@ -153,10 +127,8 @@
     </div>
   </div>
 
-  <!-- カードの描画フィールド（ズーム/パン対応） -->
   <div id="container">
     <div id="field">
-      <!-- 4象限にプレイヤー領域を描画（UIの目安・機能的制約はまだない） -->
       <div class="player-area player-1">
         <div class="play-area">
           <div class="deck-area"></div>
@@ -188,7 +160,6 @@
     </div>
   </div>
 
-  <!-- 右：プレビュー（選択中カードの画像を表示） -->
   <div id="preview">
     <h2>選択中のカード</h2>
     <img id="preview-img" src="" alt="プレビュー画像" />
@@ -196,16 +167,10 @@
 
   <div id="spacer"></div>
 
-  <!-- =====================================================
-       アプリ本体（ES ModuleでFirebaseを利用）
-       - 匿名Authで uid を取得
-       - Firestore で rooms/{roomId} 配下の seats/cards を使用
-  ====================================================== -->
   <script type="module">
-    /* ---------------------- Firebase 初期化 ---------------------- */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, query, orderBy, limit, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, query, orderBy, limit, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
     // ★あなたの Firebase プロジェクト設定に差し替え済み
     const firebaseConfig = {
@@ -216,12 +181,10 @@
       messagingSenderId: "248859224605",
       appId: "1:248859224605:web:1320093856bc1861c174f4"
     };
-
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    /* ---------------------- ロビーUI 参照 ---------------------- */
     const lobby = document.getElementById('lobby');
     const joinRoomInput = document.getElementById('join-room-id');
     const joinRoomLoadBtn = document.getElementById('join-room-load');
@@ -237,23 +200,13 @@
     const createRoomBtn = document.getElementById('create-room-btn');
     const roomListDiv = document.getElementById('room-list');
 
-    /* ---------------------- セッション状態 ----------------------
-       - CURRENT_ROOM: 文字列 例 "room-alpha"
-       - CURRENT_PLAYER: 1..4（どの座席か）
-       - CURRENT_UID: Firebase Auth の匿名ユーザーID
-    ------------------------------------------------------------ */
-    let CURRENT_ROOM = null; // string
+    let CURRENT_ROOM = null;
     let CURRENT_PLAYER = null; // 1..4
-    let CURRENT_UID = null; // auth.uid
+    let CURRENT_UID = null;
 
-    // 匿名サインイン → uid が取れたら onAuthStateChanged でセット
     signInAnonymously(auth).catch(console.error);
-    onAuthStateChanged(auth, (user) => { if(user){ CURRENT_UID = user.uid; } });
+    onAuthStateChanged(auth, (user) => { if(user){ CURRENT_UID = user.uid; }});
 
-    /* ---------------------- ルーム一覧購読 ----------------------
-       - rooms コレクションを updatedAt 降順で最大50件購読
-       - 参加ボタンで joinRoomInput に反映
-    ------------------------------------------------------------ */
     function subscribeRoomList(){
       const qRooms = query(collection(db, 'rooms'), orderBy('updatedAt', 'desc'), limit(50));
       onSnapshot(qRooms, snap => {
@@ -272,10 +225,6 @@
     }
     subscribeRoomList();
 
-    /* ---------------------- ルーム作成 ----------------------
-       - rooms/{roomId} を作成/更新
-       - 作成後は左側の参加欄にIDを反映して座席状態を購読
-    ------------------------------------------------------------ */
     createRoomBtn.addEventListener('click', async () => {
       const id = (newRoomIdInput.value||'').trim(); if(!id){ alert('ルームIDを入力してください'); return; }
       const title = (newRoomTitleInput.value||'').trim();
@@ -285,11 +234,6 @@
       }catch(e){ console.error(e); alert('ルーム作成に失敗しました'); }
     });
 
-    /* ---------------------- 座席の購読/表示 ----------------------
-       - rooms/{roomId}/seats/{1..4}
-       - heartbeatAt が60秒以上古い＝陳腐化（空席扱い）
-       - taken: 他人が使用中  / mine: 自分が使用中
-    ------------------------------------------------------------ */
     let unsubscribeSeats = null;
     joinRoomLoadBtn.addEventListener('click', loadSeatStatus);
     joinRoomInput.addEventListener('change', loadSeatStatus);
@@ -310,7 +254,6 @@
         const mine  = data && !isSeatStale(data) && data.claimedByUid === CURRENT_UID;
         btn.disabled = taken;
         note.textContent = taken ? (data.displayName ? `${data.displayName}` : '使用中') : (mine ? 'あなた' : '空席');
-        btn.style.borderColor = data && data.color ? data.color : '#bbb';
         btn.classList.toggle('active', CURRENT_PLAYER === seat);
       });
       validateLobby();
@@ -322,7 +265,6 @@
       detachSeatsListener();
       const roomId = (joinRoomInput.value||'').trim();
       if(!roomId){ renderSeatAvailability(); return; }
-      // rooms/{roomId} の updatedAt を軽く更新（一覧の並び替え維持）
       setDoc(doc(db, `rooms/${roomId}`), { updatedAt: serverTimestamp() }, { merge: true }).catch(()=>{});
       const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
@@ -339,7 +281,6 @@
       startBtn.disabled = !(roomOk && seatOk && nameOk);
     }
 
-    // 座席確保（トランザクションで空席のみ取る）
     seatButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
         const seat = parseInt(btn.dataset.seat, 10);
@@ -390,29 +331,21 @@
       }catch(e){ console.error('claimSeat error', e); return false; }
     }
 
-    // 退室時の座席開放（best-effort）
     async function releaseSeat(roomId, seat){
       try{ await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`)); }catch(e){ console.warn('releaseSeat error', e); }
     }
 
-    // ハートビート（10秒毎）で生存通知 / 60秒以上更新なしは陳腐化
     let heartbeatTimer = null;
     function startHeartbeat(roomId, seat){
       stopHeartbeat();
       heartbeatTimer = setInterval(async () => {
-        try{
-          await setDoc(doc(db, `rooms/${roomId}/seats/${seat}`), { claimedByUid: CURRENT_UID, heartbeatAt: serverTimestamp() }, { merge: true });
-        }catch(e){ console.warn('heartbeat failed', e); }
+        try{ await setDoc(doc(db, `rooms/${roomId}/seats/${seat}`), { claimedByUid: CURRENT_UID, heartbeatAt: serverTimestamp() }, { merge: true }); }
+        catch(e){ console.warn('heartbeat failed', e); }
       }, 10000);
     }
     function stopHeartbeat(){ if(heartbeatTimer){ clearInterval(heartbeatTimer); heartbeatTimer = null; } }
 
-    /* =====================================================
-       カード同期関連
-       - コレクション: rooms/{roomId}/cards/{cardId}
-       - フィールド: { x, y, zIndex, faceUp, imageUrl, ownerUid, createdAt, updatedAt }
-       - Data URL保存は体験用。将来的には Firebase Storage を推奨
-    ====================================================== */
+    /* ===================== カード同期（オーナー制御） ===================== */
     const field = document.getElementById("field");
     const previewImg = document.getElementById("preview-img");
     const uploadArea = document.getElementById("upload-area");
@@ -421,14 +354,11 @@
 
     let zoom = 1, panOffsetX = 0, panOffsetY = 0, selectedCard = null;
 
-    // cardId -> DOM 要素
     const cardDomMap = new Map();
-    // 自分が原因の変更を onSnapshot で二重適用しないためのフラグ
     const localChangeSet = new Set();
 
     let unsubscribeCards = null;
 
-    // ゲーム開始：ロビー閉じて購読開始
     function startSession(roomId, playerId){
       CURRENT_ROOM = roomId; CURRENT_PLAYER = playerId;
       sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: P${CURRENT_PLAYER}`;
@@ -439,7 +369,6 @@
       subscribeCards();
     }
 
-    // カード購読（差分反映）
     function subscribeCards(){
       if(unsubscribeCards){ unsubscribeCards(); unsubscribeCards = null; }
       const qCards = collection(db, `rooms/${CURRENT_ROOM}/cards`);
@@ -451,15 +380,12 @@
             const el = cardDomMap.get(id); if(el){ el.remove(); cardDomMap.delete(id); }
             return;
           }
-          // 追加 or 変更
           upsertCardFromRemote(id, data);
         });
       });
     }
 
-    // サーバーからの変更を DOM に反映
     function upsertCardFromRemote(id, data){
-      // 自分が直前に変更したものはスキップ（ローカルに反映済み）
       if(localChangeSet.has(id)) return;
       let el = cardDomMap.get(id);
       if(!el){
@@ -470,27 +396,27 @@
       applyCardState(el, data);
     }
 
-    // 1枚のカードDOMを生成（イベント付与）
     function createCardDom(cardId, imageSrc, state){
       const card = document.createElement("div");
       card.className = "card";
       card.dataset.cardId = cardId;
-      // TODO: 自分のカードのみ操作可にしたい場合 → ownerUid を dataset に保持し、各操作で CURRENT_UID と比較
+      // ★オーナーUIDをDOMに保持（自分のカード判定用）
+      card.dataset.ownerUid = state?.ownerUid || '';
 
       const img = document.createElement("img");
       img.src = imageSrc; card.appendChild(img);
 
       makeDraggable(card);
 
-      // 右クリックで表裏反転（faceUpトグル）
+      // 右クリックで表裏反転（自分のカードのみ）
       card.addEventListener("contextmenu", async e => {
         e.preventDefault();
-        // TODO: 自分のカード限定にするなら ownerUid チェックを追加
+        if (card.dataset.ownerUid !== CURRENT_UID) return; // 他人のカードは無視
         const faceUp = !(card.dataset.faceUp === 'true');
-        await updateCard(cardId, { faceUp });
+        await updateCard(cardId, { faceUp, updatedAt: serverTimestamp() });
       });
 
-      // 左クリックで選択 & プレビュー更新
+      // 左クリックで選択 & プレビュー
       card.addEventListener("click", e => {
         e.stopPropagation();
         if (selectedCard) selectedCard.classList.remove("selected");
@@ -504,8 +430,12 @@
       return card;
     }
 
-    // Firestoreのカード状態をDOMへ適用
     function applyCardState(card, data){
+      // DOMにもオーナーUIDを反映
+      card.dataset.ownerUid = data.ownerUid || '';
+      // 見た目のヒントとして他人カードに cursor:not-allowed を付与
+      card.setAttribute('data-owner', (data.ownerUid && data.ownerUid !== CURRENT_UID) ? 'other' : 'me');
+
       card.style.left = `${data.x||0}px`;
       card.style.top  = `${data.y||0}px`;
       card.style.zIndex = data.zIndex || 1;
@@ -518,20 +448,14 @@
       }
     }
 
-    // カード1枚の部分更新（更新元を localChangeSet に記録してエコーバック抑止）
     async function updateCard(cardId, patch){
       if(!CURRENT_ROOM) return;
       const ref = doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`);
       localChangeSet.add(cardId);
       try { await updateDoc(ref, patch); } catch(e){ console.error('updateCard', e); }
-      // 短時間で解除（被りを避けたいなら Map+timestamp にする）
-      setTimeout(() => localChangeSet.delete(cardId), 250);
+      setTimeout(() => localChangeSet.delete(cardId), 300);
     }
 
-    /* ---------------------- 画像アップロード → カード作成 ----------------------
-       - Data URL をそのまま imageUrl に保存（デモ用）
-       - 本番は Firebase Storage にアップロードしてダウンロードURLを保存推奨
-    ------------------------------------------------------------------------- */
     function bindUploadHandlers(){
       uploadArea.addEventListener("click", () => fileInput.click());
       uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.style.backgroundColor = "#eef"; });
@@ -545,7 +469,7 @@
         if(!file.type.startsWith("image/")) return;
         const reader = new FileReader();
         reader.onload = async e => {
-          const imageUrl = e.target.result; // Data URL（サイズに注意）
+          const imageUrl = e.target.result;
           await createCardRemote({ imageUrl });
         };
         reader.readAsDataURL(file);
@@ -560,26 +484,26 @@
           x: baseX, y: baseY, zIndex: 1,
           faceUp: true,
           imageUrl,
-          ownerUid: CURRENT_UID,
+          ownerUid: CURRENT_UID, // ★作成者を保存
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-        // 即時反映（ユーザー体感向上）
+        // 自分の画面には即時反映
         localChangeSet.add(ref.id);
-        const el = createCardDom(ref.id, imageUrl, { x:baseX, y:baseY, zIndex:1, faceUp:true });
+        const el = createCardDom(ref.id, imageUrl, { x:baseX, y:baseY, zIndex:1, faceUp:true, ownerUid: CURRENT_UID });
         cardDomMap.set(ref.id, el);
         field.appendChild(el);
-        applyCardState(el, { x:baseX, y:baseY, zIndex:1, faceUp:true, imageUrl });
-        setTimeout(()=>localChangeSet.delete(ref.id), 250);
+        applyCardState(el, { x:baseX, y:baseY, zIndex:1, faceUp:true, imageUrl, ownerUid: CURRENT_UID });
+        setTimeout(()=>localChangeSet.delete(ref.id), 300);
       }catch(e){ console.error('createCardRemote', e); }
     }
 
-    /* ---------------------- ドラッグで移動（mouseupで確定更新） ---------------------- */
     function makeDraggable(card){
       let offsetX=0, offsetY=0, isDragging=false;
       card.addEventListener("mousedown", e => {
         if(e.button!==0) return;
-        // TODO: 自分のカード限定なら ownerUid チェック
+        // 自分のカード以外はドラッグ不可
+        if (card.dataset.ownerUid !== CURRENT_UID) return;
         const rect = field.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
         const mouseY = (e.clientY - rect.top - panOffsetY) / zoom;
@@ -597,7 +521,6 @@
           isDragging = false; card.style.cursor = "grab";
           document.removeEventListener("mousemove", onMove);
           document.removeEventListener("mouseup", onUp);
-          // 位置確定を Firestore に反映
           const id = card.dataset.cardId;
           const x = parseFloat(card.style.left)||0; const y = parseFloat(card.style.top)||0; const zIndex = parseInt(card.style.zIndex)||1;
           await updateCard(id, { x, y, zIndex, updatedAt: serverTimestamp() });
@@ -609,38 +532,33 @@
 
     function getMaxZIndex(){ let max=0; document.querySelectorAll(".card").forEach(c=>{ const z=parseInt(c.style.zIndex)||0; if(z>max) max=z; }); return max; }
 
-    /* ---------------------- 操作パネル（表裏一括） ----------------------
-       - 現状は全カードに適用されます
-       - 自分のカードだけにしたい場合は ownerUid === CURRENT_UID の判定を追加
-    ----------------------------------------------------------------- */
+    // 一括表裏：自分のカードのみ対象
     window.faceDownAll = async function(){
       for(const [id, el] of cardDomMap){
-        // TODO: if (el.dataset.ownerUid !== CURRENT_UID) continue;
+        if (el.dataset.ownerUid !== CURRENT_UID) continue;
         await updateCard(id, { faceUp: false, updatedAt: serverTimestamp() });
       }
       previewImg.src = ""; previewImg.style.display = "none";
     }
     window.faceUpAll = async function(){
       for(const [id, el] of cardDomMap){
-        // TODO: if (el.dataset.ownerUid !== CURRENT_UID) continue;
+        if (el.dataset.ownerUid !== CURRENT_UID) continue;
         await updateCard(id, { faceUp: true, updatedAt: serverTimestamp() });
       }
     }
 
-    /* ---------------------- 表示調整（同期しない） ---------------------- */
+    // 表示調整（同期しない）
     window.toggleFieldSizeOptions = function(){ fieldSizeOptions.style.display = fieldSizeOptions.style.display==="none"?"block":"none"; }
     window.setFieldSize = function(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
-    window.alignDecks = function(){ /* 表示上のみ：同期しない */ }
-    window.shuffleDecks = function(){ /* 表示上のみ：同期しない */ }
+    window.alignDecks = function(){ /* 表示のみ */ }
+    window.shuffleDecks = function(){ /* 表示のみ */ }
 
-    /* ---------------------- パン/ズーム & 空クリックで選択解除 ---------------------- */
     function bindPanZoomHandlers(){
       field.addEventListener("wheel", e => { if(e.ctrlKey) return; e.preventDefault(); const rect=field.getBoundingClientRect(); const cx=e.clientX-rect.left; const cy=e.clientY-rect.top; const scale=0.1; const old=zoom; zoom += e.deltaY<0?scale:-scale; zoom = Math.max(0.3, Math.min(zoom, 3)); const sx=(cx - panOffsetX)/old; const sy=(cy - panOffsetY)/old; panOffsetX = cx - sx*zoom; panOffsetY = cy - sy*zoom; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }, {passive:false});
       field.addEventListener("mousedown", e => { if(e.target.closest(".card")) return; let panning=true; let sx=e.clientX, sy=e.clientY; const onMove=e2=>{ if(!panning) return; const dx=e2.clientX-sx; const dy=e2.clientY-sy; panOffsetX+=dx; panOffsetY+=dy; sx=e2.clientX; sy=e2.clientY; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }; const onUp=()=>{ panning=false; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); }; document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp); });
       field.addEventListener("click", () => { if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; } });
     }
 
-    // 初期化（ロビーから開始するためここではフィールドのみ準備）
     function initializePlayField(){ setFieldSize('small'); bindUploadHandlers(); bindPanZoomHandlers(); }
   </script>
 </body>
