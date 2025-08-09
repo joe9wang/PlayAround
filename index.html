@@ -199,6 +199,7 @@
     <button onclick="faceDownAll()">🂠 裏返す（自分のカードのみ）</button>
     <button onclick="faceUpAll()">🂡 表にする（自分のカードのみ）</button>
     <button onclick="shuffleDecks()">🌀 シャッフル（自分のデッキのみ）</button>
+    <button onclick="deleteMyCards()">🗑 全カード削除（自分のカードのみ）</button>
     <button onclick="alignDecks()">📏 整列（表示のみ）</button>
 
     <button onclick="toggleFieldSizeOptions()">🖼 フィールドサイズ変更</button>
@@ -1255,6 +1256,67 @@ startBtn.addEventListener('click', async (ev) => {
         await updateCard(id, { faceUp: true, updatedAt: serverTimestamp() });
       }
     }
+    
+    
+    window.deleteMyCards = async function(){
+  if (!CURRENT_ROOM || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください');
+    return;
+  }
+  if (!confirm('本当に自分の全カードを削除しますか？この操作は取り消せません。')) return;
+
+  try {
+    const cardsCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
+    const q = query(cardsCol, where('ownerUid', '==', CURRENT_UID));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      alert('削除対象のカードはありません');
+      return;
+    }
+
+    let batch = writeBatch(db);
+    let count = 0;
+    const removedIds = [];
+
+    for (const docSnap of snap.docs) {
+      batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${docSnap.id}`));
+      removedIds.push(docSnap.id);
+      if (++count >= 450) {         // Firestore バッチ上限対策
+        await batch.commit();
+        batch = writeBatch(db);
+        count = 0;
+      }
+    }
+    if (count > 0) await batch.commit();
+
+    // 楽観的にDOMからも削除（onSnapshotでも追随して消える）
+    removedIds.forEach(id => {
+      const el = cardDomMap.get(id);
+      if (el) { el.remove(); cardDomMap.delete(id); }
+    });
+
+    // プレビューもリセット
+    if (previewImg) { previewImg.src = ''; previewImg.style.display = 'none'; }
+    alert(`削除しました（${removedIds.length}枚）`);
+  } catch (e) {
+    console.error(e);
+    alert('削除に失敗しました。ネットワーク状況を確認して再度お試しください。');
+  }
+};
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     window.toggleFieldSizeOptions = function(){ fieldSizeOptions.style.display = fieldSizeOptions.style.display==="none"?"block":"none"; }
     window.setFieldSize = function(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
