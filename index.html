@@ -421,17 +421,22 @@ function randomPointInDeck(seat){
 
 
 function subscribeRoomList(){
-  // 公開ルームのみ表示
   const qRooms = query(
     collection(db, 'rooms'),
     where('public', '==', true),
-    orderBy('updatedAt', 'desc'),
     limit(50)
   );
 
   onSnapshot(qRooms, snap => {
+    // クライアント側で updatedAt 降順に並べ替え
+    const docs = snap.docs.slice().sort((a,b) => {
+      const au = a.data().updatedAt?.toMillis?.() ?? 0;
+      const bu = b.data().updatedAt?.toMillis?.() ?? 0;
+      return bu - au;
+    });
+
     roomListDiv.innerHTML = '';
-    snap.forEach(docSnap => {
+    docs.forEach(docSnap => {
       const data = docSnap.data() || {};
       const item = document.createElement('div'); item.className = 'room-item';
       const left = document.createElement('div');
@@ -562,33 +567,38 @@ joinRoomInput.addEventListener('keydown', (e) => {
 
     function detachSeatsListener(){ if(unsubscribeSeats){ unsubscribeSeats(); unsubscribeSeats = null; } }
 
+
+
     function loadSeatStatus(){
-      detachSeatsListener();
-      
-      if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
-      const roomId = (joinRoomInput.value||'').trim();
-      if(!roomId){ 
-        CURRENT_ROOM_META = null; 
-        renderSeatAvailability();
-        return; 
-      }
-      
-      // ルームdoc購読（ホスト情報など）
-      unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
-        CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
-        renderFieldLabels(); // ホスト表記更新
-      });
-      
-      const roomId = (joinRoomInput.value||'').trim();
-      if(!roomId){ renderSeatAvailability(); return; }
-      setDoc(doc(db, `rooms/${roomId}`), { updatedAt: serverTimestamp() }, { merge: true }).catch(()=>{});
-      const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
-      const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
-        currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
-        renderSeatAvailability();
-      }));
-      unsubscribeSeats = () => unsubs.forEach(fn => fn());
-    }
+  detachSeatsListener();
+
+  if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
+  const roomId = (joinRoomInput.value||'').trim();
+  if(!roomId){ 
+    CURRENT_ROOM_META = null; 
+    renderSeatAvailability();
+    return; 
+  }
+
+  // ルームdoc購読（ホスト情報など）
+  unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
+    CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
+    renderFieldLabels(); // ホスト表記更新
+  });
+
+  // ルームの更新時刻だけ軽く更新（存在しなくてもOK）
+  setDoc(doc(db, `rooms/${roomId}`), { updatedAt: serverTimestamp() }, { merge: true }).catch(()=>{});
+
+  // 座席doc購読
+  const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
+  const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
+    currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
+    renderSeatAvailability();
+  }));
+  unsubscribeSeats = () => unsubs.forEach(fn => fn());
+}
+
+
 
     function validateLobby(){
       const roomOk = !!(joinRoomInput.value||'').trim();
