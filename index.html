@@ -125,19 +125,42 @@
           </div>
         </section>
 
-        <section class="lobby-section">
-          <label class="lobby-label">新しいルームを作成</label>
-          <div class="row" style="margin-bottom:8px;">
-            <input id="new-room-id" type="text" class="field" placeholder="作成するID（例: room-xyz）" />
-          </div>
-          <div class="row" style="margin-bottom:12px;">
-            <input id="new-room-title" type="text" class="field" placeholder="タイトル（任意）" />
-            <button id="create-room-btn" class="btn">作成</button>
-          </div>
+<section class="lobby-section">
+  <label class="lobby-label">新しいルームを作成</label>
+  <div class="row" style="margin-bottom:8px;">
+    <input id="new-room-id" type="text" class="field" placeholder="作成するID（例: room-xyz）" />
+  </div>
+  <div class="row" style="margin-bottom:12px;">
+    <input id="new-room-title" type="text" class="field" placeholder="タイトル（任意）" />
+    <button id="create-room-btn" class="btn">作成</button>
+  </div>
 
-          <label class="lobby-label">公開ルーム一覧（新しい順）</label>
-          <div id="room-list" class="room-list"></div>
-        </section>
+  <!-- 公開/非公開 選択 -->
+  <label class="lobby-label">公開設定</label>
+  <div class="row" style="gap:12px; margin-bottom:12px;">
+    <label class="row" style="gap:6px; align-items:center;">
+      <input type="radio" name="room-visibility" id="room-public" value="public" checked />
+      <span>公開</span>
+    </label>
+    <label class="row" style="gap:6px; align-items:center;">
+      <input type="radio" name="room-visibility" id="room-private" value="private" />
+      <span>非公開</span>
+    </label>
+  </div>
+
+  <!-- 作成後に参加する座席選択 -->
+  <label class="lobby-label">作成後に参加する座席</label>
+  <div class="seat-grid" id="create-seat-grid">
+    <button class="seat-btn" data-create-seat="1">P1</button>
+    <button class="seat-btn" data-create-seat="2">P2</button>
+    <button class="seat-btn" data-create-seat="3">P3</button>
+    <button class="seat-btn" data-create-seat="4">P4</button>
+  </div>
+
+  <label class="lobby-label" style="margin-top:10px;">公開ルーム一覧（新しい順）</label>
+  <div id="room-list" class="room-list"></div>
+</section>
+
       </div>
     </div>
   </div>
@@ -245,7 +268,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, query, orderBy, limit, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, query, orderBy, limit, addDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
     // ★あなたの Firebase プロジェクト設定に差し替え済み
     const firebaseConfig = {
@@ -275,6 +298,17 @@
     const newRoomTitleInput = document.getElementById('new-room-title');
     const createRoomBtn = document.getElementById('create-room-btn');
     const roomListDiv = document.getElementById('room-list');
+    
+    // ルーム作成時の座席選択UI
+const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
+let CREATE_SELECTED_SEAT = null;
+
+createSeatButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    CREATE_SELECTED_SEAT = parseInt(btn.dataset.createSeat, 10);
+    createSeatButtons.forEach(b => b.classList.toggle('active', b === btn));
+  });
+});
 
     let CURRENT_ROOM = null;
     let CURRENT_PLAYER = null; // 1..4
@@ -376,35 +410,93 @@ function randomPointInDeck(seat){
 }
 
 
-    function subscribeRoomList(){
-      const qRooms = query(collection(db, 'rooms'), orderBy('updatedAt', 'desc'), limit(50));
-      onSnapshot(qRooms, snap => {
-        roomListDiv.innerHTML = '';
-        snap.forEach(docSnap => {
-          const data = docSnap.data() || {};
-          const item = document.createElement('div'); item.className = 'room-item';
-          const left = document.createElement('div'); left.innerHTML = `<div class="room-id">${docSnap.id}</div><div style="font-size:12px; color:#555;">${(data.title||'（無題）')}</div>`;
-          const right = document.createElement('div');
-          const btn = document.createElement('button'); btn.className = 'btn secondary'; btn.textContent = '参加'; btn.onclick = () => { joinRoomInput.value = docSnap.id; loadSeatStatus(); };
-          right.appendChild(btn);
-          item.appendChild(left); item.appendChild(right);
-          roomListDiv.appendChild(item);
-        });
-      });
-    }
+function subscribeRoomList(){
+  // 公開ルームのみ表示
+  const qRooms = query(
+    collection(db, 'rooms'),
+    where('public', '==', true),
+    orderBy('updatedAt', 'desc'),
+    limit(50)
+  );
+
+  onSnapshot(qRooms, snap => {
+    roomListDiv.innerHTML = '';
+    snap.forEach(docSnap => {
+      const data = docSnap.data() || {};
+      const item = document.createElement('div'); item.className = 'room-item';
+      const left = document.createElement('div');
+      left.innerHTML = `
+        <div class="room-id">${docSnap.id}</div>
+        <div style="font-size:12px; color:#555;">${(data.title||'（無題）')}</div>
+      `;
+      const right = document.createElement('div');
+      const btn = document.createElement('button');
+      btn.className = 'btn secondary';
+      btn.textContent = '参加';
+      btn.onclick = () => { joinRoomInput.value = docSnap.id; loadSeatStatus(); };
+      right.appendChild(btn);
+      item.appendChild(left); item.appendChild(right);
+      roomListDiv.appendChild(item);
+    });
+  });
+}
+
+
     subscribeRoomList();
 
     createRoomBtn.addEventListener('click', async () => {
-      const id = (newRoomIdInput.value||'').trim(); if(!id){ alert('ルームIDを入力してください'); return; }
-      const title = (newRoomTitleInput.value||'').trim();
-      try{
-        await setDoc(doc(db, `rooms/${id}`), { title: title || null, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), public: true }, { merge: true });
-        joinRoomInput.value = id; loadSeatStatus();
-      }catch(e){ console.error(e); alert('ルーム作成に失敗しました'); }
-    });
+  const id = (newRoomIdInput.value||'').trim();
+  if(!id){ alert('ルームIDを入力してください'); return; }
+
+  const title = (newRoomTitleInput.value||'').trim();
+  const isPublic = document.getElementById('room-public').checked; // true=公開, false=非公開
+
+  try{
+    // ルーム作成（公開/非公開を保存）
+    await setDoc(doc(db, `rooms/${id}`), {
+      title: title || null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      public: !!isPublic
+    }, { merge: true });
+
+    // 画面左の参加フォームへ反映して座席状況を読み込み
+    joinRoomInput.value = id;
+    loadSeatStatus();
+
+    // 座席選択されていれば、その席を確保して即参加
+    if (CREATE_SELECTED_SEAT) {
+      if(!CURRENT_UID){
+        alert('認証準備中です。数秒後にもう一度お試しください。');
+        return;
+      }
+      const ok = await claimSeat(id, CREATE_SELECTED_SEAT);
+      if(!ok){
+        alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`);
+        return;
+      }
+      CURRENT_PLAYER = CREATE_SELECTED_SEAT;
+      seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
+      startSession(id, CREATE_SELECTED_SEAT);
+    } else {
+      // 座席未選択なら作成だけ（のちほど左側で座席を選んで開始）
+      alert('ルームを作成しました。座席を選んで「開始」を押してください。');
+    }
+
+  }catch(e){
+    console.error(e);
+    alert('ルーム作成に失敗しました');
+  }
+});
+
 
     let unsubscribeSeats = null;
     joinRoomInput.addEventListener('change', loadSeatStatus);
+
+// ルームID欄に入力 → Enter でも座席状況が読み込まれるように
+joinRoomInput.addEventListener('keydown', (e) => { 
+  if (e.key === 'Enter') loadSeatStatus();
+});
 
     const currentSeatMap = {1:null,2:null,3:null,4:null};
     function isSeatStale(data){
@@ -412,6 +504,9 @@ function randomPointInDeck(seat){
       const hb = data.heartbeatAt?.toMillis ? data.heartbeatAt.toMillis() : 0;
       return (Date.now() - hb) > 60000; // 60秒
     }
+
+
+
 
     function renderSeatAvailability(){
       seatButtons.forEach(btn => {
