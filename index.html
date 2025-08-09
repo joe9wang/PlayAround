@@ -2,13 +2,13 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>プレイアラウンド v17（ロビー拡張 + ルール対応）</title>
+  <title>プレイアラウンド v18（ロビー + カード操作同期）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif; margin:0; background:#eee; overflow:hidden; }
     h1 { background:#444; color:#fff; padding:1em; text-align:center; margin:0; height:var(--header-h); box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:1rem; position:relative; }
-    #session-indicator { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#ddd; font-size:12px; }
+    #session-indicator { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#ddd; font-size:12px; opacity:.9; }
     #upload-area { padding:16px; text-align:center; background:#fff; cursor:pointer; border-bottom:2px solid #ccc; user-select:none; }
     #file-input { display:none; }
     #sidebar { width:var(--sidebar-w); height:calc(100vh - var(--header-h) - 120px); float:left; background:#fff; border-right:2px solid #aaa; box-shadow:2px 0 5px rgba(0,0,0,.2); padding:10px; box-sizing:border-box; }
@@ -50,6 +50,7 @@
     .room-item{ display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #f0f0f0; }
     .room-item:last-child{ border-bottom:0; }
     .room-id{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
+    #spacer{ height:40px; clear:both; }
   </style>
 </head>
 <body>
@@ -116,10 +117,10 @@
 
   <div id="sidebar">
     <h2>操作パネル</h2>
-    <button onclick="faceDownAll()">🂠 裏返す</button>
-    <button onclick="faceUpAll()">🂡 表にする</button>
-    <button onclick="shuffleDecks()">🌀 シャッフル（P1のみ）</button>
-    <button onclick="alignDecks()">📏 整列</button>
+    <button onclick="faceDownAll()">🂠 裏返す（自分のカード）</button>
+    <button onclick="faceUpAll()">🂡 表にする（自分のカード）</button>
+    <button onclick="shuffleDecks()">🌀 シャッフル（P1のみ・表示上のみ）</button>
+    <button onclick="alignDecks()">📏 整列（表示上のみ）</button>
 
     <button onclick="toggleFieldSizeOptions()">🖼 フィールドサイズ変更</button>
     <div id="field-size-options">
@@ -127,12 +128,6 @@
       <button onclick="setFieldSize('medium')">中</button>
       <button onclick="setFieldSize('large')">大</button>
     </div>
-
-    <h2>全カードを移動</h2>
-    <button onclick="shiftAllCards(0, -160)">⬆ 上にずらす</button>
-    <button onclick="shiftAllCards(0, 160)">⬇ 下にずらす</button>
-    <button onclick="shiftAllCards(-120, 0)">⬅ 左にずらす</button>
-    <button onclick="shiftAllCards(120, 0)">➡ 右にずらす</button>
   </div>
 
   <div id="container">
@@ -179,7 +174,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, query, orderBy, limit, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
 
     const firebaseConfig = {
       apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
@@ -190,8 +186,7 @@
       appId: "1:248859224605:web:1320093856bc1861c174f4"
     };
 
-
-    const app = initializeApp(firebaseConfig);
+   const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
@@ -216,18 +211,14 @@
     let CURRENT_PLAYER = null; // 1..4
     let CURRENT_UID = null; // auth.uid
 
-    const CLIENT_ID_KEY = 'playaround_client_id_v1';
-    function getOrCreateClientId(){ const k = localStorage.getItem(CLIENT_ID_KEY); if(k) return k; const v = crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random()); localStorage.setItem(CLIENT_ID_KEY, v); return v; }
-    const clientId = getOrCreateClientId();
-
     // 匿名サインイン
     signInAnonymously(auth).catch(console.error);
     onAuthStateChanged(auth, (user) => { if(user){ CURRENT_UID = user.uid; } });
 
     // ====== ルーム一覧購読 ======
     function subscribeRoomList(){
-      const q = query(collection(db, 'rooms'), orderBy('updatedAt', 'desc'), limit(50));
-      onSnapshot(q, snap => {
+      const qRooms = query(collection(db, 'rooms'), orderBy('updatedAt', 'desc'), limit(50));
+      onSnapshot(qRooms, snap => {
         roomListDiv.innerHTML = '';
         snap.forEach(docSnap => {
           const data = docSnap.data() || {};
@@ -368,6 +359,22 @@
     }
     function stopHeartbeat(){ if(heartbeatTimer){ clearInterval(heartbeatTimer); heartbeatTimer = null; } }
 
+    /* ===================== カード同期 ===================== */
+    const field = document.getElementById("field");
+    const previewImg = document.getElementById("preview-img");
+    const uploadArea = document.getElementById("upload-area");
+    const fileInput = document.getElementById("file-input");
+    const fieldSizeOptions = document.getElementById("field-size-options");
+
+    let zoom = 1, panOffsetX = 0, panOffsetY = 0, selectedCard = null;
+
+    // cardId -> DOM 要素
+    const cardDomMap = new Map();
+    // 自分が原因の変更かどうかを抑止するフラグ
+    const localChangeSet = new Set();
+
+    let unsubscribeCards = null;
+
     function startSession(roomId, playerId){
       CURRENT_ROOM = roomId; CURRENT_PLAYER = playerId;
       sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: P${CURRENT_PLAYER}`;
@@ -375,19 +382,92 @@
       startHeartbeat(roomId, playerId);
       window.addEventListener('beforeunload', () => { stopHeartbeat(); releaseSeat(roomId, playerId); });
       initializePlayField();
+      subscribeCards();
     }
 
-    // ========= ここから従来機能 =========
-    const uploadArea = document.getElementById("upload-area");
-    const fileInput = document.getElementById("file-input");
-    const field = document.getElementById("field");
-    const previewImg = document.getElementById("preview-img");
-    const fieldSizeOptions = document.getElementById("field-size-options");
+    function subscribeCards(){
+      if(unsubscribeCards){ unsubscribeCards(); unsubscribeCards = null; }
+      const qCards = collection(db, `rooms/${CURRENT_ROOM}/cards`);
+      unsubscribeCards = onSnapshot(qCards, snap => {
+        snap.docChanges().forEach(change => {
+          const data = change.doc.data();
+          const id = change.doc.id;
+          if(change.type === 'removed'){
+            const el = cardDomMap.get(id); if(el){ el.remove(); cardDomMap.delete(id); }
+            return;
+          }
+          // 追加 or 変更
+          upsertCardFromRemote(id, data);
+        });
+      });
+    }
 
-    let zoom = 1, panOffsetX = 0, panOffsetY = 0, selectedCard = null;
+    function upsertCardFromRemote(id, data){
+      // 自分が直前に変更したものはスキップ（反映はすでにローカルにある）
+      if(localChangeSet.has(id)) return;
+      let el = cardDomMap.get(id);
+      if(!el){
+        el = createCardDom(id, data.imageUrl, data);
+        cardDomMap.set(id, el);
+        field.appendChild(el);
+      }
+      applyCardState(el, data);
+    }
 
-    function initializePlayField(){ setFieldSize('small'); bindUploadHandlers(); bindPanZoomHandlers(); }
+    function createCardDom(cardId, imageSrc, state){
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.cardId = cardId;
 
+      const img = document.createElement("img");
+      img.src = imageSrc; card.appendChild(img);
+
+      makeDraggable(card);
+
+      // 表裏反転（右クリック）
+      card.addEventListener("contextmenu", async e => {
+        e.preventDefault();
+        const faceUp = !(card.dataset.faceUp === 'true');
+        await updateCard(cardId, { faceUp });
+      });
+
+      // 選択 & プレビュー
+      card.addEventListener("click", e => {
+        e.stopPropagation();
+        if (selectedCard) selectedCard.classList.remove("selected");
+        card.classList.add("selected");
+        selectedCard = card;
+        const imgEl = card.querySelector('img');
+        if (imgEl && imgEl.style.display !== "none") { previewImg.src = imgEl.src; previewImg.style.display = "block"; }
+        else { previewImg.src = ""; previewImg.style.display = "none"; }
+      });
+
+      return card;
+    }
+
+    function applyCardState(card, data){
+      card.style.left = `${data.x||0}px`;
+      card.style.top  = `${data.y||0}px`;
+      card.style.zIndex = data.zIndex || 1;
+      card.dataset.faceUp = data.faceUp ? 'true' : 'false';
+      const img = card.querySelector('img');
+      if(img){
+        if(data.faceUp){ img.style.display = 'block'; card.style.backgroundColor = '#fff'; }
+        else { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
+        if(data.imageUrl && img.src !== data.imageUrl){ img.src = data.imageUrl; }
+      }
+    }
+
+    async function updateCard(cardId, patch){
+      if(!CURRENT_ROOM) return;
+      const ref = doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`);
+      localChangeSet.add(cardId);
+      try { await updateDoc(ref, patch); } catch(e){ console.error('updateCard', e); }
+      // 反映済み扱いにするため、短時間で解除
+      setTimeout(() => localChangeSet.delete(cardId), 250);
+    }
+
+    // ===== アップロード → カード生成（Firestoreへ保存） =====
     function bindUploadHandlers(){
       uploadArea.addEventListener("click", () => fileInput.click());
       uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.style.backgroundColor = "#eef"; });
@@ -399,17 +479,37 @@
     function handleFiles(files){
       [...files].forEach(file => {
         if(!file.type.startsWith("image/")) return;
-        const reader = new FileReader(); reader.onload = e => createCard(e.target.result); reader.readAsDataURL(file);
+        const reader = new FileReader();
+        reader.onload = async e => {
+          // 注意: データURLで Firestore に保存するとサイズ制限にかかる可能性があります。
+          // 体験用として保存しますが、将来は Firebase Storage へアップロード推奨です。
+          const imageUrl = e.target.result;
+          await createCardRemote({ imageUrl });
+        };
+        reader.readAsDataURL(file);
       });
     }
 
-    function createCard(imageSrc){
-      const card = document.createElement("div"); card.className = "card";
-      card.style.left = `${Math.random() * 500}px`; card.style.top = `${Math.random() * 500}px`;
-      const img = document.createElement("img"); img.src = imageSrc; card.appendChild(img); field.appendChild(card);
-      makeDraggable(card);
-      card.addEventListener("contextmenu", e => { e.preventDefault(); const up = img.style.display !== "none"; img.style.display = up?"none":"block"; card.style.backgroundColor = up?"#000":"#fff"; });
-      card.addEventListener("click", e => { e.stopPropagation(); if(selectedCard) selectedCard.classList.remove("selected"); card.classList.add("selected"); selectedCard = card; if(img && img.style.display !== "none"){ previewImg.src = img.src; previewImg.style.display = "block"; } else { previewImg.src = ""; previewImg.style.display = "none"; } });
+    async function createCardRemote({ imageUrl }){
+      if(!CURRENT_ROOM) return;
+      const baseX = Math.random()*500|0, baseY = Math.random()*500|0;
+      try{
+        const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+          x: baseX, y: baseY, zIndex: 1,
+          faceUp: true,
+          imageUrl,
+          ownerUid: CURRENT_UID,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        // 自分の画面には即時反映（doc作成でスナップショットも来るが体感向上）
+        localChangeSet.add(ref.id);
+        const el = createCardDom(ref.id, imageUrl, { x:baseX, y:baseY, zIndex:1, faceUp:true });
+        cardDomMap.set(ref.id, el);
+        field.appendChild(el);
+        applyCardState(el, { x:baseX, y:baseY, zIndex:1, faceUp:true, imageUrl });
+        setTimeout(()=>localChangeSet.delete(ref.id), 250);
+      }catch(e){ console.error('createCardRemote', e); }
     }
 
     function makeDraggable(card){
@@ -419,25 +519,61 @@
         const rect = field.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
         const mouseY = (e.clientY - rect.top - panOffsetY) / zoom;
-        offsetX = mouseX - parseFloat(card.style.left);
-        offsetY = mouseY - parseFloat(card.style.top);
-        isDragging = true; card.style.cursor = "grabbing"; card.style.zIndex = getMaxZIndex()+1;
-        const onMove = e2 => { if(!isDragging) return; const x=(e2.clientX - rect.left - panOffsetX)/zoom; const y=(e2.clientY - rect.top - panOffsetY)/zoom; card.style.left = `${x - offsetX}px`; card.style.top = `${y - offsetY}px`; };
-        const onUp = () => { isDragging = false; card.style.cursor = "grab"; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
-        document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp);
+        offsetX = mouseX - parseFloat(card.style.left||'0');
+        offsetY = mouseY - parseFloat(card.style.top||'0');
+        isDragging = true; card.style.cursor = "grabbing";
+        const newZ = getMaxZIndex()+1; card.style.zIndex = newZ;
+
+        const onMove = e2 => {
+          if(!isDragging) return;
+          const x=(e2.clientX - rect.left - panOffsetX)/zoom; const y=(e2.clientY - rect.top - panOffsetY)/zoom;
+          card.style.left = `${x - offsetX}px`; card.style.top = `${y - offsetY}px`;
+        };
+        const onUp = async () => {
+          isDragging = false; card.style.cursor = "grab";
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          // 位置確定を Firestore に反映
+          const id = card.dataset.cardId;
+          const x = parseFloat(card.style.left)||0; const y = parseFloat(card.style.top)||0; const zIndex = parseInt(card.style.zIndex)||1;
+          await updateCard(id, { x, y, zIndex, updatedAt: serverTimestamp() });
+        };
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
       });
     }
 
     function getMaxZIndex(){ let max=0; document.querySelectorAll(".card").forEach(c=>{ const z=parseInt(c.style.zIndex)||0; if(z>max) max=z; }); return max; }
-    function faceDownAll(){ document.querySelectorAll(".card").forEach(card=>{ const img=card.querySelector("img"); if(img) img.style.display="none"; card.style.backgroundColor="#000"; }); previewImg.src=""; previewImg.style.display="none"; }
-    function faceUpAll(){ document.querySelectorAll(".card").forEach(card=>{ const img=card.querySelector("img"); if(img) img.style.display="block"; card.style.backgroundColor="#fff"; }); }
-    function shuffleDecks(){ const cards = Array.from(document.querySelectorAll(".card")); const player1DeckArea = document.querySelector(".player-1 .deck-area"); if(!player1DeckArea) return; const rect = player1DeckArea.getBoundingClientRect(); const fieldRect = field.getBoundingClientRect(); const minX = (rect.left - fieldRect.left + field.scrollLeft) / zoom; const minY = (rect.top - fieldRect.top + field.scrollTop) / zoom; const maxX = minX + rect.width / zoom; const maxY = minY + rect.height / zoom; const deckCards = cards.filter(card => { const left=parseFloat(card.style.left)||0; const top=parseFloat(card.style.top)||0; return left>=minX && left<=maxX && top>=minY && top<=maxY; }); const shuffled = deckCards.sort(()=>Math.random()-0.5); const baseX = minX + 10; const baseY = minY + 10; shuffled.forEach((card,i)=>{ card.style.left=`${baseX}px`; card.style.top=`${baseY}px`; card.style.zIndex=i+1; }); }
-    function alignDecks(){ const cards = Array.from(document.querySelectorAll(".card")); let x=20,y=20; const maxW = window.innerWidth - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w')) + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--preview-w'))) - 40; cards.forEach(card=>{ card.style.left=`${x}px`; card.style.top=`${y}px`; card.style.zIndex=1; x+=140; if(x>maxW){ x=20; y+=180; } }); }
-    function toggleFieldSizeOptions(){ const el=document.getElementById("field-size-options"); el.style.display = el.style.display==="none"?"block":"none"; }
-    function setFieldSize(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
-    function shiftAllCards(dx,dy){ document.querySelectorAll(".card").forEach(card=>{ const left=parseFloat(card.style.left)||0; const top=parseFloat(card.style.top)||0; card.style.left=`${left+dx}px`; card.style.top=`${top+dy}px`; }); }
-    function bindPanZoomHandlers(){ field.addEventListener("wheel", e => { if(e.ctrlKey) return; e.preventDefault(); const rect=field.getBoundingClientRect(); const cx=e.clientX-rect.left; const cy=e.clientY-rect.top; const scale=0.1; const old=zoom; zoom += e.deltaY<0?scale:-scale; zoom = Math.max(0.3, Math.min(zoom, 3)); const sx=(cx - panOffsetX)/old; const sy=(cy - panOffsetY)/old; panOffsetX = cx - sx*zoom; panOffsetY = cy - sy*zoom; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }, {passive:false}); field.addEventListener("mousedown", e => { if(e.target.closest(".card")) return; let panning=true; let sx=e.clientX, sy=e.clientY; const onMove=e2=>{ if(!panning) return; const dx=e2.clientX-sx; const dy=e2.clientY-sy; panOffsetX+=dx; panOffsetY+=dy; sx=e2.clientX; sy=e2.clientY; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }; const onUp=()=>{ panning=false; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); }; document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp); }); field.addEventListener("click", () => { if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; } }); }
 
+    /* ===== ユーティリティ: 表裏一括（自分のカードのみ） ===== */
+    window.faceDownAll = async function(){
+      for(const [id, el] of cardDomMap){
+        // 自分のカードだけ
+        const owner = el.dataset.ownerUid; // 後で使う拡張用
+        await updateCard(id, { faceUp: false, updatedAt: serverTimestamp() });
+      }
+      previewImg.src = ""; previewImg.style.display = "none";
+    }
+    window.faceUpAll = async function(){
+      for(const [id, el] of cardDomMap){
+        await updateCard(id, { faceUp: true, updatedAt: serverTimestamp() });
+      }
+    }
+
+    /* ===== 表示調整系（同期しない） ===== */
+    window.toggleFieldSizeOptions = function(){ fieldSizeOptions.style.display = fieldSizeOptions.style.display==="none"?"block":"none"; }
+    window.setFieldSize = function(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
+    window.alignDecks = function(){ /* 表示上のみ：同期しない */ }
+    window.shuffleDecks = function(){ /* 表示上のみ：同期しない */ }
+
+    /* ===== パン/ズーム & クリック空選択 ===== */
+    function bindPanZoomHandlers(){
+      field.addEventListener("wheel", e => { if(e.ctrlKey) return; e.preventDefault(); const rect=field.getBoundingClientRect(); const cx=e.clientX-rect.left; const cy=e.clientY-rect.top; const scale=0.1; const old=zoom; zoom += e.deltaY<0?scale:-scale; zoom = Math.max(0.3, Math.min(zoom, 3)); const sx=(cx - panOffsetX)/old; const sy=(cy - panOffsetY)/old; panOffsetX = cx - sx*zoom; panOffsetY = cy - sy*zoom; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }, {passive:false});
+      field.addEventListener("mousedown", e => { if(e.target.closest(".card")) return; let panning=true; let sx=e.clientX, sy=e.clientY; const onMove=e2=>{ if(!panning) return; const dx=e2.clientX-sx; const dy=e2.clientY-sy; panOffsetX+=dx; panOffsetY+=dy; sx=e2.clientX; sy=e2.clientY; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }; const onUp=()=>{ panning=false; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); }; document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp); });
+      field.addEventListener("click", () => { if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; } });
+    }
+
+    function initializePlayField(){ setFieldSize('small'); bindUploadHandlers(); bindPanZoomHandlers(); }
   </script>
 </body>
 </html>
