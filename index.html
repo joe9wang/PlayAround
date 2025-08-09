@@ -329,7 +329,10 @@
     const SEAT_STALE_MS = 60000;   // 既存の席の古さ判定はそのまま
     
     function isHostAlive(roomMeta){
-      if(!roomMeta?.hostUid) return false;
+    if(!roomMeta?.hostUid) return false;
+    // ★ ホスト本人のタブでは常に在室扱い（HB待ちの瞬間でも蹴られない）
+    if (CURRENT_UID && roomMeta.hostUid === CURRENT_UID) return true;
+
  const now = Date.now();
  const t = roomMeta.hostHeartbeatAt?.toMillis?.() ?? 0;
  if (now - t < HOST_STALE_MS) return true;
@@ -446,7 +449,16 @@
     const iAmHost = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
     const closed  = !!CURRENT_ROOM_META?.roomClosed;
     const hostHere = isHostAlive(CURRENT_ROOM_META);
-    if (!iAmHost && (closed || !hostHere)) {
+    
+    
+    // ★ ルーム作成直後のグレース（HBがまだ付かない瞬間対策）
+    const createdAtMs = CURRENT_ROOM_META?.createdAt?.toMillis?.() ?? 0;
+    const GRACE_MS = 10000; // 10秒
+    const underGrace = createdAtMs && (Date.now() - createdAtMs) < GRACE_MS;
+
+    
+    
+      if (!iAmHost && !underGrace && (closed || !hostHere)) {
       // 既存の退室処理と同じ流れ
       try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
       if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; }
