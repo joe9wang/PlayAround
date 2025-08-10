@@ -1520,20 +1520,32 @@ window.resetMyCardRotation = async function () {
 
 
   field.addEventListener("mousedown", e => {
-    // ダブルクリックの2発目ではパンを始めない
-    if (e.detail > 1) return;
-    // カード上ではパンしない
-    if (e.target.closest(".card")) return;
-    // 色変更ゾーン上ではパンしない
-    if (e.target.closest(".zone-colorable")) return;
-        
-        
-        let panning=true; let sx=e.clientX, sy=e.clientY;
-        const onMove=e2=>{ if(!panning) return; const dx=e2.clientX-sx; const dy=e2.clientY-sy; panOffsetX+=dx; panOffsetY+=dy; sx=e2.clientX; sy=e2.clientY; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; };
-        const onUp=()=>{ panning=false; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
-        document.addEventListener("mousemove", onMove);
-        document.addEventListener("mouseup", onUp);
-      });
+    if (e.detail > 1) return;               // ダブルクリック時はパン開始しない
+    if (e.target.closest(".card")) return;  // カード上ではパンしない
+    let panning = false;
+    let sx = e.clientX, sy = e.clientY;
+    const TH = 5; // px しきい値
+    const onMove = e2 => {
+      const dx = e2.clientX - sx;
+      const dy = e2.clientY - sy;
+      if (!panning) {
+        if (Math.hypot(dx, dy) < TH) return; // まだ動かさない
+        panning = true;
+      }
+      panOffsetX += dx; panOffsetY += dy;
+      sx = e2.clientX; sy = e2.clientY;
+      field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
+    };
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  });
+
+
+
       field.addEventListener("click", () => {
         if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; }
       });
