@@ -75,6 +75,8 @@
     #spacer{ height:40px; clear:both; }
     .player-label { position: absolute; top: 6px; left: 6px; font-size: 22px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 2px 8px; border-radius: 4px; pointer-events: none; z-index: 10; }
     .zone-label { position: absolute; right: 4px; bottom: 4px; font-size: 12px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 4px; pointer-events: none; z-index: 5; }
+    /* 追加しておくと親切（既に inline で cursor を当てているので任意） */
+    .zone-colorable { cursor: pointer; }
     .deck-area, .main-play-area, .hand-area { position: relative; }
     #create-seat-grid .seat-btn.active{ outline: 3px solid #0a7; background: #e9fff7; box-shadow: 0 0 0 3px rgba(0,170,119,.15) inset; }
     #create-seat-picked { margin-top: 6px; font-size: 12px; color: #0a7; font-weight: 700; }
@@ -670,21 +672,22 @@
           if (!el) return;
           if (el.__colorHandlerBound) return;
           el.__colorHandlerBound = true;
-          // フィールドのパン開始をブロック（キャプチャ段階で停止）
-          el.addEventListener('mousedown', (e) => e.stopPropagation(), true);
-          el.style.cursor = 'pointer';          
+          // パン側の判定用。見た目のヒントも付ける
+          el.classList.add('zone-colorable');
+          el.style.cursor = 'pointer';
           
-          el.addEventListener('dblclick', async () => {
+          
+          el.addEventListener('dblclick', async (ev) => {
+            ev.stopPropagation();            
             if (seat !== CURRENT_PLAYER) return;
             if (!CURRENT_ROOM) return;
             const input = document.createElement('input');
             input.type = 'color';
-            try { input.value = getSeatAreaColor(seat, key); }
-            catch { input.value = DEFAULT_AREA_COLORS[key]; }
+            input.value = getSeatAreaColor(seat, key);
             input.style.position = 'fixed';
             input.style.left = '-9999px';
             document.body.appendChild(input);
-            input.addEventListener('input', async () => {
+            input.addEventListener('change', async () => {
               const picked = input.value;
               el.style.background = picked;
               try{
@@ -696,9 +699,10 @@
                 console.error(err);
                 alert('エリア色の保存に失敗しました。ネットワークをご確認ください。');
               }
+              input.remove(); // ピッカーを閉じた後に片付け
             }, { once: true });
+            
             input.click();
-            setTimeout(() => { input.remove(); }, 0);
           });
         });
       }
@@ -1513,8 +1517,17 @@ window.resetMyCardRotation = async function () {
         panOffsetX = cx - sx*zoom; panOffsetY = cy - sy*zoom;
         field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
       }, {passive:false});
-      field.addEventListener("mousedown", e => {
-        if(e.target.closest(".card")) return;
+
+
+  field.addEventListener("mousedown", e => {
+    // ダブルクリックの2発目ではパンを始めない
+    if (e.detail > 1) return;
+    // カード上ではパンしない
+    if (e.target.closest(".card")) return;
+    // 色変更ゾーン上ではパンしない
+    if (e.target.closest(".zone-colorable")) return;
+        
+        
         let panning=true; let sx=e.clientX, sy=e.clientY;
         const onMove=e2=>{ if(!panning) return; const dx=e2.clientX-sx; const dy=e2.clientY-sy; panOffsetX+=dx; panOffsetY+=dy; sx=e2.clientX; sy=e2.clientY; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; };
         const onUp=()=>{ panning=false; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
