@@ -2,11 +2,11 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>プレイアラウンド v19（ラベル安定化+ホスト座席選択の警告改善）</title>
+  <title>プレイアラウンド v20（thumbのみFirestore保存／原本はStorage・クリック時読込）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif; margin:0; background:#eee; overflow:hidden; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP",sans-serif; margin:0; background:#eee; overflow:hidden; }
     h1 { background:#444; color:#fff; padding:1em; text-align:center; margin:0; height:var(--header-h); box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:1rem; position:relative; }
     #session-indicator { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#ddd; font-size:12px; opacity:.9; }
     #upload-area { padding:16px; text-align:center; background:#fff; cursor:pointer; border-bottom:2px solid #ccc; user-select:none; }
@@ -25,10 +25,12 @@
     .hand-area{ position:relative; bottom:0; left:0; width:100%; height:33.33%; background:#228be6; z-index:0; }
     .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; }
     .card[data-owner="other"]{ cursor:not-allowed; opacity:.95; }
-    .card img{ width:100%; height:100%; border-radius:10px; object-fit:cover; pointer-events:none; user-select:none; }
+    .card img{ width:100%; height:100%; border-radius:10px; object-fit:cover; pointer-events:none; user-select:none; image-rendering: pixelated; }
     .card.selected{ border:3px solid red; }
     #preview{ width:var(--preview-w); height:calc(100vh - var(--header-h) - 120px); float:right; background:#fff; border-left:2px solid #aaa; box-shadow:-2px 0 5px rgba(0,0,0,.2); padding:10px; box-sizing:border-box; }
-    #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; } #preview-img{ width:100%; height:auto; border-radius:10px; display:none; }
+    #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; } 
+    #preview-img{ width:100%; height:auto; border-radius:10px; display:none; }
+    #preview-info{ font-size:12px; color:#555; margin-top:6px; }
 
     #lobby{ position:fixed; inset:0; background:rgba(0,0,0,.58); display:flex; align-items:center; justify-content:center; z-index:9999; }
     .lobby-card{ width:min(920px, 96vw); background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:18px; box-sizing:border-box; }
@@ -52,50 +54,14 @@
     .room-item:last-child{ border-bottom:0; }
     .room-id{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
     #spacer{ height:40px; clear:both; }
-    
-    .player-label {
-      position: absolute;
-      top: 6px;
-      left: 6px;
-      font-size: 22px;
-      font-weight: bold;
-      color: rgba(255, 255, 255, 0.95);
-      background: rgba(0, 0, 0, 0.4);
-      padding: 2px 8px;
-      border-radius: 4px;
-      pointer-events: none;
-      z-index: 10;
-    }
-    .zone-label {
-      position: absolute;
-      right: 4px;
-      bottom: 4px;
-      font-size: 12px;
-      font-weight: bold;
-      color: rgba(255, 255, 255, 0.95);
-      background: rgba(0, 0, 0, 0.4);
-      padding: 1px 6px;
-      border-radius: 4px;
-      pointer-events: none;
-      z-index: 5;
-    }
+
+    .player-label { position: absolute; top: 6px; left: 6px; font-size: 22px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 2px 8px; border-radius: 4px; pointer-events: none; z-index: 10; }
+    .zone-label { position: absolute; right: 4px; bottom: 4px; font-size: 12px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 4px; pointer-events: none; z-index: 5; }
     .deck-area, .main-play-area, .hand-area { position: relative; }
-    
-    /* ホスト側の座席選択のハイライトを強化 */
-    #create-seat-grid .seat-btn.active{
-      outline: 3px solid #0a7;
-      background: #e9fff7;
-      box-shadow: 0 0 0 3px rgba(0,170,119,.15) inset;
-    }
-    #create-seat-picked {
-      margin-top: 6px;
-      font-size: 12px;
-      color: #0a7;
-      font-weight: 700;
-    }
-    .seat-btn:focus-visible{
-      outline: 3px solid #66aaff;
-    }
+
+    #create-seat-grid .seat-btn.active{ outline: 3px solid #0a7; background: #e9fff7; box-shadow: 0 0 0 3px rgba(0,170,119,.15) inset; }
+    #create-seat-picked { margin-top: 6px; font-size: 12px; color: #0a7; font-weight: 700; }
+    .seat-btn:focus-visible{ outline: 3px solid #66aaff; }
   </style>
 </head>
 <body>
@@ -108,20 +74,18 @@
     <div class="lobby-card">
       <div class="lobby-title">プレイアラウンドへようこそ</div>
       <div class="lobby-grid">
-        <!-- 左：既存ルームに参加（非ホスト） -->
+        <!-- 左：既存ルームに参加 -->
         <section class="lobby-section">
           <div class="lobby-subtitle">既存ルームに参加（非ホスト）</div>
           <label class="lobby-label">参加するルームID</label>
           <div class="row" style="margin-bottom:8px;">
             <input id="join-room-id" type="text" class="field" placeholder="例: room-alpha / 1234" />
           </div>
-
           <label class="lobby-label">プレイヤー名 / 色</label>
           <div class="row" style="margin-bottom:8px;">
             <input id="player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
             <input id="player-color" type="color" value="#22aaff" title="プレイヤーカラー" />
           </div>
-
           <label class="lobby-label">座席を選択</label>
           <div class="seat-grid">
             <button class="seat-btn" data-seat="1">P1 <span class="seat-note"></span></button>
@@ -129,17 +93,15 @@
             <button class="seat-btn" data-seat="3">P3 <span class="seat-note"></span></button>
             <button class="seat-btn" data-seat="4">P4 <span class="seat-note"></span></button>
           </div>
-
           <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
             <button id="start-btn" type="button" class="btn" disabled>開始</button>
             <button id="clear-btn" type="button" class="btn secondary">クリア</button>
           </div>
         </section>
 
-        <!-- 右：新しいルームを作成して参加（ホスト） -->
+        <!-- 右：新しいルームを作成（ホスト） -->
         <section class="lobby-section">
           <div class="lobby-subtitle">新しいルームを作成して参加（ホスト）</div>
-
           <label class="lobby-label">新しいルームを作成</label>
           <div class="row" style="margin-bottom:8px;">
             <input id="new-room-id" type="text" class="field" placeholder="作成するID（例: room-xyz）" />
@@ -157,14 +119,8 @@
 
           <label class="lobby-label">公開設定</label>
           <div class="row" style="gap:12px; margin-bottom:12px;">
-            <label class="row" style="gap:6px; align-items:center;">
-              <input type="radio" name="room-visibility" id="room-public" value="public" checked />
-              <span>公開</span>
-            </label>
-            <label class="row" style="gap:6px; align-items:center;">
-              <input type="radio" name="room-visibility" id="room-private" value="private" />
-              <span>非公開</span>
-            </label>
+            <label class="row" style="gap:6px; align-items:center;"><input type="radio" name="room-visibility" id="room-public" value="public" checked /><span>公開</span></label>
+            <label class="row" style="gap:6px; align-items:center;"><input type="radio" name="room-visibility" id="room-private" value="private" /><span>非公開</span></label>
           </div>
 
           <label class="lobby-label">作成後に参加する座席</label>
@@ -207,46 +163,23 @@
   <div id="container">
     <div id="field">
       <div class="player-area player-1">
-        <div class="player-label">
-          <span class="label-seat">P1</span> <span class="label-name"></span>
-        </div>
-        <div class="play-area">
-          <div class="deck-area"><div class="zone-label">デッキエリア</div></div>
-          <div class="main-play-area"><div class="zone-label">プレイエリア</div></div>
-        </div>
+        <div class="player-label"><span class="label-seat">P1</span> <span class="label-name"></span></div>
+        <div class="play-area"><div class="deck-area"><div class="zone-label">デッキエリア</div></div><div class="main-play-area"><div class="zone-label">プレイエリア</div></div></div>
         <div class="hand-area"><div class="zone-label">手札エリア</div></div>
       </div>
-
       <div class="player-area player-2">
-        <div class="player-label">
-          <span class="label-seat">P2</span> <span class="label-name"></span>
-        </div>
-        <div class="play-area">
-          <div class="deck-area"><div class="zone-label">デッキエリア</div></div>
-          <div class="main-play-area"><div class="zone-label">プレイエリア</div></div>
-        </div>
+        <div class="player-label"><span class="label-seat">P2</span> <span class="label-name"></span></div>
+        <div class="play-area"><div class="deck-area"><div class="zone-label">デッキエリア</div></div><div class="main-play-area"><div class="zone-label">プレイエリア</div></div></div>
         <div class="hand-area"><div class="zone-label">手札エリア</div></div>
       </div>
-
       <div class="player-area player-3">
-        <div class="player-label">
-          <span class="label-seat">P3</span> <span class="label-name"></span>
-        </div>
-        <div class="play-area">
-          <div class="deck-area"><div class="zone-label">デッキエリア</div></div>
-          <div class="main-play-area"><div class="zone-label">プレイエリア</div></div>
-        </div>
+        <div class="player-label"><span class="label-seat">P3</span> <span class="label-name"></span></div>
+        <div class="play-area"><div class="deck-area"><div class="zone-label">デッキエリア</div></div><div class="main-play-area"><div class="zone-label">プレイエリア</div></div></div>
         <div class="hand-area"><div class="zone-label">手札エリア</div></div>
       </div>
-
       <div class="player-area player-4">
-        <div class="player-label">
-          <span class="label-seat">P4</span> <span class="label-name"></span>
-        </div>
-        <div class="play-area">
-          <div class="deck-area"><div class="zone-label">デッキエリア</div></div>
-          <div class="main-play-area"><div class="zone-label">プレイエリア</div></div>
-        </div>
+        <div class="player-label"><span class="label-seat">P4</span> <span class="label-name"></span></div>
+        <div class="play-area"><div class="deck-area"><div class="zone-label">デッキエリア</div></div><div class="main-play-area"><div class="zone-label">プレイエリア</div></div></div>
         <div class="hand-area"><div class="zone-label">手札エリア</div></div>
       </div>
     </div>
@@ -264,6 +197,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
     import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, limit, addDoc, updateDoc, where, query, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getStorage, ref as sRef, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
@@ -277,6 +211,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const storage = getStorage(app);
 
     const lobby = document.getElementById('lobby');
     const joinRoomInput = document.getElementById('join-room-id');
@@ -315,37 +250,27 @@
     let ACTIVE_MODE = 'join'; // 'join' | 'create'
     let IS_ROOM_CREATOR = false;
 
-    // ローカル・グレース管理（作成直後の誤判定回避）
     let JUST_CREATED_ROOM_ID = null;
     let JUST_CREATED_AT = 0;
 
-    // しきい値（ms）
     const HOST_STALE_MS = 15000;
     const SEAT_STALE_MS = 60000;
 
     function isHostAlive(roomMeta){
       if(!roomMeta?.hostUid) return false;
-
-      // ★ 作成者タブは作成直後の一定時間は常に在室扱い
       if (IS_ROOM_CREATOR && CURRENT_ROOM && CURRENT_ROOM === JUST_CREATED_ROOM_ID) {
-        if (Date.now() - JUST_CREATED_AT < 15000) return true; // 15秒グレース
+        if (Date.now() - JUST_CREATED_AT < 15000) return true;
       }
-
-      // 自分がホスト本人なら在室扱い
       if (CURRENT_UID && roomMeta.hostUid === CURRENT_UID) return true;
-
       const now = Date.now();
       const t = roomMeta.hostHeartbeatAt?.toMillis?.() ?? 0;
       if (now - t < HOST_STALE_MS) return true;
-
-      // フォールバック1: ホスト席の heartbeat
       const hostSeat = roomMeta.hostSeat;
       if (hostSeat) {
         const d = currentSeatMap[hostSeat];
         const hb = d?.heartbeatAt?.toMillis?.();
         if (hb && (now - hb) < SEAT_STALE_MS) return true;
       }
-      // フォールバック2: どの席でも hostUid が握っていれば OK
       for (const s of [1,2,3,4]) {
         const d = currentSeatMap[s];
         const hb = d?.heartbeatAt?.toMillis?.();
@@ -435,6 +360,7 @@
       return { x: Math.round(x), y: Math.round(y) };
     }
 
+    // ====== ホスト監視 ======
     function startHostWatch() {
       stopHostWatch();
       hostWatchTimer = setInterval(() => {
@@ -443,12 +369,9 @@
         const closed   = !!CURRENT_ROOM_META?.roomClosed;
         const hostHere = isHostAlive(CURRENT_ROOM_META);
 
-        // ★ ルーム作成直後のグレース（serverTimestamp未反映の瞬間対策）
         const createdAtMs = CURRENT_ROOM_META?.createdAt?.toMillis?.() ?? 0;
-        const GRACE_MS = 10000; // 10秒
+        const GRACE_MS = 10000;
         const underCreatedGrace = createdAtMs && (Date.now() - createdAtMs) < GRACE_MS;
-
-        // ★ ローカル・グレース（このタブで今まさに作成した直後）
         const localGrace = IS_ROOM_CREATOR &&
                            CURRENT_ROOM === JUST_CREATED_ROOM_ID &&
                            (Date.now() - JUST_CREATED_AT) < 15000;
@@ -467,9 +390,7 @@
         }
       }, 3000);
     }
-    function stopHostWatch() {
-      if (hostWatchTimer) { clearInterval(hostWatchTimer); hostWatchTimer = null; }
-    }
+    function stopHostWatch() { if (hostWatchTimer) { clearInterval(hostWatchTimer); hostWatchTimer = null; } }
 
     function subscribeRoomList(){
       const qRooms = query(collection(db, 'rooms'), where('public', '==', true), limit(50));
@@ -528,7 +449,7 @@
       });
     }
 
-    // ── CREATE（右）：作成→即参加（ホスト）
+    // ── CREATE：作成→即参加（ホスト）
     createRoomBtn.addEventListener('click', async () => {
       ACTIVE_MODE = 'create';
       await ensureAuthReady();
@@ -544,7 +465,6 @@
       if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
 
       try{
-        // ルーム作成
         await setDoc(doc(db, `rooms/${id}`), {
           title: title || null,
           createdAt: serverTimestamp(),
@@ -554,22 +474,15 @@
           hostDisplayName: creatorName
         }, { merge: true });
 
-        IS_ROOM_CREATOR = true;      // このタブは作成者
-        startHostHeartbeat(id);      // ロビーにいる間もHB開始
-
-        // ★ ローカル・グレースの印
+        IS_ROOM_CREATOR = true;
+        startHostHeartbeat(id);
         JUST_CREATED_ROOM_ID = id;
         JUST_CREATED_AT = Date.now();
 
-        // 楽観更新
         CURRENT_ROOM_META = { ...(CURRENT_ROOM_META || {}), hostUid: CURRENT_UID, hostDisplayName: creatorName };
-        renderFieldLabels();
-
-        // 左フォームへも反映
         playerNameInput.value  = creatorName;
         playerColorInput.value = creatorColor;
 
-        // 以降、座席確保 → 即開始
         joinRoomInput.value = id;
         loadSeatStatus();
 
@@ -579,12 +492,8 @@
           return;
         }
 
-        await setDoc(doc(db, `rooms/${id}`), {
-          hostSeat: CREATE_SELECTED_SEAT,
-          updatedAt: serverTimestamp()
-        }, { merge: true });
+        await setDoc(doc(db, `rooms/${id}`), { hostSeat: CREATE_SELECTED_SEAT, updatedAt: serverTimestamp() }, { merge: true });
 
-        // 楽観反映：自分の座席名
         currentSeatMap[CREATE_SELECTED_SEAT] = {
           ...(currentSeatMap[CREATE_SELECTED_SEAT] || {}),
           claimedByUid: CURRENT_UID,
@@ -593,9 +502,7 @@
         renderFieldLabels();
 
         CURRENT_PLAYER = CREATE_SELECTED_SEAT;
-        seatButtons.forEach(b =>
-          b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER)
-        );
+        seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
         startSession(id, CREATE_SELECTED_SEAT);
 
       }catch(e){
@@ -606,11 +513,8 @@
 
     let unsubscribeSeats = null;
     joinRoomInput.addEventListener('change', loadSeatStatus);
-    joinRoomInput.addEventListener('keydown', (e) => { 
-      if (e.key === 'Enter') loadSeatStatus();
-    });
+    joinRoomInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadSeatStatus(); });
 
-    // 左フォームの名前変更→自席docに反映
     playerNameInput.addEventListener('change', async () => {
       const newName = (playerNameInput.value || '').trim();
       if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return;
@@ -641,7 +545,6 @@
         }
 
         const occupied = !!(data && !isSeatStale(data) && data.claimedByUid);
-
         if (occupied) {
           const isHostSeat = (CURRENT_ROOM_META?.hostSeat === seat);
           note.textContent = (data.displayName || '') + (isHostSeat ? '（ホスト）' : '');
@@ -650,16 +553,13 @@
           note.textContent = '空き';
           note.style.color = 'blue';
         }
-
         btn.disabled = occupied;
         btn.classList.toggle('active', CURRENT_PLAYER === seat);
       });
-
       renderFieldLabels();
       validateLobby();
     }
 
-    // ★ ラベル描画
     function renderFieldLabels(){
       for (const s of [1,2,3,4]) {
         const area   = document.querySelector(`.player-${s}`);
@@ -668,14 +568,10 @@
         if(!seatEl || !nameEl) continue;
 
         seatEl.textContent = `P${s}`;
-
         const seatData = currentSeatMap[s] || null;
         const displayName = seatData?.displayName || '';
         const isHostSeat = (CURRENT_ROOM_META?.hostSeat === s);
-
-        nameEl.textContent = displayName
-          ? `${displayName}${isHostSeat ? '（ホスト）' : ''}`
-          : '';
+        nameEl.textContent = displayName ? `${displayName}${isHostSeat ? '（ホスト）' : ''}` : '';
       }
     }
 
@@ -686,9 +582,7 @@
       if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
       const roomId = (joinRoomInput.value||'').trim();
 
-      // ★ 作成直後に同じルームを読む場合は、クリア＆HB停止を抑止
       const preserveCreator = IS_ROOM_CREATOR && roomId && roomId === JUST_CREATED_ROOM_ID;
-
       if (!preserveCreator) {
         CURRENT_ROOM_META = null;
         IS_ROOM_CREATOR = false;
@@ -699,7 +593,6 @@
 
       if(!roomId){ return; }
 
-      // ルームdoc購読
       unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
         CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
         IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
@@ -707,7 +600,6 @@
         renderFieldLabels();
         startHostWatch();
 
-        // ルーム閉鎖 or ホスト不在（グレースは startHostWatch 内で考慮）
         const closed = !!CURRENT_ROOM_META?.roomClosed;
         const hostHere = isHostAlive(CURRENT_ROOM_META);
         const iAmHost = (CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
@@ -725,10 +617,8 @@
         }
       });
 
-      // 軽く更新時刻だけ
       setDoc(doc(db, `rooms/${roomId}`), { updatedAt: serverTimestamp() }, { merge: true }).catch(()=>{});
 
-      // 座席doc購読
       const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
         currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
@@ -739,14 +629,8 @@
 
     function validateLobby(){
       const hostHere = isHostAlive(CURRENT_ROOM_META);
-      if (!hostHere && ACTIVE_MODE === 'join') {
-        startBtn.disabled = true;
-        return;
-      }
-      if (ACTIVE_MODE === 'create') {
-        startBtn.disabled = true;
-        return;
-      }
+      if (!hostHere && ACTIVE_MODE === 'join') { startBtn.disabled = true; return; }
+      if (ACTIVE_MODE === 'create') { startBtn.disabled = true; return; }
       const roomOk  = !!(joinRoomInput.value||'').trim();
       const nameNow = (playerNameInput.value||'').trim();
       const nameOk  = nameNow.length > 0 && nameNow.length <= 24;
@@ -774,9 +658,7 @@
         }
         const seat = parseInt(btn.dataset.seat, 10);
         CURRENT_PLAYER = seat;
-        seatButtons.forEach(b =>
-          b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER)
-        );
+        seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
         validateLobby();
       });
     });
@@ -793,53 +675,38 @@
       ev.preventDefault();
       ACTIVE_MODE = 'join';
       await ensureAuthReady();
-      if (!CURRENT_UID) {
-        alert('認証の初期化に時間がかかっています。数秒後に再度お試しください。');
-        return;
-      }
+      if (!CURRENT_UID) { alert('認証の初期化に時間がかかっています。数秒後に再度お試しください。'); return; }
+
       const room    = (joinRoomInput.value || '').trim();
       const seat    = CURRENT_PLAYER;
       const nameNow = (playerNameInput.value || '').trim();
       const colorNow = playerColorInput.value || '#22aaff';
+
       if (!room)  { alert('ルームIDを入力してください'); return; }
       if (!nameNow) { alert('プレイヤー名を入力してください'); return; }
       if (!seat)  { alert('座席を選択してください'); return; }
 
       const oldText = startBtn.textContent;
-      startBtn.disabled = true;
-      startBtn.textContent = '開始中…';
+      startBtn.disabled = true; startBtn.textContent = '開始中…';
 
       try {
         const roomSnap = await onSnapshotOnce(doc(db, `rooms/${room}`));
         const meta = roomSnap.exists() ? roomSnap.data() : null;
         const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
-        if (!meta || (!isHostAlive(meta) && !iAmHost)) {
-          alert('ホストが不在のため、このルームには参加できません。');
-          return;
-        }
+        if (!meta || (!isHostAlive(meta) && !iAmHost)) { alert('ホストが不在のため、このルームには参加できません。'); return; }
         if (iAmHost) IS_ROOM_CREATOR = true;
 
         const ok = await claimSeat(room, seat);
-        if (!ok) {
-          alert('開始直前に座席が埋まりました。別の席を選んでください。');
-          return;
-        }
+        if (!ok) { alert('開始直前に座席が埋まりました。別の席を選んでください。'); return; }
 
-        currentSeatMap[seat] = {
-          ...(currentSeatMap[seat] || {}),
-          claimedByUid: CURRENT_UID,
-          displayName: nameNow,
-          color: colorNow
-        };
+        currentSeatMap[seat] = { ...(currentSeatMap[seat] || {}), claimedByUid: CURRENT_UID, displayName: nameNow, color: colorNow };
         renderSeatAvailability();
-
         startSession(room, seat);
       } catch (e) {
         console.error(e);
         alert('開始に失敗しました。ネットワーク状態を確認してもう一度お試しください。');
       } finally {
-        startBtn.disabled = false;
-        startBtn.textContent = oldText;
+        startBtn.disabled = false; startBtn.textContent = oldText;
       }
     });
 
@@ -878,7 +745,7 @@
 
     let heartbeatTimer = null;
     let hostHeartbeatTimer = null;
-    
+
     function startHostHeartbeat(roomId){
       stopHostHeartbeat();
       hostHeartbeatTimer = setInterval(async () => {
@@ -887,9 +754,7 @@
         }catch(e){ console.warn('host HB failed', e); }
       }, 5000);
     }
-    function stopHostHeartbeat(){
-      if(hostHeartbeatTimer){ clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; }
-    }
+    function stopHostHeartbeat(){ if(hostHeartbeatTimer){ clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; } }
     function startHeartbeat(roomId, seat){
       stopHeartbeat();
       heartbeatTimer = setInterval(async () => {
@@ -899,7 +764,7 @@
     }
     function stopHeartbeat(){ if(heartbeatTimer){ clearInterval(heartbeatTimer); heartbeatTimer = null; } }
 
-    // ===== カード同期 =====
+    // ===== カード同期と表示 =====
     const field = document.getElementById("field");
     const previewImg = document.getElementById("preview-img");
     const previewInfo = document.getElementById("preview-info");
@@ -924,7 +789,6 @@
       startHeartbeat(roomId, playerId);
       if (IS_ROOM_CREATOR) { startHostHeartbeat(roomId); }
 
-      // ★ seat/room の購読を張り直す（ラベル確実反映）
       joinRoomInput.value = CURRENT_ROOM;
       loadSeatStatus();
 
@@ -963,14 +827,14 @@
       let el = cardDomMap.get(id) || document.querySelector(`[data-card-id="${id}"]`);
       const exists = !!el;
       if (!exists && !isLocalRecent(id)) {
-        el = createCardDom(id, data.imageUrl, data);
+        el = createCardDom(id, data.thumbUrl, data);
         cardDomMap.set(id, el);
         field.appendChild(el);
       }
       if (el) applyCardState(el, data);
     }
 
-    function createCardDom(cardId, imageSrc, state){
+    function createCardDom(cardId, thumbSrc, state){
       const card = document.createElement("div");
       card.className = "card";
       card.dataset.cardId = cardId;
@@ -979,7 +843,8 @@
       card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
 
       const img = document.createElement("img");
-      img.src = imageSrc; card.appendChild(img);
+      img.src = thumbSrc || '';      // フィールドはサムネのみ
+      card.appendChild(img);
 
       makeDraggable(card);
 
@@ -990,24 +855,24 @@
         await updateCard(cardId, { faceUp, updatedAt: serverTimestamp() });
       });
 
-      card.addEventListener("click", e => {
+      card.addEventListener("click", async e => {
         e.stopPropagation();
         if (selectedCard) selectedCard.classList.remove("selected");
         card.classList.add("selected");
         selectedCard = card;
 
-        const imgEl = card.querySelector('img');
-        if (imgEl && imgEl.style.display !== "none") {
-          previewImg.src = imgEl.src;
-          previewImg.style.display = "block";
-        } else {
-          previewImg.src = "";
-          previewImg.style.display = "none";
-        }
+        previewInfo.textContent = '高解像度を読み込み中…';
+        previewImg.style.display = 'none';
 
-        let ownerPlayerNum = "?";
-        if (card.dataset.ownerSeat) ownerPlayerNum = `P${card.dataset.ownerSeat}`;
-        previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
+        try{
+          const url = await getDownloadURL(storageRefForCard(card.dataset.cardId));
+          previewImg.src = url;
+          previewImg.style.display = "block";
+          previewInfo.textContent = `カードのオーナー: P${card.dataset.ownerSeat||'?'} / あなた: P${CURRENT_PLAYER||'?'}`;
+        }catch(err){
+          console.warn('getDownloadURL failed', err);
+          previewInfo.textContent = '原本の取得に失敗しました。';
+        }
       });
       return card;
     }
@@ -1021,11 +886,14 @@
       card.style.top  = `${data.y||0}px`;
       card.style.zIndex = data.zIndex || 1;
       card.dataset.faceUp = data.faceUp ? 'true' : 'false';
+
       const img = card.querySelector('img');
       if(img){
         if(data.faceUp){ img.style.display = 'block'; card.style.backgroundColor = '#fff'; }
         else { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
-        if(data.imageUrl && img.src !== data.imageUrl){ img.src = data.imageUrl; }
+
+        const want = data.thumbUrl || ''; // フィールド表示はサムネのみ
+        if (want && img.src !== want) img.src = want;
       }
 
       try {
@@ -1038,25 +906,25 @@
           if (hb && isCenterInsideRect(x, y, hb)) { insideSeat = s; break; }
         }
         if (insideSeat && String(viewerSeat) !== String(insideSeat)) {
-          const img = card.querySelector('img');
-          if (img) { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
+          const img2 = card.querySelector('img');
+          if (img2) { img2.style.display = 'none'; card.style.backgroundColor = '#000'; }
         }
       } catch(_) {}
     }
 
     async function cleanupAndCloseRoom(roomId){
-      // cards削除
       const cardsCol = collection(db, `rooms/${roomId}/cards`);
       const cardsSnap = await getDocs(cardsCol);
       let batch = writeBatch(db);
       let count = 0;
       for (const docSnap of cardsSnap.docs) {
+        // Storage 原本も削除（ベストエフォート）
+        try { await deleteObject(storageRefForCard(docSnap.id)); } catch(_) {}
         batch.delete(doc(db, `rooms/${roomId}/cards/${docSnap.id}`));
         if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
       }
       if (count > 0) await batch.commit();
 
-      // seats削除
       const seatsCol = collection(db, `rooms/${roomId}/seats`);
       const seatsSnap = await getDocs(seatsCol);
       batch = writeBatch(db); count = 0;
@@ -1066,11 +934,7 @@
       }
       if (count > 0) await batch.commit();
 
-      // ルーム閉鎖フラグ＆最終更新
-      await setDoc(doc(db, `rooms/${roomId}`), {
-        roomClosed: true,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+      await setDoc(doc(db, `rooms/${roomId}`), { roomClosed: true, updatedAt: serverTimestamp() }, { merge: true });
     }
 
     async function updateCard(cardId, patch){
@@ -1080,53 +944,96 @@
       try { await updateDoc(ref, patch); } catch(e){ console.error('updateCard', e); }
     }
 
+    // ===== サムネ生成ユーティリティ =====
+    async function fileToDataURL(file){
+      return await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+    }
+    async function makeThumbnail(dataUrl, maxSize=256, quality=0.7){
+      const img = new Image();
+      img.decoding = 'async';
+      img.loading = 'eager';
+      return await new Promise((resolve, reject) => {
+        img.onload = () => {
+          const { width: w, height: h } = img;
+          const scale = Math.min(1, maxSize / Math.max(w, h));
+          const tw = Math.max(1, Math.round(w * scale));
+          const th = Math.max(1, Math.round(h * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = tw; canvas.height = th;
+          const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+          ctx.drawImage(img, 0, 0, tw, th);
+          const thumb = canvas.toDataURL('image/jpeg', quality);
+          resolve(thumb);
+        };
+        img.onerror = reject;
+        img.src = dataUrl;
+      });
+    }
+
+    // Storageのカード原本の参照（拡張子なし・Content-TypeはdataURLから推定）
+    function storageRefForCard(cardId){
+      // ルーム毎に分離。URLは保存せずパスを規約で決め打ち。
+      return sRef(storage, `rooms/${CURRENT_ROOM}/cards/${cardId}`);
+    }
+
     function bindUploadHandlers(){
       uploadArea.addEventListener("click", () => fileInput.click());
       uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.style.backgroundColor = "#eef"; });
       uploadArea.addEventListener("dragleave", () => { uploadArea.style.backgroundColor = "#fff"; });
-      uploadArea.addEventListener("drop", e => { e.preventDefault(); uploadArea.style.backgroundColor = "#fff"; handleFiles(e.dataTransfer.files); });
-      fileInput.addEventListener("change", e => handleFiles(e.target.files));
-    }
-
-    function handleFiles(files){
-      [...files].forEach(file => {
-        if(!file.type.startsWith("image/")) return;
-        const reader = new FileReader();
-        reader.onload = async e => {
-          const imageUrl = e.target.result;
-          await createCardRemote({ imageUrl });
-        };
-        reader.readAsDataURL(file);
+      uploadArea.addEventListener("drop", async e => {
+        e.preventDefault(); uploadArea.style.backgroundColor = "#fff";
+        await handleFiles(e.dataTransfer.files);
       });
+      fileInput.addEventListener("change", async e => { await handleFiles(e.target.files); });
     }
 
-    async function createCardRemote({ imageUrl }){
+    async function handleFiles(files){
+      const list = [...files].filter(f => f.type.startsWith("image/"));
+      for (const file of list) {
+        const full = await fileToDataURL(file);                  // 原本（dataURL）
+        const thumb = await makeThumbnail(full, 256, 0.7);       // 軽量サムネ
+        await createCardRemote({ thumbUrl: thumb, fullDataUrl: full });
+      }
+    }
+
+    async function createCardRemote({ thumbUrl, fullDataUrl }){
       if(!CURRENT_ROOM) return;
       const { x: baseX, y: baseY } = randomPointInDeck(CURRENT_PLAYER);
       try{
-        const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+        // まずFirestoreにカードdoc（thumbのみ）
+        const refDoc = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
           x: baseX, y: baseY, zIndex: 1,
           faceUp: true,
-          imageUrl,
+          thumbUrl,              // Firestoreはthumbだけ
           ownerUid: CURRENT_UID,
           ownerSeat: CURRENT_PLAYER,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-        markLocal(ref.id);
-        let el = cardDomMap.get(ref.id) || document.querySelector(`[data-card-id="${ref.id}"]`);
+        const id = refDoc.id;
+        markLocal(id);
+
+        // DOMは即時反映（thumb）
+        let el = cardDomMap.get(id) || document.querySelector(`[data-card-id="${id}"]`);
         if(!el){
-          el = createCardDom(ref.id, imageUrl, {
+          el = createCardDom(id, thumbUrl, {
             x: baseX, y: baseY, zIndex: 1, faceUp: true,
-            ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
+            ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
+            thumbUrl
           });
-          cardDomMap.set(ref.id, el);
+          cardDomMap.set(id, el);
           field.appendChild(el);
         }
-        applyCardState(el, {
-          x: baseX, y: baseY, zIndex: 1, faceUp: true,
-          imageUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
-        });
+        applyCardState(el, { x: baseX, y: baseY, zIndex: 1, faceUp: true, thumbUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER });
+
+        // 原本はStorageへ非同期アップロード（待たない）
+        uploadString(storageRefForCard(id), fullDataUrl, 'data_url')
+          .catch(err => console.warn('upload original failed', err));
       }catch(e){ console.error('createCardRemote', e); }
     }
 
@@ -1189,31 +1096,23 @@
         const q = query(cardsCol, where('ownerUid', '==', CURRENT_UID));
         const snap = await getDocs(q);
 
-        if (snap.empty) {
-          alert('削除対象のカードはありません');
-          return;
-        }
+        if (snap.empty) { alert('削除対象のカードはありません'); return; }
 
         let batch = writeBatch(db);
         let count = 0;
         const removedIds = [];
 
         for (const docSnap of snap.docs) {
-          batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${docSnap.id}`));
-          removedIds.push(docSnap.id);
-          if (++count >= 450) {
-            await batch.commit();
-            batch = writeBatch(db);
-            count = 0;
-          }
+          const cid = docSnap.id;
+          // Storageの原本も削除（エラーは握りつぶし）
+          try { await deleteObject(storageRefForCard(cid)); } catch(_) {}
+          batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${cid}`));
+          removedIds.push(cid);
+          if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
         }
         if (count > 0) await batch.commit();
 
-        removedIds.forEach(id => {
-          const el = cardDomMap.get(id);
-          if (el) { el.remove(); cardDomMap.delete(id); }
-        });
-
+        removedIds.forEach(id => { const el = cardDomMap.get(id); if (el) { el.remove(); cardDomMap.delete(id); } });
         if (previewImg) { previewImg.src = ''; previewImg.style.display = 'none'; }
         alert(`削除しました（${removedIds.length}枚）`);
       } catch (e) {
@@ -1267,7 +1166,7 @@
         document.addEventListener("mouseup", onUp);
       });
       field.addEventListener("click", () => {
-        if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; }
+        if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; previewInfo.textContent=''; }
       });
     }
 
