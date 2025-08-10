@@ -914,6 +914,7 @@
 
     // ===== カード同期・UI =====
     const field = document.getElementById("field");
+    const container = document.getElementById("container"); // ←追加
     const previewImg = document.getElementById("preview-img");
     const previewInfo = document.getElementById("preview-info");
     const uploadArea = document.getElementById("upload-area");
@@ -1505,51 +1506,73 @@ window.resetMyCardRotation = async function () {
       }
     };
 
-    function bindPanZoomHandlers(){
-      field.addEventListener("wheel", e => {
-        if(e.ctrlKey) return;
-        e.preventDefault();
-        const rect=field.getBoundingClientRect();
-        const cx=e.clientX-rect.left; const cy=e.clientY-rect.top;
-        const scale=0.1; const old=zoom;
-        zoom += e.deltaY<0?scale:-scale; zoom = Math.max(0.3, Math.min(zoom, 3));
-        const sx=(cx - panOffsetX)/old; const sy=(cy - panOffsetY)/old;
-        panOffsetX = cx - sx*zoom; panOffsetY = cy - sy*zoom;
-        field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
-      }, {passive:false});
+function bindPanZoomHandlers(){
+  // ズーム（そのまま）
+  field.addEventListener("wheel", e => {
+    if(e.ctrlKey) return;
+    e.preventDefault();
+    const rect = field.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const scale = 0.1;
+    const old = zoom;
+    zoom += e.deltaY < 0 ? scale : -scale;
+    zoom = Math.max(0.3, Math.min(zoom, 3));
+    const sx = (cx - panOffsetX) / old;
+    const sy = (cy - panOffsetY) / old;
+    panOffsetX = cx - sx * zoom;
+    panOffsetY = cy - sy * zoom;
+    field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
+  }, { passive:false });
 
+  // パン：containerで拾う（カード・ダブルクリック無視／しきい値あり）
+  container.addEventListener("mousedown", e => {
+    if (e.button !== 0) return;              // 左クリックのみ
+    if (e.detail > 1) return;                // ダブルクリック時は開始しない
+    if (e.target.closest(".card")) return;   // カード上はパンしない
 
-  field.addEventListener("mousedown", e => {
-    if (e.detail > 1) return;               // ダブルクリック時はパン開始しない
-    if (e.target.closest(".card")) return;  // カード上ではパンしない
+    const TH = 5; // px
     let panning = false;
     let sx = e.clientX, sy = e.clientY;
-    const TH = 5; // px しきい値
+
+    // 画面外までドラッグしても切れないようにdocumentで追従
+    document.body.style.userSelect = 'none';
+    container.style.cursor = 'grabbing';
+
     const onMove = e2 => {
       const dx = e2.clientX - sx;
       const dy = e2.clientY - sy;
       if (!panning) {
-        if (Math.hypot(dx, dy) < TH) return; // まだ動かさない
+        if (Math.hypot(dx, dy) < TH) return; // しきい値未満は無視（クリック判定と共存）
         panning = true;
       }
-      panOffsetX += dx; panOffsetY += dy;
+      panOffsetX += dx;
+      panOffsetY += dy;
       sx = e2.clientX; sy = e2.clientY;
       field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
     };
-    const onUp = () => {
+
+    const cleanup = () => {
       document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("mouseup", cleanup);
+      document.body.style.userSelect = '';
+      container.style.cursor = '';
     };
+
     document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener("mouseup", cleanup);
   });
 
-
-
-      field.addEventListener("click", () => {
-        if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; }
-      });
+  // 空クリックで選択解除（従来どおり）
+  field.addEventListener("click", () => {
+    if (selectedCard) {
+      selectedCard.classList.remove("selected");
+      selectedCard = null;
+      previewImg.src = "";
+      previewImg.style.display = "none";
     }
+  });
+}
     
     
     /* （任意）初回座席作成時に hp:0 を入れておきたい場合は claimSeat 内 tx.set に hp を付与
