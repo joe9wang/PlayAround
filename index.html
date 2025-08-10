@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>プレイアラウンド v19（Storage最適化＋ラベル安定化）</title>
+  <title>プレイアラウンド v19（ラベル安定化+ホスト座席選択の警告改善）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; }
@@ -23,7 +23,7 @@
     .play-area{ position:relative; left:0; width:100%; height:66.66%; display:flex; flex-direction: row-reverse; z-index:0; }
     .deck-area{ width:33.33%; background:#f90; } .main-play-area{ width:66.66%; background:#2d8; }
     .hand-area{ position:relative; bottom:0; left:0; width:100%; height:33.33%; background:#228be6; z-index:0; }
-    .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; content-visibility:auto; }
+    .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; }
     .card[data-owner="other"]{ cursor:not-allowed; opacity:.95; }
     .card img{ width:100%; height:100%; border-radius:10px; object-fit:cover; pointer-events:none; user-select:none; }
     .card.selected{ border:3px solid red; }
@@ -52,12 +52,50 @@
     .room-item:last-child{ border-bottom:0; }
     .room-id{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
     #spacer{ height:40px; clear:both; }
-    .player-label { position:absolute; top:6px; left:6px; font-size:22px; font-weight:bold; color:rgba(255,255,255,.95); background:rgba(0,0,0,.4); padding:2px 8px; border-radius:4px; pointer-events:none; z-index:10; }
-    .zone-label { position:absolute; right:4px; bottom:4px; font-size:12px; font-weight:bold; color:rgba(255,255,255,.95); background:rgba(0,0,0,.4); padding:1px 6px; border-radius:4px; pointer-events:none; z-index:5; }
+    
+    .player-label {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      font-size: 22px;
+      font-weight: bold;
+      color: rgba(255, 255, 255, 0.95);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .zone-label {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      color: rgba(255, 255, 255, 0.95);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 1px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 5;
+    }
     .deck-area, .main-play-area, .hand-area { position: relative; }
-    #create-seat-grid .seat-btn.active{ outline:3px solid #0a7; background:#e9fff7; box-shadow:0 0 0 3px rgba(0,170,119,.15) inset; }
-    #create-seat-picked { margin-top:6px; font-size:12px; color:#0a7; font-weight:700; }
-    .seat-btn:focus-visible{ outline:3px solid #66aaff; }
+    
+    /* ホスト側の座席選択のハイライトを強化 */
+    #create-seat-grid .seat-btn.active{
+      outline: 3px solid #0a7;
+      background: #e9fff7;
+      box-shadow: 0 0 0 3px rgba(0,170,119,.15) inset;
+    }
+    #create-seat-picked {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #0a7;
+      font-weight: 700;
+    }
+    .seat-btn:focus-visible{
+      outline: 3px solid #66aaff;
+    }
   </style>
 </head>
 <body>
@@ -225,13 +263,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-    import {
-      getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction,
-      deleteDoc, collection, limit, addDoc, updateDoc, where, query, getDocs, writeBatch
-    } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
-    import {
-      getStorage, ref as sRef, uploadBytes, getDownloadURL
-    } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
+    import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, limit, addDoc, updateDoc, where, query, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
@@ -245,7 +277,6 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app);
 
     const lobby = document.getElementById('lobby');
     const joinRoomInput = document.getElementById('join-room-id');
@@ -281,24 +312,40 @@
     let CURRENT_UID = null;
     let hostWatchTimer = null;
 
-    let ACTIVE_MODE = 'join';
+    let ACTIVE_MODE = 'join'; // 'join' | 'create'
     let IS_ROOM_CREATOR = false;
 
+    // ローカル・グレース管理（作成直後の誤判定回避）
+    let JUST_CREATED_ROOM_ID = null;
+    let JUST_CREATED_AT = 0;
+
+    // しきい値（ms）
     const HOST_STALE_MS = 15000;
     const SEAT_STALE_MS = 60000;
 
     function isHostAlive(roomMeta){
       if(!roomMeta?.hostUid) return false;
-      if (CURRENT_UID && roomMeta.hostUid === CURRENT_UID) return true; // 自分がホストなら常に在室扱い
+
+      // ★ 作成者タブは作成直後の一定時間は常に在室扱い
+      if (IS_ROOM_CREATOR && CURRENT_ROOM && CURRENT_ROOM === JUST_CREATED_ROOM_ID) {
+        if (Date.now() - JUST_CREATED_AT < 15000) return true; // 15秒グレース
+      }
+
+      // 自分がホスト本人なら在室扱い
+      if (CURRENT_UID && roomMeta.hostUid === CURRENT_UID) return true;
+
       const now = Date.now();
       const t = roomMeta.hostHeartbeatAt?.toMillis?.() ?? 0;
       if (now - t < HOST_STALE_MS) return true;
+
+      // フォールバック1: ホスト席の heartbeat
       const hostSeat = roomMeta.hostSeat;
       if (hostSeat) {
         const d = currentSeatMap[hostSeat];
         const hb = d?.heartbeatAt?.toMillis?.();
         if (hb && (now - hb) < SEAT_STALE_MS) return true;
       }
+      // フォールバック2: どの席でも hostUid が握っていれば OK
       for (const s of [1,2,3,4]) {
         const d = currentSeatMap[s];
         const hb = d?.heartbeatAt?.toMillis?.();
@@ -310,22 +357,27 @@
     signInAnonymously(auth).catch(console.error);
     onAuthStateChanged(auth, (user) => { if(user){ CURRENT_UID = user.uid; }});
 
+    // モード切替
     joinRoomInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
     playerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
     seatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'join'; validateLobby(); }));
+
     newRoomIdInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     newRoomTitleInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     newPlayerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     newPlayerColorInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     createSeatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'create'; validateLobby(); }));
 
-    const CARD_W = 120, CARD_H = 160;
+    // カードサイズ
+    const CARD_W = 120;
+    const CARD_H = 160;
 
     function isCenterInsideRect(x, y, rect){
       const cx = x + CARD_W / 2;
       const cy = y + CARD_H / 2;
       return cx >= rect.minX && cx <= rect.minX + rect.width && cy >= rect.minY && cy <= rect.minY + rect.height;
     }
+
     function getHandBoundsForSeat(seat){
       const hand = document.querySelector(`.player-${seat} .hand-area`);
       if(!hand) return null;
@@ -337,6 +389,7 @@
       const height = handRect.height / zoom;
       return { minX, minY, width, height };
     }
+
     function getDeckBoundsForSeat(seat){
       const deck = document.querySelector(`.player-${seat} .deck-area`);
       if(!deck) return null;
@@ -348,6 +401,7 @@
       const height = deckRect.height / zoom;
       return { minX, minY, width, height };
     }
+
     function getCardsInsideRect(rect){
       const cards = [];
       document.querySelectorAll('.card').forEach(el => {
@@ -362,7 +416,15 @@
       });
       return cards;
     }
-    function shuffleArray(arr){ for(let i=arr.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+
+    function shuffleArray(arr){
+      for(let i=arr.length-1;i>0;i--){
+        const j = (Math.random()* (i+1))|0;
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
     function randomPointInDeck(seat){
       const b = getDeckBoundsForSeat(seat);
       if(!b) return { x: Math.random()*500|0, y: Math.random()*500|0 };
@@ -377,14 +439,21 @@
       stopHostWatch();
       hostWatchTimer = setInterval(() => {
         if (!CURRENT_ROOM_META) return;
-        const iAmHost = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
-        const closed  = !!CURRENT_ROOM_META?.roomClosed;
+        const iAmHost  = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+        const closed   = !!CURRENT_ROOM_META?.roomClosed;
         const hostHere = isHostAlive(CURRENT_ROOM_META);
-        const createdAtMs = CURRENT_ROOM_META?.createdAt?.toMillis?.() ?? 0;
-        const GRACE_MS = 10000;
-        const underGrace = createdAtMs && (Date.now() - createdAtMs) < GRACE_MS;
 
-        if (!iAmHost && !underGrace && (closed || !hostHere)) {
+        // ★ ルーム作成直後のグレース（serverTimestamp未反映の瞬間対策）
+        const createdAtMs = CURRENT_ROOM_META?.createdAt?.toMillis?.() ?? 0;
+        const GRACE_MS = 10000; // 10秒
+        const underCreatedGrace = createdAtMs && (Date.now() - createdAtMs) < GRACE_MS;
+
+        // ★ ローカル・グレース（このタブで今まさに作成した直後）
+        const localGrace = IS_ROOM_CREATOR &&
+                           CURRENT_ROOM === JUST_CREATED_ROOM_ID &&
+                           (Date.now() - JUST_CREATED_AT) < 15000;
+
+        if (!iAmHost && !underCreatedGrace && !localGrace && (closed || !hostHere)) {
           try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
           if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; }
           if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; }
@@ -398,7 +467,9 @@
         }
       }, 3000);
     }
-    function stopHostWatch() { if (hostWatchTimer) { clearInterval(hostWatchTimer); hostWatchTimer = null; } }
+    function stopHostWatch() {
+      if (hostWatchTimer) { clearInterval(hostWatchTimer); hostWatchTimer = null; }
+    }
 
     function subscribeRoomList(){
       const qRooms = query(collection(db, 'rooms'), where('public', '==', true), limit(50));
@@ -408,19 +479,26 @@
           const bu = b.data().updatedAt?.toMillis?.() ?? 0;
           return bu - au;
         });
+
         roomListDiv.innerHTML = '';
         docs.forEach(docSnap => {
           const data = docSnap.data() || {};
           const item = document.createElement('div');
           item.className = 'room-item';
           item.style.cursor = 'pointer';
+
           const left = document.createElement('div');
-          left.innerHTML = `<div class="room-id">${docSnap.id}</div><div style="font-size:12px; color:#555;">${(data.title||'（無題）')}</div>`;
+          left.innerHTML = `
+            <div class="room-id">${docSnap.id}</div>
+            <div style="font-size:12px; color:#555;">${(data.title||'（無題）')}</div>
+          `;
+
           const right = document.createElement('div');
           const btn = document.createElement('button');
           btn.setAttribute('type', 'button');
           btn.className = 'btn secondary';
           btn.textContent = '参加';
+
           const selectRoom = (ev) => {
             if (ev) { ev.preventDefault(); ev.stopPropagation(); }
             joinRoomInput.value = docSnap.id;
@@ -428,8 +506,10 @@
             loadSeatStatus();
             setTimeout(() => { joinRoomInput.focus(); joinRoomInput.scrollIntoView({behavior:'smooth', block:'center'}); }, 0);
           };
+
           btn.addEventListener('click', selectRoom);
           item.addEventListener('click', selectRoom);
+
           right.appendChild(btn);
           item.appendChild(left);
           item.appendChild(right);
@@ -442,23 +522,29 @@
     function ensureAuthReady(){
       return new Promise((resolve) => {
         if (CURRENT_UID) return resolve();
-        const off = onAuthStateChanged(auth, (u) => { if (u) { CURRENT_UID = u.uid; off(); resolve(); } });
+        const off = onAuthStateChanged(auth, (u) => {
+          if (u) { CURRENT_UID = u.uid; off(); resolve(); }
+        });
       });
     }
 
+    // ── CREATE（右）：作成→即参加（ホスト）
     createRoomBtn.addEventListener('click', async () => {
       ACTIVE_MODE = 'create';
       await ensureAuthReady();
+
       const id = (newRoomIdInput.value||'').trim();
       const title = (newRoomTitleInput.value||'').trim();
       const isPublic = document.getElementById('room-public').checked;
       const creatorName  = (newPlayerNameInput.value || '').trim();
       const creatorColor = (newPlayerColorInput.value || '#22aaff');
+
       if(!id){ alert('ルームIDを入力してください'); return; }
       if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
       if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
 
       try{
+        // ルーム作成
         await setDoc(doc(db, `rooms/${id}`), {
           title: title || null,
           createdAt: serverTimestamp(),
@@ -468,28 +554,48 @@
           hostDisplayName: creatorName
         }, { merge: true });
 
-        IS_ROOM_CREATOR = true;
-        startHostHeartbeat(id); // ロビー中もHB
+        IS_ROOM_CREATOR = true;      // このタブは作成者
+        startHostHeartbeat(id);      // ロビーにいる間もHB開始
 
+        // ★ ローカル・グレースの印
+        JUST_CREATED_ROOM_ID = id;
+        JUST_CREATED_AT = Date.now();
+
+        // 楽観更新
         CURRENT_ROOM_META = { ...(CURRENT_ROOM_META || {}), hostUid: CURRENT_UID, hostDisplayName: creatorName };
         renderFieldLabels();
 
+        // 左フォームへも反映
         playerNameInput.value  = creatorName;
         playerColorInput.value = creatorColor;
 
+        // 以降、座席確保 → 即開始
         joinRoomInput.value = id;
         loadSeatStatus();
 
         const ok = await claimSeat(id, CREATE_SELECTED_SEAT);
-        if(!ok){ alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`); return; }
+        if(!ok){
+          alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`);
+          return;
+        }
 
-        await setDoc(doc(db, `rooms/${id}`), { hostSeat: CREATE_SELECTED_SEAT, updatedAt: serverTimestamp() }, { merge: true });
+        await setDoc(doc(db, `rooms/${id}`), {
+          hostSeat: CREATE_SELECTED_SEAT,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
 
-        currentSeatMap[CREATE_SELECTED_SEAT] = { ...(currentSeatMap[CREATE_SELECTED_SEAT] || {}), claimedByUid: CURRENT_UID, displayName: creatorName };
+        // 楽観反映：自分の座席名
+        currentSeatMap[CREATE_SELECTED_SEAT] = {
+          ...(currentSeatMap[CREATE_SELECTED_SEAT] || {}),
+          claimedByUid: CURRENT_UID,
+          displayName: creatorName
+        };
         renderFieldLabels();
 
         CURRENT_PLAYER = CREATE_SELECTED_SEAT;
-        seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
+        seatButtons.forEach(b =>
+          b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER)
+        );
         startSession(id, CREATE_SELECTED_SEAT);
 
       }catch(e){
@@ -500,8 +606,11 @@
 
     let unsubscribeSeats = null;
     joinRoomInput.addEventListener('change', loadSeatStatus);
-    joinRoomInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadSeatStatus(); });
+    joinRoomInput.addEventListener('keydown', (e) => { 
+      if (e.key === 'Enter') loadSeatStatus();
+    });
 
+    // 左フォームの名前変更→自席docに反映
     playerNameInput.addEventListener('change', async () => {
       const newName = (playerNameInput.value || '').trim();
       if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return;
@@ -550,17 +659,23 @@
       validateLobby();
     }
 
+    // ★ ラベル描画
     function renderFieldLabels(){
       for (const s of [1,2,3,4]) {
         const area   = document.querySelector(`.player-${s}`);
         const seatEl = area?.querySelector('.player-label .label-seat');
         const nameEl = area?.querySelector('.player-label .label-name');
         if(!seatEl || !nameEl) continue;
+
         seatEl.textContent = `P${s}`;
+
         const seatData = currentSeatMap[s] || null;
         const displayName = seatData?.displayName || '';
         const isHostSeat = (CURRENT_ROOM_META?.hostSeat === s);
-        nameEl.textContent = displayName ? `${displayName}${isHostSeat ? '（ホスト）' : ''}` : '';
+
+        nameEl.textContent = displayName
+          ? `${displayName}${isHostSeat ? '（ホスト）' : ''}`
+          : '';
       }
     }
 
@@ -571,14 +686,20 @@
       if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
       const roomId = (joinRoomInput.value||'').trim();
 
-      CURRENT_ROOM_META = null;
-      IS_ROOM_CREATOR = false;
-      stopHostHeartbeat();
+      // ★ 作成直後に同じルームを読む場合は、クリア＆HB停止を抑止
+      const preserveCreator = IS_ROOM_CREATOR && roomId && roomId === JUST_CREATED_ROOM_ID;
+
+      if (!preserveCreator) {
+        CURRENT_ROOM_META = null;
+        IS_ROOM_CREATOR = false;
+        stopHostHeartbeat();
+      }
       stopHostWatch();
       renderFieldLabels();
 
-      if(!roomId) return;
+      if(!roomId){ return; }
 
+      // ルームdoc購読
       unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
         CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
         IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
@@ -586,6 +707,7 @@
         renderFieldLabels();
         startHostWatch();
 
+        // ルーム閉鎖 or ホスト不在（グレースは startHostWatch 内で考慮）
         const closed = !!CURRENT_ROOM_META?.roomClosed;
         const hostHere = isHostAlive(CURRENT_ROOM_META);
         const iAmHost = (CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
@@ -603,8 +725,10 @@
         }
       });
 
+      // 軽く更新時刻だけ
       setDoc(doc(db, `rooms/${roomId}`), { updatedAt: serverTimestamp() }, { merge: true }).catch(()=>{});
 
+      // 座席doc購読
       const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
         currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
@@ -615,8 +739,14 @@
 
     function validateLobby(){
       const hostHere = isHostAlive(CURRENT_ROOM_META);
-      if (!hostHere && ACTIVE_MODE === 'join') { startBtn.disabled = true; return; }
-      if (ACTIVE_MODE === 'create') { startBtn.disabled = true; return; }
+      if (!hostHere && ACTIVE_MODE === 'join') {
+        startBtn.disabled = true;
+        return;
+      }
+      if (ACTIVE_MODE === 'create') {
+        startBtn.disabled = true;
+        return;
+      }
       const roomOk  = !!(joinRoomInput.value||'').trim();
       const nameNow = (playerNameInput.value||'').trim();
       const nameOk  = nameNow.length > 0 && nameNow.length <= 24;
@@ -637,10 +767,16 @@
             nameNow = rightName;
           }
         }
-        if (!nameNow) { alert('先に「プレイヤー名」を入力してください。'); playerNameInput.focus(); return; }
+        if (!nameNow) {
+          alert('先に「プレイヤー名」を入力してください。');
+          playerNameInput.focus();
+          return;
+        }
         const seat = parseInt(btn.dataset.seat, 10);
         CURRENT_PLAYER = seat;
-        seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
+        seatButtons.forEach(b =>
+          b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER)
+        );
         validateLobby();
       });
     });
@@ -657,14 +793,17 @@
       ev.preventDefault();
       ACTIVE_MODE = 'join';
       await ensureAuthReady();
-      if (!CURRENT_UID) { alert('認証の初期化に時間がかかっています。数秒後に再度お試しください。'); return; }
+      if (!CURRENT_UID) {
+        alert('認証の初期化に時間がかかっています。数秒後に再度お試しください。');
+        return;
+      }
       const room    = (joinRoomInput.value || '').trim();
       const seat    = CURRENT_PLAYER;
       const nameNow = (playerNameInput.value || '').trim();
       const colorNow = playerColorInput.value || '#22aaff';
-      if (!room){ alert('ルームIDを入力してください'); return; }
-      if (!nameNow){ alert('プレイヤー名を入力してください'); return; }
-      if (!seat){ alert('座席を選択してください'); return; }
+      if (!room)  { alert('ルームIDを入力してください'); return; }
+      if (!nameNow) { alert('プレイヤー名を入力してください'); return; }
+      if (!seat)  { alert('座席を選択してください'); return; }
 
       const oldText = startBtn.textContent;
       startBtn.disabled = true;
@@ -674,14 +813,26 @@
         const roomSnap = await onSnapshotOnce(doc(db, `rooms/${room}`));
         const meta = roomSnap.exists() ? roomSnap.data() : null;
         const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
-        if (!meta || (!isHostAlive(meta) && !iAmHost)) { alert('ホストが不在のため、このルームには参加できません。'); return; }
+        if (!meta || (!isHostAlive(meta) && !iAmHost)) {
+          alert('ホストが不在のため、このルームには参加できません。');
+          return;
+        }
         if (iAmHost) IS_ROOM_CREATOR = true;
 
         const ok = await claimSeat(room, seat);
-        if (!ok) { alert('開始直前に座席が埋まりました。別の席を選んでください。'); return; }
+        if (!ok) {
+          alert('開始直前に座席が埋まりました。別の席を選んでください。');
+          return;
+        }
 
-        currentSeatMap[seat] = { ...(currentSeatMap[seat] || {}), claimedByUid: CURRENT_UID, displayName: nameNow, color: colorNow };
+        currentSeatMap[seat] = {
+          ...(currentSeatMap[seat] || {}),
+          claimedByUid: CURRENT_UID,
+          displayName: nameNow,
+          color: colorNow
+        };
         renderSeatAvailability();
+
         startSession(room, seat);
       } catch (e) {
         console.error(e);
@@ -727,16 +878,18 @@
 
     let heartbeatTimer = null;
     let hostHeartbeatTimer = null;
-
+    
     function startHostHeartbeat(roomId){
       stopHostHeartbeat();
       hostHeartbeatTimer = setInterval(async () => {
-        try{ await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true }); }
-        catch(e){ console.warn('host HB failed', e); }
+        try{
+          await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
+        }catch(e){ console.warn('host HB failed', e); }
       }, 5000);
     }
-    function stopHostHeartbeat(){ if(hostHeartbeatTimer){ clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; } }
-
+    function stopHostHeartbeat(){
+      if(hostHeartbeatTimer){ clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; }
+    }
     function startHeartbeat(roomId, seat){
       stopHeartbeat();
       heartbeatTimer = setInterval(async () => {
@@ -769,12 +922,13 @@
       sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: P${CURRENT_PLAYER}`;
       lobby.style.display = 'none';
       startHeartbeat(roomId, playerId);
-      if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
+      if (IS_ROOM_CREATOR) { startHostHeartbeat(roomId); }
 
+      // ★ seat/room の購読を張り直す（ラベル確実反映）
       joinRoomInput.value = CURRENT_ROOM;
       loadSeatStatus();
 
-      window.addEventListener('beforeunload', () => {
+      window.addEventListener('beforeunload', () => { 
         stopHeartbeat();
         stopHostWatch();
         if (IS_ROOM_CREATOR && CURRENT_ROOM) {
@@ -789,118 +943,34 @@
       startHostWatch();
     }
 
-    // ---- Storage最適化：アップロード＆生成 ----
-    async function fileToCanvasThumb(file, max=512){
-      const img = await new Promise((res, rej) => {
-        const i = new Image();
-        i.onload = () => res(i);
-        i.onerror = rej;
-        i.src = URL.createObjectURL(file);
-      });
-      const scale = Math.min(1, max / Math.max(img.width, img.height));
-      const w = Math.max(1, Math.round(img.width * scale));
-      const h = Math.max(1, Math.round(img.height * scale));
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.75));
-      return blob;
-    }
-
-    async function uploadToStorage(roomId, file, kind){
-      // kind: 'thumb' | 'full'
-      const nameSafe = file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-      const path = `rooms/${roomId}/cards/${kind}/${Date.now()}_${nameSafe}`;
-      const ref = sRef(storage, path);
-      const data = (kind === 'thumb') ? await fileToCanvasThumb(file, 512) : file;
-      const snap = await uploadBytes(ref, data);
-      return await getDownloadURL(snap.ref);
-    }
-
-    // アップロード並列数を絞る（帯域安定）
-    const MAX_PARALLEL = 5;
-    async function handleFiles(files){
-      const all = [...files].filter(f => f.type.startsWith('image/'));
-      const queue = all.slice();
-      const runners = Array.from({length: Math.min(MAX_PARALLEL, queue.length)}, () => worker());
-      await Promise.all(runners);
-
-      async function worker(){
-        while(queue.length){
-          const file = queue.shift();
-          try{ await createCardFromFile(file); }catch(e){ console.error(e); }
-        }
-      }
-    }
-
-    async function createCardFromFile(file){
-      if(!CURRENT_ROOM) return;
-      const { x, y } = randomPointInDeck(CURRENT_PLAYER);
-
-      // まず軽いdocを作ってから画像をアップロード
-      const refDoc = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-        x, y, zIndex: 1,
-        faceUp: true,
-        imageThumbUrl: null,
-        imageUrl: null,
-        ownerUid: CURRENT_UID,
-        ownerSeat: CURRENT_PLAYER,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      markLocal(refDoc.id);
-
-      // 並列アップロード
-      const [thumbUrl, fullUrl] = await Promise.all([
-        uploadToStorage(CURRENT_ROOM, file, 'thumb'),
-        uploadToStorage(CURRENT_ROOM, file, 'full')
-      ]);
-
-      // URLを段階的に反映（thumb→full）
-      await updateDoc(refDoc, { imageThumbUrl: thumbUrl, updatedAt: serverTimestamp() });
-      await updateDoc(refDoc, { imageUrl: fullUrl,      updatedAt: serverTimestamp() });
-    }
-
-    // ---- 購読：一括フラッシュでDOMを更新 ----
-    let pendingChanges = [];
-    let flushScheduled = false;
-    function scheduleFlush(){
-      if (flushScheduled) return;
-      flushScheduled = true;
-      requestAnimationFrame(() => {
-        const frag = document.createDocumentFragment();
-        for (const [id, data] of pendingChanges) {
-          let el = cardDomMap.get(id) || document.querySelector(`[data-card-id="${id}"]`);
-          if (!el && !isLocalRecent(id)) {
-            el = createCardDom(id, data);
-            cardDomMap.set(id, el);
-            frag.appendChild(el);
-          }
-          if (el) applyCardState(el, data);
-        }
-        if (frag.childNodes.length) field.appendChild(frag);
-        pendingChanges = [];
-        flushScheduled = false;
-      });
-    }
-
     function subscribeCards(){
       if(unsubscribeCards){ unsubscribeCards(); unsubscribeCards = null; }
       const qCards = collection(db, `rooms/${CURRENT_ROOM}/cards`);
       unsubscribeCards = onSnapshot(qCards, snap => {
         snap.docChanges().forEach(change => {
+          const data = change.doc.data();
+          const id = change.doc.id;
           if(change.type === 'removed'){
-            const el = cardDomMap.get(change.doc.id); if(el){ el.remove(); cardDomMap.delete(change.doc.id); }
+            const el = cardDomMap.get(id); if(el){ el.remove(); cardDomMap.delete(id); }
             return;
           }
-          pendingChanges.push([change.doc.id, change.doc.data()]);
+          upsertCardFromRemote(id, data);
         });
-        scheduleFlush();
       });
     }
 
-    function createCardDom(cardId, state){
+    function upsertCardFromRemote(id, data){
+      let el = cardDomMap.get(id) || document.querySelector(`[data-card-id="${id}"]`);
+      const exists = !!el;
+      if (!exists && !isLocalRecent(id)) {
+        el = createCardDom(id, data.imageUrl, data);
+        cardDomMap.set(id, el);
+        field.appendChild(el);
+      }
+      if (el) applyCardState(el, data);
+    }
+
+    function createCardDom(cardId, imageSrc, state){
       const card = document.createElement("div");
       card.className = "card";
       card.dataset.cardId = cardId;
@@ -909,10 +979,7 @@
       card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
 
       const img = document.createElement("img");
-      img.loading = "lazy";
-      img.decoding = "async";
-      img.src = state?.imageThumbUrl || state?.imageUrl || "";
-      card.appendChild(img);
+      img.src = imageSrc; card.appendChild(img);
 
       makeDraggable(card);
 
@@ -930,7 +997,7 @@
         selectedCard = card;
 
         const imgEl = card.querySelector('img');
-        if (imgEl && imgEl.style.display !== "none" && imgEl.src) {
+        if (imgEl && imgEl.style.display !== "none") {
           previewImg.src = imgEl.src;
           previewImg.style.display = "block";
         } else {
@@ -954,16 +1021,11 @@
       card.style.top  = `${data.y||0}px`;
       card.style.zIndex = data.zIndex || 1;
       card.dataset.faceUp = data.faceUp ? 'true' : 'false';
-
       const img = card.querySelector('img');
       if(img){
         if(data.faceUp){ img.style.display = 'block'; card.style.backgroundColor = '#fff'; }
         else { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
-
-        // まずthumbを優先、そのあとfullが来たら置換
-        const prefer = data.imageThumbUrl || data.imageUrl || "";
-        if (prefer && img.src !== prefer) img.src = prefer;
-        if (data.imageUrl && img.src !== data.imageUrl) img.src = data.imageUrl;
+        if(data.imageUrl && img.src !== data.imageUrl){ img.src = data.imageUrl; }
       }
 
       try {
@@ -983,15 +1045,18 @@
     }
 
     async function cleanupAndCloseRoom(roomId){
+      // cards削除
       const cardsCol = collection(db, `rooms/${roomId}/cards`);
       const cardsSnap = await getDocs(cardsCol);
-      let batch = writeBatch(db); let count = 0;
+      let batch = writeBatch(db);
+      let count = 0;
       for (const docSnap of cardsSnap.docs) {
         batch.delete(doc(db, `rooms/${roomId}/cards/${docSnap.id}`));
         if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
       }
       if (count > 0) await batch.commit();
 
+      // seats削除
       const seatsCol = collection(db, `rooms/${roomId}/seats`);
       const seatsSnap = await getDocs(seatsCol);
       batch = writeBatch(db); count = 0;
@@ -1001,7 +1066,11 @@
       }
       if (count > 0) await batch.commit();
 
-      await setDoc(doc(db, `rooms/${roomId}`), { roomClosed: true, updatedAt: serverTimestamp() }, { merge: true });
+      // ルーム閉鎖フラグ＆最終更新
+      await setDoc(doc(db, `rooms/${roomId}`), {
+        roomClosed: true,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
     }
 
     async function updateCard(cardId, patch){
@@ -1015,12 +1084,50 @@
       uploadArea.addEventListener("click", () => fileInput.click());
       uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.style.backgroundColor = "#eef"; });
       uploadArea.addEventListener("dragleave", () => { uploadArea.style.backgroundColor = "#fff"; });
-      uploadArea.addEventListener("drop", async e => {
-        e.preventDefault();
-        uploadArea.style.backgroundColor = "#fff";
-        await handleFiles(e.dataTransfer.files);
+      uploadArea.addEventListener("drop", e => { e.preventDefault(); uploadArea.style.backgroundColor = "#fff"; handleFiles(e.dataTransfer.files); });
+      fileInput.addEventListener("change", e => handleFiles(e.target.files));
+    }
+
+    function handleFiles(files){
+      [...files].forEach(file => {
+        if(!file.type.startsWith("image/")) return;
+        const reader = new FileReader();
+        reader.onload = async e => {
+          const imageUrl = e.target.result;
+          await createCardRemote({ imageUrl });
+        };
+        reader.readAsDataURL(file);
       });
-      fileInput.addEventListener("change", async e => { await handleFiles(e.target.files); fileInput.value = ""; });
+    }
+
+    async function createCardRemote({ imageUrl }){
+      if(!CURRENT_ROOM) return;
+      const { x: baseX, y: baseY } = randomPointInDeck(CURRENT_PLAYER);
+      try{
+        const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+          x: baseX, y: baseY, zIndex: 1,
+          faceUp: true,
+          imageUrl,
+          ownerUid: CURRENT_UID,
+          ownerSeat: CURRENT_PLAYER,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        markLocal(ref.id);
+        let el = cardDomMap.get(ref.id) || document.querySelector(`[data-card-id="${ref.id}"]`);
+        if(!el){
+          el = createCardDom(ref.id, imageUrl, {
+            x: baseX, y: baseY, zIndex: 1, faceUp: true,
+            ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
+          });
+          cardDomMap.set(ref.id, el);
+          field.appendChild(el);
+        }
+        applyCardState(el, {
+          x: baseX, y: baseY, zIndex: 1, faceUp: true,
+          imageUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
+        });
+      }catch(e){ console.error('createCardRemote', e); }
     }
 
     function makeDraggable(card){
@@ -1071,23 +1178,42 @@
     }
 
     window.deleteMyCards = async function(){
-      if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+      if (!CURRENT_ROOM || !CURRENT_UID) {
+        alert('ルームに参加してから実行してください');
+        return;
+      }
       if (!confirm('本当に自分の全カードを削除しますか？この操作は取り消せません。')) return;
+
       try {
         const cardsCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
         const q = query(cardsCol, where('ownerUid', '==', CURRENT_UID));
         const snap = await getDocs(q);
-        if (snap.empty) { alert('削除対象のカードはありません'); return; }
+
+        if (snap.empty) {
+          alert('削除対象のカードはありません');
+          return;
+        }
+
         let batch = writeBatch(db);
         let count = 0;
         const removedIds = [];
+
         for (const docSnap of snap.docs) {
           batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${docSnap.id}`));
           removedIds.push(docSnap.id);
-          if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
+          if (++count >= 450) {
+            await batch.commit();
+            batch = writeBatch(db);
+            count = 0;
+          }
         }
         if (count > 0) await batch.commit();
-        removedIds.forEach(id => { const el = cardDomMap.get(id); if (el) { el.remove(); cardDomMap.delete(id); } });
+
+        removedIds.forEach(id => {
+          const el = cardDomMap.get(id);
+          if (el) { el.remove(); cardDomMap.delete(id); }
+        });
+
         if (previewImg) { previewImg.src = ''; previewImg.style.display = 'none'; }
         alert(`削除しました（${removedIds.length}枚）`);
       } catch (e) {
