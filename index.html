@@ -14,6 +14,11 @@
     #sidebar { width:var(--sidebar-w); height:calc(100vh - var(--header-h) - 120px); float:left; background:#fff; border-right:2px solid #aaa; box-shadow:2px 0 5px rgba(0,0,0,.2); padding:10px; box-sizing:border-box; }
     #sidebar h2 { font-size:14px; text-align:center; margin:20px 0 10px; }
     #sidebar button { width:100%; margin-bottom:10px; padding:10px; font-size:14px; cursor:pointer; }
+    
+    /* 追加: ルーム終了ボタンのスタイル */
+    #sidebar button.danger { background:#c62828; color:#fff; }
+    #sidebar button.danger:disabled { opacity:.6; cursor:not-allowed; }
+    
     #field-size-options { display:none; margin-top:5px; text-align:center; }
     #field-size-options button { width:30%; margin:5px 2%; padding:5px; font-size:13px; }
     #container { width:calc(100% - var(--sidebar-w) - var(--preview-w)); height:calc(100vh - var(--header-h) - 120px); overflow:hidden; position:relative; float:left; background:#f7f7f7; }
@@ -164,6 +169,10 @@
       <button onclick="setFieldSize('medium')">中</button>
       <button onclick="setFieldSize('large')">大</button>
     </div>
+    
+    <!-- 追加: ホスト専用「ルームを終了」ボタン（初期は非表示） -->
+    <button id="end-room-btn" class="danger" style="display:none">🚪 ルームを終了（ホスト）</button>
+    
   </div>
 
   <div id="container">
@@ -546,6 +555,7 @@
 
       renderFieldLabels();
       validateLobby();
+      updateEndRoomButtonVisibility(); // 追加
     }
 
     function renderFieldLabels(){
@@ -584,6 +594,7 @@
         IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
         if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
         renderFieldLabels();
+        updateEndRoomButtonVisibility(); // 追加
       });
 
       // 軽く更新時刻だけ
@@ -627,6 +638,7 @@
         CURRENT_PLAYER = seat;
         seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
         validateLobby();
+        updateEndRoomButtonVisibility(); // 追加
       });
     });
 
@@ -636,6 +648,7 @@
       renderSeatAvailability();
       detachSeatsListener();
       joinRoomInput.focus();
+      updateEndRoomButtonVisibility(); // 追加
     });
 
     startBtn.addEventListener('click', async (ev) => {
@@ -746,6 +759,61 @@
     const uploadArea = document.getElementById("upload-area");
     const fileInput = document.getElementById("file-input");
     const fieldSizeOptions = document.getElementById("field-size-options");
+    
+    
+    
+    // === 追加: ルーム終了ボタンの制御 ===
+const endRoomBtn = document.getElementById('end-room-btn');
+
+/** ホスト座席のホスト本人だけにボタンを出す */
+function updateEndRoomButtonVisibility(){
+  const isHostUid = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+  const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
+  const show = !!(CURRENT_ROOM && isHostUid && isHostSeat);
+  if (endRoomBtn) endRoomBtn.style.display = show ? 'block' : 'none';
+}
+
+/** クリックでルーム終了（cards/seats 全削除 + roomClosed: true） */
+endRoomBtn?.addEventListener('click', async () => {
+  if (!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID && CURRENT_ROOM_META?.hostSeat === CURRENT_PLAYER)) {
+    alert('この操作は、ホスト座席に座ったホストのみ実行できます。');
+    return;
+  }
+  if (!confirm('ルームを終了します。全カードと座席情報が削除され、全員が退出します。よろしいですか？')) return;
+
+  endRoomBtn.disabled = true;
+  try {
+    await cleanupAndCloseRoom(CURRENT_ROOM); // 既存関数: cards/seats全削除 + roomClosed: true をセット
+    // 自分（ホスト）側のクリーンアップとロビー復帰
+    try { if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; } } catch(_) {}
+    try { if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; } } catch(_) {}
+    try { if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; } } catch(_) {}
+    try { stopHeartbeat(); } catch(_) {}
+    try { stopHostHeartbeat(); } catch(_) {}
+    try { stopHostWatch(); } catch(_) {}
+    try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
+
+    CURRENT_ROOM = null;
+    CURRENT_PLAYER = null;
+    sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
+    lobby.style.display = 'flex';
+    alert('ルームを終了しました。');
+
+  } catch (e) {
+    console.error(e);
+    alert('ルームの終了に失敗しました。ネットワークをご確認のうえ再試行してください。');
+  } finally {
+    endRoomBtn.disabled = false;
+    updateEndRoomButtonVisibility();
+  }
+});
+    
+    
+    
+    
+    
+    
+    
 
     let zoom = 1, panOffsetX = 0, panOffsetY = 0, selectedCard = null;
 
@@ -762,6 +830,7 @@
 
     function startSession(roomId, playerId){
       CURRENT_ROOM = roomId; CURRENT_PLAYER = playerId;
+      updateEndRoomButtonVisibility(); // 追加
       sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: P${CURRENT_PLAYER}`;
       lobby.style.display = 'none';
       startHeartbeat(roomId, playerId);
