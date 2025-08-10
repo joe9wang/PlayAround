@@ -670,6 +670,10 @@
           if (!el) return;
           if (el.__colorHandlerBound) return;
           el.__colorHandlerBound = true;
+          // フィールドのパン開始をブロック（キャプチャ段階で停止）
+          el.addEventListener('mousedown', (e) => e.stopPropagation(), true);
+          el.style.cursor = 'pointer';          
+          
           el.addEventListener('dblclick', async () => {
             if (seat !== CURRENT_PLAYER) return;
             if (!CURRENT_ROOM) return;
