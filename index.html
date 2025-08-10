@@ -158,6 +158,8 @@
 
   <div id="sidebar">
     <h2>操作パネル</h2>
+    <!-- 追加: 全カード向きリセット（自分のカードのみ） -->
+    <button onclick="resetMyCardRotation()">↻ 全カード向きリセット（自分のカードのみ）</button>
     <button onclick="faceDownAll()">🂠 裏返す（自分のカードのみ）</button>
     <button onclick="faceUpAll()">🂡 表にする（自分のカードのみ）</button>
     <button onclick="shuffleDecks()">🌀 シャッフル（自分のデッキのみ）</button>
@@ -1122,8 +1124,14 @@ card.addEventListener("dblclick", async (e) => {
                   x, y, zIndex: 1, faceUp: true,
                   ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
                 });
+                
                 cardDomMap.set(ref.id, el);
-                applyCardState(el, {x, y, zIndex: 1, faceUp: true, imageUrl: thumbDataUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER});
+                applyCardState(el, {
+                  x, y, zIndex: 1, faceUp: true,
+                  imageUrl: thumbDataUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
+                  rotation: 0
+                });
+                
                 frag.appendChild(el);
               }
               return true;
@@ -1167,7 +1175,13 @@ card.addEventListener("dblclick", async (e) => {
           cardDomMap.set(ref.id, el);
           field.appendChild(el);
         }
-        applyCardState(el, { x: baseX, y: baseY, zIndex: 1, faceUp: true, imageUrl: thumbDataUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER });
+        
+        applyCardState(el, {
+          x: baseX, y: baseY, zIndex: 1, faceUp: true,
+          imageUrl: thumbDataUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
+          rotation: 0
+        });
+        
       }catch(e){ console.error('createCardRemote', e); }
     }
 
@@ -1237,12 +1251,39 @@ card.addEventListener("dblclick", async (e) => {
       }
       previewImg.src = ""; previewImg.style.display = "none";
     }
+    
     window.faceUpAll = async function(){
       for(const [id, el] of cardDomMap){
         if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
         await updateCard(id, { faceUp: true, updatedAt: serverTimestamp() });
       }
     }
+    
+    
+    // 追加: 自分のカードの回転をすべて 0 度にリセット
+window.resetMyCardRotation = async function () {
+  if (!CURRENT_ROOM || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください');
+    return;
+  }
+
+  // ローカル表示を即時反映しつつ、Firestore も更新
+  const tasks = [];
+  for (const [id, el] of cardDomMap) {
+    if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue; // 自分のカードのみ
+    el.style.transform = 'rotate(0deg)';                           // 即時反映
+    tasks.push(updateCard(id, { rotation: 0, updatedAt: serverTimestamp() }));
+  }
+
+  try {
+    await Promise.all(tasks);
+    alert('向きをリセットしました');
+  } catch (e) {
+    console.error(e);
+    alert('リセットに失敗しました。ネットワーク状況を確認して再度お試しください。');
+  }
+};
+    
 
     window.deleteMyCards = async function(){
       if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
