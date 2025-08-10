@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>プレイアラウンド v20（高速サムネ+ホスト在室安定+全削除）</title>
+  <title>プレイアラウンド v21（ホスト在室安定/高速サムネ/全削除）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; }
@@ -25,7 +25,7 @@
     .hand-area{ position:relative; bottom:0; left:0; width:100%; height:33.33%; background:#228be6; z-index:0; }
     .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; }
     .card[data-owner="other"]{ cursor:not-allowed; opacity:.95; }
-    .card img{ width:100%; height:100%; border-radius:10px; object-fit:cover; pointer-events:none; user-select:none; image-rendering: auto; }
+    .card img{ width:100%; height:100%; border-radius:10px; object-fit:cover; pointer-events:none; user-select:none; image-rendering:auto; }
     .card.selected{ border:3px solid red; }
     #preview{ width:var(--preview-w); height:calc(100vh - var(--header-h) - 120px); float:right; background:#fff; border-left:2px solid #aaa; box-shadow:-2px 0 5px rgba(0,0,0,.2); padding:10px; box-sizing:border-box; }
     #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; } 
@@ -81,7 +81,7 @@
           </div>
 
           <label class="lobby-label">プレイヤー名 / 色</label>
-          <div class="row" style="margin-bottom:8px;">
+          <div class="row" style="margin-bottom:8px%;">
             <input id="player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
             <input id="player-color" type="color" value="#22aaff" title="プレイヤーカラー" />
           </div>
@@ -103,7 +103,6 @@
         <!-- 右：新しいルームを作成して参加（ホスト） -->
         <section class="lobby-section">
           <div class="lobby-subtitle">新しいルームを作成して参加（ホスト）</div>
-
           <label class="lobby-label">新しいルームを作成</label>
           <div class="row" style="margin-bottom:8px;">
             <input id="new-room-id" type="text" class="field" placeholder="作成するID（例: room-xyz）" />
@@ -268,17 +267,18 @@
     let ACTIVE_MODE = 'join'; // 'join' | 'create'
     let IS_ROOM_CREATOR = false;
 
-    // “直近で自分が作成したルーム”のローカル印（ホスト不在誤判定の猶予に使う）
+    // 直近で自分が作成したルーム情報（猶予判定に使用）
     let JUST_CREATED_ROOM_ID = null;
     let JUST_CREATED_AT = 0;
 
     // しきい値（ms）
     const HOST_STALE_MS = 15000;   // 15秒
     const SEAT_STALE_MS = 60000;   // 60秒
+    const LOCAL_GRACE_MS = 15000;  // 15秒
 
     function isHostAlive(roomMeta){
       if(!roomMeta?.hostUid) return false;
-      // ★ ホスト本人のタブは常に在室扱い
+      // ホスト本人のタブは常在扱い
       if (CURRENT_UID && roomMeta.hostUid === CURRENT_UID) return true;
 
       const now = Date.now();
@@ -321,7 +321,6 @@
       const cy = y + CARD_H / 2;
       return cx >= rect.minX && cx <= rect.minX + rect.width && cy >= rect.minY && cy <= rect.minY + rect.height;
     }
-
     function getHandBoundsForSeat(seat){
       const hand = document.querySelector(`.player-${seat} .hand-area`);
       if(!hand) return null;
@@ -333,7 +332,6 @@
       const height = handRect.height / zoom;
       return { minX, minY, width, height };
     }
-
     function getDeckBoundsForSeat(seat){
       const deck = document.querySelector(`.player-${seat} .deck-area`);
       if(!deck) return null;
@@ -345,7 +343,6 @@
       const height = deckRect.height / zoom;
       return { minX, minY, width, height };
     }
-
     function getCardsInsideRect(rect){
       const cards = [];
       document.querySelectorAll('.card').forEach(el => {
@@ -360,7 +357,6 @@
       });
       return cards;
     }
-
     function shuffleArray(arr){
       for(let i=arr.length-1;i>0;i--){
         const j = (Math.random()* (i+1))|0;
@@ -368,7 +364,6 @@
       }
       return arr;
     }
-
     function randomPointInDeck(seat){
       const b = getDeckBoundsForSeat(seat);
       if(!b) return { x: Math.random()*500|0, y: Math.random()*500|0 };
@@ -387,11 +382,11 @@
         const closed   = !!CURRENT_ROOM_META?.roomClosed;
         const hostHere = isHostAlive(CURRENT_ROOM_META);
 
-        // ローカル猶予（作成直後15秒）
+        // ← IS_ROOM_CREATORに依存せず、直近作成した同一ルームなら猶予
         const localGrace =
-          IS_ROOM_CREATOR &&
-          ((joinRoomInput.value || '').trim() === (JUST_CREATED_ROOM_ID || '')) &&
-          (Date.now() - (JUST_CREATED_AT || 0) < 15000);
+          JUST_CREATED_ROOM_ID &&
+          ((joinRoomInput.value || '').trim() === JUST_CREATED_ROOM_ID) &&
+          (Date.now() - (JUST_CREATED_AT || 0) < LOCAL_GRACE_MS);
 
         if (!iAmHost && !localGrace && (closed || !hostHere)) {
           try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
@@ -435,7 +430,6 @@
           btn.setAttribute('type', 'button');
           btn.className = 'btn secondary';
           btn.textContent = '参加';
-
           const selectRoom = (ev) => {
             if (ev) { ev.preventDefault(); ev.stopPropagation(); }
             joinRoomInput.value = docSnap.id;
@@ -496,7 +490,7 @@
         // ローカル即時反映（isHostAlive がすぐ通るように）
         CURRENT_ROOM_META = { ...(CURRENT_ROOM_META || {}), hostUid: CURRENT_UID, hostDisplayName: creatorName };
 
-        // 左フォームへも反映
+        // 左フォームへ反映
         playerNameInput.value  = creatorName;
         playerColorInput.value = creatorColor;
 
@@ -529,6 +523,7 @@
     joinRoomInput.addEventListener('change', loadSeatStatus);
     joinRoomInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadSeatStatus(); });
 
+    // 名前変更を自席docへ
     playerNameInput.addEventListener('change', async () => {
       const newName = (playerNameInput.value || '').trim();
       if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return;
@@ -596,16 +591,24 @@
       if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
       const roomId = (joinRoomInput.value||'').trim();
 
+      // ★ ここで IS_ROOM_CREATOR を無条件リセットしない！
+      // 直前に自分が作成した同一ルームであれば保持する。
+      if (!(JUST_CREATED_ROOM_ID && roomId === JUST_CREATED_ROOM_ID)) {
+        IS_ROOM_CREATOR = false;
+      }
+
+      // メタのクリアや監視リセット
       CURRENT_ROOM_META = null;
-      IS_ROOM_CREATOR = false;
       stopHostHeartbeat();
       stopHostWatch();
       renderFieldLabels();
       if(!roomId){ return; }
 
+      // ルームdoc購読
       unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
         CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
-        IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+        // メタに基づいても再評価するが、ここで false になっても直後猶予が効く
+        IS_ROOM_CREATOR = IS_ROOM_CREATOR || !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
         if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
         renderFieldLabels();
         startHostWatch();
@@ -613,10 +616,11 @@
         const closed = !!CURRENT_ROOM_META?.roomClosed;
         const hostHere = isHostAlive(CURRENT_ROOM_META);
         const iAmHost = (CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+
         const localGrace =
-          IS_ROOM_CREATOR &&
-          ((joinRoomInput.value || '').trim() === (JUST_CREATED_ROOM_ID || '')) &&
-          (Date.now() - (JUST_CREATED_AT || 0) < 15000);
+          JUST_CREATED_ROOM_ID &&
+          (roomId === JUST_CREATED_ROOM_ID) &&
+          (Date.now() - (JUST_CREATED_AT || 0) < LOCAL_GRACE_MS);
 
         if (!iAmHost && !localGrace && (closed || !hostHere)) {
           try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
@@ -632,8 +636,10 @@
         }
       });
 
+      // 軽い更新
       setDoc(doc(db, `rooms/${roomId}`), { updatedAt: serverTimestamp() }, { merge: true }).catch(()=>{});
 
+      // 座席doc購読
       const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
         currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
@@ -845,7 +851,7 @@
       let el = cardDomMap.get(id) || document.querySelector(`[data-card-id="${id}"]`);
       const exists = !!el;
       if (!exists && !isLocalRecent(id)) {
-        el = createCardDom(id, data.thumbUrl || data.imageUrl, data); // 互換: 旧データは imageUrl
+        el = createCardDom(id, data.thumbUrl || data.imageUrl, data); // 旧データ互換
         cardDomMap.set(id, el);
         field.appendChild(el);
       }
@@ -886,7 +892,6 @@
           previewImg.style.display = "block";
           previewInfo.textContent = `カードのオーナー: P${card.dataset.ownerSeat || "?"} / あなた: P${CURRENT_PLAYER || "?"}`;
         } else {
-          // 予備としてthumbを出しておく
           previewImg.src = img.src;
           previewImg.style.display = "block";
           previewInfo.textContent = `（フル画質の取得に失敗）`;
@@ -939,7 +944,6 @@
       }
       if (count > 0) await batch.commit();
 
-      // フル画像用サブコレ削除
       const fullCol = collection(db, `rooms/${roomId}/cards_full`);
       const fullSnap = await getDocs(fullCol);
       batch = writeBatch(db); count = 0;
@@ -949,7 +953,6 @@
       }
       if (count > 0) await batch.commit();
 
-      // seats削除
       const seatsCol = collection(db, `rooms/${roomId}/seats`);
       const seatsSnap = await getDocs(seatsCol);
       batch = writeBatch(db); count = 0;
@@ -983,8 +986,7 @@
         const reader = new FileReader();
         reader.onload = async e => {
           const fullUrl = e.target.result;
-          // サムネ生成（短辺基準で縮小、低品質JPG）
-          const thumbUrl = await makeThumbnail(fullUrl, 240, 320, 0.5); // 240x320, 品質50%
+          const thumbUrl = await makeThumbnail(fullUrl, 240, 320, 0.5);
           await createCardRemote({ thumbUrl, fullUrl });
         };
         reader.readAsDataURL(file);
@@ -995,21 +997,16 @@
       if(!CURRENT_ROOM) return;
       const { x: baseX, y: baseY } = randomPointInDeck(CURRENT_PLAYER);
       try{
-        // 軽量ドキュメント（一覧/同期用）
         const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
           x: baseX, y: baseY, zIndex: 1,
           faceUp: true,
-          thumbUrl,                               // 👈 サムネのみ
+          thumbUrl,
           ownerUid: CURRENT_UID,
           ownerSeat: CURRENT_PLAYER,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-
-        // フル画像は別コレクションに分離（クリック時に都度 getDoc）
-        await setDoc(doc(db, `rooms/${CURRENT_ROOM}/cards_full/${ref.id}`), {
-          fullUrl, createdAt: serverTimestamp()
-        });
+        await setDoc(doc(db, `rooms/${CURRENT_ROOM}/cards_full/${ref.id}`), { fullUrl, createdAt: serverTimestamp() });
 
         markLocal(ref.id);
         let el = cardDomMap.get(ref.id) || document.querySelector(`[data-card-id="${ref.id}"]`);
@@ -1026,14 +1023,11 @@
       try{
         const fullRef = doc(db, `rooms/${CURRENT_ROOM}/cards_full/${cardId}`);
         const snap = await getDoc(fullRef);
-        if (snap.exists()) {
-          return { ok:true, fullUrl: snap.data().fullUrl };
-        }
+        if (snap.exists()) { return { ok:true, fullUrl: snap.data().fullUrl }; }
         return { ok:false };
       }catch(e){ console.warn('fetchFullImageForCard', e); return { ok:false }; }
     }
 
-    // 低コストなサムネ生成（canvas 縮小 + JPEG 品質を落とす）
     async function makeThumbnail(dataUrl, maxW, maxH, quality=0.5){
       return await new Promise((resolve) => {
         const img = new Image();
@@ -1045,12 +1039,8 @@
           canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext('2d', { alpha: false });
           ctx.drawImage(img, 0, 0, w, h);
-          try {
-            const out = canvas.toDataURL('image/jpeg', quality);
-            resolve(out);
-          } catch {
-            resolve(dataUrl); // 失敗時は原本
-          }
+          try { resolve(canvas.toDataURL('image/jpeg', quality)); }
+          catch { resolve(dataUrl); }
         };
         img.src = dataUrl;
       });
@@ -1117,7 +1107,6 @@
         const removedIds = [];
         for (const docSnap of snap.docs) {
           batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${docSnap.id}`));
-          // フル側も削除
           batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards_full/${docSnap.id}`));
           removedIds.push(docSnap.id);
           if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
