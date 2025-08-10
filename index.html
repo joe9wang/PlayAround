@@ -582,6 +582,7 @@
       renderFieldLabels();
       validateLobby();
       updateEndRoomButtonVisibility(); // 追加
+      renderAreaColors(); // 追加: エリア色反映
       renderHPPanel(); // 追加: HP再描画
       
     }
@@ -636,6 +637,69 @@
     }
     
     
+    // ===== 追加: エリア色の反映とダブルクリック編集 =====
+    function getSeatAreaColor(seat, zone){
+      const ac = currentSeatMap[seat]?.areaColors || {};
+      return ac[zone] || DEFAULT_AREA_COLORS[zone];
+    }
+
+    function renderAreaColors(){
+      for (const seat of [1,2,3,4]) {
+        const root = document.querySelector(`.player-${seat}`);
+        if (!root) continue;
+        const deck = root.querySelector('.deck-area');
+        const main = root.querySelector('.main-play-area');
+        const hand = root.querySelector('.hand-area');
+        if (deck) deck.style.background = getSeatAreaColor(seat, 'deck');
+        if (main) main.style.background = getSeatAreaColor(seat, 'main');
+        if (hand) hand.style.background = getSeatAreaColor(seat, 'hand');
+      }
+    }
+
+    // 自分の座席の各エリアをダブルクリックで色変更できるようにする
+    function bindAreaColorHandlers(){
+      for (const seat of [1,2,3,4]) {
+        const root = document.querySelector(`.player-${seat}`);
+        if (!root) continue;
+        const zones = [
+          { el: root.querySelector('.deck-area'), key: 'deck' },
+          { el: root.querySelector('.main-play-area'), key: 'main' },
+          { el: root.querySelector('.hand-area'), key: 'hand' },
+        ];
+        zones.forEach(({el, key}) => {
+          if (!el) return;
+          if (el.__colorHandlerBound) return;
+          el.__colorHandlerBound = true;
+          el.addEventListener('dblclick', async () => {
+            if (seat !== CURRENT_PLAYER) return;
+            if (!CURRENT_ROOM) return;
+            const input = document.createElement('input');
+            input.type = 'color';
+            try { input.value = getSeatAreaColor(seat, key); }
+            catch { input.value = DEFAULT_AREA_COLORS[key]; }
+            input.style.position = 'fixed';
+            input.style.left = '-9999px';
+            document.body.appendChild(input);
+            input.addEventListener('input', async () => {
+              const picked = input.value;
+              el.style.background = picked;
+              try{
+                const prev = (currentSeatMap[seat]?.areaColors) || {};
+                const next = { ...prev, [key]: picked };
+                const seatRef = doc(db, `rooms/${CURRENT_ROOM}/seats/${seat}`);
+                await setDoc(seatRef, { areaColors: next, updatedAt: serverTimestamp() }, { merge: true });
+              }catch(err){
+                console.error(err);
+                alert('エリア色の保存に失敗しました。ネットワークをご確認ください。');
+              }
+            }, { once: true });
+            input.click();
+            setTimeout(() => { input.remove(); }, 0);
+          });
+        });
+      }
+    }
+    
     
     
     
@@ -676,6 +740,7 @@
         IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
         if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
         renderFieldLabels();
+        renderAreaColors(); // 追加: エリア色反映
         updateEndRoomButtonVisibility(); // 追加
         renderHPPanel(); // 追加: HP再描画
       });
@@ -687,6 +752,7 @@
       const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
         currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
+        renderAreaColors(); // 追加: エリア色反映
         renderSeatAvailability();
         // renderHPPanel は renderSeatAvailability 内で呼ばれる
       }));
@@ -847,6 +913,14 @@
     const fieldSizeOptions = document.getElementById("field-size-options");
     
     
+    // === 追加: エリア色（デフォルト値）
+    const DEFAULT_AREA_COLORS = {
+      deck: '#ff9900',     // CSS: .deck-area{ background:#f90; }
+      main: '#22dd88',     // CSS: .main-play-area{ background:#2d8; }
+      hand: '#228be6'      // CSS: .hand-area{ background:#228be6; }
+    };
+
+    
     
     // === 追加: ルーム終了ボタンの制御 ===
 const endRoomBtn = document.getElementById('end-room-btn');
@@ -938,6 +1012,7 @@ endRoomBtn?.addEventListener('click', async () => {
       initializePlayField();
       subscribeCards();
       startHostWatch();
+      renderAreaColors(); // 追加: 入室直後にエリア色反映
       renderHPPanel(); // 追加: 入室直後にHP描画
     }
 
@@ -1463,6 +1538,7 @@ window.resetMyCardRotation = async function () {
       if (!handlersBound) {
         bindUploadHandlers();
         bindPanZoomHandlers();
+        bindAreaColorHandlers(); // 追加: エリア色のダブルクリック編集
         handlersBound = true;
       }
     }
