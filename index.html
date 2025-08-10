@@ -35,6 +35,21 @@
     .card.selected{ border:3px solid red; }
     #preview{ width:var(--preview-w); height:calc(100vh - var(--header-h) - 120px); float:right; background:#fff; border-left:2px solid #aaa; box-shadow:-2px 0 5px rgba(0,0,0,.2); padding:10px; box-sizing:border-box; }
     #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; } #preview-img{ width:100%; height:auto; border-radius:10px; display:none; }
+    
+    /* 追加: プレビューを上2/3 + 下1/3(HP) に分割 */
+    #preview { display:flex; flex-direction:column; }
+    #preview-top { flex:2 1 0; overflow:auto; }
+    #hp-panel { flex:1 1 0; border-top:1px solid #eee; padding:8px 6px; }
+    #hp-grid { display:grid; grid-template-columns: 1fr; gap:8px; }
+    .hp-row { display:flex; align-items:center; gap:8px; }
+    .hp-seat { width:36px; font-weight:700; text-align:center; }
+    .hp-name { flex:1; min-width:0; color:#555; font-size:12px; }
+    .hp-value { width:72px; text-align:right; }
+    .hp-input { width:80px; padding:6px 8px; border:1px solid #ccc; border-radius:8px; text-align:right; }
+    .hp-btn { padding:6px 10px; border:1px solid #ccc; border-radius:8px; background:#f6f6f6; cursor:pointer; }
+    .hp-btn:disabled, .hp-input:disabled { opacity:.6; cursor:not-allowed; }
+    
+    
 
     #lobby{ position:fixed; inset:0; background:rgba(0,0,0,.58); display:flex; align-items:center; justify-content:center; z-index:9999; }
     .lobby-card{ width:min(920px, 96vw); background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:18px; box-sizing:border-box; }
@@ -216,10 +231,18 @@
   </div>
 
   <div id="preview">
-    <h2>選択中のカード</h2>
-    <img id="preview-img" src="" alt="プレビュー画像" />
-    <div id="preview-info"></div>
+    <div id="preview-top">
+      <h2>選択中のカード</h2>
+      <img id="preview-img" src="" alt="プレビュー画像" />
+      <div id="preview-info"></div>
+    </div>
+    <!-- 追加: HP パネル（下1/3） -->
+    <div id="hp-panel" aria-label="HP パネル">
+      <div style="font-size:12px;color:#666;margin-bottom:6px;">プレイヤーHP</div>
+      <div id="hp-grid"><!-- JSでP1〜P4行を描画 --></div>
+    </div>
   </div>
+
 
   <div id="spacer"></div>
 
@@ -559,7 +582,63 @@
       renderFieldLabels();
       validateLobby();
       updateEndRoomButtonVisibility(); // 追加
+      renderHPPanel(); // 追加: HP再描画
+      
     }
+    
+    
+    // 追加: HPパネル描画 & 自席のみ編集可
+    function renderHPPanel(){
+      const grid = document.getElementById('hp-grid');
+      if (!grid) return;
+      const rows = [];
+      for (const seat of [1,2,3,4]) {
+        const seatData = currentSeatMap[seat] || {};
+        const dispName = seatData.displayName || '';
+        const isMe = (CURRENT_PLAYER === seat);
+        const hpVal = (typeof seatData.hp === 'number') ? seatData.hp : 0;
+        rows.push(`
+          <div class="hp-row" data-seat="${seat}">
+            <div class="hp-seat">P${seat}</div>
+            <div class="hp-name">${dispName ? dispName : ''}</div>
+            <div class="hp-value">
+              <input class="hp-input" type="number" step="1" value="${hpVal}" ${isMe ? '' : 'disabled'} />
+            </div>
+            <div class="hp-ops">
+              <button class="hp-btn hp-minus" ${isMe ? '' : 'disabled'}>-</button>
+              <button class="hp-btn hp-plus"  ${isMe ? '' : 'disabled'}>+</button>
+            </div>
+          </div>
+        `);
+      }
+      grid.innerHTML = rows.join('');
+      grid.querySelectorAll('.hp-row').forEach(row => {
+        const seat = parseInt(row.dataset.seat, 10);
+        if (seat !== CURRENT_PLAYER) return; // 自分以外は編集不可
+        const input = row.querySelector('.hp-input');
+        const minus = row.querySelector('.hp-minus');
+        const plus  = row.querySelector('.hp-plus');
+        const commit = async (nextVal) => {
+          const n = Number.isFinite(nextVal) ? Math.trunc(nextVal) : 0;
+          if (input) input.value = n;
+          try {
+            const seatRef = doc(db, `rooms/${CURRENT_ROOM}/seats/${seat}`);
+            await setDoc(seatRef, { hp: n, updatedAt: serverTimestamp() }, { merge: true });
+          } catch(e) {
+            console.error(e);
+            alert('HPの更新に失敗しました。ネットワークをご確認ください。');
+          }
+        };
+        input?.addEventListener('change', () => commit(parseInt(input.value, 10)));
+        minus?.addEventListener('click', () => commit(parseInt(input.value, 10) - 1));
+        plus ?.addEventListener('click', () => commit(parseInt(input.value, 10) + 1));
+      });
+    }
+    
+    
+    
+    
+    
 
     function renderFieldLabels(){
       for (const s of [1,2,3,4]) {
@@ -598,6 +677,7 @@
         if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
         renderFieldLabels();
         updateEndRoomButtonVisibility(); // 追加
+        renderHPPanel(); // 追加: HP再描画
       });
 
       // 軽く更新時刻だけ
@@ -608,6 +688,7 @@
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
         currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
         renderSeatAvailability();
+        // renderHPPanel は renderSeatAvailability 内で呼ばれる
       }));
       unsubscribeSeats = () => unsubs.forEach(fn => fn());
     }
@@ -642,6 +723,7 @@
         seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
         validateLobby();
         updateEndRoomButtonVisibility(); // 追加
+        renderHPPanel(); // 追加
       });
     });
 
@@ -652,6 +734,7 @@
       detachSeatsListener();
       joinRoomInput.focus();
       updateEndRoomButtonVisibility(); // 追加
+      renderHPPanel(); // 追加
     });
 
     startBtn.addEventListener('click', async (ev) => {
@@ -855,6 +938,7 @@ endRoomBtn?.addEventListener('click', async () => {
       initializePlayField();
       subscribeCards();
       startHostWatch();
+      renderHPPanel(); // 追加: 入室直後にHP描画
     }
 
     function subscribeCards(){
@@ -1277,7 +1361,6 @@ window.resetMyCardRotation = async function () {
 
   try {
     await Promise.all(tasks);
-    alert('向きをリセットしました');
   } catch (e) {
     console.error(e);
     alert('リセットに失敗しました。ネットワーク状況を確認して再度お試しください。');
@@ -1363,7 +1446,18 @@ window.resetMyCardRotation = async function () {
         if(selectedCard){ selectedCard.classList.remove("selected"); selectedCard=null; previewImg.src=""; previewImg.style.display="none"; }
       });
     }
-
+    
+    
+    /* （任意）初回座席作成時に hp:0 を入れておきたい場合は claimSeat 内 tx.set に hp を付与
+       既に存在して hp が数字なら維持、無ければ 0 を設定:
+       tx.set(seatRef, {
+         claimedByUid: CURRENT_UID, displayName, color,
+         claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp(),
+         hp: (snap.exists() && typeof snap.data()?.hp === 'number') ? snap.data().hp : 0
+       });
+    */
+    
+    
     function initializePlayField(){
       setFieldSize('small');
       if (!handlersBound) {
