@@ -1172,37 +1172,62 @@ card.addEventListener("dblclick", async (e) => {
     }
 
     // ========= 既存のUI操作 =========
-    function makeDraggable(card){
-      let offsetX=0, offsetY=0, isDragging=false;
-      card.addEventListener("mousedown", e => {
-        if(e.button!==0) return;
-        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
-        const rect = field.getBoundingClientRect();
-        const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
-        const mouseY = (e.clientY - rect.top - panOffsetY) / zoom;
-        offsetX = mouseX - parseFloat(card.style.left||'0');
-        offsetY = mouseY - parseFloat(card.style.top||'0');
-        isDragging = true; card.style.cursor = "grabbing";
-        const newZ = getMaxZIndex()+1; card.style.zIndex = newZ;
+ function makeDraggable(card){
+   const DRAG_THRESHOLD = 5; // px：これ未満の移動はドラッグにしない
+   let isDragging = false;
+   let startClientX = 0, startClientY = 0;
+   let grabOffsetX = 0, grabOffsetY = 0;
 
-        const onMove = e2 => {
-          if(!isDragging) return;
-          const x=(e2.clientX - rect.left - panOffsetX)/zoom; const y=(e2.clientY - rect.top - panOffsetY)/zoom;
-          card.style.left = `${x - offsetX}px`; card.style.top = `${y - offsetY}px`;
-        };
-        const onUp = async () => {
-          isDragging = false; card.style.cursor = "grab";
-          document.removeEventListener("mousemove", onMove);
-          document.removeEventListener("mouseup", onUp);
-          const id = card.dataset.cardId;
-          const x = parseFloat(card.style.left)||0; const y = parseFloat(card.style.top)||0; const zIndex = parseInt(card.style.zIndex)||1;
-          await updateCard(id, { x, y, zIndex, updatedAt: serverTimestamp() });
-        };
-        document.addEventListener("mousemove", onMove);
-        document.addEventListener("mouseup", onUp);
-      });
-    }
+   card.addEventListener("mousedown", (e) => {
+     if (e.button !== 0) return;
+     if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+     // ダブルクリック（2回目の mousedown）はドラッグ開始を無視
+     if (e.detail > 1) return;
 
+     const rect = field.getBoundingClientRect();
+     const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
+     const mouseY = (e.clientY - rect.top - panOffsetY) / zoom;
+
+     startClientX = e.clientX;
+     startClientY = e.clientY;
+     grabOffsetX = mouseX - (parseFloat(card.style.left || '0') || 0);
+     grabOffsetY = mouseY - (parseFloat(card.style.top  || '0') || 0);
+
+     const onMove = (e2) => {
+       const dx = e2.clientX - startClientX;
+       const dy = e2.clientY - startClientY;
+       // 閾値を超えたら初めてドラッグ開始
+       if (!isDragging) {
+         if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+         isDragging = true;
+         card.style.cursor = "grabbing";
+         card.style.zIndex = getMaxZIndex() + 1;
+       }
+       const x = (e2.clientX - rect.left - panOffsetX) / zoom;
+       const y = (e2.clientY - rect.top  - panOffsetY) / zoom;
+       card.style.left = `${x - grabOffsetX}px`;
+       card.style.top  = `${y - grabOffsetY}px`;
+     };
+
+     const onUp = async () => {
+       document.removeEventListener("mousemove", onMove);
+       document.removeEventListener("mouseup", onUp);
+       card.style.cursor = "grab";
+       // ドラッグとして成立していなければ、位置更新しない（クリック/ダブルクリック優先）
+       if (!isDragging) return;
+       isDragging = false;
+       const id = card.dataset.cardId;
+       const x = parseFloat(card.style.left) || 0;
+       const y = parseFloat(card.style.top)  || 0;
+       const zIndex = parseInt(card.style.zIndex) || 1;
+       await updateCard(id, { x, y, zIndex, updatedAt: serverTimestamp() });
+     };
+
+     document.addEventListener("mousemove", onMove);
+     document.addEventListener("mouseup", onUp);
+   });
+ }
+ 
     function getMaxZIndex(){ let max=0; document.querySelectorAll(".card").forEach(c=>{ const z=parseInt(c.style.zIndex)||0; if(z>max) max=z; }); return max; }
 
     window.faceDownAll = async function(){
