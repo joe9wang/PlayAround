@@ -178,6 +178,7 @@
     <button onclick="faceDownAll()">🂠 裏返す（自分のカードのみ）</button>
     <button onclick="faceUpAll()">🂡 表にする（自分のカードのみ）</button>
     <button onclick="shuffleDecks()">🌀 シャッフル（自分のデッキのみ）</button>
+    <button onclick="openMyCardsDialog()">🗂 全カード一覧（自分）</button>
     <button onclick="deleteMyCards()">🗑 全カード削除（自分のカードのみ）</button>
     <button onclick="alignDecks()">📏 整列（表示のみ）</button>
 
@@ -245,6 +246,19 @@
 
 
   <div id="spacer"></div>
+  
+  <!-- 全カード一覧モーダル -->
+<div id="card-list-modal" role="dialog" aria-modal="true" aria-labelledby="card-list-title" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:10000;">
+  <div id="card-list-sheet" style="width:min(920px, 92vw); max-height:80vh; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
+    <div id="card-list-header" style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
+      <div id="card-list-title" style="font-weight:700;">自分のカード一覧</div>
+      <button id="card-list-close" type="button" style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;">閉じる</button>
+    </div>
+    <div id="card-list-body" style="padding:12px; overflow:auto;">
+      <div id="card-list-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px;"></div>
+    </div>
+  </div>
+</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
@@ -1479,7 +1493,105 @@ window.resetMyCardRotation = async function () {
         alert('削除に失敗しました。ネットワーク状況を確認して再度お試しください。');
       }
     };
+    
+    
+    
+    // ===== 全カード一覧（自分） =====
+const cardListModal = document.getElementById('card-list-modal');
+const cardListGrid  = document.getElementById('card-list-grid');
+const cardListClose = document.getElementById('card-list-close');
 
+window.openMyCardsDialog = function(){
+  if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
+
+  // グリッド初期化
+  cardListGrid.innerHTML = '';
+
+  // 自分のカードだけ集める（サムネは full があればそれ、なければ img.src）
+  const mine = [];
+  for (const [id, el] of cardDomMap) {
+    if (el.dataset.ownerSeat === String(CURRENT_PLAYER)) {
+      const imgEl = el.querySelector('img');
+      const src = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
+      mine.push({ id, src });
+    }
+  }
+
+  if (mine.length === 0) {
+    const empty = document.createElement('div');
+    empty.textContent = 'まだ自分のカードがありません。';
+    empty.style.cssText = 'color:#666;font-size:14px;text-align:center;padding:24px 12px;';
+    cardListGrid.appendChild(empty);
+  } else {
+    mine.forEach(({id, src}) => {
+      const item = document.createElement('div');
+      item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;';
+      item.title = id;
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = 'カード';
+      img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
+      item.appendChild(img);
+
+      item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
+      item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
+
+      item.addEventListener('click', async () => {
+        await focusCardById(id); // 最前面＆選択（表裏は変えない）
+        closeMyCardsDialog();
+      });
+
+      cardListGrid.appendChild(item);
+    });
+  }
+
+  // 表示
+  cardListModal.style.display = 'flex';
+};
+
+function closeMyCardsDialog(){
+  cardListModal.style.display = 'none';
+}
+
+cardListClose?.addEventListener('click', closeMyCardsDialog);
+cardListModal?.addEventListener('click', (e) => {
+  if (e.target === cardListModal) closeMyCardsDialog(); // オーバーレイクリックで閉じる
+});
+
+/** 指定IDのカードを最前面にして選択状態にする（表裏は保持） */
+async function focusCardById(cardId){
+  const el = cardDomMap.get(cardId) || document.querySelector(`[data-card-id="${cardId}"]`);
+  if (!el) return;
+
+  // zIndex を最前面（Firestoreにも反映）
+  const newZ = getMaxZIndex() + 1;
+  el.style.zIndex = newZ;
+  try { await updateCard(cardId, { zIndex: newZ, updatedAt: serverTimestamp() }); } catch {}
+
+  // 選択状態に（既存のプレビュー動作も踏襲）
+  if (selectedCard) selectedCard.classList.remove('selected');
+  el.classList.add('selected');
+  selectedCard = el;
+
+  const full = fullImageStore.get(cardId);
+  const thumbEl = el.querySelector('img');
+  if (thumbEl && thumbEl.style.display !== 'none') {
+    previewImg.src = full || thumbEl.src;
+    previewImg.style.display = 'block';
+  } else {
+    previewImg.src = '';
+    previewImg.style.display = 'none';
+  }
+
+  let ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
+  previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
+}
+    
+    
+    
+    
+    
+    
     window.toggleFieldSizeOptions = function(){ fieldSizeOptions.style.display = fieldSizeOptions.style.display==="none"?"block":"none"; }
     window.setFieldSize = function(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
     window.alignDecks = function(){ /* 表示のみ */ }
