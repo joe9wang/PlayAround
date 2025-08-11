@@ -192,7 +192,10 @@
     <button onclick="faceUpAll()">🂡 表にする（自分のカードのみ）</button>
     <button onclick="shuffleDecks()">🌀 シャッフル（自分のデッキのみ）</button>
     <button onclick="openMyCardsDialog()">🗂 全カード一覧（自分）</button>
-    <button onclick="spawnPlusOne()">➕ +1カウンターを置く</button>
+    <button onclick="spawnCounter('+1')">➕ +1カウンター</button>
+    <button onclick="spawnCounter('+10')">➕ +10カウンター</button>
+    <button onclick="spawnCounter('-1')">➖ -1カウンター</button>
+    <button onclick="spawnCounter('-10')">➖ -10カウンター</button>
     <button onclick="deleteMyCards()">🗑 全カード削除（自分のカードのみ）</button>
     <button onclick="alignDecks()">📏 整列（表示のみ）</button>
 
@@ -958,14 +961,76 @@
       hand: '#228be6'      // CSS: .hand-area{ background:#228be6; }
     };
     
-const PLUS1_ICON =
-  'data:image/svg+xml;utf8,' +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
-       <circle cx="30" cy="30" r="28" fill="white"/>
-       <text x="30" y="38" font-size="28" font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="black">+1</text>
-     </svg>`
-  );
+    
+    
+    
+    // 丸形・半分サイズのカウンターSVGを動的に作る
+function makeCounterIcon(label /* '+1' | '+10' | '-1' | '-10' */){
+  // 60x80（もとの半分）、白丸に黒文字
+  // 文字が3桁（+10, -10）の時は少し小さめ
+  const fontSize = (label.length >= 3) ? 28 : 32;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="80" viewBox="0 0 60 80">
+       <rect width="60" height="80" fill="black"/>
+       <circle cx="30" cy="40" r="24" fill="white"/>
+       <text x="30" y="46" font-size="${fontSize}" font-family="Arial, Helvetica, sans-serif"
+             text-anchor="middle" fill="black">${label}</text>
+     </svg>`;
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+// 共通：任意のカウンターを生成
+window.spawnCounter = async function(kind /* '+1' | '+10' | '-1' | '-10' */) {
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください');
+    return;
+  }
+
+  const icon = makeCounterIcon(kind);
+  const { x, y } = randomPointInDeck(CURRENT_PLAYER);
+
+  try {
+    const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+      x, y,
+      zIndex: getMaxZIndex() + 1,
+      faceUp: true,
+      imageUrl: icon,            // 小さめSVGデータURL
+      ownerUid: CURRENT_UID,
+      ownerSeat: CURRENT_PLAYER,
+      rotation: 0,
+      type: 'counter',
+      counterKind: kind,         // '+1' | '+10' | '-1' | '-10'
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    markLocal(ref.id);
+
+    // DOM即時反映
+    let el = cardDomMap.get(ref.id);
+    if (!el) {
+      el = createCardDom(ref.id, icon, {
+        x, y, zIndex: getMaxZIndex() + 1, faceUp: true,
+        ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
+        rotation: 0, type: 'counter', counterKind: kind
+      });
+      cardDomMap.set(ref.id, el);
+      field.appendChild(el);
+    }
+    applyCardState(el, {
+      x, y, zIndex: parseInt(el.style.zIndex) || (getMaxZIndex() + 1),
+      faceUp: true,
+      imageUrl: icon,
+      ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
+      rotation: 0, type: 'counter', counterKind: kind
+    });
+  } catch (e) {
+    console.error(e);
+    alert('カウンターの配置に失敗しました。ネットワークをご確認ください。');
+  }
+};
+    
+    
+    
     
     // === 追加: ルーム終了ボタンの制御 ===
 const endRoomBtn = document.getElementById('end-room-btn');
@@ -1020,7 +1085,7 @@ endRoomBtn?.addEventListener('click', async () => {
     
     
 
-    let zoom = 1.5, panOffsetX = 0, panOffsetY = 0, selectedCard = null;
+    let zoom = 1, panOffsetX = 0, panOffsetY = 0, selectedCard = null;
 
     const cardDomMap = new Map();
     const localChangeMap = new Map();
@@ -1357,53 +1422,6 @@ card.addEventListener("dblclick", async (e) => {
     
     
     
-    // === +1カウンターを生成して自分のデッキエリアに出す ===
-window.spawnPlusOne = async function () {
-  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
-    alert('ルームに参加してから実行してください');
-    return;
-  }
-  // 置き場所は自分のデッキエリア中心付近
-  const { x, y } = randomPointInDeck(CURRENT_PLAYER);
-  try {
-    const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-      x, y,
-      zIndex: getMaxZIndex() + 1,
-      faceUp: true,
-      imageUrl: PLUS1_ICON,     // 小さめPNGなのでそのまま保存でOK
-      ownerUid: CURRENT_UID,
-      ownerSeat: CURRENT_PLAYER,
-      rotation: 0,
-      type: 'counter',
-      counterKind: '+1',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    markLocal(ref.id);
-
-    // DOM即時反映（スナップ待ち無し）
-    let el = cardDomMap.get(ref.id);
-    if (!el) {
-      el = createCardDom(ref.id, PLUS1_ICON, {
-        x, y, zIndex: getMaxZIndex() + 1, faceUp: true,
-        ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
-        rotation: 0, type: 'counter', counterKind: '+1'
-      });
-      cardDomMap.set(ref.id, el);
-      field.appendChild(el);
-    }
-    applyCardState(el, {
-      x, y, zIndex: parseInt(el.style.zIndex) || (getMaxZIndex() + 1),
-      faceUp: true,
-      imageUrl: PLUS1_ICON,
-      ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
-      rotation: 0, type: 'counter', counterKind: '+1'
-    });
-  } catch (e) {
-    console.error(e);
-    alert('カウンターの配置に失敗しました。ネットワークをご確認ください。');
-  }
-};
     
     
     
