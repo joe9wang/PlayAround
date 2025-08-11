@@ -282,14 +282,14 @@
       apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
       authDomain: "cardgame-f484c.firebaseapp.com",
       projectId: "cardgame-f484c",
-      storageBucket: "cardgame-f484c.firebasestorage.app",
+      storageBucket: "cardgame-f484c.appspot.com",
       messagingSenderId: "248859224605",
       appId: "1:248859224605:web:1320093856bc1861c174f4"
     };
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app);
+    const storage = getStorage(app, "gs://cardgame-f484c.appspot.com");
 
     // ===== DOM refs
     const lobby = document.getElementById('lobby');
