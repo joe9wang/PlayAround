@@ -134,6 +134,32 @@
   border-radius:50%;
   object-fit:cover;
 }
+
+
+/* トークン（白いメモカード） */
+.card.token{
+  background:#fff;
+  display:flex;
+  align-items:stretch;
+  justify-content:stretch;
+  overflow:hidden;
+}
+
+.card.token .token-input{
+  width:100%;
+  height:100%;
+  border:0;
+  padding:10px;
+  font-size:14px;
+  line-height:1.3;
+  outline:none;
+  resize:none;            /* 大きさ変更は不可（カードサイズ一定のため） */
+  background:transparent; /* カード背景色に従う */
+  color:#111;
+  box-sizing:border-box;
+}
+
+
     
   </style>
 </head>
@@ -239,6 +265,7 @@
     <button onclick="spawnCounter('+10')">➕ +10カウンター</button>
     <button onclick="spawnCounter('-1')">➖ -1カウンター</button>
     <button onclick="spawnCounter('-10')">➖ -10カウンター</button>
+    <button onclick="spawnToken()">📝 トークン作成</button>
     <button onclick="deleteMyCards()">🗑 全カード削除（自分のカードのみ）</button>
     <button onclick="alignDecks()">📏 整列（表示のみ）</button>
 
@@ -1073,6 +1100,71 @@ window.spawnCounter = async function(kind /* '+1' | '+10' | '-1' | '-10' */) {
     
     
     
+    // トークン（白カード + テキスト）を自分のデッキエリア付近に生成
+window.spawnToken = async function(){
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください');
+    return;
+  }
+  const { x, y } = randomPointInDeck(CURRENT_PLAYER);
+  try{
+    const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+      x, y,
+      zIndex: getMaxZIndex() + 1,
+      faceUp: true,
+      imageUrl: '',            // 画像は使わない
+      ownerUid: CURRENT_UID,
+      ownerSeat: CURRENT_PLAYER,
+      rotation: 0,
+      type: 'token',           // 種別：トークン
+      tokenText: '',           // 同期される本文
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    markLocal(ref.id);
+
+    // DOM 即時反映
+    let el = cardDomMap.get(ref.id);
+    if (!el) {
+      el = createCardDom(ref.id, '', {
+        x, y, zIndex: getMaxZIndex() + 1,
+        faceUp: true,
+        ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
+        rotation: 0,
+        type: 'token', tokenText: ''
+      });
+      cardDomMap.set(ref.id, el);
+      field.appendChild(el);
+    }
+    applyCardState(el, {
+      x, y,
+      zIndex: parseInt(el.style.zIndex) || (getMaxZIndex() + 1),
+      faceUp: true,
+      imageUrl: '',
+      ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
+      rotation: 0,
+      type: 'token', tokenText: ''
+    });
+  }catch(e){
+    console.error(e);
+    alert('トークンの作成に失敗しました。ネットワークをご確認ください。');
+  }
+};
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     // === 追加: ルーム終了ボタンの制御 ===
 const endRoomBtn = document.getElementById('end-room-btn');
 
@@ -1208,36 +1300,94 @@ endRoomBtn?.addEventListener('click', async () => {
       img.decoding = 'async';
       img.loading = 'lazy';
       card.appendChild(img);
+      
+      
+      // --- トークン専用UI（テキストエリア）を追加 ---
+let tokenInput = null;
+if (state?.type === 'token') {
+  card.classList.add('token');
+
+  tokenInput = document.createElement('textarea');
+  tokenInput.className = 'token-input';
+  tokenInput.value = typeof state.tokenText === 'string' ? state.tokenText : '';
+
+  // トークンは画像を使わないので img は隠す
+  img.style.display = 'none';
+
+  // 作成者のみ編集可
+  const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
+  tokenInput.readOnly = !editable;
+  tokenInput.disabled = !editable;
+
+  if (editable) {
+    let tmr = null;
+    const commit = async () => {
+      tmr = null;
+      const id = card.dataset.cardId;
+      const text = tokenInput.value.slice(0, 2000);
+      try { await updateCard(id, { tokenText: text, updatedAt: serverTimestamp() }); } catch(e){}
+    };
+    tokenInput.addEventListener('input', () => {
+      if (tmr) clearTimeout(tmr);
+      tmr = setTimeout(commit, 300);
+    });
+    tokenInput.addEventListener('blur', () => {
+      if (tmr) clearTimeout(tmr);
+      tmr = null;
+      const id = card.dataset.cardId;
+      const text = tokenInput.value.slice(0, 2000);
+      updateCard(id, { tokenText: text, updatedAt: serverTimestamp() }).catch(()=>{});
+    });
+  }
+
+  card.appendChild(tokenInput);
+}
+// --- ここまでトークンUI ---
 
       makeDraggable(card);
 
 card.addEventListener("click", async e => {
   e.stopPropagation();
 
-  // クリックで最前面へ（カード/カウンター共通）
+  // 最前面へ
   const newZ = getMaxZIndex() + 1;
   card.style.zIndex = newZ;
   try { await updateCard(cardId, { zIndex: newZ, updatedAt: serverTimestamp() }); } catch {}
 
-  // 選択表示（既存）
+  // 選択表示
   if (selectedCard) selectedCard.classList.remove("selected");
   card.classList.add("selected");
   selectedCard = card;
 
-  const full = fullImageStore.get(cardId); // アップロード者のみ保持（カウンターは無いのでundefinedでOK）
-  const thumbEl = card.querySelector('img');
+  const isToken = card.classList.contains('token');
 
-  if (thumbEl && thumbEl.style.display !== "none") {
-    previewImg.src = full || thumbEl.src;
-    previewImg.style.display = "block";
-  } else {
+  if (isToken) {
+    // トークンは画像プレビューを出さない
     previewImg.src = "";
     previewImg.style.display = "none";
+  } else {
+    const full = fullImageStore.get(cardId);
+    const thumbEl = card.querySelector('img');
+    if (thumbEl && thumbEl.style.display !== "none") {
+      previewImg.src = full || thumbEl.src;
+      previewImg.style.display = "block";
+    } else {
+      previewImg.src = "";
+      previewImg.style.display = "none";
+    }
   }
 
   let ownerPlayerNum = "?";
   if (card.dataset.ownerSeat) ownerPlayerNum = `P${card.dataset.ownerSeat}`;
-  previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
+
+  if (isToken) {
+    const t = card.querySelector('.token-input')?.value || '';
+    previewInfo.textContent =
+      `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}\n内容: ${t ? t.slice(0,200) : '(未記入)'}`;
+  } else {
+    previewInfo.textContent =
+      `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
+  }
 });
 
       
@@ -1274,6 +1424,28 @@ card.addEventListener("contextmenu", async (e) => {
       }
     }
   }
+  
+  
+   // トークン（textarea）側も即時反映
+ const tokenEl = card.querySelector('.token-input');
+ if (tokenEl) {
+   if (nextFaceUp) {
+     tokenEl.style.display = 'block';
+     card.style.backgroundColor = '#fff';
+   } else {
+     tokenEl.style.display = 'none';
+     card.style.backgroundColor = '#000';
+     if (selectedCard === card) {
+       previewImg.src = '';
+       previewImg.style.display = 'none';
+     }
+   }
+ }
+  
+  
+  
+  
+  
 
   // Firestoreへ反映
   await updateCard(cardId, { faceUp: nextFaceUp, updatedAt: serverTimestamp() });
@@ -1331,6 +1503,37 @@ card.addEventListener("dblclick", async (e) => {
         else { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
         if(data.imageUrl && img.src !== data.imageUrl){ img.src = data.imageUrl; }
       }
+      
+      // --- トークンの反映 ---
+if (data.type === 'token') {
+  card.classList.add('token');
+
+  const tokenInput = card.querySelector('.token-input');
+  if (tokenInput) {
+    // 内容（他人が編集したものも即反映）
+    if (typeof data.tokenText === 'string' && tokenInput.value !== data.tokenText) {
+      tokenInput.value = data.tokenText;
+    }
+    // 表裏
+    if (data.faceUp) {
+      tokenInput.style.display = 'block';
+      card.style.backgroundColor = '#fff';
+    } else {
+      tokenInput.style.display = 'none';
+      card.style.backgroundColor = '#000';
+    }
+    // 編集可否：作成者のみ
+    const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
+    tokenInput.readOnly = !editable;
+    tokenInput.disabled = !editable;
+  }
+
+  // トークンは画像を使わない（万一表示されていたら隠す）
+  const img2 = card.querySelector('img');
+  if (img2) img2.style.display = 'none';
+}
+// --- ここまでトークンの反映 ---
+      
 
       try {
         const viewerSeat = CURRENT_PLAYER;
@@ -1341,10 +1544,18 @@ card.addEventListener("dblclick", async (e) => {
           const hb = getHandBoundsForSeat(s);
           if (hb && isCenterInsideRect(x, y, hb)) { insideSeat = s; break; }
         }
+
+
+
         if (insideSeat && String(viewerSeat) !== String(insideSeat)) {
           const img = card.querySelector('img');
           if (img) { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
+          const tokenInput2 = card.querySelector('.token-input');
+          if (tokenInput2) { tokenInput2.style.display = 'none'; card.style.backgroundColor = '#000'; }
         }
+        
+        
+        
       } catch(_) {}
     }
 
