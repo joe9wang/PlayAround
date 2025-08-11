@@ -179,6 +179,7 @@
     <button onclick="faceUpAll()">🂡 表にする（自分のカードのみ）</button>
     <button onclick="shuffleDecks()">🌀 シャッフル（自分のデッキのみ）</button>
     <button onclick="openMyCardsDialog()">🗂 全カード一覧（自分）</button>
+    <button onclick="spawnPlusOne()">➕ +1カウンターを置く</button>
     <button onclick="deleteMyCards()">🗑 全カード削除（自分のカードのみ）</button>
     <button onclick="alignDecks()">📏 整列（表示のみ）</button>
 
@@ -933,7 +934,9 @@
     const fileInput = document.getElementById("file-input");
     const fieldSizeOptions = document.getElementById("field-size-options");
     
-    
+    data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOsAAADTCAMAAABX/RQnAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8AAACcElEQVR4Ae3a0XKbQAxF0Ww9Wc8WqQO1lY4LJq3l1kZ2f0mQdH8Kx1E5lq0z+o+7m9Hk5dQW0f7z1gk1KpV...（中略）...AAAAAElFTkSuQmCC
+
+
     // === 追加: エリア色（デフォルト値）
     const DEFAULT_AREA_COLORS = {
       deck: '#ff9900',     // CSS: .deck-area{ background:#f90; }
@@ -1080,12 +1083,34 @@ endRoomBtn?.addEventListener('click', async () => {
 
       makeDraggable(card);
 
-      card.addEventListener("contextmenu", async e => {
-        e.preventDefault();
-        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
-        const faceUp = !(card.dataset.faceUp === 'true');
-        await updateCard(cardId, { faceUp, updatedAt: serverTimestamp() });
-      });
+card.addEventListener("click", async e => {
+  e.stopPropagation();
+
+  // クリックで最前面へ（カード/カウンター共通）
+  const newZ = getMaxZIndex() + 1;
+  card.style.zIndex = newZ;
+  try { await updateCard(cardId, { zIndex: newZ, updatedAt: serverTimestamp() }); } catch {}
+
+  // 選択表示（既存）
+  if (selectedCard) selectedCard.classList.remove("selected");
+  card.classList.add("selected");
+  selectedCard = card;
+
+  const full = fullImageStore.get(cardId); // アップロード者のみ保持（カウンターは無いのでundefinedでOK）
+  const thumbEl = card.querySelector('img');
+
+  if (thumbEl && thumbEl.style.display !== "none") {
+    previewImg.src = full || thumbEl.src;
+    previewImg.style.display = "block";
+  } else {
+    previewImg.src = "";
+    previewImg.style.display = "none";
+  }
+
+  let ownerPlayerNum = "?";
+  if (card.dataset.ownerSeat) ownerPlayerNum = `P${card.dataset.ownerSeat}`;
+  previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
+});
 
       card.addEventListener("click", e => {
         e.stopPropagation();
@@ -1328,7 +1353,63 @@ card.addEventListener("dblclick", async (e) => {
         processing = false;
       }
     }
+    
+    
+    
+    // === +1カウンターを生成して自分のデッキエリアに出す ===
+window.spawnPlusOne = async function () {
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください');
+    return;
+  }
+  // 置き場所は自分のデッキエリア中心付近
+  const { x, y } = randomPointInDeck(CURRENT_PLAYER);
+  try {
+    const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+      x, y,
+      zIndex: getMaxZIndex() + 1,
+      faceUp: true,
+      imageUrl: PLUS1_ICON,     // 小さめPNGなのでそのまま保存でOK
+      ownerUid: CURRENT_UID,
+      ownerSeat: CURRENT_PLAYER,
+      rotation: 0,
+      type: 'counter',
+      counterKind: '+1',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    markLocal(ref.id);
 
+    // DOM即時反映（スナップ待ち無し）
+    let el = cardDomMap.get(ref.id);
+    if (!el) {
+      el = createCardDom(ref.id, PLUS1_ICON, {
+        x, y, zIndex: getMaxZIndex() + 1, faceUp: true,
+        ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
+        rotation: 0, type: 'counter', counterKind: '+1'
+      });
+      cardDomMap.set(ref.id, el);
+      field.appendChild(el);
+    }
+    applyCardState(el, {
+      x, y, zIndex: parseInt(el.style.zIndex) || (getMaxZIndex() + 1),
+      faceUp: true,
+      imageUrl: PLUS1_ICON,
+      ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
+      rotation: 0, type: 'counter', counterKind: '+1'
+    });
+  } catch (e) {
+    console.error(e);
+    alert('カウンターの配置に失敗しました。ネットワークをご確認ください。');
+  }
+};
+    
+    
+    
+    
+    
+    
+    
     // ========= 既存の単発アップロードAPIはサムネ方式へ（他処理から呼ぶ場合） =========
     async function createCardRemote({ imageUrl }){
       // 互換：渡されたimageUrl（フル）からサムネ生成して保存
