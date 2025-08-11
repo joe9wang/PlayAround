@@ -660,12 +660,22 @@ createRoomBtn.addEventListener('click', async () => {
       'setDoc(room)'
     );
 
-    // 3) 古い seats/cards を掃除（最大8秒、失敗しても続行）
-    try {
+// 3) 既存IDが「自分の部屋」だった場合だけ、希望時に掃除（大量書き込みなので常用しない）
+try {
+  const roomSnap = await onSnapshotOnce(doc(db, `rooms/${id}`));
+  const meta = roomSnap.exists() ? roomSnap.data() : null;
+  const canClean = meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID;
+
+  if (canClean) {
+    const doClean = confirm('同じルームIDが既にあります。古い座席/カードを全削除しますか？（大量書き込み）');
+    if (doClean) {
       await withTimeout(resetRoomState(id), 8000, 'resetRoomState');
-    } catch (e) {
-      console.warn('resetRoomState failed (continue):', e);
     }
+  }
+} catch(e) {
+  console.warn('check/resetRoomState skipped:', e);
+}
+
 
     IS_ROOM_CREATOR = true;
     startHostHeartbeat(id); // ロビー中からHB
@@ -935,9 +945,6 @@ createRoomBtn.addEventListener('click', async () => {
         renderHPPanel(); // 追加: HP再描画
       });
 
-      // 軽く更新時刻だけ
-      setDoc(doc(db, `rooms/${roomId}`), { updatedAt: serverTimestamp() }, { merge: true }).catch(()=>{});
-
       // 座席doc購読
       const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
@@ -1084,24 +1091,26 @@ startBtn.addEventListener('click', async (ev) => {
     let heartbeatTimer = null;
     let hostHeartbeatTimer = null;
 
-    function startHostHeartbeat(roomId){
-      stopHostHeartbeat();
-      hostHeartbeatTimer = setInterval(async () => {
-        try{
-          await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
-        }catch(e){ console.warn('host HB failed', e); }
-      }, 5000);
-    }
-    function stopHostHeartbeat(){ if(hostHeartbeatTimer){ clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; } }
+function startHostHeartbeat(roomId){
+  stopHostHeartbeat();
+  hostHeartbeatTimer = setInterval(async () => {
+    try{
+      await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
+    }catch(e){ console.warn('host HB failed', e); }
+  }, 15000); // ← 5000 → 15000（15秒）
+}
 
-    function startHeartbeat(roomId, seat){
-      stopHeartbeat();
-      heartbeatTimer = setInterval(async () => {
-        try{
-          await setDoc(doc(db, `rooms/${roomId}/seats/${seat}`), { claimedByUid: CURRENT_UID, heartbeatAt: serverTimestamp() }, { merge: true });
-        }catch(e){ console.warn('heartbeat failed', e); }
-      }, 10000);
-    }
+function startHeartbeat(roomId, seat){
+  stopHeartbeat();
+  heartbeatTimer = setInterval(async () => {
+    try{
+      await setDoc(doc(db, `rooms/${roomId}/seats/${seat}`), { claimedByUid: CURRENT_UID, heartbeatAt: serverTimestamp() }, { merge: true });
+    }catch(e){ console.warn('heartbeat failed', e); }
+  }, 30000); // ← 10000 → 30000（30秒）
+}
+
+
+
     function stopHeartbeat(){ if(heartbeatTimer){ clearInterval(heartbeatTimer); heartbeatTimer = null; } }
 
     // ===== カード同期・UI =====
@@ -1737,8 +1746,10 @@ if (data.type === 'token') {
     // サムネの最大サイズ（カード表示より少し大きめにして見栄え確保）
     const THUMB_MAX_W = 240; // px
     const THUMB_MAX_H = 320; // px
-    const PARALLEL = Math.max(2, Math.min(8, Math.floor((navigator.hardwareConcurrency||8)/2))); // 端末に応じて
-    const BATCH_INSERT = 12;
+    //const PARALLEL = Math.max(2, Math.min(8, Math.floor((navigator.hardwareConcurrency||8)/2))); // 端末に応じて
+    //const BATCH_INSERT = 12;
+    const PARALLEL = 2;     // ← 固定で2
+    const BATCH_INSERT = 4; // ← 12 → 4
 
     const fileQueue = [];
     let processing = false;
