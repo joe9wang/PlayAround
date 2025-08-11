@@ -79,6 +79,19 @@
     #create-seat-grid .seat-btn.active{ outline: 3px solid #0a7; background: #e9fff7; box-shadow: 0 0 0 3px rgba(0,170,119,.15) inset; }
     #create-seat-picked { margin-top: 6px; font-size: 12px; color: #0a7; font-weight: 700; }
     .seat-btn:focus-visible{ outline: 3px solid #66aaff; }
+    
+    /* 追加: カウンター用（小さくて丸） */
+.card.counter{
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  overflow:hidden;        /* 画像は円形に切り抜き */
+}
+.card.counter img{
+  border-radius:50%;
+  object-fit:cover;
+}
+    
   </style>
 </head>
 <body>
@@ -388,6 +401,8 @@
       const cards = [];
       document.querySelectorAll('.card').forEach(el => {
         const id = el.dataset.cardId;
+        const w = el.offsetWidth  || CARD_W; // ←要素の実サイズ
+        const h = el.offsetHeight || CARD_H;
         const left = parseFloat(el.style.left) || 0;
         const top  = parseFloat(el.style.top)  || 0;
         const cx = left + CARD_W/2;
@@ -946,12 +961,11 @@
 const PLUS1_ICON =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="80" viewBox="0 0 60 80">
-       <rect width="60" height="80" fill="black"/>
-       <circle cx="30" cy="40" r="24" fill="white"/>
-       <text x="30" y="46" font-size="32" font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="black">+1</text>
+    `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+       <circle cx="30" cy="30" r="28" fill="white"/>
+       <text x="30" y="38" font-size="28" font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="black">+1</text>
      </svg>`
-  );    
+  );
     
     // === 追加: ルーム終了ボタンの制御 ===
 const endRoomBtn = document.getElementById('end-room-btn');
@@ -1077,6 +1091,7 @@ endRoomBtn?.addEventListener('click', async () => {
     function createCardDom(cardId, imageSrc, state){
       const card = document.createElement("div");
       card.className = "card";
+      if (state?.type === 'counter') card.classList.add('counter'); // ←追加
       card.dataset.cardId = cardId;
       card.dataset.ownerUid = state?.ownerUid || '';
       card.dataset.ownerSeat = state?.ownerSeat ? String(state.ownerSeat) : '';
