@@ -380,7 +380,7 @@
     const roomListDiv = document.getElementById('room-list');
 
     const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
-    let CREATE_SELECTED_SEAT = null;
+    let CREATE_SELECTED_SEAT = 1;  // ★変更: 既定は P1
     createSeatButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         CREATE_SELECTED_SEAT = parseInt(btn.dataset.createSeat, 10);
@@ -389,6 +389,15 @@
         if (picked) picked.textContent = `選択中: P${CREATE_SELECTED_SEAT}`;
       });
     });
+    
+    // ★追加: 初期表示で P1 を選んだ見た目にしておく
+createSeatButtons.forEach(b => {
+  b.classList.toggle('active', parseInt(b.dataset.createSeat, 10) === 1);
+});
+const picked = document.getElementById('create-seat-picked');
+if (picked) picked.textContent = '選択中: P1';
+    
+    
 
     let CURRENT_ROOM = null;
     let CURRENT_ROOM_META = null;
@@ -575,64 +584,79 @@
     }
 
     // ── CREATE（右）：作成→即参加（ホスト）
-    createRoomBtn.addEventListener('click', async () => {
-      ACTIVE_MODE = 'create';
-      await ensureAuthReady();
+createRoomBtn.addEventListener('click', async () => {
+  ACTIVE_MODE = 'create';
+  await ensureAuthReady();
 
-      const id = (newRoomIdInput.value||'').trim();
-      const title = (newRoomTitleInput.value||'').trim();
-      const isPublic = document.getElementById('room-public').checked;
-      const creatorName  = (newPlayerNameInput.value || '').trim();
-      const creatorColor = (newPlayerColorInput.value || '#22aaff');
+  const id = (newRoomIdInput.value||'').trim();
+  const title = (newRoomTitleInput.value||'').trim();
+  const isPublic = document.getElementById('room-public').checked;
+  const creatorName  = (newPlayerNameInput.value || '').trim();
+  const creatorColor = (newPlayerColorInput.value || '#22aaff');
 
-      if(!id){ alert('ルームIDを入力してください'); return; }
-      if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
-      if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
+  if(!id){ alert('ルームIDを入力してください'); return; }
+  if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
+  if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
 
-      try{
-        await setDoc(doc(db, `rooms/${id}`), {
-          title: title || null,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          public: !!isPublic,
-          hostUid: CURRENT_UID,
-          hostDisplayName: creatorName
-        }, { merge: true });
+  // ★追加: 二度押し防止と進行表示
+  createRoomBtn.disabled = true;
+  const oldText = createRoomBtn.textContent;
+  createRoomBtn.textContent = '作成中…';
 
-        IS_ROOM_CREATOR = true;
-        startHostHeartbeat(id); // ロビー中からHB
+  try{
+    // ★変更: roomClosed を明示的に false にしつつルーム doc を用意/更新
+    await setDoc(doc(db, `rooms/${id}`), {
+      title: title || null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      public: !!isPublic,
+      hostUid: CURRENT_UID,
+      hostDisplayName: creatorName,
+      roomClosed: false,                 // ←これを追加
+    }, { merge: true });
 
-        // 楽観反映
-        CURRENT_ROOM_META = { ...(CURRENT_ROOM_META||{}), hostUid: CURRENT_UID, hostDisplayName: creatorName };
-        renderFieldLabels();
+    // ★追加: 同じID再利用時の残骸を掃除（staleな座席/カードを空に）
+    await resetRoomState(id);
 
-        playerNameInput.value  = creatorName;
-        playerColorInput.value = creatorColor;
+    IS_ROOM_CREATOR = true;
+    startHostHeartbeat(id); // ロビー中からHB
 
-        // 座席確保 → 即開始
-        joinRoomInput.value = id;
-        loadSeatStatus();
+    // 楽観反映
+    CURRENT_ROOM_META = { ...(CURRENT_ROOM_META||{}), hostUid: CURRENT_UID, hostDisplayName: creatorName };
+    renderFieldLabels();
 
-        const ok = await claimSeat(id, CREATE_SELECTED_SEAT);
-        if(!ok){ alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`); return; }
+    playerNameInput.value  = creatorName;
+    playerColorInput.value = creatorColor;
 
-        await setDoc(doc(db, `rooms/${id}`), { hostSeat: CREATE_SELECTED_SEAT, updatedAt: serverTimestamp() }, { merge: true });
+    // 座席確保 → 即開始
+    joinRoomInput.value = id;
+    loadSeatStatus();
 
-        currentSeatMap[CREATE_SELECTED_SEAT] = {
-          ...(currentSeatMap[CREATE_SELECTED_SEAT] || {}),
-          claimedByUid: CURRENT_UID,
-          displayName: creatorName
-        };
-        renderFieldLabels();
+    const ok = await claimSeat(id, CREATE_SELECTED_SEAT);
+    if(!ok){ alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`); return; }
 
-        CURRENT_PLAYER = CREATE_SELECTED_SEAT;
-        seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
-        startSession(id, CREATE_SELECTED_SEAT);
-      }catch(e){
-        console.error(e);
-        alert('ルーム作成に失敗しました');
-      }
-    });
+    await setDoc(doc(db, `rooms/${id}`), { hostSeat: CREATE_SELECTED_SEAT, updatedAt: serverTimestamp() }, { merge: true });
+
+    currentSeatMap[CREATE_SELECTED_SEAT] = {
+      ...(currentSeatMap[CREATE_SELECTED_SEAT] || {}),
+      claimedByUid: CURRENT_UID,
+      displayName: creatorName
+    };
+    renderFieldLabels();
+
+    CURRENT_PLAYER = CREATE_SELECTED_SEAT;
+    seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
+    startSession(id, CREATE_SELECTED_SEAT);
+  }catch(e){
+    console.error(e);
+    alert('ルーム作成に失敗しました');
+  }finally{
+    // ★追加: UI を元に戻す
+    createRoomBtn.disabled = false;
+    createRoomBtn.textContent = oldText;
+  }
+});
+
 
     let unsubscribeSeats = null;
     joinRoomInput.addEventListener('change', loadSeatStatus);
@@ -1583,6 +1607,52 @@ if (data.type === 'token') {
 
       await setDoc(doc(db, `rooms/${roomId}`), { roomClosed: true, updatedAt: serverTimestamp() }, { merge: true });
     }
+    
+    
+    async function resetRoomState(roomId){
+  // 過去の cards / seats を全削除（存在しない場合は何もしない）
+  try{
+    // cards
+    const cardsCol = collection(db, `rooms/${roomId}/cards`);
+    const cardsSnap = await getDocs(cardsCol);
+    let batch = writeBatch(db); let n = 0;
+    for (const d of cardsSnap.docs){
+      batch.delete(doc(db, `rooms/${roomId}/cards/${d.id}`));
+      if (++n >= 450){ await batch.commit(); batch = writeBatch(db); n = 0; }
+    }
+    if (n > 0) await batch.commit();
+
+    // seats
+    const seatsCol = collection(db, `rooms/${roomId}/seats`);
+    const seatsSnap = await getDocs(seatsCol);
+    batch = writeBatch(db); n = 0;
+    for (const d of seatsSnap.docs){
+      batch.delete(doc(db, `rooms/${roomId}/seats/${d.id}`));
+      if (++n >= 450){ await batch.commit(); batch = writeBatch(db); n = 0; }
+    }
+    if (n > 0) await batch.commit();
+
+    // roomClosed を明示的に解除
+    await setDoc(doc(db, `rooms/${roomId}`), {
+      roomClosed: false,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  }catch(e){
+    console.warn('resetRoomState failed', e);
+  }
+}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     async function updateCard(cardId, patch){
       if(!CURRENT_ROOM) return;
