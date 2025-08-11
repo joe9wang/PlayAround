@@ -275,6 +275,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
     import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, limit, addDoc, updateDoc, where, query, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
 
     // ===== Firebase
     const firebaseConfig = {
@@ -288,6 +289,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const storage = getStorage(app);
 
     // ===== DOM refs
     const lobby = document.getElementById('lobby');
@@ -1087,7 +1089,7 @@
           previewImg.src = "";
           previewImg.style.display = "none";
         } else {
-          const full = fullImageStore.get(cardId);
+          const full = card.dataset.fullUrl || fullImageStore.get(cardId);
           const thumbEl = card.querySelector('img');
           if (thumbEl && thumbEl.style.display !== "none") {
             previewImg.src = full || thumbEl.src;
@@ -1165,6 +1167,9 @@
 
       card.dataset.faceUp = data.faceUp ? 'true' : 'false';
       const img = card.querySelector('img');
+      if (data.fullUrl) { card.dataset.fullUrl = data.fullUrl; }
+      
+      
       if(img){
         if(data.faceUp){ img.style.display = 'block'; card.style.backgroundColor = '#fff'; }
         else { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
@@ -1322,26 +1327,60 @@
               if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return null;
 
               const {x,y} = randomPointInDeck(CURRENT_PLAYER);
-              // addDoc は書き込み回数自体は減らないが、ここは作成時のみ
-              const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-                x, y, zIndex: 1, faceUp: true, imageUrl: thumbDataUrl,
+
+
+              // 1) まず Firestore にメタだけ作る（URLはあとで埋める）
+              const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
+              const refDoc = await addDoc(baseCol, {
+                x, y, zIndex: 1, faceUp: true,
                 ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0,
+                visibleToAll: true,
                 createdAt: serverTimestamp(), updatedAt: serverTimestamp()
               });
-              markLocal(ref.id);
-              fullImageStore.set(ref.id, fullDataUrl);
+              const cardId = refDoc.id;
 
-              let el = cardDomMap.get(ref.id);
-              if(!el){
-                el = createCardDom(ref.id, thumbDataUrl, {
+              // 2) Storage へ thumb/full をアップロード
+              const objBase = `rooms/${CURRENT_ROOM}/cards/${cardId}`;
+              const fullRef  = ref(storage, `${objBase}/full.jpg`);
+              const thumbRef = ref(storage, `${objBase}/thumb.jpg`);
+              // data URL を直接アップロード（クライアント生成）
+              await Promise.all([
+                uploadString(fullRef,  fullDataUrl,  'data_url'),
+                uploadString(thumbRef, thumbDataUrl, 'data_url'),
+              ]);
+              const [fullUrl, thumbUrl] = await Promise.all([
+                getDownloadURL(fullRef),
+                getDownloadURL(thumbRef),
+              ]);
+
+              // 3) Firestore のカードに URL を反映
+              await updateDoc(refDoc, {
+                imageUrl: thumbUrl,
+                fullUrl: fullUrl,
+                updatedAt: serverTimestamp()
+              });
+
+              // 4) DOM 生成（即時プレビュー用に thumb を使い、full は data 属性へ）
+              markLocal(cardId);
+              let el = cardDomMap.get(cardId);
+              if (!el) {
+                el = createCardDom(cardId, thumbUrl, {
                   x, y, zIndex: 1, faceUp: true,
                   ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0
                 });
-                cardDomMap.set(ref.id, el);
-                applyCardState(el, { x, y, zIndex: 1, faceUp: true, imageUrl: thumbDataUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0 });
+                el.dataset.fullUrl = fullUrl;
+                cardDomMap.set(cardId, el);
+                applyCardState(el, {
+                  x, y, zIndex: 1, faceUp: true,
+                  imageUrl: thumbUrl, fullUrl,
+                  ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0
+                });
                 frag.appendChild(el);
               }
               return true;
+              
+              
+              
             }));
             await nextFrame();
           }
