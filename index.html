@@ -817,8 +817,7 @@
       if (ACTIVE_MODE === 'create') { startBtn.disabled = true; return; }
       const roomOk  = !!(joinRoomInput.value||'').trim();
       const nameNow = (playerNameInput.value||'').trim();
-      const nameOk  = nameNow.length > 0 && nameOk <= 24 ? true : nameNow.length <= 24;
-      const seatOk  = !!CURRENT_PLAYER;
+      const nameOk  = nameNow.length > 0 && nameNow.length <= 24;      const seatOk  = !!CURRENT_PLAYER;
       startBtn.disabled = !(roomOk && nameOk && seatOk);
     }
 
@@ -932,14 +931,20 @@
     let heartbeatTimer = null;
     let hostHeartbeatTimer = null;
 
-    function startHostHeartbeat(roomId){
-      stopHostHeartbeat();
-      hostHeartbeatTimer = setInterval(async () => {
-        try{
-          await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
-        }catch(e){ console.warn('host HB failed', e); }
-      }, HOST_HEARTBEAT_MS);
-    }
+ // [HB] host heartbeat
+ function startHostHeartbeat(roomId){
+   // ここで直接クリアしてから再セット（未定義参照を避ける）
+   if (hostHeartbeatTimer) { clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; }
+   hostHeartbeatTimer = setInterval(async () => {
+     try{
+       await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
+     }catch(e){ console.warn('host HB failed', e); }
+   }, HOST_HEARTBEAT_MS);
+ }    
+    
+    
+    
+    
     function stopHostHeartbeat(){ if(hostHeartbeatTimer){ clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; } }
 
     function startHeartbeat(roomId, seat){
