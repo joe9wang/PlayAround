@@ -943,7 +943,16 @@
       main: '#22dd88',     // CSS: .main-play-area{ background:#2d8; }
       hand: '#228be6'      // CSS: .hand-area{ background:#228be6; }
     };
-
+    
+    const PLUS1_ICON =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="160" viewBox="0 0 120 160">
+       <rect width="120" height="160" fill="black"/>
+       <circle cx="60" cy="80" r="48" fill="white"/>
+       <text x="60" y="92" font-size="64" font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="black">+1</text>
+     </svg>`
+  );
     
     
     // === 追加: ルーム終了ボタンの制御 ===
@@ -1112,27 +1121,6 @@ card.addEventListener("click", async e => {
   previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
 });
 
-      card.addEventListener("click", e => {
-        e.stopPropagation();
-        if (selectedCard) selectedCard.classList.remove("selected");
-        card.classList.add("selected");
-        selectedCard = card;
-
-        const full = fullImageStore.get(cardId); // アップロード者のみ保持
-        const thumbEl = card.querySelector('img');
-
-        if (thumbEl && thumbEl.style.display !== "none") {
-          previewImg.src = full || thumbEl.src; // フルがなければサムネで
-          previewImg.style.display = "block";
-        } else {
-          previewImg.src = "";
-          previewImg.style.display = "none";
-        }
-
-        let ownerPlayerNum = "?";
-        if (card.dataset.ownerSeat) ownerPlayerNum = `P${card.dataset.ownerSeat}`;
-        previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
-      });
       
       
       // 追加: ダブルクリックで左へ90°回転（自分のカードのみ）
