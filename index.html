@@ -2,77 +2,54 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>プレイアラウンド v21（高速サムネ生成 + 並列制限 + プレビュー原寸）</title>
+  <title>プレイアラウンド v22（書き込み抑制版：バッチ/デバウンス/心拍間引き）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px;   --upload-h: 56px;   /* ← 追加 */ }
+    :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; --upload-h: 56px; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif; margin:0; background:#eee; overflow:hidden; }
     h1 { background:#444; color:#fff; padding:1em; text-align:center; margin:0; height:var(--header-h); box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:1rem; position:relative; }
     #session-indicator { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#ddd; font-size:12px; opacity:.9; }
-    #upload-area { height: var(--upload-h);       /* ← 追加 */
-  display: flex;                 /* ← 追加 */
-  align-items: center;           /* ← 追加 */
-  padding:0 16px; text-align:center; background:#fff; cursor:pointer; border-bottom:2px solid #ccc; user-select:none; }
+    #upload-area { height: var(--upload-h); display:flex; align-items:center; padding:0 16px; text-align:center; background:#fff; cursor:pointer; border-bottom:2px solid #ccc; user-select:none; }
     #file-input { display:none; }
 
-#sidebar {
-  width: var(--sidebar-w);
-  height: calc(100vh - var(--header-h) - var(--upload-h));
-  float: left;
-  background: #fff;
-  border-right: 2px solid #aaa;
-  box-shadow: 2px 0 5px rgba(0,0,0,.2);
-  padding: 10px;
-  box-sizing: border-box;
-}
+    #sidebar {
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--header-h) - var(--upload-h));
+      float: left; background:#fff; border-right:2px solid #aaa; box-shadow:2px 0 5px rgba(0,0,0,.2);
+      padding:10px; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+    }
     #sidebar h2 { font-size:14px; text-align:center; margin:20px 0 10px; }
     #sidebar button { width:100%; margin-bottom:10px; padding:10px; font-size:14px; cursor:pointer; }
-    
-    /* 追加: ルーム終了ボタンのスタイル */
     #sidebar button.danger { background:#c62828; color:#fff; }
     #sidebar button.danger:disabled { opacity:.6; cursor:not-allowed; }
-    
+
     #field-size-options { display:none; margin-top:5px; text-align:center; }
     #field-size-options button { width:30%; margin:5px 2%; padding:5px; font-size:13px; }
 
-#container{
-  width: calc(100% - var(--sidebar-w) - var(--preview-w));
-  height: calc(100vh - var(--header-h) - var(--upload-h));
-  overflow: hidden;
-  position: relative;
-  float: left;
-  background: #f7f7f7;
-}
-
+    #container{
+      width: calc(100% - var(--sidebar-w) - var(--preview-w));
+      height: calc(100vh - var(--header-h) - var(--upload-h));
+      overflow:hidden; position:relative; float:left; background:#f7f7f7;
+    }
     #field { position:absolute; transform-origin:0 0; background:none; }
     .player-area { position:absolute; width:50%; height:50%; border:5px dashed #666; box-sizing:border-box; }
     .player-1{ top:0; left:0; } .player-2{ top:0; left:50%; } .player-3{ top:50%; left:0; } .player-4{ top:50%; left:50%; }
     .play-area{ position:relative; left:0; width:100%; height:66.66%; display:flex; flex-direction: row-reverse; z-index:0; }
     .deck-area{ width:33.33%; background:#f90; } .main-play-area{ width:66.66%; background:#2d8; }
     .hand-area{ position:relative; bottom:0; left:0; width:100%; height:33.33%; background:#228be6; z-index:0; }
-    .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; }
+    .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; transform-origin:50% 50%; }
     .card[data-owner="other"]{ cursor:not-allowed; opacity:.95; }
-    .card{ transform-origin: 50% 50%; }    /* 追加: カード回転の基準点を中央に */
     .card img{ width:100%; height:100%; border-radius:10px; object-fit:cover; pointer-events:none; user-select:none; image-rendering: -webkit-optimize-contrast; }
     .card.selected{ border:3px solid red; }
 
-
-#preview{
-  width: var(--preview-w);
-  height: calc(100vh - var(--header-h) - var(--upload-h));
-  float: right;
-  background: #fff;
-  border-left: 2px solid #aaa;
-  box-shadow: -2px 0 5px rgba(0,0,0,.2);
-  padding: 10px;
-  box-sizing: border-box;
-  display: flex;             /* ← 分割レイアウト用を同居させる */
-  flex-direction: column;
-}
-
-
-    #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; } #preview-img{ width:100%; height:auto; border-radius:10px; display:none; }
-    
+    #preview{
+      width: var(--preview-w);
+      height: calc(100vh - var(--header-h) - var(--upload-h));
+      float:right; background:#fff; border-left:2px solid #aaa; box-shadow:-2px 0 5px rgba(0,0,0,.2);
+      padding:10px; box-sizing:border-box; display:flex; flex-direction:column;
+    }
+    #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; }
+    #preview-img{ width:100%; height:auto; border-radius:10px; display:none; }
     #preview-top { flex:2 1 0; overflow:auto; }
     #hp-panel { flex:1 1 0; border-top:1px solid #eee; padding:8px 6px; }
     #hp-grid { display:grid; grid-template-columns: 1fr; gap:8px; }
@@ -83,8 +60,6 @@
     .hp-input { width:80px; padding:6px 8px; border:1px solid #ccc; border-radius:8px; text-align:right; }
     .hp-btn { padding:6px 10px; border:1px solid #ccc; border-radius:8px; background:#f6f6f6; cursor:pointer; }
     .hp-btn:disabled, .hp-input:disabled { opacity:.6; cursor:not-allowed; }
-    
-    
 
     #lobby{ position:fixed; inset:0; background:rgba(0,0,0,.58); display:flex; align-items:center; justify-content:center; z-index:9999; }
     .lobby-card{ width:min(920px, 96vw); background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:18px; box-sizing:border-box; }
@@ -109,58 +84,18 @@
     .room-id{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
     .player-label { position: absolute; top: 6px; left: 6px; font-size: 22px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 2px 8px; border-radius: 4px; pointer-events: none; z-index: 10; }
     .zone-label { position: absolute; right: 4px; bottom: 4px; font-size: 12px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 4px; pointer-events: none; z-index: 5; }
-    .deck-area, .main-play-area, .hand-area { position: relative; }
-    #create-seat-grid .seat-btn.active{ outline: 3px solid #0a7; background: #e9fff7; box-shadow: 0 0 0 3px rgba(0,170,119,.15) inset; }
-    #create-seat-picked { margin-top: 6px; font-size: 12px; color: #0a7; font-weight: 700; }
-    .seat-btn:focus-visible{ outline: 3px solid #66aaff; }
-    
-    /* サイドバーをスクロール可能に */
-#sidebar{
-  overflow: auto;
-  overscroll-behavior: contain;         /* 画面全体のスクロールに伝播しない */
-  -webkit-overflow-scrolling: touch;    /* モバイルで慣性スクロール */
-}
+    #create-seat-grid .seat-btn.active{ outline:3px solid #0a7; background:#e9fff7; box-shadow:0 0 0 3px rgba(0,170,119,.15) inset; }
+    #create-seat-picked { margin-top:6px; font-size:12px; color:#0a7; font-weight:700; }
+    .seat-btn:focus-visible{ outline:3px solid #66aaff; }
 
+    .card.counter{ width:60px; height:60px; border-radius:50%; overflow:hidden; }
+    .card.counter img{ border-radius:50%; object-fit:cover; }
 
-    
-    /* 追加: カウンター用（小さくて丸） */
-.card.counter{
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  overflow:hidden;        /* 画像は円形に切り抜き */
-}
-.card.counter img{
-  border-radius:50%;
-  object-fit:cover;
-}
-
-
-/* トークン（白いメモカード） */
-.card.token{
-  background:#fff;
-  display:flex;
-  align-items:stretch;
-  justify-content:stretch;
-  overflow:hidden;
-}
-
-.card.token .token-input{
-  width:100%;
-  height:100%;
-  border:0;
-  padding:10px;
-  font-size:14px;
-  line-height:1.3;
-  outline:none;
-  resize:none;            /* 大きさ変更は不可（カードサイズ一定のため） */
-  background:transparent; /* カード背景色に従う */
-  color:#111;
-  box-sizing:border-box;
-}
-
-
-    
+    .card.token{ background:#fff; display:flex; align-items:stretch; justify-content:stretch; overflow:hidden; }
+    .card.token .token-input{
+      width:100%; height:100%; border:0; padding:10px; font-size:14px; line-height:1.3;
+      outline:none; resize:none; background:transparent; color:#111; box-sizing:border-box;
+    }
   </style>
 </head>
 <body>
@@ -173,7 +108,6 @@
     <div class="lobby-card">
       <div class="lobby-title">プレイアラウンドへようこそ</div>
       <div class="lobby-grid">
-        <!-- 左：既存ルームに参加（非ホスト） -->
         <section class="lobby-section">
           <div class="lobby-subtitle">既存ルームに参加（非ホスト）</div>
           <label class="lobby-label">参加するルームID</label>
@@ -201,10 +135,8 @@
           </div>
         </section>
 
-        <!-- 右：新しいルームを作成して参加（ホスト） -->
         <section class="lobby-section">
           <div class="lobby-subtitle">新しいルームを作成して参加（ホスト）</div>
-
           <label class="lobby-label">新しいルームを作成</label>
           <div class="row" style="margin-bottom:8px;">
             <input id="new-room-id" type="text" class="field" placeholder="作成するID（例: room-xyz）" />
@@ -255,7 +187,6 @@
 
   <div id="sidebar">
     <h2>操作パネル</h2>
-    <!-- 追加: 全カード向きリセット（自分のカードのみ） -->
     <button onclick="resetMyCardRotation()">↻ 全カード向きリセット（自分のカードのみ）</button>
     <button onclick="faceDownAll()">🂠 裏返す（自分のカードのみ）</button>
     <button onclick="faceUpAll()">🂡 表にする（自分のカードのみ）</button>
@@ -275,10 +206,8 @@
       <button onclick="setFieldSize('medium')">中</button>
       <button onclick="setFieldSize('large')">大</button>
     </div>
-    
-    <!-- 追加: ホスト専用「ルームを終了」ボタン（初期は非表示） -->
+
     <button id="end-room-btn" class="danger" style="display:none">🚪 ルームを終了（ホスト）</button>
-    
   </div>
 
   <div id="container">
@@ -324,32 +253,30 @@
       <img id="preview-img" src="" alt="プレビュー画像" />
       <div id="preview-info"></div>
     </div>
-    <!-- 追加: HP パネル（下1/3） -->
     <div id="hp-panel" aria-label="HP パネル">
       <div style="font-size:12px;color:#666;margin-bottom:6px;">プレイヤーHP</div>
-      <div id="hp-grid"><!-- JSでP1〜P4行を描画 --></div>
+      <div id="hp-grid"></div>
     </div>
   </div>
 
-
-  <!-- 全カード一覧モーダル -->
-<div id="card-list-modal" role="dialog" aria-modal="true" aria-labelledby="card-list-title" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:10000;">
-  <div id="card-list-sheet" style="width:min(920px, 92vw); max-height:80vh; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
-    <div id="card-list-header" style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
-      <div id="card-list-title" style="font-weight:700;">自分のカード一覧</div>
-      <button id="card-list-close" type="button" style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;">閉じる</button>
-    </div>
-    <div id="card-list-body" style="padding:12px; overflow:auto;">
-      <div id="card-list-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px;"></div>
+  <div id="card-list-modal" role="dialog" aria-modal="true" aria-labelledby="card-list-title" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:10000;">
+    <div id="card-list-sheet" style="width:min(920px, 92vw); max-height:80vh; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
+      <div id="card-list-header" style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
+        <div id="card-list-title" style="font-weight:700;">自分のカード一覧</div>
+        <button id="card-list-close" type="button" style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;">閉じる</button>
+      </div>
+      <div id="card-list-body" style="padding:12px; overflow:auto;">
+        <div id="card-list-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px;"></div>
+      </div>
     </div>
   </div>
-</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
     import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, limit, addDoc, updateDoc, where, query, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
+    // ===== Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
       authDomain: "cardgame-f484c.firebaseapp.com",
@@ -358,11 +285,11 @@
       messagingSenderId: "248859224605",
       appId: "1:248859224605:web:1320093856bc1861c174f4"
     };
-
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    // ===== DOM refs
     const lobby = document.getElementById('lobby');
     const joinRoomInput = document.getElementById('join-room-id');
     const playerNameInput = document.getElementById('player-name');
@@ -380,24 +307,12 @@
     const roomListDiv = document.getElementById('room-list');
 
     const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
-    let CREATE_SELECTED_SEAT = 1;  // ★変更: 既定は P1
-    createSeatButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        CREATE_SELECTED_SEAT = parseInt(btn.dataset.createSeat, 10);
-        createSeatButtons.forEach(b => b.classList.toggle('active', b === btn));
-        const picked = document.getElementById('create-seat-picked');
-        if (picked) picked.textContent = `選択中: P${CREATE_SELECTED_SEAT}`;
-      });
-    });
-    
-    // ★追加: 初期表示で P1 を選んだ見た目にしておく
-createSeatButtons.forEach(b => {
-  b.classList.toggle('active', parseInt(b.dataset.createSeat, 10) === 1);
-});
-const picked = document.getElementById('create-seat-picked');
-if (picked) picked.textContent = '選択中: P1';
-    
-    
+
+    // ===== State
+    let CREATE_SELECTED_SEAT = 1;
+    createSeatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.createSeat, 10) === 1));
+    const picked = document.getElementById('create-seat-picked');
+    if (picked) picked.textContent = '選択中: P1';
 
     let CURRENT_ROOM = null;
     let CURRENT_ROOM_META = null;
@@ -409,16 +324,59 @@ if (picked) picked.textContent = '選択中: P1';
     let ACTIVE_MODE = 'join'; // 'join' | 'create'
     let IS_ROOM_CREATOR = false;
 
-    // しきい値（ms）
-    const HOST_STALE_MS = 15000;
-    const SEAT_STALE_MS = 60000;
+    // ===== Quota care: intervals
+    const HOST_STALE_MS = 25000;  // ← 延長（25s）
+    const SEAT_STALE_MS = 70000;  // ← 延長（70s）
+    const HOST_HEARTBEAT_MS = 10000; // ← 10s
+    const SEAT_HEARTBEAT_MS = 20000; // ← 20s
 
     const CARD_W = 120;
     const CARD_H = 160;
 
+    // ===== Write queue (batching & coalescing)
+    const WRITE_FLUSH_MS = 400;     // まとめ書き周期
+    const MAX_BATCH_OPS = 450;      // Firestoreの上限に合わせる
+    const pendingPatches = new Map(); // key: path "rooms/{room}/cards/{id}" or seats, value: merged patch
+    let flushTimer = null;
+
+    function pathFor(roomId, sub, id){ return `rooms/${roomId}/${sub}/${id}`; }
+
+    function queueUpdate(path, patch){
+      // serverTimestampはここで付けない：無駄な書き込み増を防ぐ
+      const prev = pendingPatches.get(path) || {};
+      pendingPatches.set(path, { ...prev, ...patch });
+      if (!flushTimer) flushTimer = setTimeout(flushWrites, WRITE_FLUSH_MS);
+    }
+
+    async function flushWrites(){
+      flushTimer = null;
+      if (pendingPatches.size === 0) return;
+      // 複数バッチに分割
+      const entries = Array.from(pendingPatches.entries());
+      pendingPatches.clear();
+      for (let i=0; i<entries.length; i += MAX_BATCH_OPS){
+        const batch = writeBatch(db);
+        const slice = entries.slice(i, i+MAX_BATCH_OPS);
+        for (const [path, patch] of slice){
+          batch.update(doc(db, path), patch);
+        }
+        try{ await batch.commit(); }catch(e){ console.warn('batch commit failed', e); }
+      }
+    }
+
+    function updateCardBatched(cardId, patch){
+      if(!CURRENT_ROOM) return;
+      queueUpdate(pathFor(CURRENT_ROOM, 'cards', cardId), patch);
+    }
+    function updateSeatBatched(seat, patch){
+      if(!CURRENT_ROOM) return;
+      queueUpdate(pathFor(CURRENT_ROOM, 'seats', seat), patch);
+    }
+
+    // ===== Presence / host alive
     function isHostAlive(roomMeta){
       if(!roomMeta?.hostUid) return false;
-      if (CURRENT_UID && roomMeta.hostUid === CURRENT_UID) return true; // 自分がホスト本人なら在室扱い
+      if (CURRENT_UID && roomMeta.hostUid === CURRENT_UID) return true;
       const now = Date.now();
       const t = roomMeta.hostHeartbeatAt?.toMillis?.() ?? 0;
       if (now - t < HOST_STALE_MS) return true;
@@ -439,7 +397,7 @@ if (picked) picked.textContent = '選択中: P1';
     signInAnonymously(auth).catch(console.error);
     onAuthStateChanged(auth, (user) => { if(user){ CURRENT_UID = user.uid; }});
 
-    // モード切替
+    // UI switching
     joinRoomInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
     playerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
     seatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'join'; validateLobby(); }));
@@ -481,8 +439,6 @@ if (picked) picked.textContent = '選択中: P1';
       const cards = [];
       document.querySelectorAll('.card').forEach(el => {
         const id = el.dataset.cardId;
-        const w = el.offsetWidth  || CARD_W; // ←要素の実サイズ
-        const h = el.offsetHeight || CARD_H;
         const left = parseFloat(el.style.left) || 0;
         const top  = parseFloat(el.style.top)  || 0;
         const cx = left + CARD_W/2;
@@ -530,25 +486,11 @@ if (picked) picked.textContent = '選択中: P1';
           lobby.style.display = 'flex';
           alert('ホストが退室したため、このルームは終了しました。');
         }
-      }, 3000);
+      }, 5000); // ← 5s
     }
     function stopHostWatch() { if (hostWatchTimer) { clearInterval(hostWatchTimer); hostWatchTimer = null; } }
-    
-    
-    
-    // 任意のPromiseにタイムアウトを付ける
-function withTimeout(promise, ms, label='operation'){
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timeout (${ms}ms)`)), ms))
-  ]);
-}
-    
-    
-    
-    
-    
 
+    // 公開ルーム購読（読み取りはOK）
     function subscribeRoomList(){
       const qRooms = query(collection(db, 'rooms'), where('public', '==', true), limit(50));
       onSnapshot(qRooms, snap => {
@@ -570,9 +512,7 @@ function withTimeout(promise, ms, label='operation'){
           `;
           const right = document.createElement('div');
           const btn = document.createElement('button');
-          btn.setAttribute('type', 'button');
-          btn.className = 'btn secondary';
-          btn.textContent = '参加';
+          btn.type = 'button'; btn.className = 'btn secondary'; btn.textContent = '参加';
           const selectRoom = (ev) => {
             if (ev) { ev.preventDefault(); ev.stopPropagation(); }
             joinRoomInput.value = docSnap.id;
@@ -591,142 +531,89 @@ function withTimeout(promise, ms, label='operation'){
     }
     subscribeRoomList();
 
-// 置き換え版：最大7秒で諦めてエラーを投げる
-function ensureAuthReady(timeoutMs = 7000){
-  return new Promise((resolve, reject) => {
-    // 既にUIDがあるなら即resolve
-    if (CURRENT_UID) return resolve();
+    function ensureAuthReady(){
+      return new Promise((resolve) => {
+        if (CURRENT_UID) return resolve();
+        const off = onAuthStateChanged(auth, (u) => { if (u) { CURRENT_UID = u.uid; off(); resolve(); } });
+      });
+    }
 
-    const timer = setTimeout(() => {
-      off?.();
-      reject(new Error('Firebase Auth が初期化できませんでした（タイムアウト）'));
-    }, timeoutMs);
+    // ===== create room (host)
+    createRoomBtn.addEventListener('click', async () => {
+      await ensureAuthReady();
+      const id = (newRoomIdInput.value||'').trim();
+      const title = (newRoomTitleInput.value||'').trim();
+      const isPublic = document.getElementById('room-public').checked;
+      const creatorName  = (newPlayerNameInput.value || '').trim();
+      const creatorColor = (newPlayerColorInput.value || '#22aaff');
+      if(!id){ alert('ルームIDを入力してください'); return; }
+      if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
+      if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
 
-    // 監視開始（発火したら解除）
-    const off = onAuthStateChanged(auth, (u) => {
-      if (u) {
-        CURRENT_UID = u.uid;
-        clearTimeout(timer);
-        off();
-        resolve();
+      createRoomBtn.disabled = true;
+      const oldText = createRoomBtn.textContent;
+      createRoomBtn.textContent = '作成中…';
+
+      try{
+        await setDoc(doc(db, `rooms/${id}`), {
+          title: title || null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          public: !!isPublic,
+          hostUid: CURRENT_UID,
+          hostDisplayName: creatorName,
+          roomClosed: false,
+        }, { merge: true });
+
+        await resetRoomState(id);
+
+        IS_ROOM_CREATOR = true;
+        startHostHeartbeat(id);
+
+        CURRENT_ROOM_META = { ...(CURRENT_ROOM_META||{}), hostUid: CURRENT_UID, hostDisplayName: creatorName };
+        renderFieldLabels();
+
+        playerNameInput.value  = creatorName;
+        playerColorInput.value = creatorColor;
+
+        joinRoomInput.value = id;
+        loadSeatStatus();
+
+        const ok = await claimSeat(id, CREATE_SELECTED_SEAT);
+        if(!ok){ alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`); return; }
+
+        await setDoc(doc(db, `rooms/${id}`), { hostSeat: CREATE_SELECTED_SEAT, updatedAt: serverTimestamp() }, { merge: true });
+
+        currentSeatMap[CREATE_SELECTED_SEAT] = {
+          ...(currentSeatMap[CREATE_SELECTED_SEAT] || {}),
+          claimedByUid: CURRENT_UID,
+          displayName: creatorName
+        };
+        renderFieldLabels();
+
+        CURRENT_PLAYER = CREATE_SELECTED_SEAT;
+        seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
+        startSession(id, CREATE_SELECTED_SEAT);
+      }catch(e){
+        console.error(e);
+        alert('ルーム作成に失敗しました');
+      }finally{
+        createRoomBtn.disabled = false;
+        createRoomBtn.textContent = oldText;
       }
     });
 
-    // 念のためもう一度試す（Safari/シークレットで失敗しやすい）
-    signInAnonymously(auth).catch((e) => {
-      console.error('signInAnonymously error', e);
-      // ここでは reject しない。onAuthStateChanged の発火 or タイムアウトに任せる
+    const createSeatButtonsEls = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
+    createSeatButtonsEls.forEach(btn => {
+      btn.addEventListener('click', () => {
+        CREATE_SELECTED_SEAT = parseInt(btn.dataset.createSeat, 10);
+        createSeatButtonsEls.forEach(b => b.classList.toggle('active', b === btn));
+        const picked = document.getElementById('create-seat-picked');
+        if (picked) picked.textContent = `選択中: P${CREATE_SELECTED_SEAT}`;
+      });
     });
-  });
-}
 
-
-
-    // ── CREATE（右）：作成→即参加（ホスト）
-createRoomBtn.addEventListener('click', async () => {
-  ACTIVE_MODE = 'create';
-
-  // 二度押し防止＋表示
-  createRoomBtn.disabled = true;
-  const oldText = createRoomBtn.textContent;
-  createRoomBtn.textContent = '作成中…';
-
-  try{
-    // 1) 認証（最大7秒）
-    await ensureAuthReady(7000);
-
-    const id = (newRoomIdInput.value||'').trim();
-    const title = (newRoomTitleInput.value||'').trim();
-    const isPublic = document.getElementById('room-public').checked;
-    const creatorName  = (newPlayerNameInput.value || '').trim();
-    const creatorColor = (newPlayerColorInput.value || '#22aaff');
-
-    if(!id){ alert('ルームIDを入力してください'); return; }
-    if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
-    if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
-
-    // 2) ルームdoc作成（最大5秒）
-    await withTimeout(
-      setDoc(doc(db, `rooms/${id}`), {
-        title: title || null,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        public: !!isPublic,
-        hostUid: CURRENT_UID,
-        hostDisplayName: creatorName,
-        roomClosed: false, // 明示解除
-      }, { merge: true }),
-      5000,
-      'setDoc(room)'
-    );
-
-// 3) 既存IDが「自分の部屋」だった場合だけ、希望時に掃除（大量書き込みなので常用しない）
-try {
-  const roomSnap = await onSnapshotOnce(doc(db, `rooms/${id}`));
-  const meta = roomSnap.exists() ? roomSnap.data() : null;
-  const canClean = meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID;
-
-  if (canClean) {
-    const doClean = confirm('同じルームIDが既にあります。古い座席/カードを全削除しますか？（大量書き込み）');
-    if (doClean) {
-      await withTimeout(resetRoomState(id), 8000, 'resetRoomState');
-    }
-  }
-} catch(e) {
-  console.warn('check/resetRoomState skipped:', e);
-}
-
-
-    IS_ROOM_CREATOR = true;
-    startHostHeartbeat(id); // ロビー中からHB
-
-    // 楽観反映
-    CURRENT_ROOM_META = { ...(CURRENT_ROOM_META||{}), hostUid: CURRENT_UID, hostDisplayName: creatorName };
-    renderFieldLabels();
-    playerNameInput.value  = creatorName;
-    playerColorInput.value = creatorColor;
-
-    // 4) 座席確保（最大10秒）
-    joinRoomInput.value = id;
-    loadSeatStatus();
-
-    const ok = await withTimeout(
-      claimSeat(id, CREATE_SELECTED_SEAT),
-      10000,
-      'claimSeat(transaction)'
-    );
-    if(!ok){ alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`); return; }
-
-    // 5) ホスト座席を記録（最大5秒）
-    await withTimeout(
-      setDoc(doc(db, `rooms/${id}`), { hostSeat: CREATE_SELECTED_SEAT, updatedAt: serverTimestamp() }, { merge: true }),
-      5000,
-      'setDoc(hostSeat)'
-    );
-
-    currentSeatMap[CREATE_SELECTED_SEAT] = {
-      ...(currentSeatMap[CREATE_SELECTED_SEAT] || {}),
-      claimedByUid: CURRENT_UID,
-      displayName: creatorName
-    };
-    renderFieldLabels();
-
-    // 6) セッション開始
-    CURRENT_PLAYER = CREATE_SELECTED_SEAT;
-    seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
-    startSession(id, CREATE_SELECTED_SEAT);
-
-  }catch(e){
-    console.error(e);
-    alert(`ルーム作成に失敗しました：${e?.message || e}`);
-  }finally{
-    createRoomBtn.disabled = false;
-    createRoomBtn.textContent = oldText;
-  }
-});
-
-
-
+    // ===== seats & lobby
     let unsubscribeSeats = null;
     joinRoomInput.addEventListener('change', loadSeatStatus);
     joinRoomInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadSeatStatus(); });
@@ -734,8 +621,8 @@ try {
     playerNameInput.addEventListener('change', async () => {
       const newName = (playerNameInput.value || '').trim();
       if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return;
-      const seatRef = doc(db, `rooms/${CURRENT_ROOM}/seats/${CURRENT_PLAYER}`);
-      await setDoc(seatRef, { displayName: newName, updatedAt: serverTimestamp() }, { merge: true });
+      // batched
+      updateSeatBatched(CURRENT_PLAYER, { displayName: newName, updatedAt: serverTimestamp() });
     });
 
     const currentSeatMap = {1:null,2:null,3:null,4:null};
@@ -775,14 +662,11 @@ try {
 
       renderFieldLabels();
       validateLobby();
-      updateEndRoomButtonVisibility(); // 追加
-      renderAreaColors(); // 追加: エリア色反映
-      renderHPPanel(); // 追加: HP再描画
-      
+      updateEndRoomButtonVisibility();
+      renderAreaColors();
+      renderHPPanel();
     }
-    
-    
-    // 追加: HPパネル描画 & 自席のみ編集可
+
     function renderHPPanel(){
       const grid = document.getElementById('hp-grid');
       if (!grid) return;
@@ -809,34 +693,27 @@ try {
       grid.innerHTML = rows.join('');
       grid.querySelectorAll('.hp-row').forEach(row => {
         const seat = parseInt(row.dataset.seat, 10);
-        if (seat !== CURRENT_PLAYER) return; // 自分以外は編集不可
+        if (seat !== CURRENT_PLAYER) return;
         const input = row.querySelector('.hp-input');
         const minus = row.querySelector('.hp-minus');
         const plus  = row.querySelector('.hp-plus');
-        const commit = async (nextVal) => {
+        const commit = (nextVal) => {
           const n = Number.isFinite(nextVal) ? Math.trunc(nextVal) : 0;
           if (input) input.value = n;
-          try {
-            const seatRef = doc(db, `rooms/${CURRENT_ROOM}/seats/${seat}`);
-            await setDoc(seatRef, { hp: n, updatedAt: serverTimestamp() }, { merge: true });
-          } catch(e) {
-            console.error(e);
-            alert('HPの更新に失敗しました。ネットワークをご確認ください。');
-          }
+          updateSeatBatched(seat, { hp: n, updatedAt: serverTimestamp() });
         };
         input?.addEventListener('change', () => commit(parseInt(input.value, 10)));
         minus?.addEventListener('click', () => commit(parseInt(input.value, 10) - 1));
         plus ?.addEventListener('click', () => commit(parseInt(input.value, 10) + 1));
       });
     }
-    
-    
-    // ===== 追加: エリア色の反映とダブルクリック編集 =====
+
+    // ===== area colors (no change in write count; low frequency)
+    const DEFAULT_AREA_COLORS = { deck:'#ff9900', main:'#22dd88', hand:'#228be6' };
     function getSeatAreaColor(seat, zone){
       const ac = currentSeatMap[seat]?.areaColors || {};
       return ac[zone] || DEFAULT_AREA_COLORS[zone];
     }
-
     function renderAreaColors(){
       for (const seat of [1,2,3,4]) {
         const root = document.querySelector(`.player-${seat}`);
@@ -849,28 +726,21 @@ try {
         if (hand) hand.style.background = getSeatAreaColor(seat, 'hand');
       }
     }
-
-    // 自分の座席の各エリアをダブルクリックで色変更できるようにする
     function bindAreaColorHandlers(){
       for (const seat of [1,2,3,4]) {
         const root = document.querySelector(`.player-${seat}`);
         if (!root) continue;
-        const zones = [
+        [
           { el: root.querySelector('.deck-area'), key: 'deck' },
           { el: root.querySelector('.main-play-area'), key: 'main' },
           { el: root.querySelector('.hand-area'), key: 'hand' },
-        ];
-        zones.forEach(({el, key}) => {
-          if (!el) return;
-          if (el.__colorHandlerBound) return;
+        ].forEach(({el, key}) => {
+          if (!el || el.__colorHandlerBound) return;
           el.__colorHandlerBound = true;
-          // パン側の判定用。見た目のヒントも付ける
           el.classList.add('zone-colorable');
           el.style.cursor = 'pointer';
-          
-          
           el.addEventListener('dblclick', async (ev) => {
-            ev.stopPropagation();            
+            ev.stopPropagation();
             if (seat !== CURRENT_PLAYER) return;
             if (!CURRENT_ROOM) return;
             const input = document.createElement('input');
@@ -882,27 +752,16 @@ try {
             input.addEventListener('change', async () => {
               const picked = input.value;
               el.style.background = picked;
-              try{
-                const prev = (currentSeatMap[seat]?.areaColors) || {};
-                const next = { ...prev, [key]: picked };
-                const seatRef = doc(db, `rooms/${CURRENT_ROOM}/seats/${seat}`);
-                await setDoc(seatRef, { areaColors: next, updatedAt: serverTimestamp() }, { merge: true });
-              }catch(err){
-                console.error(err);
-                alert('エリア色の保存に失敗しました。ネットワークをご確認ください。');
-              }
-              input.remove(); // ピッカーを閉じた後に片付け
+              const prev = (currentSeatMap[seat]?.areaColors) || {};
+              const next = { ...prev, [key]: picked };
+              updateSeatBatched(seat, { areaColors: next, updatedAt: serverTimestamp() });
+              input.remove();
             }, { once: true });
-            
             input.click();
           });
         });
       }
     }
-    
-    
-    
-    
 
     function renderFieldLabels(){
       for (const s of [1,2,3,4]) {
@@ -910,7 +769,6 @@ try {
         const seatEl = area?.querySelector('.player-label .label-seat');
         const nameEl = area?.querySelector('.player-label .label-name');
         if(!seatEl || !nameEl) continue;
-
         seatEl.textContent = `P${s}`;
         const seatData = currentSeatMap[s] || null;
         const displayName = seatData?.displayName || '';
@@ -918,7 +776,6 @@ try {
         nameEl.textContent = displayName ? `${displayName}${isHostSeat ? '（ホスト）' : ''}` : '';
       }
     }
-
     function detachSeatsListener(){ if(unsubscribeSeats){ unsubscribeSeats(); unsubscribeSeats = null; } }
 
     function loadSeatStatus(){
@@ -934,24 +791,22 @@ try {
 
       if(!roomId){ return; }
 
-      // ルームdoc購読
+      // room doc listen
       unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
         CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
         IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
         if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
-        renderFieldLabels();
-        renderAreaColors(); // 追加: エリア色反映
-        updateEndRoomButtonVisibility(); // 追加
-        renderHPPanel(); // 追加: HP再描画
+        renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); renderHPPanel();
       });
 
-      // 座席doc購読
+      // ※ ここで updatedAt を書かない（以前は軽く触るだけで1書き込み発生していた）
+
+      // seat docs listen
       const seatDocs = [1,2,3,4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
         currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
-        renderAreaColors(); // 追加: エリア色反映
+        renderAreaColors();
         renderSeatAvailability();
-        // renderHPPanel は renderSeatAvailability 内で呼ばれる
       }));
       unsubscribeSeats = () => unsubs.forEach(fn => fn());
     }
@@ -962,7 +817,7 @@ try {
       if (ACTIVE_MODE === 'create') { startBtn.disabled = true; return; }
       const roomOk  = !!(joinRoomInput.value||'').trim();
       const nameNow = (playerNameInput.value||'').trim();
-      const nameOk  = nameNow.length > 0 && nameNow.length <= 24;
+      const nameOk  = nameNow.length > 0 && nameOk <= 24 ? true : nameNow.length <= 24;
       const seatOk  = !!CURRENT_PLAYER;
       startBtn.disabled = !(roomOk && nameOk && seatOk);
     }
@@ -985,8 +840,8 @@ try {
         CURRENT_PLAYER = seat;
         seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
         validateLobby();
-        updateEndRoomButtonVisibility(); // 追加
-        renderHPPanel(); // 追加
+        updateEndRoomButtonVisibility();
+        renderHPPanel();
       });
     });
 
@@ -996,64 +851,55 @@ try {
       renderSeatAvailability();
       detachSeatsListener();
       joinRoomInput.focus();
-      updateEndRoomButtonVisibility(); // 追加
-      renderHPPanel(); // 追加
+      updateEndRoomButtonVisibility();
+      renderHPPanel();
     });
 
-startBtn.addEventListener('click', async (ev) => {
-  ev.preventDefault();
-  ACTIVE_MODE = 'join';
+    startBtn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      ACTIVE_MODE = 'join';
+      await ensureAuthReady();
+      if (!CURRENT_UID) { alert('認証の初期化に時間がかかっています。数秒後に再度お試しください。'); return; }
 
-  const oldText = startBtn.textContent;
-  startBtn.disabled = true;
-  startBtn.textContent = '開始中…';
+      const room    = (joinRoomInput.value || '').trim();
+      const seat    = CURRENT_PLAYER;
+      const nameNow = (playerNameInput.value || '').trim();
+      const colorNow = playerColorInput.value || '#22aaff';
 
-  try {
-    // 認証（最大7秒）
-    await ensureAuthReady(7000);
-    if (!CURRENT_UID) { alert('認証の初期化に時間がかかっています。数秒後に再度お試しください。'); return; }
+      if (!room)  { alert('ルームIDを入力してください'); return; }
+      if (!nameNow) { alert('プレイヤー名を入力してください'); return; }
+      if (!seat)  { alert('座席を選択してください'); return; }
 
-    const room    = (joinRoomInput.value || '').trim();
-    const seat    = CURRENT_PLAYER;
-    const nameNow = (playerNameInput.value || '').trim();
-    const colorNow = playerColorInput.value || '#22aaff';
+      const oldText = startBtn.textContent;
+      startBtn.disabled = true;
+      startBtn.textContent = '開始中…';
 
-    if (!room)  { alert('ルームIDを入力してください'); return; }
-    if (!nameNow) { alert('プレイヤー名を入力してください'); return; }
-    if (!seat)  { alert('座席を選択してください'); return; }
+      try {
+        const roomSnap = await new Promise(resolve => {
+          const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); });
+        });
+        const meta = roomSnap.exists() ? roomSnap.data() : null;
+        const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
 
-    // ルーム存在確認（ここは短いのでタイムアウト無しでもOK）
-    const roomSnap = await onSnapshotOnce(doc(db, `rooms/${room}`));
-    const meta = roomSnap.exists() ? roomSnap.data() : null;
-    const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
+        const hostLikelyHere = !!meta?.hostUid || isHostAlive(meta);
+        if (!meta || (!hostLikelyHere && !iAmHost)) { alert('ホストが不在のため、このルームには参加できません。'); return; }
+        if (iAmHost) IS_ROOM_CREATOR = true;
 
-    const hostLikelyHere = !!meta?.hostUid || isHostAlive(meta);
-    if (!meta || (!hostLikelyHere && !iAmHost)) { alert('ホストが不在のため、このルームには参加できません。'); return; }
-    if (iAmHost) IS_ROOM_CREATOR = true;
+        const ok = await claimSeat(room, seat);
+        if (!ok) { alert('開始直前に座席が埋まりました。別の席を選んでください。'); return; }
 
-    // 座席確保（最大10秒）
-    const ok = await withTimeout(
-      claimSeat(room, seat),
-      10000,
-      'claimSeat(transaction)'
-    );
-    if (!ok) { alert('開始直前に座席が埋まりました。別の席を選んでください。'); return; }
+        currentSeatMap[seat] = { ...(currentSeatMap[seat] || {}), claimedByUid: CURRENT_UID, displayName: nameNow, color: colorNow };
+        renderSeatAvailability();
 
-    currentSeatMap[seat] = { ...(currentSeatMap[seat] || {}), claimedByUid: CURRENT_UID, displayName: nameNow, color: colorNow };
-    renderSeatAvailability();
-
-    startSession(room, seat);
-
-  } catch (e) {
-    console.error(e);
-    alert(`開始に失敗しました：${e?.message || e}`);
-  } finally {
-    startBtn.disabled = false;
-    startBtn.textContent = oldText;
-  }
-});
-
-
+        startSession(room, seat);
+      } catch (e) {
+        console.error(e);
+        alert('開始に失敗しました。ネットワーク状態を確認してもう一度お試しください。');
+      } finally {
+        startBtn.disabled = false;
+        startBtn.textContent = oldText;
+      }
+    });
 
     async function claimSeat(roomId, seat){
       const seatRef = doc(db, `rooms/${roomId}/seats/${seat}`);
@@ -1063,13 +909,13 @@ startBtn.addEventListener('click', async (ev) => {
         const success = await runTransaction(db, async (tx) => {
           const snap = await tx.get(seatRef);
           if(!snap.exists()){
-            tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() });
+            tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp(), hp: 0 });
             return true;
           }
           const data = snap.data();
           const stale = isSeatStale(data);
           if(!data.claimedByUid || stale || data.claimedByUid === CURRENT_UID){
-            tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() });
+            tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp(), hp: (typeof data?.hp==='number'?data.hp:0) });
             return true;
           }
           return false;
@@ -1078,256 +924,44 @@ startBtn.addEventListener('click', async (ev) => {
       }catch(e){ console.error('claimSeat error', e); return false; }
     }
 
-    async function onSnapshotOnce(ref){
-      return await new Promise(resolve => {
-        const unsub = onSnapshot(ref, snap => { unsub(); resolve(snap); });
-      });
-    }
-
     async function releaseSeat(roomId, seat){
       try{ await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`)); }catch(e){ console.warn('releaseSeat error', e); }
     }
 
+    // ===== heartbeats (rate-limited)
     let heartbeatTimer = null;
     let hostHeartbeatTimer = null;
 
-function startHostHeartbeat(roomId){
-  stopHostHeartbeat();
-  hostHeartbeatTimer = setInterval(async () => {
-    try{
-      await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
-    }catch(e){ console.warn('host HB failed', e); }
-  }, 15000); // ← 5000 → 15000（15秒）
-}
+    function startHostHeartbeat(roomId){
+      stopHostHeartbeat();
+      hostHeartbeatTimer = setInterval(async () => {
+        try{
+          await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
+        }catch(e){ console.warn('host HB failed', e); }
+      }, HOST_HEARTBEAT_MS);
+    }
+    function stopHostHeartbeat(){ if(hostHeartbeatTimer){ clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; } }
 
-function startHeartbeat(roomId, seat){
-  stopHeartbeat();
-  heartbeatTimer = setInterval(async () => {
-    try{
-      await setDoc(doc(db, `rooms/${roomId}/seats/${seat}`), { claimedByUid: CURRENT_UID, heartbeatAt: serverTimestamp() }, { merge: true });
-    }catch(e){ console.warn('heartbeat failed', e); }
-  }, 30000); // ← 10000 → 30000（30秒）
-}
-
-
-
+    function startHeartbeat(roomId, seat){
+      stopHeartbeat();
+      heartbeatTimer = setInterval(async () => {
+        try{
+          // batchedでもOKだが、ここは1ドキュメントのみで間隔も長いので直接merge
+          await setDoc(doc(db, `rooms/${roomId}/seats/${seat}`), { claimedByUid: CURRENT_UID, heartbeatAt: serverTimestamp() }, { merge: true });
+        }catch(e){ console.warn('heartbeat failed', e); }
+      }, SEAT_HEARTBEAT_MS);
+    }
     function stopHeartbeat(){ if(heartbeatTimer){ clearInterval(heartbeatTimer); heartbeatTimer = null; } }
 
-    // ===== カード同期・UI =====
+    // ===== Cards / UI
     const field = document.getElementById("field");
-    const container = document.getElementById("container"); // ←追加
+    const container = document.getElementById("container");
     const previewImg = document.getElementById("preview-img");
     const previewInfo = document.getElementById("preview-info");
     const uploadArea = document.getElementById("upload-area");
     const fileInput = document.getElementById("file-input");
     const fieldSizeOptions = document.getElementById("field-size-options");
-    
 
-
-    // === 追加: エリア色（デフォルト値）
-    const DEFAULT_AREA_COLORS = {
-      deck: '#ff9900',     // CSS: .deck-area{ background:#f90; }
-      main: '#22dd88',     // CSS: .main-play-area{ background:#2d8; }
-      hand: '#228be6'      // CSS: .hand-area{ background:#228be6; }
-    };
-    
-    
-    
-    
-    // 丸形・半分サイズのカウンターSVGを動的に作る
-function makeCounterIcon(label /* '+1' | '+10' | '-1' | '-10' */){
-  // 60x80（もとの半分）、白丸に黒文字
-  // 文字が3桁（+10, -10）の時は少し小さめ
-  const fontSize = (label.length >= 3) ? 28 : 32;
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="80" viewBox="0 0 60 80">
-       <rect width="60" height="80" fill="black"/>
-       <circle cx="30" cy="40" r="24" fill="white"/>
-       <text x="30" y="46" font-size="${fontSize}" font-family="Arial, Helvetica, sans-serif"
-             text-anchor="middle" fill="black">${label}</text>
-     </svg>`;
-  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-}
-
-// 共通：任意のカウンターを生成
-window.spawnCounter = async function(kind /* '+1' | '+10' | '-1' | '-10' */) {
-  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
-    alert('ルームに参加してから実行してください');
-    return;
-  }
-
-  const icon = makeCounterIcon(kind);
-  const { x, y } = randomPointInDeck(CURRENT_PLAYER);
-
-  try {
-    const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-      x, y,
-      zIndex: getMaxZIndex() + 1,
-      faceUp: true,
-      imageUrl: icon,            // 小さめSVGデータURL
-      ownerUid: CURRENT_UID,
-      ownerSeat: CURRENT_PLAYER,
-      rotation: 0,
-      type: 'counter',
-      counterKind: kind,         // '+1' | '+10' | '-1' | '-10'
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    markLocal(ref.id);
-
-    // DOM即時反映
-    let el = cardDomMap.get(ref.id);
-    if (!el) {
-      el = createCardDom(ref.id, icon, {
-        x, y, zIndex: getMaxZIndex() + 1, faceUp: true,
-        ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
-        rotation: 0, type: 'counter', counterKind: kind
-      });
-      cardDomMap.set(ref.id, el);
-      field.appendChild(el);
-    }
-    applyCardState(el, {
-      x, y, zIndex: parseInt(el.style.zIndex) || (getMaxZIndex() + 1),
-      faceUp: true,
-      imageUrl: icon,
-      ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
-      rotation: 0, type: 'counter', counterKind: kind
-    });
-  } catch (e) {
-    console.error(e);
-    alert('カウンターの配置に失敗しました。ネットワークをご確認ください。');
-  }
-};
-    
-    
-    
-    
-    // トークン（白カード + テキスト）を自分のデッキエリア付近に生成
-window.spawnToken = async function(){
-  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
-    alert('ルームに参加してから実行してください');
-    return;
-  }
-  const { x, y } = randomPointInDeck(CURRENT_PLAYER);
-  try{
-    const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-      x, y,
-      zIndex: getMaxZIndex() + 1,
-      faceUp: true,
-      imageUrl: '',            // 画像は使わない
-      ownerUid: CURRENT_UID,
-      ownerSeat: CURRENT_PLAYER,
-      rotation: 0,
-      type: 'token',           // 種別：トークン
-      tokenText: '',           // 同期される本文
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    markLocal(ref.id);
-
-    // DOM 即時反映
-    let el = cardDomMap.get(ref.id);
-    if (!el) {
-      el = createCardDom(ref.id, '', {
-        x, y, zIndex: getMaxZIndex() + 1,
-        faceUp: true,
-        ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
-        rotation: 0,
-        type: 'token', tokenText: ''
-      });
-      cardDomMap.set(ref.id, el);
-      field.appendChild(el);
-    }
-    applyCardState(el, {
-      x, y,
-      zIndex: parseInt(el.style.zIndex) || (getMaxZIndex() + 1),
-      faceUp: true,
-      imageUrl: '',
-      ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
-      rotation: 0,
-      type: 'token', tokenText: ''
-    });
-  }catch(e){
-    console.error(e);
-    alert('トークンの作成に失敗しました。ネットワークをご確認ください。');
-  }
-};
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    // === 追加: ルーム終了ボタンの制御 ===
-const endRoomBtn = document.getElementById('end-room-btn');
-
-/** ホスト座席のホスト本人だけにボタンを出す */
-function updateEndRoomButtonVisibility(){
-  const isHostUid = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
-  const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
-  const show = !!(CURRENT_ROOM && isHostUid && isHostSeat);
-  if (endRoomBtn) endRoomBtn.style.display = show ? 'block' : 'none';
-}
-
-/** クリックでルーム終了（cards/seats 全削除 + roomClosed: true） */
-endRoomBtn?.addEventListener('click', async () => {
-  if (!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID && CURRENT_ROOM_META?.hostSeat === CURRENT_PLAYER)) {
-    alert('この操作は、ホスト座席に座ったホストのみ実行できます。');
-    return;
-  }
-  if (!confirm('ルームを終了します。全カードと座席情報が削除され、全員が退出します。よろしいですか？')) return;
-
-  endRoomBtn.disabled = true;
-  try {
-    await cleanupAndCloseRoom(CURRENT_ROOM); // 既存関数: cards/seats全削除 + roomClosed: true をセット
-    // 自分（ホスト）側のクリーンアップとロビー復帰
-    try { if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; } } catch(_) {}
-    try { if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; } } catch(_) {}
-    try { if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; } } catch(_) {}
-    try { stopHeartbeat(); } catch(_) {}
-    try { stopHostHeartbeat(); } catch(_) {}
-    try { stopHostWatch(); } catch(_) {}
-    try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
-
-    CURRENT_ROOM = null;
-    CURRENT_PLAYER = null;
-    sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
-    lobby.style.display = 'flex';
-    alert('ルームを終了しました。');
-
-  } catch (e) {
-    console.error(e);
-    alert('ルームの終了に失敗しました。ネットワークをご確認のうえ再試行してください。');
-  } finally {
-    endRoomBtn.disabled = false;
-    updateEndRoomButtonVisibility();
-  }
-});
-    
-    
-    
-    
-    
-    
-    
-
-    let zoom = 1, panOffsetX = 0, panOffsetY = 0, selectedCard = null;
-
-    const cardDomMap = new Map();
-    const localChangeMap = new Map();
-    function markLocal(id){ localChangeMap.set(id, Date.now()); setTimeout(()=>localChangeMap.delete(id), 800); }
-    function isLocalRecent(id){ const t = localChangeMap.get(id); return t && (Date.now() - t < 800); }
-
-    // フル解像度はアップロード者だけが保持（他プレイヤーはサムネのみ）
     const fullImageStore = new Map(); // key: cardId, value: dataURL(full)
 
     let unsubscribeCards = null;
@@ -1335,7 +969,7 @@ endRoomBtn?.addEventListener('click', async () => {
 
     function startSession(roomId, playerId){
       CURRENT_ROOM = roomId; CURRENT_PLAYER = playerId;
-      updateEndRoomButtonVisibility(); // 追加
+      updateEndRoomButtonVisibility();
       sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: P${CURRENT_PLAYER}`;
       lobby.style.display = 'none';
       startHeartbeat(roomId, playerId);
@@ -1357,8 +991,8 @@ endRoomBtn?.addEventListener('click', async () => {
       initializePlayField();
       subscribeCards();
       startHostWatch();
-      renderAreaColors(); // 追加: 入室直後にエリア色反映
-      renderHPPanel(); // 追加: 入室直後にHP描画
+      renderAreaColors();
+      renderHPPanel();
     }
 
     function subscribeCards(){
@@ -1377,11 +1011,16 @@ endRoomBtn?.addEventListener('click', async () => {
       });
     }
 
+    const cardDomMap = new Map();
+    const localChangeMap = new Map();
+    function markLocal(id){ localChangeMap.set(id, Date.now()); setTimeout(()=>localChangeMap.delete(id), 800); }
+    function isLocalRecent(id){ const t = localChangeMap.get(id); return t && (Date.now() - t < 800); }
+
     function upsertCardFromRemote(id, data){
       let el = cardDomMap.get(id) || document.querySelector(`[data-card-id="${id}"]`);
       const exists = !!el;
       if (!exists && !isLocalRecent(id)) {
-        el = createCardDom(id, data.imageUrl, data); // imageUrl はサムネ
+        el = createCardDom(id, data.imageUrl, data);
         cardDomMap.set(id, el);
         field.appendChild(el);
       }
@@ -1391,196 +1030,119 @@ endRoomBtn?.addEventListener('click', async () => {
     function createCardDom(cardId, imageSrc, state){
       const card = document.createElement("div");
       card.className = "card";
-      if (state?.type === 'counter') card.classList.add('counter'); // ←追加
+      if (state?.type === 'counter') card.classList.add('counter');
       card.dataset.cardId = cardId;
       card.dataset.ownerUid = state?.ownerUid || '';
       card.dataset.ownerSeat = state?.ownerSeat ? String(state.ownerSeat) : '';
       card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
 
       const img = document.createElement("img");
-      img.src = imageSrc; // サムネ（小さめ）
-      img.decoding = 'async';
-      img.loading = 'lazy';
+      img.src = imageSrc; img.decoding = 'async'; img.loading = 'lazy';
       card.appendChild(img);
-      
-      
-      // --- トークン専用UI（テキストエリア）を追加 ---
-let tokenInput = null;
-if (state?.type === 'token') {
-  card.classList.add('token');
 
-  tokenInput = document.createElement('textarea');
-  tokenInput.className = 'token-input';
-  tokenInput.value = typeof state.tokenText === 'string' ? state.tokenText : '';
-
-  // トークンは画像を使わないので img は隠す
-  img.style.display = 'none';
-
-  // 作成者のみ編集可
-  const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
-  tokenInput.readOnly = !editable;
-  tokenInput.disabled = !editable;
-
-  if (editable) {
-    let tmr = null;
-    const commit = async () => {
-      tmr = null;
-      const id = card.dataset.cardId;
-      const text = tokenInput.value.slice(0, 2000);
-      try { await updateCard(id, { tokenText: text, updatedAt: serverTimestamp() }); } catch(e){}
-    };
-    tokenInput.addEventListener('input', () => {
-      if (tmr) clearTimeout(tmr);
-      tmr = setTimeout(commit, 300);
-    });
-    tokenInput.addEventListener('blur', () => {
-      if (tmr) clearTimeout(tmr);
-      tmr = null;
-      const id = card.dataset.cardId;
-      const text = tokenInput.value.slice(0, 2000);
-      updateCard(id, { tokenText: text, updatedAt: serverTimestamp() }).catch(()=>{});
-    });
-  }
-
-  card.appendChild(tokenInput);
-}
-// --- ここまでトークンUI ---
+      // token UI
+      let tokenInput = null;
+      if (state?.type === 'token') {
+        card.classList.add('token');
+        tokenInput = document.createElement('textarea');
+        tokenInput.className = 'token-input';
+        tokenInput.value = typeof state.tokenText === 'string' ? state.tokenText : '';
+        img.style.display = 'none';
+        const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
+        tokenInput.readOnly = !editable;
+        tokenInput.disabled = !editable;
+        if (editable) {
+          let tmr = null;
+          const commit = () => {
+            tmr = null;
+            const id = card.dataset.cardId;
+            const text = tokenInput.value.slice(0, 2000);
+            updateCardBatched(id, { tokenText: text });
+          };
+          tokenInput.addEventListener('input', () => { if (tmr) clearTimeout(tmr); tmr = setTimeout(commit, 500); }); // ← 500ms
+          tokenInput.addEventListener('blur', commit);
+        }
+        card.appendChild(tokenInput);
+      }
 
       makeDraggable(card);
 
-card.addEventListener("click", async e => {
-  e.stopPropagation();
+      card.addEventListener("click", async e => {
+        e.stopPropagation();
+        // 表示上だけ最前面へ（サーバーへzIndexは書かない：無駄書き減）
+        const newZ = getMaxZIndex() + 1;
+        card.style.zIndex = newZ;
 
-  // 最前面へ
-  const newZ = getMaxZIndex() + 1;
-  card.style.zIndex = newZ;
-  try { await updateCard(cardId, { zIndex: newZ, updatedAt: serverTimestamp() }); } catch {}
+        if (selectedCard) selectedCard.classList.remove("selected");
+        card.classList.add("selected");
+        selectedCard = card;
 
-  // 選択表示
-  if (selectedCard) selectedCard.classList.remove("selected");
-  card.classList.add("selected");
-  selectedCard = card;
+        const isToken = card.classList.contains('token');
+        if (isToken) {
+          previewImg.src = "";
+          previewImg.style.display = "none";
+        } else {
+          const full = fullImageStore.get(cardId);
+          const thumbEl = card.querySelector('img');
+          if (thumbEl && thumbEl.style.display !== "none") {
+            previewImg.src = full || thumbEl.src;
+            previewImg.style.display = "block";
+          } else {
+            previewImg.src = "";
+            previewImg.style.display = "none";
+          }
+        }
+        const ownerPlayerNum = card.dataset.ownerSeat ? `P${card.dataset.ownerSeat}` : "?";
+        if (isToken) {
+          const t = card.querySelector('.token-input')?.value || '';
+          previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}\n内容: ${t ? t.slice(0,200) : '(未記入)'}`;
+        } else {
+          previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
+        }
+      });
 
-  const isToken = card.classList.contains('token');
+      // 右クリックで表裏トグル（自分のカードのみ／カウンターは除外）
+      card.addEventListener("contextmenu", async (e) => {
+        e.preventDefault();
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+        if (card.classList.contains('counter')) return;
 
-  if (isToken) {
-    // トークンは画像プレビューを出さない
-    previewImg.src = "";
-    previewImg.style.display = "none";
-  } else {
-    const full = fullImageStore.get(cardId);
-    const thumbEl = card.querySelector('img');
-    if (thumbEl && thumbEl.style.display !== "none") {
-      previewImg.src = full || thumbEl.src;
-      previewImg.style.display = "block";
-    } else {
-      previewImg.src = "";
-      previewImg.style.display = "none";
-    }
-  }
+        const isFaceUp = card.dataset.faceUp === 'true';
+        const nextFaceUp = !isFaceUp;
+        card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
+        const imgEl = card.querySelector('img');
+        if (imgEl) {
+          if (nextFaceUp) {
+            imgEl.style.display = 'block'; card.style.backgroundColor = '#fff';
+            if (selectedCard === card) {
+              const full = fullImageStore.get(cardId);
+              previewImg.src = full || imgEl.src; previewImg.style.display = 'block';
+            }
+          } else {
+            imgEl.style.display = 'none'; card.style.backgroundColor = '#000';
+            if (selectedCard === card) { previewImg.src = ''; previewImg.style.display = 'none'; }
+          }
+        }
+        const tokenEl = card.querySelector('.token-input');
+        if (tokenEl) {
+          if (nextFaceUp) { tokenEl.style.display = 'block'; card.style.backgroundColor = '#fff'; }
+          else { tokenEl.style.display = 'none'; card.style.backgroundColor = '#000'; if (selectedCard === card) { previewImg.src=''; previewImg.style.display='none'; } }
+        }
+        updateCardBatched(cardId, { faceUp: nextFaceUp });
+      });
 
-  let ownerPlayerNum = "?";
-  if (card.dataset.ownerSeat) ownerPlayerNum = `P${card.dataset.ownerSeat}`;
+      // ダブルクリックで90°回転（自分のカードのみ）
+      card.addEventListener("dblclick", async (e) => {
+        e.stopPropagation();
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+        const currentStyle = card.style.transform || '';
+        const match = currentStyle.match(/rotate\((-?\d+(?:\.\d+)?)deg\)/);
+        const current = match ? parseFloat(match[1]) : (typeof state?.rotation === 'number' ? state.rotation : 0);
+        const next = ((current + 270) % 360 + 360) % 360;
+        card.style.transform = `rotate(${next}deg)`;
+        updateCardBatched(cardId, { rotation: next });
+      });
 
-  if (isToken) {
-    const t = card.querySelector('.token-input')?.value || '';
-    previewInfo.textContent =
-      `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}\n内容: ${t ? t.slice(0,200) : '(未記入)'}`;
-  } else {
-    previewInfo.textContent =
-      `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
-  }
-});
-
-      
-      
-// 右クリックで表裏トグル（自分のカードのみ／カウンターは除外）
-card.addEventListener("contextmenu", async (e) => {
-  e.preventDefault(); // OSのコンテキストメニューは出さない
-  if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
-  if (card.classList.contains('counter')) return; // カウンターは裏返さない（必要なら外してOK）
-
-  const isFaceUp = card.dataset.faceUp === 'true';
-  const nextFaceUp = !isFaceUp;
-
-  // ローカル即時反映
-  card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
-  const imgEl = card.querySelector('img');
-  if (imgEl) {
-    if (nextFaceUp) {
-      imgEl.style.display = 'block';
-      card.style.backgroundColor = '#fff';
-      // 選択中ならプレビューも更新
-      if (selectedCard === card) {
-        const full = fullImageStore.get(cardId);
-        previewImg.src = full || imgEl.src;
-        previewImg.style.display = 'block';
-      }
-    } else {
-      imgEl.style.display = 'none';
-      card.style.backgroundColor = '#000';
-      // 選択中ならプレビューを消す
-      if (selectedCard === card) {
-        previewImg.src = '';
-        previewImg.style.display = 'none';
-      }
-    }
-  }
-  
-  
-   // トークン（textarea）側も即時反映
- const tokenEl = card.querySelector('.token-input');
- if (tokenEl) {
-   if (nextFaceUp) {
-     tokenEl.style.display = 'block';
-     card.style.backgroundColor = '#fff';
-   } else {
-     tokenEl.style.display = 'none';
-     card.style.backgroundColor = '#000';
-     if (selectedCard === card) {
-       previewImg.src = '';
-       previewImg.style.display = 'none';
-     }
-   }
- }
-  
-  
-  
-  
-  
-
-  // Firestoreへ反映
-  await updateCard(cardId, { faceUp: nextFaceUp, updatedAt: serverTimestamp() });
-});      
-      
-      
-      
-      
-      
-      
-      // 追加: ダブルクリックで左へ90°回転（自分のカードのみ）
-card.addEventListener("dblclick", async (e) => {
-  e.stopPropagation();
-  // 自分のカードだけ操作可
-  if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
-
-  // 現在の角度（style または dataset / state）を読み出し
-  const currentStyle = card.style.transform || '';
-  const match = currentStyle.match(/rotate\((-?\d+(?:\.\d+)?)deg\)/);
-  const current = match ? parseFloat(match[1]) : (typeof state?.rotation === 'number' ? state.rotation : 0);
-
-  // 左に90°（= -90）回転 → 0..359 の範囲に正規化
-  const next = ((current + 270) % 360 + 360) % 360;
-
-  // ローカル即時反映
-  card.style.transform = `rotate(${next}deg)`;
-
-  // Firestore へ保存（同期）
-  await updateCard(cardId, { rotation: next, updatedAt: serverTimestamp() });
-});
-      
-      
-      
       return card;
     }
 
@@ -1591,13 +1153,11 @@ card.addEventListener("dblclick", async (e) => {
 
       card.style.left = `${data.x||0}px`;
       card.style.top  = `${data.y||0}px`;
-      card.style.zIndex = data.zIndex || 1;
-      
-      // 追加: 回転（0/90/180/270など）を反映
+      if (data.zIndex) card.style.zIndex = data.zIndex;
+
       const rot = (typeof data.rotation === 'number') ? data.rotation : 0;
       card.style.transform = `rotate(${rot}deg)`;
-      
-      
+
       card.dataset.faceUp = data.faceUp ? 'true' : 'false';
       const img = card.querySelector('img');
       if(img){
@@ -1605,37 +1165,21 @@ card.addEventListener("dblclick", async (e) => {
         else { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
         if(data.imageUrl && img.src !== data.imageUrl){ img.src = data.imageUrl; }
       }
-      
-      // --- トークンの反映 ---
-if (data.type === 'token') {
-  card.classList.add('token');
 
-  const tokenInput = card.querySelector('.token-input');
-  if (tokenInput) {
-    // 内容（他人が編集したものも即反映）
-    if (typeof data.tokenText === 'string' && tokenInput.value !== data.tokenText) {
-      tokenInput.value = data.tokenText;
-    }
-    // 表裏
-    if (data.faceUp) {
-      tokenInput.style.display = 'block';
-      card.style.backgroundColor = '#fff';
-    } else {
-      tokenInput.style.display = 'none';
-      card.style.backgroundColor = '#000';
-    }
-    // 編集可否：作成者のみ
-    const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
-    tokenInput.readOnly = !editable;
-    tokenInput.disabled = !editable;
-  }
-
-  // トークンは画像を使わない（万一表示されていたら隠す）
-  const img2 = card.querySelector('img');
-  if (img2) img2.style.display = 'none';
-}
-// --- ここまでトークンの反映 ---
-      
+      if (data.type === 'token') {
+        card.classList.add('token');
+        const tokenInput = card.querySelector('.token-input');
+        if (tokenInput) {
+          if (typeof data.tokenText === 'string' && tokenInput.value !== data.tokenText) tokenInput.value = data.tokenText;
+          if (data.faceUp) { tokenInput.style.display = 'block'; card.style.backgroundColor = '#fff'; }
+          else { tokenInput.style.display = 'none'; card.style.backgroundColor = '#000'; }
+          const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
+          tokenInput.readOnly = !editable;
+          tokenInput.disabled = !editable;
+        }
+        const img2 = card.querySelector('img');
+        if (img2) img2.style.display = 'none';
+      }
 
       try {
         const viewerSeat = CURRENT_PLAYER;
@@ -1646,23 +1190,17 @@ if (data.type === 'token') {
           const hb = getHandBoundsForSeat(s);
           if (hb && isCenterInsideRect(x, y, hb)) { insideSeat = s; break; }
         }
-
-
-
         if (insideSeat && String(viewerSeat) !== String(insideSeat)) {
           const img = card.querySelector('img');
           if (img) { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
           const tokenInput2 = card.querySelector('.token-input');
           if (tokenInput2) { tokenInput2.style.display = 'none'; card.style.backgroundColor = '#000'; }
         }
-        
-        
-        
       } catch(_) {}
     }
 
     async function cleanupAndCloseRoom(roomId){
-      // cards削除
+      // cards
       const cardsCol = collection(db, `rooms/${roomId}/cards`);
       const cardsSnap = await getDocs(cardsCol);
       let batch = writeBatch(db);
@@ -1673,7 +1211,7 @@ if (data.type === 'token') {
       }
       if (count > 0) await batch.commit();
 
-      // seats削除
+      // seats
       const seatsCol = collection(db, `rooms/${roomId}/seats`);
       const seatsSnap = await getDocs(seatsCol);
       batch = writeBatch(db); count = 0;
@@ -1685,71 +1223,45 @@ if (data.type === 'token') {
 
       await setDoc(doc(db, `rooms/${roomId}`), { roomClosed: true, updatedAt: serverTimestamp() }, { merge: true });
     }
-    
-    
+
     async function resetRoomState(roomId){
-  // 過去の cards / seats を全削除（存在しない場合は何もしない）
-  try{
-    // cards
-    const cardsCol = collection(db, `rooms/${roomId}/cards`);
-    const cardsSnap = await getDocs(cardsCol);
-    let batch = writeBatch(db); let n = 0;
-    for (const d of cardsSnap.docs){
-      batch.delete(doc(db, `rooms/${roomId}/cards/${d.id}`));
-      if (++n >= 450){ await batch.commit(); batch = writeBatch(db); n = 0; }
+      try{
+        const cardsCol = collection(db, `rooms/${roomId}/cards`);
+        const cardsSnap = await getDocs(cardsCol);
+        let batch = writeBatch(db); let n = 0;
+        for (const d of cardsSnap.docs){
+          batch.delete(doc(db, `rooms/${roomId}/cards/${d.id}`));
+          if (++n >= 450){ await batch.commit(); batch = writeBatch(db); n = 0; }
+        }
+        if (n > 0) await batch.commit();
+
+        const seatsCol = collection(db, `rooms/${roomId}/seats`);
+        const seatsSnap = await getDocs(seatsCol);
+        batch = writeBatch(db); n = 0;
+        for (const d of seatsSnap.docs){
+          batch.delete(doc(db, `rooms/${roomId}/seats/${d.id}`));
+          if (++n >= 450){ await batch.commit(); batch = writeBatch(db); n = 0; }
+        }
+        if (n > 0) await batch.commit();
+
+        await setDoc(doc(db, `rooms/${roomId}`), { roomClosed: false, updatedAt: serverTimestamp() }, { merge: true });
+      }catch(e){
+        console.warn('resetRoomState failed', e);
+      }
     }
-    if (n > 0) await batch.commit();
 
-    // seats
-    const seatsCol = collection(db, `rooms/${roomId}/seats`);
-    const seatsSnap = await getDocs(seatsCol);
-    batch = writeBatch(db); n = 0;
-    for (const d of seatsSnap.docs){
-      batch.delete(doc(db, `rooms/${roomId}/seats/${d.id}`));
-      if (++n >= 450){ await batch.commit(); batch = writeBatch(db); n = 0; }
-    }
-    if (n > 0) await batch.commit();
-
-    // roomClosed を明示的に解除
-    await setDoc(doc(db, `rooms/${roomId}`), {
-      roomClosed: false,
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-  }catch(e){
-    console.warn('resetRoomState failed', e);
-  }
-}
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
+    // ===== queued update API (replaces updateDoc direct calls)
     async function updateCard(cardId, patch){
-      if(!CURRENT_ROOM) return;
-      const ref = doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`);
-      markLocal(cardId);
-      try { await updateDoc(ref, patch); } catch(e){ console.error('updateCard', e); }
+      // 互換用（今は使っていない）— 直接書かない
+      updateCardBatched(cardId, patch);
     }
 
-    // ========= 画像投入：並列制限 + サムネ生成（軽量化） =========
-    const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+    // ===== Uploads: parallel & thumbnails
     const nextFrame = ()=>new Promise(r=>requestAnimationFrame(()=>r()));
-
-    // サムネの最大サイズ（カード表示より少し大きめにして見栄え確保）
-    const THUMB_MAX_W = 240; // px
-    const THUMB_MAX_H = 320; // px
-    //const PARALLEL = Math.max(2, Math.min(8, Math.floor((navigator.hardwareConcurrency||8)/2))); // 端末に応じて
-    //const BATCH_INSERT = 12;
-    const PARALLEL = 2;     // ← 固定で2
-    const BATCH_INSERT = 4; // ← 12 → 4
+    const THUMB_MAX_W = 240;
+    const THUMB_MAX_H = 320;
+    const PARALLEL = Math.max(2, Math.min(6, Math.floor((navigator.hardwareConcurrency||8)/2))); // 少し下げる
+    const BATCH_INSERT = 12;
 
     const fileQueue = [];
     let processing = false;
@@ -1768,9 +1280,8 @@ if (data.type === 'token') {
       if (!processing) processQueue();
     }
 
-    // 画像→サムネ＆フル（dataURL）
     async function fileToThumbAndFull(file){
-      const bmp = await createImageBitmap(file); // 高速デコード
+      const bmp = await createImageBitmap(file);
       const sw = bmp.width, sh = bmp.height;
       const scale = Math.min(THUMB_MAX_W / sw, THUMB_MAX_H / sh, 1);
       const tw = Math.max(1, Math.round(sw * scale));
@@ -1782,22 +1293,12 @@ if (data.type === 'token') {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'low';
       ctx.drawImage(bmp, 0, 0, tw, th);
-      const thumbDataUrl = canvas.toDataURL('image/jpeg', 0.7); // 軽量
-
-      // フルはそのまま（アップロード者のみ保持）
-      const fullDataUrl = await blobToDataURL(file);
-
+      const thumbDataUrl = canvas.toDataURL('image/jpeg', 0.6); // ← 0.6 に
+      const fullDataUrl = await new Promise((res, rej)=>{
+        const fr = new FileReader(); fr.onerror = rej; fr.onload = ()=>res(fr.result); fr.readAsDataURL(file);
+      });
       try { bmp.close?.(); } catch(_){}
       return { thumbDataUrl, fullDataUrl };
-    }
-
-    function blobToDataURL(blob){
-      return new Promise((res, rej)=>{
-        const fr = new FileReader();
-        fr.onerror = rej;
-        fr.onload = ()=>res(fr.result);
-        fr.readAsDataURL(blob);
-      });
     }
 
     async function processQueue(){
@@ -1816,46 +1317,29 @@ if (data.type === 'token') {
               if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return null;
 
               const {x,y} = randomPointInDeck(CURRENT_PLAYER);
-              // Firestoreにはサムネだけ保存（ネットワーク軽量化）
+              // addDoc は書き込み回数自体は減らないが、ここは作成時のみ
               const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-                x, y, zIndex: 1,
-                faceUp: true,
-                imageUrl: thumbDataUrl,
-                ownerUid: CURRENT_UID,
-                ownerSeat: CURRENT_PLAYER,
-                rotation: 0,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
+                x, y, zIndex: 1, faceUp: true, imageUrl: thumbDataUrl,
+                ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0,
+                createdAt: serverTimestamp(), updatedAt: serverTimestamp()
               });
               markLocal(ref.id);
-
-              // 自分だけフルを保持（プレビュー用）
               fullImageStore.set(ref.id, fullDataUrl);
 
-              // DOMを即時反映（スナップ待ちしない）
               let el = cardDomMap.get(ref.id);
               if(!el){
                 el = createCardDom(ref.id, thumbDataUrl, {
                   x, y, zIndex: 1, faceUp: true,
-                  ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
+                  ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0
                 });
-                
                 cardDomMap.set(ref.id, el);
-                applyCardState(el, {
-                  x, y, zIndex: 1, faceUp: true,
-                  imageUrl: thumbDataUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
-                  rotation: 0
-                });
-                
+                applyCardState(el, { x, y, zIndex: 1, faceUp: true, imageUrl: thumbDataUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0 });
                 frag.appendChild(el);
               }
               return true;
             }));
-
-            // メインスレッドに一息
             await nextFrame();
           }
-
           if (frag.childNodes.length) field.appendChild(frag);
           await nextFrame();
         }
@@ -1863,150 +1347,104 @@ if (data.type === 'token') {
         processing = false;
       }
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    // ========= 既存の単発アップロードAPIはサムネ方式へ（他処理から呼ぶ場合） =========
-    async function createCardRemote({ imageUrl }){
-      // 互換：渡されたimageUrl（フル）からサムネ生成して保存
-      if(!CURRENT_ROOM) return;
-      const fullBlob = await (await fetch(imageUrl)).blob();
-      const {thumbDataUrl, fullDataUrl} = await fileToThumbAndFull(fullBlob);
-      const { x: baseX, y: baseY } = randomPointInDeck(CURRENT_PLAYER);
-      try{
-        const ref = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-          x: baseX, y: baseY, zIndex: 1, faceUp: true,
-          imageUrl: thumbDataUrl,
-          ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
-          rotation: 0,
-          createdAt: serverTimestamp(), updatedAt: serverTimestamp()
-        });
-        markLocal(ref.id);
-        fullImageStore.set(ref.id, fullDataUrl);
-        let el = cardDomMap.get(ref.id) || document.querySelector(`[data-card-id="${ref.id}"]`);
-        if(!el){
-          el = createCardDom(ref.id, thumbDataUrl, {
-            x: baseX, y: baseY, zIndex: 1, faceUp: true,
-            ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER
-          });
-          cardDomMap.set(ref.id, el);
-          field.appendChild(el);
-        }
-        
-        applyCardState(el, {
-          x: baseX, y: baseY, zIndex: 1, faceUp: true,
-          imageUrl: thumbDataUrl, ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER,
-          rotation: 0
-        });
-        
-      }catch(e){ console.error('createCardRemote', e); }
+
+    // ===== Existing UI ops (batching applied)
+    function makeDraggable(card){
+      const DRAG_THRESHOLD = 5;
+      let isDragging = false;
+      let startClientX = 0, startClientY = 0;
+      let grabOffsetX = 0, grabOffsetY = 0;
+
+      card.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+        if (e.detail > 1) return;
+
+        const rect = field.getBoundingClientRect();
+        const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
+        const mouseY = (e.clientY - rect.top - panOffsetY) / zoom;
+
+        startClientX = e.clientX;
+        startClientY = e.clientY;
+        grabOffsetX = mouseX - (parseFloat(card.style.left || '0') || 0);
+        grabOffsetY = mouseY - (parseFloat(card.style.top  || '0') || 0);
+
+        const onMove = (e2) => {
+          const dx = e2.clientX - startClientX;
+          const dy = e2.clientY - startClientY;
+          if (!isDragging) {
+            if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+            isDragging = true;
+            card.style.cursor = "grabbing";
+            card.style.zIndex = getMaxZIndex() + 1; // 表示のみ
+          }
+          const x = (e2.clientX - rect.left - panOffsetX) / zoom;
+          const y = (e2.clientY - rect.top  - panOffsetY) / zoom;
+          card.style.left = `${x - grabOffsetX}px`;
+          card.style.top  = `${y - grabOffsetY}px`;
+        };
+
+        const onUp = async () => {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          card.style.cursor = "grab";
+          if (!isDragging) return;
+          isDragging = false;
+          const id = card.dataset.cardId;
+          const x = parseFloat(card.style.left) || 0;
+          const y = parseFloat(card.style.top)  || 0;
+          const zIndex = parseInt(card.style.zIndex) || 1;
+          updateCardBatched(id, { x, y, zIndex });
+        };
+
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      });
     }
 
-    // ========= 既存のUI操作 =========
- function makeDraggable(card){
-   const DRAG_THRESHOLD = 5; // px：これ未満の移動はドラッグにしない
-   let isDragging = false;
-   let startClientX = 0, startClientY = 0;
-   let grabOffsetX = 0, grabOffsetY = 0;
-
-   card.addEventListener("mousedown", (e) => {
-     if (e.button !== 0) return;
-     if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
-     // ダブルクリック（2回目の mousedown）はドラッグ開始を無視
-     if (e.detail > 1) return;
-
-     const rect = field.getBoundingClientRect();
-     const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
-     const mouseY = (e.clientY - rect.top - panOffsetY) / zoom;
-
-     startClientX = e.clientX;
-     startClientY = e.clientY;
-     grabOffsetX = mouseX - (parseFloat(card.style.left || '0') || 0);
-     grabOffsetY = mouseY - (parseFloat(card.style.top  || '0') || 0);
-
-     const onMove = (e2) => {
-       const dx = e2.clientX - startClientX;
-       const dy = e2.clientY - startClientY;
-       // 閾値を超えたら初めてドラッグ開始
-       if (!isDragging) {
-         if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
-         isDragging = true;
-         card.style.cursor = "grabbing";
-         card.style.zIndex = getMaxZIndex() + 1;
-       }
-       const x = (e2.clientX - rect.left - panOffsetX) / zoom;
-       const y = (e2.clientY - rect.top  - panOffsetY) / zoom;
-       card.style.left = `${x - grabOffsetX}px`;
-       card.style.top  = `${y - grabOffsetY}px`;
-     };
-
-     const onUp = async () => {
-       document.removeEventListener("mousemove", onMove);
-       document.removeEventListener("mouseup", onUp);
-       card.style.cursor = "grab";
-       // ドラッグとして成立していなければ、位置更新しない（クリック/ダブルクリック優先）
-       if (!isDragging) return;
-       isDragging = false;
-       const id = card.dataset.cardId;
-       const x = parseFloat(card.style.left) || 0;
-       const y = parseFloat(card.style.top)  || 0;
-       const zIndex = parseInt(card.style.zIndex) || 1;
-       await updateCard(id, { x, y, zIndex, updatedAt: serverTimestamp() });
-     };
-
-     document.addEventListener("mousemove", onMove);
-     document.addEventListener("mouseup", onUp);
-   });
- }
- 
     function getMaxZIndex(){ let max=0; document.querySelectorAll(".card").forEach(c=>{ const z=parseInt(c.style.zIndex)||0; if(z>max) max=z; }); return max; }
 
     window.faceDownAll = async function(){
+      const batch = writeBatch(db);
+      let count = 0;
       for(const [id, el] of cardDomMap){
         if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
-        await updateCard(id, { faceUp: false, updatedAt: serverTimestamp() });
+        el.dataset.faceUp = 'false';
+        const imgEl = el.querySelector('img'); if (imgEl) imgEl.style.display='none';
+        el.style.backgroundColor = '#000';
+        batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { faceUp: false });
+        if (++count >= 450){ await batch.commit(); count=0; }
       }
+      if (count>0) await batch.commit();
       previewImg.src = ""; previewImg.style.display = "none";
     }
-    
+
     window.faceUpAll = async function(){
+      const batch = writeBatch(db);
+      let count = 0;
       for(const [id, el] of cardDomMap){
         if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
-        await updateCard(id, { faceUp: true, updatedAt: serverTimestamp() });
+        el.dataset.faceUp = 'true';
+        const imgEl = el.querySelector('img'); if (imgEl) imgEl.style.display='block';
+        el.style.backgroundColor = '#fff';
+        batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { faceUp: true });
+        if (++count >= 450){ await batch.commit(); count=0; }
       }
+      if (count>0) await batch.commit();
     }
-    
-    
-    // 追加: 自分のカードの回転をすべて 0 度にリセット
-window.resetMyCardRotation = async function () {
-  if (!CURRENT_ROOM || !CURRENT_UID) {
-    alert('ルームに参加してから実行してください');
-    return;
-  }
 
-  // ローカル表示を即時反映しつつ、Firestore も更新
-  const tasks = [];
-  for (const [id, el] of cardDomMap) {
-    if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue; // 自分のカードのみ
-    el.style.transform = 'rotate(0deg)';                           // 即時反映
-    tasks.push(updateCard(id, { rotation: 0, updatedAt: serverTimestamp() }));
-  }
-
-  try {
-    await Promise.all(tasks);
-  } catch (e) {
-    console.error(e);
-    alert('リセットに失敗しました。ネットワーク状況を確認して再度お試しください。');
-  }
-};
-    
+    window.resetMyCardRotation = async function () {
+      if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+      const batch = writeBatch(db);
+      let count = 0;
+      for (const [id, el] of cardDomMap) {
+        if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
+        el.style.transform = 'rotate(0deg)';
+        batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { rotation: 0 });
+        if (++count >= 450){ await batch.commit(); count=0; }
+      }
+      if (count>0) await batch.commit();
+    };
 
     window.deleteMyCards = async function(){
       if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
@@ -2037,105 +1475,72 @@ window.resetMyCardRotation = async function () {
         alert('削除に失敗しました。ネットワーク状況を確認して再度お試しください。');
       }
     };
-    
-    
-    
-    // ===== 全カード一覧（自分） =====
-const cardListModal = document.getElementById('card-list-modal');
-const cardListGrid  = document.getElementById('card-list-grid');
-const cardListClose = document.getElementById('card-list-close');
 
-window.openMyCardsDialog = function(){
-  if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
+    const cardListModal = document.getElementById('card-list-modal');
+    const cardListGrid  = document.getElementById('card-list-grid');
+    const cardListClose = document.getElementById('card-list-close');
 
-  // グリッド初期化
-  cardListGrid.innerHTML = '';
+    window.openMyCardsDialog = function(){
+      if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
+      cardListGrid.innerHTML = '';
+      const mine = [];
+      for (const [id, el] of cardDomMap) {
+        if (el.dataset.ownerSeat === String(CURRENT_PLAYER)) {
+          const imgEl = el.querySelector('img');
+          const src = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
+          mine.push({ id, src });
+        }
+      }
+      if (mine.length === 0) {
+        const empty = document.createElement('div');
+        empty.textContent = 'まだ自分のカードがありません。';
+        empty.style.cssText = 'color:#666;font-size:14px;text-align:center;padding:24px 12px;';
+        cardListGrid.appendChild(empty);
+      } else {
+        mine.forEach(({id, src}) => {
+          const item = document.createElement('div');
+          item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;';
+          item.title = id;
+          const img = document.createElement('img');
+          img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
+          item.appendChild(img);
+          item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
+          item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
+          item.addEventListener('click', async () => {
+            await focusCardById(id);
+            closeMyCardsDialog();
+          });
+          cardListGrid.appendChild(item);
+        });
+      }
+      cardListModal.style.display = 'flex';
+    };
 
-  // 自分のカードだけ集める（サムネは full があればそれ、なければ img.src）
-  const mine = [];
-  for (const [id, el] of cardDomMap) {
-    if (el.dataset.ownerSeat === String(CURRENT_PLAYER)) {
-      const imgEl = el.querySelector('img');
-      const src = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
-      mine.push({ id, src });
+    function closeMyCardsDialog(){ cardListModal.style.display = 'none'; }
+    cardListClose?.addEventListener('click', closeMyCardsDialog);
+    cardListModal?.addEventListener('click', (e) => { if (e.target === cardListModal) closeMyCardsDialog(); });
+
+    async function focusCardById(cardId){
+      const el = cardDomMap.get(cardId) || document.querySelector(`[data-card-id="${cardId}"]`);
+      if (!el) return;
+      const newZ = getMaxZIndex() + 1;
+      el.style.zIndex = newZ; // 表示だけ（サーバーへは書かない）
+      if (selectedCard) selectedCard.classList.remove('selected');
+      el.classList.add('selected');
+      selectedCard = el;
+      const full = fullImageStore.get(cardId);
+      const thumbEl = el.querySelector('img');
+      if (thumbEl && thumbEl.style.display !== 'none') {
+        previewImg.src = full || thumbEl.src;
+        previewImg.style.display = 'block';
+      } else {
+        previewImg.src = '';
+        previewImg.style.display = 'none';
+      }
+      const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
+      previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
     }
-  }
 
-  if (mine.length === 0) {
-    const empty = document.createElement('div');
-    empty.textContent = 'まだ自分のカードがありません。';
-    empty.style.cssText = 'color:#666;font-size:14px;text-align:center;padding:24px 12px;';
-    cardListGrid.appendChild(empty);
-  } else {
-    mine.forEach(({id, src}) => {
-      const item = document.createElement('div');
-      item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;';
-      item.title = id;
-      const img = document.createElement('img');
-      img.src = src;
-      img.alt = 'カード';
-      img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
-      item.appendChild(img);
-
-      item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
-      item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
-
-      item.addEventListener('click', async () => {
-        await focusCardById(id); // 最前面＆選択（表裏は変えない）
-        closeMyCardsDialog();
-      });
-
-      cardListGrid.appendChild(item);
-    });
-  }
-
-  // 表示
-  cardListModal.style.display = 'flex';
-};
-
-function closeMyCardsDialog(){
-  cardListModal.style.display = 'none';
-}
-
-cardListClose?.addEventListener('click', closeMyCardsDialog);
-cardListModal?.addEventListener('click', (e) => {
-  if (e.target === cardListModal) closeMyCardsDialog(); // オーバーレイクリックで閉じる
-});
-
-/** 指定IDのカードを最前面にして選択状態にする（表裏は保持） */
-async function focusCardById(cardId){
-  const el = cardDomMap.get(cardId) || document.querySelector(`[data-card-id="${cardId}"]`);
-  if (!el) return;
-
-  // zIndex を最前面（Firestoreにも反映）
-  const newZ = getMaxZIndex() + 1;
-  el.style.zIndex = newZ;
-  try { await updateCard(cardId, { zIndex: newZ, updatedAt: serverTimestamp() }); } catch {}
-
-  // 選択状態に（既存のプレビュー動作も踏襲）
-  if (selectedCard) selectedCard.classList.remove('selected');
-  el.classList.add('selected');
-  selectedCard = el;
-
-  const full = fullImageStore.get(cardId);
-  const thumbEl = el.querySelector('img');
-  if (thumbEl && thumbEl.style.display !== 'none') {
-    previewImg.src = full || thumbEl.src;
-    previewImg.style.display = 'block';
-  } else {
-    previewImg.src = '';
-    previewImg.style.display = 'none';
-  }
-
-  let ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
-  previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
-}
-    
-    
-    
-    
-    
-    
     window.toggleFieldSizeOptions = function(){ fieldSizeOptions.style.display = fieldSizeOptions.style.display==="none"?"block":"none"; }
     window.setFieldSize = function(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
     window.alignDecks = function(){ /* 表示のみ */ }
@@ -2152,102 +1557,133 @@ async function focusCardById(cardId){
       const centerY = Math.round(dstBounds.minY + (dstBounds.height - CARD_H)/2);
       const baseZ = getMaxZIndex() + 1;
       let z = baseZ;
+      // バッチで位置/zIndexをまとめ書き
+      let batch = writeBatch(db); let count = 0;
       for(const { id, el } of targets){
         el.style.left = `${centerX}px`;
         el.style.top  = `${centerY}px`;
         el.style.zIndex = z++;
-        await updateCard(id, { x: centerX, y: centerY, zIndex: parseInt(el.style.zIndex) || z, updatedAt: serverTimestamp() });
+        batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { x: centerX, y: centerY, zIndex: parseInt(el.style.zIndex) || z });
+        if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
       }
+      if (count>0) await batch.commit();
     };
 
-function bindPanZoomHandlers(){
-  // ズーム（そのまま）
-  field.addEventListener("wheel", e => {
-    if(e.ctrlKey) return;
-    e.preventDefault();
-    const rect = field.getBoundingClientRect();
-    const cx = e.clientX - rect.left;
-    const cy = e.clientY - rect.top;
-    const scale = 0.1;
-    const old = zoom;
-    zoom += e.deltaY < 0 ? scale : -scale;
-    zoom = Math.max(0.3, Math.min(zoom, 3));
-    const sx = (cx - panOffsetX) / old;
-    const sy = (cy - panOffsetY) / old;
-    panOffsetX = cx - sx * zoom;
-    panOffsetY = cy - sy * zoom;
-    field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
-  }, { passive:false });
+    function bindPanZoomHandlers(){
+      field.addEventListener("wheel", e => {
+        if(e.ctrlKey) return;
+        e.preventDefault();
+        const rect = field.getBoundingClientRect();
+        const cx = e.clientX - rect.left;
+        const cy = e.clientY - rect.top;
+        const scale = 0.1;
+        const old = zoom;
+        zoom += e.deltaY < 0 ? scale : -scale;
+        zoom = Math.max(0.3, Math.min(zoom, 3));
+        const sx = (cx - panOffsetX) / old;
+        const sy = (cy - panOffsetY) / old;
+        panOffsetX = cx - sx * zoom;
+        panOffsetY = cy - sy * zoom;
+        field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
+      }, { passive:false });
 
-  // パン：containerで拾う（カード・ダブルクリック無視／しきい値あり）
-  container.addEventListener("mousedown", e => {
-    if (e.button !== 0) return;              // 左クリックのみ
-    if (e.detail > 1) return;                // ダブルクリック時は開始しない
-    if (e.target.closest(".card")) return;   // カード上はパンしない
+      container.addEventListener("mousedown", e => {
+        if (e.button !== 0) return;
+        if (e.detail > 1) return;
+        if (e.target.closest(".card")) return;
+        const TH = 5;
+        let panning = false;
+        let sx = e.clientX, sy = e.clientY;
+        document.body.style.userSelect = 'none';
+        container.style.cursor = 'grabbing';
+        const onMove = e2 => {
+          const dx = e2.clientX - sx;
+          const dy = e2.clientY - sy;
+          if (!panning) {
+            if (Math.hypot(dx, dy) < TH) return;
+            panning = true;
+          }
+          panOffsetX += dx;
+          panOffsetY += dy;
+          sx = e2.clientX; sy = e2.clientY;
+          field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
+        };
+        const cleanup = () => {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", cleanup);
+          document.body.style.userSelect = '';
+          container.style.cursor = '';
+        };
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", cleanup);
+      });
 
-    const TH = 5; // px
-    let panning = false;
-    let sx = e.clientX, sy = e.clientY;
-
-    // 画面外までドラッグしても切れないようにdocumentで追従
-    document.body.style.userSelect = 'none';
-    container.style.cursor = 'grabbing';
-
-    const onMove = e2 => {
-      const dx = e2.clientX - sx;
-      const dy = e2.clientY - sy;
-      if (!panning) {
-        if (Math.hypot(dx, dy) < TH) return; // しきい値未満は無視（クリック判定と共存）
-        panning = true;
-      }
-      panOffsetX += dx;
-      panOffsetY += dy;
-      sx = e2.clientX; sy = e2.clientY;
-      field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
-    };
-
-    const cleanup = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", cleanup);
-      document.body.style.userSelect = '';
-      container.style.cursor = '';
-    };
-
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", cleanup);
-  });
-
-  // 空クリックで選択解除（従来どおり）
-  field.addEventListener("click", () => {
-    if (selectedCard) {
-      selectedCard.classList.remove("selected");
-      selectedCard = null;
-      previewImg.src = "";
-      previewImg.style.display = "none";
+      field.addEventListener("click", () => {
+        if (selectedCard) {
+          selectedCard.classList.remove("selected");
+          selectedCard = null;
+          previewImg.src = "";
+          previewImg.style.display = "none";
+        }
+      });
     }
-  });
-}
-    
-    
-    /* （任意）初回座席作成時に hp:0 を入れておきたい場合は claimSeat 内 tx.set に hp を付与
-       既に存在して hp が数字なら維持、無ければ 0 を設定:
-       tx.set(seatRef, {
-         claimedByUid: CURRENT_UID, displayName, color,
-         claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp(),
-         hp: (snap.exists() && typeof snap.data()?.hp === 'number') ? snap.data().hp : 0
-       });
-    */
-    
-    
+
+    // ===== end room button
+    const endRoomBtn = document.getElementById('end-room-btn');
+    function updateEndRoomButtonVisibility(){
+      const isHostUid = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+      const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
+      const show = !!(CURRENT_ROOM && isHostUid && isHostSeat);
+      if (endRoomBtn) endRoomBtn.style.display = show ? 'block' : 'none';
+    }
+    endRoomBtn?.addEventListener('click', async () => {
+      if (!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID && CURRENT_ROOM_META?.hostSeat === CURRENT_PLAYER)) {
+        alert('この操作は、ホスト座席に座ったホストのみ実行できます。');
+        return;
+      }
+      if (!confirm('ルームを終了します。全カードと座席情報が削除され、全員が退出します。よろしいですか？')) return;
+
+      endRoomBtn.disabled = true;
+      try {
+        await cleanupAndCloseRoom(CURRENT_ROOM);
+        try { if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; } } catch(_) {}
+        try { if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; } } catch(_) {}
+        try { if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; } } catch(_) {}
+        try { stopHeartbeat(); } catch(_) {}
+        try { stopHostHeartbeat(); } catch(_) {}
+        try { stopHostWatch(); } catch(_) {}
+        try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
+
+        CURRENT_ROOM = null;
+        CURRENT_PLAYER = null;
+        sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
+        lobby.style.display = 'flex';
+        alert('ルームを終了しました。');
+      } catch (e) {
+        console.error(e);
+        alert('ルームの終了に失敗しました。ネットワークをご確認のうえ再試行してください。');
+      } finally {
+        endRoomBtn.disabled = false;
+        updateEndRoomButtonVisibility();
+      }
+    });
+
+    // ===== Init
+    let zoom = 1, panOffsetX = 0, panOffsetY = 0, selectedCard = null;
+
     function initializePlayField(){
       setFieldSize('small');
       if (!handlersBound) {
         bindUploadHandlers();
         bindPanZoomHandlers();
-        bindAreaColorHandlers(); // 追加: エリア色のダブルクリック編集
+        bindAreaColorHandlers();
         handlersBound = true;
       }
     }
+
+    // render helpers
+    function updateEndRoomButtonVisibilityWrapper(){ updateEndRoomButtonVisibility(); }
+
   </script>
 </body>
 </html>
