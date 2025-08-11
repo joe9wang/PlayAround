@@ -80,6 +80,15 @@
     #create-seat-picked { margin-top: 6px; font-size: 12px; color: #0a7; font-weight: 700; }
     .seat-btn:focus-visible{ outline: 3px solid #66aaff; }
     
+    /* サイドバーをスクロール可能に */
+#sidebar{
+  overflow: auto;
+  overscroll-behavior: contain;         /* 画面全体のスクロールに伝播しない */
+  -webkit-overflow-scrolling: touch;    /* モバイルで慣性スクロール */
+}
+
+
+    
     /* 追加: カウンター用（小さくて丸） */
 .card.counter{
   width:60px;
