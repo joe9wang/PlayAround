@@ -1210,6 +1210,48 @@ card.addEventListener("click", async e => {
 
       
       
+// 右クリックで表裏トグル（自分のカードのみ／カウンターは除外）
+card.addEventListener("contextmenu", async (e) => {
+  e.preventDefault(); // OSのコンテキストメニューは出さない
+  if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+  if (card.classList.contains('counter')) return; // カウンターは裏返さない（必要なら外してOK）
+
+  const isFaceUp = card.dataset.faceUp === 'true';
+  const nextFaceUp = !isFaceUp;
+
+  // ローカル即時反映
+  card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
+  const imgEl = card.querySelector('img');
+  if (imgEl) {
+    if (nextFaceUp) {
+      imgEl.style.display = 'block';
+      card.style.backgroundColor = '#fff';
+      // 選択中ならプレビューも更新
+      if (selectedCard === card) {
+        const full = fullImageStore.get(cardId);
+        previewImg.src = full || imgEl.src;
+        previewImg.style.display = 'block';
+      }
+    } else {
+      imgEl.style.display = 'none';
+      card.style.backgroundColor = '#000';
+      // 選択中ならプレビューを消す
+      if (selectedCard === card) {
+        previewImg.src = '';
+        previewImg.style.display = 'none';
+      }
+    }
+  }
+
+  // Firestoreへ反映
+  await updateCard(cardId, { faceUp: nextFaceUp, updatedAt: serverTimestamp() });
+});      
+      
+      
+      
+      
+      
+      
       // 追加: ダブルクリックで左へ90°回転（自分のカードのみ）
 card.addEventListener("dblclick", async (e) => {
   e.stopPropagation();
