@@ -289,7 +289,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app, "gs://cardgame-f484c.appspot.com");
+    const storage = getStorage(app, "gs://cardgame-f484c.firebasestorage.app");
 
     // ===== DOM refs
     const lobby = document.getElementById('lobby');
