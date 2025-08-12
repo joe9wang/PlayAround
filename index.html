@@ -172,6 +172,51 @@
   object-fit:contain;
 }
 
+/* 数値カウンター（横長、±ボタン＋数値入力） */
+.card.numcounter{
+  width: 110px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+.numcounter .nc-wrap{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  width:100%;
+  height:100%;
+  padding:6px;
+  box-sizing:border-box;
+}
+.numcounter .nc-btn{
+  width:28px;
+  height:28px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  background:#f6f6f6;
+  cursor:pointer;
+  font-weight:700;
+}
+.numcounter .nc-btn:disabled{ opacity:.6; cursor:not-allowed; }
+.numcounter .nc-input{
+  flex:1;
+  height:28px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  text-align:right;
+  padding:0 6px;
+  font-weight:700;
+  font-size:16px;
+  box-sizing:border-box;
+}
+.numcounter .nc-input:disabled{ opacity:.6; cursor:not-allowed; background:#fafafa; }
+
+
+
+
     .card.token{ background:#fff; display:flex; align-items:stretch; justify-content:stretch; overflow:hidden; }
     .card.token .token-input{
       width:100%; height:100%; border:0; padding:10px; font-size:30px; line-height:1.3;
@@ -259,10 +304,11 @@
     <button onclick="faceUpAll()">🂡 表にする（自分のカードのみ）</button>
     <button onclick="shuffleDecks()">🌀 シャッフル（自分のデッキのみ）</button>
     <button onclick="openMyCardsDialog()">🗂 全カード一覧（自分）</button>
-    <button onclick="spawnCounter('+1')">➕ +1カウンター</button>
-    <button onclick="spawnCounter('+10')">➕ +10カウンター</button>
-    <button onclick="spawnCounter('-1')">➖ -1カウンター</button>
-    <button onclick="spawnCounter('-10')">➖ -10カウンター</button>
+    <button onclick="spawnNumberCounter()">🔢 数値カウンター</button>
+    <button onclick="spawnCounter('+1')">➕1カウンター</button>
+    <button onclick="spawnCounter('+10')">➕10カウンター</button>
+    <button onclick="spawnCounter('-1')">➖1カウンター</button>
+    <button onclick="spawnCounter('-10')">➖10カウンター</button>
     <button onclick="spawnToken()">📝 トークン作成</button>
     <button onclick="deleteMyCards()">🗑 全カード削除（自分のカードのみ）</button>
     <button onclick="alignDecks()">📏 整列（表示のみ）</button>
@@ -1275,6 +1321,61 @@ if (state?.type === 'dice') {
       }
       
       
+      
+// token UI の直後あたりに追加
+if (state?.type === 'numcounter') {
+  card.classList.add('numcounter');
+  // 画像は使わない
+  if (img) img.style.display = 'none';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'nc-wrap';
+
+  const minus = document.createElement('button');
+  minus.className = 'nc-btn nc-minus';
+  minus.textContent = '−';
+
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.step = '1';
+  input.className = 'nc-input';
+  input.value = Number.isFinite(state?.count) ? state.count : 0;
+
+  const plus = document.createElement('button');
+  plus.className = 'nc-btn nc-plus';
+  plus.textContent = '+';
+
+  wrap.appendChild(minus);
+  wrap.appendChild(input);
+  wrap.appendChild(plus);
+  card.appendChild(wrap);
+
+  // 自分のもののみ編集可能
+  const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
+  minus.disabled = !editable;
+  plus.disabled  = !editable;
+  input.disabled = !editable;
+
+  if (editable){
+    const commit = (next) => {
+      const n = Number.isFinite(next) ? Math.trunc(next) : 0;
+      input.value = n;
+      updateCardBatched(cardId, { count: n });
+    };
+    minus.addEventListener('click', () => commit(parseInt(input.value, 10) - 1));
+    plus .addEventListener('click', () => commit(parseInt(input.value, 10) + 1));
+    input.addEventListener('change', () => commit(parseInt(input.value, 10)));
+  }
+
+  // ドラッグは可（ダイス以外は既定で makeDraggable 済）
+}
+      
+      
+      
+      
+      
+      
+      
       card.addEventListener("click", async e => {
         e.stopPropagation();
         // 表示上だけ最前面へ（サーバーへzIndexは書かない：無駄書き減）
@@ -1316,20 +1417,22 @@ if (state?.type === 'dice') {
       card.addEventListener("contextmenu", async (e) => {
         e.preventDefault();
         if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
-        const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
-        const isToken   = (state?.type === 'token')   || card.classList.contains('token');
-
-        // トークン/カウンターは右クリックで即削除（生成者のみ）
-        if (isCounter || isToken) {
-          try {
-            const id = card.dataset.cardId;
-            await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
-          } catch (err) {
-            console.warn('delete token/counter failed', err);
-          }
-          return;
-        }
-
+        
+        
+        
+const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
+const isToken   = (state?.type === 'token')   || card.classList.contains('token');
+const isNumCtr  = (state?.type === 'numcounter') || card.classList.contains('numcounter');
+if (isCounter || isToken || isNumCtr) {
+  // 生成者（= 自分）だけ削除
+  try {
+    const id = card.dataset.cardId;
+    await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+  } catch (err) {
+    console.warn('delete token/counter failed', err);
+  }
+  return;
+}
 
         const isFaceUp = card.dataset.faceUp === 'true';
         const nextFaceUp = !isFaceUp;
@@ -1392,6 +1495,28 @@ if (state?.type === 'dice') {
         else { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
         if(data.imageUrl && img.src !== data.imageUrl){ img.src = data.imageUrl; }
       }
+      
+      
+      
+      if (data.type === 'numcounter') {
+  card.classList.add('numcounter');
+  const input = card.querySelector('.nc-input');
+  if (input) {
+    const v = Number.isFinite(data.count) ? data.count : 0;
+    if (String(input.value) !== String(v)) input.value = v;
+    const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
+    input.disabled = !editable;
+    const minus = card.querySelector('.nc-minus');
+    const plus  = card.querySelector('.nc-plus');
+    if (minus) minus.disabled = !editable;
+    if (plus)  plus.disabled  = !editable;
+  }
+  const img2 = card.querySelector('img');
+  if (img2) img2.style.display = 'none';
+}
+      
+      
+      
 
       if (data.type === 'token') {
         card.classList.add('token');
@@ -1723,6 +1848,44 @@ if (state?.type === 'dice') {
       }
       if (count>0) await batch.commit();
     };
+    
+    
+    
+    
+// ===============================
+// 数値カウンター生成（入力＋±ボタン）
+// ===============================
+window.spawnNumberCounter = async function(){
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください'); return;
+  }
+  try{
+    const W = 110, H = 60;
+    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, W, H);
+    const z = getMaxZIndex() + 50;
+    const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
+    await addDoc(baseCol, {
+      type: 'numcounter',
+      count: 0,               // 初期値
+      imageUrl: '',           // 画像は使わない（DOMでUIを構成）
+      fullUrl:  '',
+      x, y, zIndex: z,
+      faceUp: true,
+      ownerUid: CURRENT_UID,
+      ownerSeat: CURRENT_PLAYER,
+      rotation: 0,
+      visibleToAll: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  }catch(e){
+    console.error(e);
+    alert('数値カウンター作成に失敗しました。');
+  }
+};
+    
+    
+    
     
     
     
