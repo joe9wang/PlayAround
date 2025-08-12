@@ -34,9 +34,10 @@
     #field { position:absolute; transform-origin:0 0; background:none; }
     .player-area { position:absolute; width:50%; height:50%; border:5px dashed #666; box-sizing:border-box; }
     .player-1{ top:0; left:0; } .player-2{ top:0; left:50%; } .player-3{ top:50%; left:0; } .player-4{ top:50%; left:50%; }
-    .play-area{ position:relative; left:0; width:100%; height:66.66%; display:flex; flex-direction: row-reverse; z-index:0; }
-    .deck-area{ width:33.33%; background:#f90; } .main-play-area{ width:66.66%; background:#2d8; }
-    .hand-area{ position:relative; bottom:0; left:0; width:100%; height:33.33%; background:#228be6; z-index:0; }
+    .play-area{ position:relative; left:0; width:100%; height:66.66%; display:flex; flex-direction: row-reverse; }
+    .hand-area{ position:relative; bottom:0; left:0; width:100%; height:33.33%; background:#228be6; }
+    .deck-area{ width:33.33%; background:#f90; position:relative; }
+    .main-play-area{ width:66.66%; background:#2d8; position:relative; }
     .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; transform-origin:50% 50%; }
     .card[data-owner="other"]{ cursor:not-allowed; opacity:.95; }
     .card img{ width:100%; height:100%; border-radius:10px; object-fit:cover; pointer-events:none; user-select:none; image-rendering: -webkit-optimize-contrast; }
