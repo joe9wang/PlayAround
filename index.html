@@ -174,7 +174,7 @@
 
     .card.token{ background:#fff; display:flex; align-items:stretch; justify-content:stretch; overflow:hidden; }
     .card.token .token-input{
-      width:100%; height:100%; border:0; padding:10px; font-size:60px; line-height:1.3;
+      width:100%; height:100%; border:0; padding:10px; font-size:40px; line-height:1.3;
       outline:none; resize:none; background:transparent; color:#111; box-sizing:border-box;
     }
   </style>
@@ -1218,8 +1218,19 @@ if (state?.type === 'dice') {
     }
   });
 
-  // 右クリックやダブルクリックのデフォ動作は無効化
-  card.addEventListener('contextmenu', e => e.preventDefault());
+  // 右クリックでも自分のダイスだけ削除
+  card.addEventListener('contextmenu', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+    try {
+      const id = card.dataset.cardId;
+      await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+    } catch (e) {
+      console.warn('delete dice failed', e);
+    }
+  });
+
   card.addEventListener('dblclick',     e => e.preventDefault());
 
   // ダイスはドラッグ不可：makeDraggable は呼ばない
@@ -1302,10 +1313,26 @@ if (state?.type === 'dice') {
       });
 
       // 右クリックで表裏トグル（自分のカードのみ／カウンターは除外）
+      // 右クリック：
+      //   - 自分の「トークン / カウンター」なら削除
+      //   - それ以外の自分のカードは表裏トグル
       card.addEventListener("contextmenu", async (e) => {
         e.preventDefault();
         if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
-        if (card.classList.contains('counter')) return;
+        const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
+        const isToken   = (state?.type === 'token')   || card.classList.contains('token');
+
+        // トークン/カウンターは右クリックで即削除（生成者のみ）
+        if (isCounter || isToken) {
+          try {
+            const id = card.dataset.cardId;
+            await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+          } catch (err) {
+            console.warn('delete token/counter failed', err);
+          }
+          return;
+        }
+
 
         const isFaceUp = card.dataset.faceUp === 'true';
         const nextFaceUp = !isFaceUp;
