@@ -489,7 +489,6 @@
     }
     function stopHostWatch() { if (hostWatchTimer) { clearInterval(hostWatchTimer); hostWatchTimer = null; } }
 
-    subscribeRoomList();
 
     function ensureAuthReady(){
       return new Promise((resolve) => {
