@@ -186,6 +186,7 @@
   <div id="sidebar">
     <h2>操作パネル</h2>
     <button onclick="resetMyCardRotation()">↻ 全カード向きリセット（自分のカードのみ）</button>
+    <button id="roll-d6-btn">🎲 6面ダイスを振る</button>
     <button onclick="faceDownAll()">🂠 裏返す（自分のカードのみ）</button>
     <button onclick="faceUpAll()">🂡 表にする（自分のカードのみ）</button>
     <button onclick="shuffleDecks()">🌀 シャッフル（自分のデッキのみ）</button>
@@ -434,6 +435,17 @@
       const height = deckRect.height / zoom;
       return { minX, minY, width, height };
     }
+    function getMainPlayBoundsForSeat(seat){
+      const main = document.querySelector(`.player-${seat} .main-play-area`);
+        if(!main) return null;
+          const mainRect  = main.getBoundingClientRect();
+          const fieldRect = field.getBoundingClientRect();
+          const minX = (mainRect.left - fieldRect.left) / zoom;
+          const minY = (mainRect.top  - fieldRect.top ) / zoom;
+          const width  = mainRect.width  / zoom;
+          const height = mainRect.height / zoom;
+          return { minX, minY, width, height };
+    }
     function getCardsInsideRect(rect){
       const cards = [];
       document.querySelectorAll('.card').forEach(el => {
@@ -487,7 +499,48 @@
         }
       }, 5000); // ← 5s
     }
+    
     function stopHostWatch() { if (hostWatchTimer) { clearInterval(hostWatchTimer); hostWatchTimer = null; } }
+    
+    
+    
+    // ▼▼▼ 追加：サイコロ画像（SVGデータURL）と座標ユーティリティ
+function svgDiceDataUrl(n){
+  // 120x120 の白地に黒フチ、黒ピップ
+  const size = 120;
+  const r = 10; // 角丸
+  const pip = (cx, cy)=>`<circle cx="${cx}" cy="${cy}" r="10" fill="#111"/>`;
+  // ピップ座標（9分割グリッド上）
+  const g = [size*0.2, size*0.5, size*0.8];
+  const patterns = {
+    1: [[1,1]],
+    2: [[0,0],[2,2]],
+    3: [[0,0],[1,1],[2,2]],
+    4: [[0,0],[0,2],[2,0],[2,2]],
+    5: [[0,0],[0,2],[1,1],[2,0],[2,2]],
+    6: [[0,0],[1,0],[2,0],[0,2],[1,2],[2,2]],
+  };
+  const pips = (patterns[n]||[]).map(([i,j]) => pip(g[i], g[j])).join('');
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+      <rect x="1" y="1" width="${size-2}" height="${size-2}" rx="${r}" ry="${r}" fill="#fff" stroke="#111" stroke-width="3"/>
+      ${pips}
+    </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function randomPointInMainPlay(seat){
+  const b = getMainPlayBoundsForSeat(seat);
+  if(!b) return { x: Math.random()*500|0, y: Math.random()*500|0 };
+  const maxX = Math.max(b.minX, b.minX + b.width  - CARD_W);
+  const maxY = Math.max(b.minY, b.minY + b.height - CARD_H);
+  const x = b.minX + Math.random() * (maxX - b.minX);
+  const y = b.minY + Math.random() * (maxY - b.minY);
+  return { x: Math.round(x), y: Math.round(y) };
+}
+    
+    
+    
 
 
     function ensureAuthReady(){
@@ -1485,6 +1538,53 @@
       }
       if (count>0) await batch.commit();
     };
+    
+    
+    
+    
+    // ▼▼▼ 追加：6面ダイス処理（3秒クールダウン）
+let lastDiceAt = 0;
+
+window.rollD6 = async function(){
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください'); return;
+  }
+  const now = Date.now();
+  if (now - lastDiceAt < 3000) return; // 早押しガード
+  lastDiceAt = now;
+
+  const btn = document.getElementById('roll-d6-btn');
+  if (btn) btn.disabled = true;
+  setTimeout(()=>{ if (btn) btn.disabled = false; }, 3000);
+
+  try{
+    const val = (Math.random()*6|0) + 1;
+    const imgUrl = svgDiceDataUrl(val);
+    const { x, y } = randomPointInMainPlay(CURRENT_PLAYER);
+    const z = getMaxZIndex() + 1;
+
+    const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
+    await addDoc(baseCol, {
+      type: 'dice',
+      diceValue: val,
+      imageUrl: imgUrl,   // サムネ兼用
+      fullUrl:  imgUrl,   // フル兼用（SVGなので同一URL）
+      x, y, zIndex: z,
+      faceUp: true,
+      ownerUid: CURRENT_UID,
+      ownerSeat: CURRENT_PLAYER,
+      rotation: 0,
+      visibleToAll: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  } catch(e){
+    console.error(e);
+    alert('ダイス作成に失敗しました。ネットワーク状態を確認してもう一度お試しください。');
+  }
+};
+    
+    
 
     window.deleteMyCards = async function(){
       if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
@@ -1720,6 +1820,14 @@
         handlersBound = true;
       }
     }
+    
+    
+    const rollBtn = document.getElementById('roll-d6-btn');
+    rollBtn?.addEventListener('click', () => window.rollD6());
+    
+    
+    
+    
 
     // render helpers
     function updateEndRoomButtonVisibilityWrapper(){ updateEndRoomButtonVisibility(); }
