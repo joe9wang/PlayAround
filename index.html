@@ -191,16 +191,7 @@
   padding:6px;
   box-sizing:border-box;
 }
-.numcounter .nc-btn{
-  width:28px;
-  height:28px;
-  border:1px solid #ccc;
-  border-radius:8px;
-  background:#f6f6f6;
-  cursor:pointer;
-  font-weight:700;
-}
-.numcounter .nc-btn:disabled{ opacity:.6; cursor:not-allowed; }
+
 .numcounter .nc-input{
   width: 50px;       /* 横幅を固定（お好みで調整） */
   min-width: 50px;
@@ -1334,23 +1325,13 @@ if (state?.type === 'numcounter') {
   const wrap = document.createElement('div');
   wrap.className = 'nc-wrap';
 
-  const minus = document.createElement('button');
-  minus.className = 'nc-btn nc-minus';
-  minus.textContent = '−';
-
   const input = document.createElement('input');
   input.type = 'number';
   input.step = '1';
   input.className = 'nc-input';
   input.value = Number.isFinite(state?.count) ? state.count : 0;
 
-  const plus = document.createElement('button');
-  plus.className = 'nc-btn nc-plus';
-  plus.textContent = '+';
-
-  wrap.appendChild(minus);
   wrap.appendChild(input);
-  wrap.appendChild(plus);
   card.appendChild(wrap);
 
   // 自分のもののみ編集可能
@@ -1365,8 +1346,6 @@ if (state?.type === 'numcounter') {
       input.value = n;
       updateCardBatched(cardId, { count: n });
     };
-    minus.addEventListener('click', () => commit(parseInt(input.value, 10) - 1));
-    plus .addEventListener('click', () => commit(parseInt(input.value, 10) + 1));
     input.addEventListener('change', () => commit(parseInt(input.value, 10)));
   }
 
