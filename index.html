@@ -460,13 +460,18 @@
           const height = mainRect.height / zoom;
           return { minX, minY, width, height };
     }
-    function centerOfMainPlay(seat, w, h){
+
+// 座席のメインプレイ中央（w,h 指定版）
+function centerOfMainPlay(seat, w, h){
   const b = getMainPlayBoundsForSeat(seat);
   if(!b) return { x: 0, y: 0 };
   const x = Math.round(b.minX + (b.width  - w)/2);
   const y = Math.round(b.minY + (b.height - h)/2);
   return { x, y };
 }
+
+
+
     function getCardsInsideRect(rect){
       const cards = [];
       document.querySelectorAll('.card').forEach(el => {
@@ -549,14 +554,7 @@ function svgDiceDataUrl(n){
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-// 座席のメインプレイ中央（w,h 指定版）
-function centerOfMainPlay(seat, w, h){
-  const b = getMainPlayBoundsForSeat(seat);
-  if(!b) return { x: 0, y: 0 };
-  const x = Math.round(b.minX + (b.width  - w)/2);
-  const y = Math.round(b.minY + (b.height - h)/2);
-  return { x, y };
-}
+
 
 let d6Cooldown = false;
 document.getElementById('roll-d6-btn')?.addEventListener('click', async () => {
