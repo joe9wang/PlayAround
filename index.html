@@ -525,30 +525,6 @@
     
     
     
-    // ▼▼▼ 追加：サイコロ画像（SVGデータURL）と座標ユーティリティ
-function svgDiceDataUrl(n){
-  // 120x120 の白地に黒フチ、黒ピップ
-  const size = 120;
-  const r = 10; // 角丸
-  const pip = (cx, cy)=>`<circle cx="${cx}" cy="${cy}" r="10" fill="#111"/>`;
-  // ピップ座標（9分割グリッド上）
-  const g = [size*0.2, size*0.5, size*0.8];
-  const patterns = {
-    1: [[1,1]],
-    2: [[0,0],[2,2]],
-    3: [[0,0],[1,1],[2,2]],
-    4: [[0,0],[0,2],[2,0],[2,2]],
-    5: [[0,0],[0,2],[1,1],[2,0],[2,2]],
-    6: [[0,0],[1,0],[2,0],[0,2],[1,2],[2,2]],
-  };
-  const pips = (patterns[n]||[]).map(([i,j]) => pip(g[i], g[j])).join('');
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-      <rect x="1" y="1" width="${size-2}" height="${size-2}" rx="${r}" ry="${r}" fill="#fff" stroke="#111" stroke-width="3"/>
-      ${pips}
-    </svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
 
 
 // ▼ 置換：72x72の正方形SVGに
