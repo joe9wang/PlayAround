@@ -462,9 +462,7 @@
     }
 
 // 座席のメインプレイ中央（w,h 指定版）
-function centerOfMainPlay(seat, w, h){
-  const b = getMainPlayBoundsForSeat(seat);
-  if(!b) return { x: 0, y: 0 };
+;
   const x = Math.round(b.minX + (b.width  - w)/2);
   const y = Math.round(b.minY + (b.height - h)/2);
   return { x, y };
@@ -533,9 +531,7 @@ function centerOfMainPlay(seat, w, h){
 
 
 // ダイス画像（72x72）を作る関数（重複定義がないことを確認！）
-function svgDiceDataUrl(n){
-  const size = 72, r = 8, pipR = 6;
-  const pip = (cx, cy)=>`<circle cx="${cx}" cy="${cy}" r="${pipR}" fill="#111"/>`;
+" cy="${cy}" r="${pipR}" fill="#111"/>`;
   const g = [size*0.22, size*0.5, size*0.78];
   const patterns = {
     1: [[1,1]],
@@ -1964,3 +1960,36 @@ window.rollD6 = async function(){
   </script>
 </body>
 </html>
+
+
+function svgDiceDataUrl(n){
+  const size = 72, r = 8, pipR = 6;
+  const pip = (cx, cy)=>`<circle cx="${cx}" cy="${cy}" r="${pipR}" fill="#111"/>`;
+  const g = [size*0.22, size*0.5, size*0.78];
+  const patterns = {
+    1: [[1,1]],
+    2: [[0,0],[2,2]],
+    3: [[0,0],[1,1],[2,2]],
+    4: [[0,0],[0,2],[2,0],[2,2]],
+    5: [[0,0],[0,2],[1,1],[2,0],[2,2]],
+    6: [[0,0],[1,0],[2,0],[0,2],[1,2],[2,2]],
+  };
+  const pips = (patterns[n]||[]).map(([i,j]) => pip(g[i], g[j])).join('');
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+      <rect x="1" y="1" width="${size-2}" height="${size-2}" rx="${r}" ry="${r}" fill="#fff" stroke="#111" stroke-width="2"/>
+      ${pips}
+    </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+
+
+function centerOfMainPlay(seat, w, h){
+  const b = getMainPlayBoundsForSeat(seat);
+  if(!b) return { x: 0, y: 0 };
+  const x = Math.round(b.minX + (b.width  - w)/2);
+  const y = Math.round(b.minY + (b.height - h)/2);
+  return { x, y };
+}
+
