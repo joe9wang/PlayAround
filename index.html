@@ -207,7 +207,7 @@
   text-align:right;
   padding:0 6px;
   font-weight:700;
-  font-size:25px;
+  font-size:16px;
   box-sizing:border-box;
 }
 .numcounter .nc-input:disabled{ opacity:.6; cursor:not-allowed; background:#fafafa; }
@@ -301,6 +301,7 @@
     <button onclick="faceDownAll()">🂠 裏返す（自分のカードのみ）</button>
     <button onclick="faceUpAll()">🂡 表にする（自分のカードのみ）</button>
     <button onclick="shuffleDecks()">🌀 シャッフル（自分のデッキのみ）</button>
+    <button onclick="openMyDeckCardsDialog()">🗃 デッキエリアのカード一覧（自分）</button>
     <button onclick="openMyCardsDialog()">🗂 全カード一覧（自分）</button>
     <button onclick="spawnNumberCounter()">🔢 数値カウンター</button>
     <button onclick="spawnCounter('+1')">➕1カウンター</button>
@@ -2136,6 +2137,71 @@ window.spawnToken = async function(){
       const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
       previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
     }
+    
+    
+    
+    
+    // ★追加：自分の「デッキエリア内カード」だけを一覧表示
+  window.openMyDeckCardsDialog = function(){
+    if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
+
+    // タイトルを書き換え
+    const titleEl = document.getElementById('card-list-title');
+    if (titleEl) titleEl.textContent = 'デッキエリアのカード一覧（自分）';
+
+    cardListGrid.innerHTML = '';
+
+    // 自分のデッキエリアの矩形を取得
+    const deckRect = getDeckBoundsForSeat(CURRENT_PLAYER); // 既存関数
+    if (!deckRect) { alert('あなたのデッキエリアが見つかりません'); return; }
+
+    // 画面上のカードDOMから、矩形内 かつ 自分のカードのみ を抽出
+    // ※「自分のデッキエリアにある自分のカード」のみを対象にしています
+    const listed = [];
+    for (const [id, el] of cardDomMap) {
+      if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue; // 自分のカードのみ
+      const left = parseFloat(el.style.left) || 0;
+      const top  = parseFloat(el.style.top)  || 0;
+      const cx = left + CARD_W/2;
+      const cy = top  + CARD_H/2;
+      if (cx >= deckRect.minX && cx <= deckRect.minX + deckRect.width &&
+          cy >= deckRect.minY && cy <= deckRect.minY + deckRect.height) {
+        const imgEl = el.querySelector('img');
+        const src = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
+        listed.push({ id, src });
+      }
+    }
+
+    if (listed.length === 0) {
+      const empty = document.createElement('div');
+      empty.textContent = 'デッキエリア内にカードがありません。';
+      empty.style.cssText = 'color:#666;font-size:14px;text-align:center;padding:24px 12px;';
+      cardListGrid.appendChild(empty);
+    } else {
+      listed.forEach(({id, src}) => {
+        const item = document.createElement('div');
+        item.style.cssText =
+          'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;';
+        item.title = id;
+        const img = document.createElement('img');
+        img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
+        item.appendChild(img);
+        item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
+        item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
+        item.addEventListener('click', async () => {
+          await focusCardById(id);   // 最前面 & プレビュー更新（既存）
+          closeMyCardsDialog();
+        });
+        cardListGrid.appendChild(item);
+      });
+    }
+    cardListModal.style.display = 'flex';
+  }
+    
+    
+    
+    
+    
 
     window.toggleFieldSizeOptions = function(){ fieldSizeOptions.style.display = fieldSizeOptions.style.display==="none"?"block":"none"; }
     window.setFieldSize = function(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
