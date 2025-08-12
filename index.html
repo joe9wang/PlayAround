@@ -64,10 +64,20 @@
   position:relative;
   z-index:0;
   display:grid;
-  /* 幅比率：プレイ（11/12） : スタック（1/12） */
-  grid-template-columns: 11fr 1fr;
+  /* プレイ : スタック = 11 : 1（縮小を許可） */
+  grid-template-columns: minmax(0, 11fr) minmax(0, 1fr);
   gap:6px;
 }
+
+/* グリッド内の各アイテムがちゃんと縮むように */
+.main-play-area,
+.deck-stack,
+.discard-area,
+.deck-area {
+  min-width: 0;
+}
+
+
 .main-play-area{ background:#2d8; position:relative; }
 
 /* デッキ縦スタック（上=捨て札、下=デッキ） */
