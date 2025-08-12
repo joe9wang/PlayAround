@@ -235,7 +235,6 @@
 
           <label class="lobby-label">作成後に参加する座席</label>
           <div class="seat-grid" id="create-seat-grid">
-            <div id="create-seat-picked">未選択</div>
             <button class="seat-btn" data-create-seat="1">P1</button>
             <button class="seat-btn" data-create-seat="2">P2</button>
             <button class="seat-btn" data-create-seat="3">P3</button>
@@ -414,7 +413,6 @@
     let CREATE_SELECTED_SEAT = 1;
     createSeatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.createSeat, 10) === 1));
     const picked = document.getElementById('create-seat-picked');
-    if (picked) picked.textContent = '選択中: P1';
 
     let CURRENT_ROOM = null;
     let CURRENT_ROOM_META = null;
@@ -736,7 +734,6 @@ function randomPointInMainPlay(seat){
         CREATE_SELECTED_SEAT = parseInt(btn.dataset.createSeat, 10);
         createSeatButtonsEls.forEach(b => b.classList.toggle('active', b === btn));
         const picked = document.getElementById('create-seat-picked');
-        if (picked) picked.textContent = `選択中: P${CREATE_SELECTED_SEAT}`;
       });
     });
 
