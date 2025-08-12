@@ -167,18 +167,6 @@
             <input id="new-player-color" type="color" value="#22aaff" title="プレイヤーカラー" />
           </div>
 
-          <label class="lobby-label">公開設定</label>
-          <div class="row" style="gap:12px; margin-bottom:12px;">
-            <label class="row" style="gap:6px; align-items:center;">
-              <input type="radio" name="room-visibility" id="room-public" value="public" checked />
-              <span>公開</span>
-            </label>
-            <label class="row" style="gap:6px; align-items:center;">
-              <input type="radio" name="room-visibility" id="room-private" value="private" />
-              <span>非公開</span>
-            </label>
-          </div>
-
           <label class="lobby-label">作成後に参加する座席</label>
           <div class="seat-grid" id="create-seat-grid">
             <div id="create-seat-picked">未選択</div>
@@ -585,7 +573,6 @@ function randomPointInMainPlay(seat){
       await ensureAuthReady();
       const id = (newRoomIdInput.value||'').trim();
       const title = (newRoomTitleInput.value||'').trim();
-      const isPublic = document.getElementById('room-public').checked;
       const creatorName  = (newPlayerNameInput.value || '').trim();
       const creatorColor = (newPlayerColorInput.value || '#22aaff');
       if(!id){ alert('ルームIDを入力してください'); return; }
@@ -601,7 +588,6 @@ function randomPointInMainPlay(seat){
           title: title || null,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          public: !!isPublic,
           hostUid: CURRENT_UID,
           hostDisplayName: creatorName,
           roomClosed: false,
