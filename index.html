@@ -462,7 +462,9 @@
     }
 
 // 座席のメインプレイ中央（w,h 指定版）
-;
+function centerOfMainPlay(seat, w, h){
+  const b = getMainPlayBoundsForSeat(seat);
+  if(!b) return { x: 0, y: 0 };
   const x = Math.round(b.minX + (b.width  - w)/2);
   const y = Math.round(b.minY + (b.height - h)/2);
   return { x, y };
@@ -531,7 +533,9 @@
 
 
 // ダイス画像（72x72）を作る関数（重複定義がないことを確認！）
-" cy="${cy}" r="${pipR}" fill="#111"/>`;
+function svgDiceDataUrl(n){
+  const size = 72, r = 8, pipR = 6;
+  const pip = (cx, cy)=>`<circle cx="${cx}" cy="${cy}" r="${pipR}" fill="#111"/>`;
   const g = [size*0.22, size*0.5, size*0.78];
   const patterns = {
     1: [[1,1]],
@@ -552,44 +556,6 @@
 
 
 
-let d6Cooldown = false;
-document.getElementById('roll-d6-btn')?.addEventListener('click', async () => {
-  if (d6Cooldown) return;
-  if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加後に使えます。'); return; }
-
-  d6Cooldown = true;
-  const btn = document.getElementById('roll-d6-btn');
-  if (btn) { btn.disabled = true; setTimeout(()=>{ d6Cooldown=false; btn.disabled=false; }, 3000); }
-
-  try {
-    const v = (Math.random()*6|0) + 1;
-    const imageUrl = svgDiceDataUrl(v);
-
-    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, 72, 72);
-    const id = `dice-P${CURRENT_PLAYER}`; // ← 固定ID（置き換え用）
-
-    await setDoc(
-      doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`),
-      {
-        type: 'dice',
-        value: v,
-        imageUrl,
-        faceUp: true,
-        rotation: 0,
-        ownerUid: CURRENT_UID || null,
-        ownerSeat: CURRENT_PLAYER,
-        x, y,
-        zIndex: (getMaxZIndex ? getMaxZIndex() + 2 : 1000), // 関数があるなら最前面へ
-        updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-      },
-      { merge: true } // 既存があれば置き換え
-    );
-  } catch (e) {
-    console.error(e);
-    alert('ダイス生成に失敗しました');
-  }
-});
 
 
 function randomPointInMainPlay(seat){
@@ -1960,36 +1926,3 @@ window.rollD6 = async function(){
   </script>
 </body>
 </html>
-
-
-function svgDiceDataUrl(n){
-  const size = 72, r = 8, pipR = 6;
-  const pip = (cx, cy)=>`<circle cx="${cx}" cy="${cy}" r="${pipR}" fill="#111"/>`;
-  const g = [size*0.22, size*0.5, size*0.78];
-  const patterns = {
-    1: [[1,1]],
-    2: [[0,0],[2,2]],
-    3: [[0,0],[1,1],[2,2]],
-    4: [[0,0],[0,2],[2,0],[2,2]],
-    5: [[0,0],[0,2],[1,1],[2,0],[2,2]],
-    6: [[0,0],[1,0],[2,0],[0,2],[1,2],[2,2]],
-  };
-  const pips = (patterns[n]||[]).map(([i,j]) => pip(g[i], g[j])).join('');
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-      <rect x="1" y="1" width="${size-2}" height="${size-2}" rx="${r}" ry="${r}" fill="#fff" stroke="#111" stroke-width="2"/>
-      ${pips}
-    </svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
-
-
-
-function centerOfMainPlay(seat, w, h){
-  const b = getMainPlayBoundsForSeat(seat);
-  if(!b) return { x: 0, y: 0 };
-  const x = Math.round(b.minX + (b.width  - w)/2);
-  const y = Math.round(b.minY + (b.height - h)/2);
-  return { x, y };
-}
-
