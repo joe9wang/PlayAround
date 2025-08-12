@@ -90,6 +90,20 @@
 
     .card.counter{ width:60px; height:60px; border-radius:50%; overflow:hidden; }
     .card.counter img{ border-radius:50%; object-fit:cover; }
+    
+    .card.dice{
+  width:72px;
+  height:72px;
+  border:none;
+  box-shadow:none;
+  border-radius:8px;
+  background:transparent;
+  cursor:pointer; /* クリックで消す */
+}
+.card.dice img{
+  border-radius:8px;
+  object-fit:contain;
+}
 
     .card.token{ background:#fff; display:flex; align-items:stretch; justify-content:stretch; overflow:hidden; }
     .card.token .token-input{
@@ -446,6 +460,13 @@
           const height = mainRect.height / zoom;
           return { minX, minY, width, height };
     }
+    function centerOfMainPlay(seat, w, h){
+  const b = getMainPlayBoundsForSeat(seat);
+  if(!b) return { x: 0, y: 0 };
+  const x = Math.round(b.minX + (b.width  - w)/2);
+  const y = Math.round(b.minY + (b.height - h)/2);
+  return { x, y };
+}
     function getCardsInsideRect(rect){
       const cards = [];
       document.querySelectorAll('.card').forEach(el => {
@@ -528,6 +549,33 @@ function svgDiceDataUrl(n){
     </svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
+
+
+// ▼ 置換：72x72の正方形SVGに
+function svgDiceDataUrl(n){
+  const size = 72;
+  const r = 8;
+  const pipR = 6;
+  const pip = (cx, cy)=>`<circle cx="${cx}" cy="${cy}" r="${pipR}" fill="#111"/>`;
+  const g = [size*0.22, size*0.5, size*0.78];
+  const patterns = {
+    1: [[1,1]],
+    2: [[0,0],[2,2]],
+    3: [[0,0],[1,1],[2,2]],
+    4: [[0,0],[0,2],[2,0],[2,2]],
+    5: [[0,0],[0,2],[1,1],[2,0],[2,2]],
+    6: [[0,0],[1,0],[2,0],[0,2],[1,2],[2,2]],
+  };
+  const pips = (patterns[n]||[]).map(([i,j]) => pip(g[i], g[j])).join('');
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+      <rect x="1" y="1" width="${size-2}" height="${size-2}" rx="${r}" ry="${r}" fill="#fff" stroke="#111" stroke-width="2"/>
+      ${pips}
+    </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+
 
 function randomPointInMainPlay(seat){
   const b = getMainPlayBoundsForSeat(seat);
@@ -1070,6 +1118,33 @@ function randomPointInMainPlay(seat){
       const card = document.createElement("div");
       card.className = "card";
       if (state?.type === 'counter') card.classList.add('counter');
+      
+      
+      
+      if (state?.type === 'dice') {
+  card.classList.add('dice');        // 見た目をCSSで上書き
+  card.style.cursor = 'pointer';
+  // ダイスはドラッグ不可：makeDraggableは呼ばない
+
+  // クリックで自分のダイスだけ消せる
+  card.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+    try{
+      const id = card.dataset.cardId;
+      await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+    }catch(e){ console.warn('delete dice failed', e); }
+  });
+
+  // 右クリック裏返し/ダブルクリック回転は無効化
+  card.addEventListener('contextmenu', e => e.preventDefault());
+  card.addEventListener('dblclick',     e => e.preventDefault());
+
+  return card; // ここで終了（共通のカード処理には入らない）
+}
+      
+      
+      
       card.dataset.cardId = cardId;
       card.dataset.ownerUid = state?.ownerUid || '';
       card.dataset.ownerSeat = state?.ownerSeat ? String(state.ownerSeat) : '';
@@ -1104,8 +1179,11 @@ function randomPointInMainPlay(seat){
         card.appendChild(tokenInput);
       }
 
-      makeDraggable(card);
-
+      if (state?.type !== 'dice') {
+        makeDraggable(card);
+      }
+      
+      
       card.addEventListener("click", async e => {
         e.stopPropagation();
         // 表示上だけ最前面へ（サーバーへzIndexは書かない：無駄書き減）
@@ -1542,7 +1620,7 @@ function randomPointInMainPlay(seat){
     
     
     
-    // ▼▼▼ 追加：6面ダイス処理（3秒クールダウン）
+// ▼ 置換：6面ダイス処理（中央配置・単一化・最前面・3秒CD）
 let lastDiceAt = 0;
 
 window.rollD6 = async function(){
@@ -1558,17 +1636,33 @@ window.rollD6 = async function(){
   setTimeout(()=>{ if (btn) btn.disabled = false; }, 3000);
 
   try{
+    // 1) 既存の自分のダイスを削除（常に1つだけにする）
+    const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
+    const qOld = query(baseCol, where('type','==','dice'), where('ownerSeat','==', CURRENT_PLAYER));
+    const oldSnap = await getDocs(qOld);
+    if (!oldSnap.empty) {
+      const batch = writeBatch(db);
+      oldSnap.forEach(d => batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${d.id}`)));
+      await batch.commit();
+    }
+
+    // 2) 新しい出目
     const val = (Math.random()*6|0) + 1;
     const imgUrl = svgDiceDataUrl(val);
-    const { x, y } = randomPointInMainPlay(CURRENT_PLAYER);
-    const z = getMaxZIndex() + 1;
 
-    const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
+    // 3) プレイエリア中央に72x72を置く
+    const SIZE = 72;
+    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
+
+    // 4) 一番手前（既存カード群より十分高いz）
+    const z = getMaxZIndex() + 100;
+
+    // 5) 追加
     await addDoc(baseCol, {
       type: 'dice',
       diceValue: val,
-      imageUrl: imgUrl,   // サムネ兼用
-      fullUrl:  imgUrl,   // フル兼用（SVGなので同一URL）
+      imageUrl: imgUrl,
+      fullUrl:  imgUrl,
       x, y, zIndex: z,
       faceUp: true,
       ownerUid: CURRENT_UID,
