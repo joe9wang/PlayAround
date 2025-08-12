@@ -1334,10 +1334,8 @@ if (state?.type === 'numcounter') {
   wrap.appendChild(input);
   card.appendChild(wrap);
 
-  // 自分のもののみ編集可能
+  // 自分のもののみ編集可
   const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
-  minus.disabled = !editable;
-  plus.disabled  = !editable;
   input.disabled = !editable;
 
   if (editable){
@@ -1350,8 +1348,7 @@ if (state?.type === 'numcounter') {
   }
 
   // ドラッグは可（ダイス以外は既定で makeDraggable 済）
-}
-      
+}      
       
       
       
@@ -1484,7 +1481,7 @@ if (isCounter || isToken || isNumCtr) {
       
       
       
-      if (data.type === 'numcounter') {
+if (data.type === 'numcounter') {
   card.classList.add('numcounter');
   const input = card.querySelector('.nc-input');
   if (input) {
@@ -1492,10 +1489,6 @@ if (isCounter || isToken || isNumCtr) {
     if (String(input.value) !== String(v)) input.value = v;
     const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
     input.disabled = !editable;
-    const minus = card.querySelector('.nc-minus');
-    const plus  = card.querySelector('.nc-plus');
-    if (minus) minus.disabled = !editable;
-    if (plus)  plus.disabled  = !editable;
   }
   const img2 = card.querySelector('img');
   if (img2) img2.style.display = 'none';
