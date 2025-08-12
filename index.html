@@ -33,39 +33,62 @@
     }
     #field { position:absolute; transform-origin:0 0; background:none; }
     
-    .player-area { 
-      position:absolute; width:50%; height:50%; border:5px dashed #666; box-sizing:border-box; 
-      position:absolute; width:50%; height:50%; border:5px dashed #666; box-sizing:border-box;
-      display: grid;
-      grid-template-columns: var(--special-w) 1fr; /* 左: 特殊 / 右: メイン */
-      grid-template-rows: 2fr 1fr;               /* 上: プレイ / 下: 手札（従来比率） */
-      gap: 6px;
-    }
-    
-    
     
     .player-1{ top:0; left:0; } .player-2{ top:0; left:50%; } .player-3{ top:50%; left:0; } .player-4{ top:50%; left:50%; }
+    .special-area{ grid-column: 1 / 2; grid-row: 1 / 3; background:#9c27b0; position:relative; }
+    
+.player-area {
+  position:absolute;
+  width:50%;
+  height:50%;
+  border:5px dashed #666;
+  box-sizing:border-box;
+  display:grid;
+  grid-template-columns: var(--special-w) 1fr; /* 左: 特殊 / 右: メイン */
+  grid-template-rows: 2fr 1fr; /* 上: プレイ / 下: 手札 */
+  gap:6px;
+}
 
-.special-area{ grid-column: 1 / 2; grid-row: 1 / 3; background:#9c27b0; position:relative; }
+/* 左の縦帯：特殊エリア（プレイ＋手札の左） */
+.special-area{
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+  background:#9c27b0;
+  position:relative;
+}
 
-/* 右側の上段：プレイ行 */
-.play-area{ 
-  grid-column: 2 / 3; grid-row: 1 / 2; 
-  position:relative; z-index:0; 
-  display: grid; 
-  grid-template-columns: 2fr 1fr; /* 左: プレイ / 右: デッキ縦スタック */
-  gap: 6px;
+/* 右上：プレイ行（左=プレイ、右=デッキ縦スタック） */
+.play-area{
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  position:relative;
+  z-index:0;
+  display:grid;
+  /* 幅比率：プレイ（5/6） : スタック（1/6） */
+  grid-template-columns: 5fr 1fr;
+  gap:6px;
 }
 .main-play-area{ background:#2d8; position:relative; }
-.deck-stack{ display:grid; grid-template-rows: 1fr 1fr; gap:6px; }
-.discard-area{ background:#cc6666; position:relative; } /* ＝捨て札（デッキと同サイズ） */
-.deck-area{ background:#f90; position:relative; }
 
-/* 右側の下段：手札行（比率は従来通り） */
-.hand-area{ 
-  grid-column: 2 / 3; grid-row: 2 / 3; 
-  position:relative; background:#228be6; z-index:0; 
+/* デッキ縦スタック（上=捨て札、下=デッキ） */
+.deck-stack{
+  display:grid;
+  grid-template-rows: 1fr 1fr;
+  gap:6px;
 }
+.discard-area{ background:#cc6666; position:relative; } /* 捨て札 */
+.deck-area{ background:#f90; position:relative; }       /* デッキ */
+
+/* 右下：手札行（従来と同じ比率で下段） */
+.hand-area{
+  grid-column: 2 / 3;
+  grid-row: 2 / 3;
+  position:relative;
+  background:#228be6;
+  z-index:0;
+}
+    
+
 
     .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; transform-origin:50% 50%; }
     .card[data-owner="other"]{ cursor:not-allowed; opacity:.95; }
