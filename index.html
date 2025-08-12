@@ -749,14 +749,36 @@
       renderFieldLabels();
 
       if(!roomId){ return; }
-
-      // room doc listen
+      
       unsubscribeRoomDoc = onSnapshot(doc(db, `rooms/${roomId}`), snap => {
-        CURRENT_ROOM_META = snap.exists() ? snap.data() : null;
-        IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
-        if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
-        renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); renderHPPanel();
-      });
+         // ルームdocが削除された（exists=false）→ 即退室（参加者側）
+         if (!snap.exists()) {
+           CURRENT_ROOM_META = null;
+           // いま実プレイ中で、この roomId に居るなら強制退室
+           if (CURRENT_ROOM === roomId && lobby.style.display === 'none') {
+             try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
+             try { if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; } } catch(_) {}
+             try { if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; } } catch(_) {}
+             try { if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; } } catch(_) {}
+             CURRENT_ROOM = null;
+             CURRENT_PLAYER = null;
+             stopHostWatch();
+             sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
+             lobby.style.display = 'flex';
+             alert('ホストがルームを削除しました。');
+           }
+           renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); renderHPPanel();
+           return;
+         }
+         // 存在する場合の通常処理
+         CURRENT_ROOM_META = snap.data();
+         IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+         if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
+         renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); renderHPPanel();
+       });
+      
+      
+
 
       // ※ ここで updatedAt を書かない（以前は軽く触るだけで1書き込み発生していた）
 
@@ -1190,6 +1212,23 @@
 
       await setDoc(doc(db, `rooms/${roomId}`), { roomClosed: true, updatedAt: serverTimestamp() }, { merge: true });
     }
+    
+    
+     // ルーム完全削除（サブコレ削除→roomClosedフラグ→親doc削除）
+     async function cleanupAndDeleteRoom(roomId){
+       // まず既存処理で cards/seats を全削除し、roomClosed を立てて通知
+       await cleanupAndCloseRoom(roomId);
+       // 次に親ルームドキュメント自体を削除
+       try {
+         await deleteDoc(doc(db, `rooms/${roomId}`));
+       } catch (e) {
+         console.warn('delete room doc failed', e);
+       }
+     }
+    
+    
+    
+    
 
     async function resetRoomState(roomId){
       try{
@@ -1646,7 +1685,7 @@
 
       endRoomBtn.disabled = true;
       try {
-        await cleanupAndCloseRoom(CURRENT_ROOM);
+        await cleanupAndDeleteRoom(CURRENT_ROOM);
         try { if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; } } catch(_) {}
         try { if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; } } catch(_) {}
         try { if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; } } catch(_) {}
