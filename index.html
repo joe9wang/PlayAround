@@ -173,8 +173,6 @@
             <button class="seat-btn" data-create-seat="4">P4</button>
           </div>
 
-          <label class="lobby-label" style="margin-top:10px;">公開ルーム一覧（新しい順）</label>
-          <div id="room-list" class="room-list"></div>
         </section>
       </div>
     </div>
@@ -306,7 +304,6 @@
     const newPlayerNameInput = document.getElementById('new-player-name');
     const newPlayerColorInput = document.getElementById('new-player-color');
     const createRoomBtn = document.getElementById('create-room-btn');
-    const roomListDiv = document.getElementById('room-list');
 
     const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
 
@@ -492,45 +489,6 @@
     }
     function stopHostWatch() { if (hostWatchTimer) { clearInterval(hostWatchTimer); hostWatchTimer = null; } }
 
-    // 公開ルーム購読（読み取りはOK）
-    function subscribeRoomList(){
-      const qRooms = query(collection(db, 'rooms'), where('public', '==', true), limit(50));
-      onSnapshot(qRooms, snap => {
-        const docs = snap.docs.slice().sort((a,b) => {
-          const au = a.data().updatedAt?.toMillis?.() ?? 0;
-          const bu = b.data().updatedAt?.toMillis?.() ?? 0;
-          return bu - au;
-        });
-        roomListDiv.innerHTML = '';
-        docs.forEach(docSnap => {
-          const data = docSnap.data() || {};
-          const item = document.createElement('div');
-          item.className = 'room-item';
-          item.style.cursor = 'pointer';
-          const left = document.createElement('div');
-          left.innerHTML = `
-            <div class="room-id">${docSnap.id}</div>
-            <div style="font-size:12px; color:#555;">${(data.title||'（無題）')}</div>
-          `;
-          const right = document.createElement('div');
-          const btn = document.createElement('button');
-          btn.type = 'button'; btn.className = 'btn secondary'; btn.textContent = '参加';
-          const selectRoom = (ev) => {
-            if (ev) { ev.preventDefault(); ev.stopPropagation(); }
-            joinRoomInput.value = docSnap.id;
-            ACTIVE_MODE = 'join';
-            loadSeatStatus();
-            setTimeout(() => { joinRoomInput.focus(); joinRoomInput.scrollIntoView({behavior:'smooth', block:'center'}); }, 0);
-          };
-          btn.addEventListener('click', selectRoom);
-          item.addEventListener('click', selectRoom);
-          right.appendChild(btn);
-          item.appendChild(left);
-          item.appendChild(right);
-          roomListDiv.appendChild(item);
-        });
-      });
-    }
     subscribeRoomList();
 
     function ensureAuthReady(){
