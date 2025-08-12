@@ -202,7 +202,10 @@
 }
 .numcounter .nc-btn:disabled{ opacity:.6; cursor:not-allowed; }
 .numcounter .nc-input{
-  flex:1;
+  width: 70px;       /* 横幅を固定（お好みで調整） */
+  min-width: 70px;
+  max-width: 70px;
+  flex: 0 0 auto;    /* flexによる伸縮を防ぐ */
   height:28px;
   border:1px solid #ccc;
   border-radius:8px;
@@ -1462,6 +1465,10 @@ if (isCounter || isToken || isNumCtr) {
       card.addEventListener("dblclick", async (e) => {
         e.stopPropagation();
         if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+        
+        // ★ 数値カウンターは回転させない
+        if (card.classList.contains('numcounter')) return;
+  
         const currentStyle = card.style.transform || '';
         const match = currentStyle.match(/rotate\((-?\d+(?:\.\d+)?)deg\)/);
         const current = match ? parseFloat(match[1]) : (typeof state?.rotation === 'number' ? state.rotation : 0);
