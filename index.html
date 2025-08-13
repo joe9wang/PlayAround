@@ -418,20 +418,30 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app-check.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
     import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, limit, addDoc, updateDoc, where, query, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
     import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
 
     // ===== Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
-      authDomain: "cardgame-f484c.firebaseapp.com",
-      projectId: "cardgame-f484c",
-      storageBucket: "cardgame-f484c.firebasestorage.app",
-      messagingSenderId: "248859224605",
-      appId: "1:248859224605:web:1320093856bc1861c174f4"
-    };
+ const firebaseConfig = {
+   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+ };
+ 
     const app = initializeApp(firebaseConfig);
+    
+  if (typeof window !== "undefined") {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_APPCHECK_KEY),
+      isTokenAutoRefreshEnabled: true
+    });
+  }
+    
     const auth = getAuth(app);
     const db = getFirestore(app);
     const storage = getStorage(app, "gs://cardgame-f484c.firebasestorage.app");
@@ -483,6 +493,10 @@
     const MAX_BATCH_OPS = 450;      // Firestoreの上限に合わせる
     const pendingPatches = new Map(); // key: path "rooms/{room}/cards/{id}" or seats, value: merged patch
     let flushTimer = null;
+    
+    
+    
+    
 
     function pathFor(roomId, sub, id){ return `rooms/${roomId}/${sub}/${id}`; }
 
