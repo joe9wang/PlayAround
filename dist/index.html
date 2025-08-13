@@ -154,11 +154,6 @@
     .lobby-title{ font-size:20px; font-weight:700; margin:4px 0 12px; text-align:center; }
     
     
-<div class="lobby-links" aria-label="サイトポリシー等へのリンク">
-  <a href="/privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> |
-  <a href="/terms.html"   target="_blank" rel="noopener">利用規約</a> |
-  <a href="/contact.html" target="_blank" rel="noopener">お問い合わせ</a>
-</div>
     
     
     .lobby-section{ border:1px solid #e3e3e3; border-radius:12px; padding:12px; }
@@ -501,7 +496,7 @@
     
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app, "gs://cardgame-f484c.firebasestorage.app");
+    const storage = getStorage(app); // Configから自動解決でOK
 
 
   // ▼ロビーのログインUI参照
@@ -905,10 +900,13 @@ function randomPointInMainPlay(seat){
         CURRENT_PLAYER = CREATE_SELECTED_SEAT;
         seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
         startSession(id, CREATE_SELECTED_SEAT);
-      }catch(e){
-        console.error(e);
-        alert('ルーム作成に失敗しました');
-      }finally{
+ } catch (e) {
+   console.error('[create-room] failed:', e);
+   // エラーコードとメッセージも表示して切り分け容易に
+   const code = e?.code || e?.name || 'unknown';
+   const msg  = e?.message || String(e);
+   alert(`ルーム作成に失敗しました\ncode: ${code}\n${msg}`);
+ } finally {
         createRoomBtn.disabled = false;
         createRoomBtn.textContent = oldText;
       }
