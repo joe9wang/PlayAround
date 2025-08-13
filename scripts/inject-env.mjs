@@ -34,7 +34,7 @@ for (const [ph, val] of Object.entries(replMap)) {
 mkdirSync(OUT_DIR, { recursive: true });
 writeFileSync(OUT, html, "utf8");
 
-// 6) 追加の静的ファイルがあればここでコピー（例）
-// copyFileSync("./styles.css", `${OUT_DIR}/styles.css`);
+// 6) 追加の静的ファイルがあればここでコピー
+copyFileSync("./ads.txt", `${OUT_DIR}/ads.txt`);
 
 console.log("Injected env vars into dist/index.html");
