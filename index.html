@@ -905,10 +905,13 @@ function randomPointInMainPlay(seat){
         CURRENT_PLAYER = CREATE_SELECTED_SEAT;
         seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
         startSession(id, CREATE_SELECTED_SEAT);
-      }catch(e){
-        console.error(e);
-        alert('ルーム作成に失敗しました');
-      }finally{
+ } catch (e) {
+   console.error('[create-room] failed:', e);
+   // エラーコードとメッセージも表示して切り分け容易に
+   const code = e?.code || e?.name || 'unknown';
+   const msg  = e?.message || String(e);
+   alert(`ルーム作成に失敗しました\ncode: ${code}\n${msg}`);
+ } finally {
         createRoomBtn.disabled = false;
         createRoomBtn.textContent = oldText;
       }
