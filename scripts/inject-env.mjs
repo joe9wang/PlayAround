@@ -35,6 +35,14 @@ mkdirSync(OUT_DIR, { recursive: true });
 writeFileSync(OUT, html, "utf8");
 
 // 6) 追加の静的ファイルがあればここでコピー
+// ads.txt を dist にコピー
 copyFileSync("./ads.txt", `${OUT_DIR}/ads.txt`);
+// privacy.html を dist にコピー
+copyFileSync("./privacy.html", `${OUT_DIR}/privacy.html`);
+// contact.html を dist にコピー
+copyFileSync("./contact.html", `${OUT_DIR}/contact.html`);
+// contact.html を dist にコピー
+copyFileSync("./terms.html", `${OUT_DIR}/terms.html`);
+
 
 console.log("Injected env vars into dist/index.html");
