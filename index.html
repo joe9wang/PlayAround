@@ -54,6 +54,19 @@
   gap:6px;
 }
 
+/* モーダル内リンク */
+.lobby-links{
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: #555;
+}
+.lobby-links a{
+  margin: 0 8px;
+  color: #0a7;
+  text-decoration: underline;
+}
+
 /* 左の縦帯：特殊エリア（プレイ＋手札の左） */
 .special-area{
   grid-column: 1 / 2;
@@ -137,6 +150,15 @@
     .lobby-card{ width:min(920px, 96vw); background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:18px; box-sizing:border-box; }
     .lobby-grid{ display:grid; grid-template-columns: 1.15fr 1fr; gap:14px; }
     .lobby-title{ font-size:20px; font-weight:700; margin:4px 0 12px; text-align:center; }
+    
+    
+<div class="lobby-links" aria-label="サイトポリシー等へのリンク">
+  <a href="/privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> |
+  <a href="/terms.html"   target="_blank" rel="noopener">利用規約</a> |
+  <a href="/contact.html" target="_blank" rel="noopener">お問い合わせ</a>
+</div>
+    
+    
     .lobby-section{ border:1px solid #e3e3e3; border-radius:12px; padding:12px; }
     .lobby-label{ display:block; font-size:12px; color:#555; margin-bottom:6px; }
     .lobby-subtitle{ font-weight:700; margin:0 0 8px; }
@@ -236,6 +258,11 @@
   <div id="lobby" aria-modal="true" role="dialog">
     <div class="lobby-card">
       <div class="lobby-title">プレイアラウンドへようこそ</div>
+      
+        <a href="/privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> |
+        <a href="/terms.html"   target="_blank" rel="noopener">利用規約</a> |
+        <a href="/contact.html" target="_blank" rel="noopener">お問い合わせ</a>
+      
       <div class="lobby-grid">
         <section class="lobby-section">
           <div class="lobby-subtitle">既存ルームに参加（非ホスト）</div>
