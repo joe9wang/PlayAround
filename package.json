@@ -1,0 +1,8 @@
+{
+  "name": "play-around-static",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/inject-env.mjs"
+  }
+}
