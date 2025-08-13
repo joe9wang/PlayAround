@@ -154,11 +154,6 @@
     .lobby-title{ font-size:20px; font-weight:700; margin:4px 0 12px; text-align:center; }
     
     
-<div class="lobby-links" aria-label="サイトポリシー等へのリンク">
-  <a href="/privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> |
-  <a href="/terms.html"   target="_blank" rel="noopener">利用規約</a> |
-  <a href="/contact.html" target="_blank" rel="noopener">お問い合わせ</a>
-</div>
     
     
     .lobby-section{ border:1px solid #e3e3e3; border-radius:12px; padding:12px; }
@@ -501,7 +496,7 @@
     
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app, "gs://cardgame-f484c.firebasestorage.app");
+    const storage = getStorage(app); // Configから自動解決でOK
 
 
   // ▼ロビーのログインUI参照
