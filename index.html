@@ -455,23 +455,25 @@
   </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-  import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app-check.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+  import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app-check.js";
 
   import {
-    getAuth,
-    signInAnonymously,
-    onAuthStateChanged,
-    GoogleAuthProvider,
-    signInWithPopup,
-    linkWithPopup,
-    signOut,
-    updateProfile
-  } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+    getAuth, signInAnonymously, onAuthStateChanged,
+    GoogleAuthProvider, signInWithPopup, linkWithPopup, signOut, updateProfile
+  } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 
-  import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, limit, addDoc, updateDoc, where, query, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
-  import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
+  import {
+    getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot,
+    serverTimestamp, runTransaction, deleteDoc, collection, limit,
+    addDoc, where, query, getDocs, writeBatch
+  } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
+  import {
+    getStorage, ref, uploadString, uploadBytes, getDownloadURL
+  } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
+  
+  
   // ===== Firebase（★ここはプレースホルダ。デプロイ時に置換される）
   const firebaseConfig = {
     apiKey: "__NEXT_PUBLIC_FIREBASE_API_KEY__",
