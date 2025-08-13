@@ -1,8 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
+     crossorigin="anonymous"></script>
+
+
   <meta charset="UTF-8" />
-  <title>PlayAround  ～プレイアラウンド～</title>
+  <title>PlayAround</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; --upload-h: 56px; --special-w: 14%; }
@@ -47,6 +52,21 @@
   grid-template-columns: var(--special-w) 1fr; /* 左: 特殊 / 右: メイン */
   grid-template-rows: 2fr 1fr; /* 上: プレイ / 下: 手札 */
   gap:6px;
+}
+
+/* モーダル内リンク */
+.lobby-links{
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  margin-bottom: 8px;
+  color: #555;
+}
+.lobby-links a{
+  margin: 0 8px;
+  color: #0a7;
+  text-decoration: underline;
+  margin: 0 5px;
 }
 
 /* 左の縦帯：特殊エリア（プレイ＋手札の左） */
@@ -132,6 +152,15 @@
     .lobby-card{ width:min(920px, 96vw); background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:18px; box-sizing:border-box; }
     .lobby-grid{ display:grid; grid-template-columns: 1.15fr 1fr; gap:14px; }
     .lobby-title{ font-size:20px; font-weight:700; margin:4px 0 12px; text-align:center; }
+    
+    
+<div class="lobby-links" aria-label="サイトポリシー等へのリンク">
+  <a href="/privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> |
+  <a href="/terms.html"   target="_blank" rel="noopener">利用規約</a> |
+  <a href="/contact.html" target="_blank" rel="noopener">お問い合わせ</a>
+</div>
+    
+    
     .lobby-section{ border:1px solid #e3e3e3; border-radius:12px; padding:12px; }
     .lobby-label{ display:block; font-size:12px; color:#555; margin-bottom:6px; }
     .lobby-subtitle{ font-weight:700; margin:0 0 8px; }
@@ -224,13 +253,29 @@
 </head>
 <body>
   <h1>
-    画像で遊べるカードデッキゲーム（4人用）
+    画像で遊べるボドゲ・カードゲーム（最大4人）
     <span id="session-indicator">ROOM: - / PLAYER: -</span>
   </h1>
 
   <div id="lobby" aria-modal="true" role="dialog">
     <div class="lobby-card">
       <div class="lobby-title">プレイアラウンドへようこそ</div>
+      
+      <div class="lobby-links">
+        <a href="/privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> |
+        <a href="/terms.html"   target="_blank" rel="noopener">利用規約</a> |
+        <a href="/contact.html" target="_blank" rel="noopener">お問い合わせ</a>
+      </div>
+      
+      
+      
+      <!-- ▼追加：ロビー上部のログインUI（リンクの直下） -->
+      <div class="lobby-auth" style="text-align:center; margin:8px 0 12px;">
+        <button id="login-google"  class="btn secondary" style="padding:8px 12px;">Googleでログイン</button>
+        <button id="logout-google" class="btn secondary" style="padding:8px 12px; display:none;">ログアウト</button>
+        <span id="whoami" style="margin-left:8px; color:#555; font-size:12px; display:none;"></span>
+      </div>
+      
       <div class="lobby-grid">
         <section class="lobby-section">
           <div class="lobby-subtitle">既存ルームに参加（非ホスト）</div>
@@ -239,10 +284,9 @@
             <input id="join-room-id" type="text" class="field" placeholder="例: room-alpha / 1234" />
           </div>
 
-          <label class="lobby-label">プレイヤー名 / 色</label>
+          <label class="lobby-label">プレイヤー名</label>
           <div class="row" style="margin-bottom:8px;">
             <input id="player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
-            <input id="player-color" type="color" value="#22aaff" title="プレイヤーカラー" />
           </div>
 
           <label class="lobby-label">座席を選択</label>
@@ -270,10 +314,9 @@
             <button id="create-room-btn" class="btn">作成</button>
           </div>
 
-          <label class="lobby-label">プレイヤー名 / 色</label>
+          <label class="lobby-label">プレイヤー名</label>
           <div class="row" style="margin-bottom:12px;">
             <input id="new-player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
-            <input id="new-player-color" type="color" value="#22aaff" title="プレイヤーカラー" />
           </div>
 
           <label class="lobby-label">作成後に参加する座席</label>
@@ -419,7 +462,18 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
   import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app-check.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+
+  import {
+    getAuth,
+    signInAnonymously,
+    onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup,
+    linkWithPopup,
+    signOut,
+    updateProfile
+  } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+
   import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, runTransaction, deleteDoc, collection, limit, addDoc, updateDoc, where, query, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
   import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
 
@@ -449,11 +503,19 @@
     const db = getFirestore(app);
     const storage = getStorage(app, "gs://cardgame-f484c.firebasestorage.app");
 
+
+  // ▼ロビーのログインUI参照
+  const loginBtn   = document.getElementById('login-google');
+  const logoutBtn  = document.getElementById('logout-google');
+  const whoamiSpan = document.getElementById('whoami');
+
+  // まだ匿名で遊べるままにする（既存のまま）
+
+
     // ===== DOM refs
     const lobby = document.getElementById('lobby');
     const joinRoomInput = document.getElementById('join-room-id');
     const playerNameInput = document.getElementById('player-name');
-    const playerColorInput = document.getElementById('player-color');
     const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
     const startBtn = document.getElementById('start-btn');
     const clearBtn = document.getElementById('clear-btn');
@@ -557,7 +619,72 @@
     }
 
     signInAnonymously(auth).catch(console.error);
-    onAuthStateChanged(auth, (user) => { if(user){ CURRENT_UID = user.uid; }});
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) return;
+    CURRENT_UID = user.uid;
+    // ロビーのボタン表示を更新
+    if (user.isAnonymous) {
+      if (loginBtn)  loginBtn.style.display  = '';
+      if (logoutBtn) logoutBtn.style.display = 'none';
+      if (whoamiSpan){ whoamiSpan.style.display = 'none'; whoamiSpan.textContent = ''; }
+    } else {
+      if (loginBtn)  loginBtn.style.display  = 'none';
+      if (logoutBtn) logoutBtn.style.display = '';
+      if (whoamiSpan){
+        whoamiSpan.style.display = '';
+        whoamiSpan.textContent = `ログイン中：${user.displayName || 'No Name'}`;
+      }
+    }
+  });
+  
+  
+  // Googleプロバイダ
+  const google = new GoogleAuthProvider();
+
+  // 匿名ユーザーなら linkWithPopup で“昇格”。既にログイン済みなら signInWithPopup で再ログイン/切替
+  loginBtn?.addEventListener('click', async () => {
+    try {
+      loginBtn.disabled = true;
+      const u = auth.currentUser;
+      if (u && u.isAnonymous) {
+        await linkWithPopup(u, google);  // ★匿名→Googleへ連携（UID維持）
+      } else {
+        await signInWithPopup(auth, google);
+      }
+      // displayName 未設定なら「プレイヤー名」を反映（任意）
+      const cu = auth.currentUser;
+      const name = (newPlayerNameInput?.value || playerNameInput?.value || '').trim();
+      if (cu && !cu.displayName && name) {
+        await updateProfile(cu, { displayName: name });
+      }
+      alert('ログインしました。');
+    } catch (e) {
+      console.warn(e);
+      alert('ログインに失敗しました。ブラウザのポップアップ許可を確認してください。');
+    } finally {
+      loginBtn.disabled = false;
+    }
+  });
+
+  // ログアウト → すぐ匿名に戻してプレイ継続可
+  logoutBtn?.addEventListener('click', async () => {
+    try {
+      logoutBtn.disabled = true;
+      await signOut(auth);
+      await signInAnonymously(auth);
+      alert('ログアウトしました。');
+    } catch (e) {
+      console.warn(e);
+      alert('ログアウトに失敗しました。');
+    } finally {
+      logoutBtn.disabled = false;
+    }
+  });
+  
+  
+  
+  
 
     // UI switching
     joinRoomInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
@@ -567,7 +694,6 @@
     newRoomIdInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     newRoomTitleInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     newPlayerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
-    newPlayerColorInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     createSeatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'create'; validateLobby(); }));
 
     function isCenterInsideRect(x, y, rect){
@@ -733,7 +859,6 @@ function randomPointInMainPlay(seat){
       const id = (newRoomIdInput.value||'').trim();
       const title = (newRoomTitleInput.value||'').trim();
       const creatorName  = (newPlayerNameInput.value || '').trim();
-      const creatorColor = (newPlayerColorInput.value || '#22aaff');
       if(!id){ alert('ルームIDを入力してください'); return; }
       if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
       if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
@@ -761,8 +886,7 @@ function randomPointInMainPlay(seat){
         renderFieldLabels();
 
         playerNameInput.value  = creatorName;
-        playerColorInput.value = creatorColor;
-
+        
         joinRoomInput.value = id;
         loadSeatStatus();
 
@@ -1035,10 +1159,8 @@ function randomPointInMainPlay(seat){
         let nameNow = (playerNameInput.value || '').trim();
         if (!nameNow) {
           const rightName  = (newPlayerNameInput.value || '').trim();
-          const rightColor = (newPlayerColorInput.value || '');
           if (rightName) {
             playerNameInput.value  = rightName;
-            if (rightColor) playerColorInput.value = rightColor;
             nameNow = rightName;
           }
         }
@@ -1071,7 +1193,6 @@ function randomPointInMainPlay(seat){
       const room    = (joinRoomInput.value || '').trim();
       const seat    = CURRENT_PLAYER;
       const nameNow = (playerNameInput.value || '').trim();
-      const colorNow = playerColorInput.value || '#22aaff';
 
       if (!room)  { alert('ルームIDを入力してください'); return; }
       if (!nameNow) { alert('プレイヤー名を入力してください'); return; }
@@ -1095,7 +1216,7 @@ function randomPointInMainPlay(seat){
         const ok = await claimSeat(room, seat);
         if (!ok) { alert('開始直前に座席が埋まりました。別の席を選んでください。'); return; }
 
-        currentSeatMap[seat] = { ...(currentSeatMap[seat] || {}), claimedByUid: CURRENT_UID, displayName: nameNow, color: colorNow };
+        currentSeatMap[seat] = { ...(currentSeatMap[seat] || {}), claimedByUid: CURRENT_UID, displayName: nameNow, color: '#22aaff' };
         renderSeatAvailability();
 
         startSession(room, seat);
@@ -1111,7 +1232,7 @@ function randomPointInMainPlay(seat){
     async function claimSeat(roomId, seat){
       const seatRef = doc(db, `rooms/${roomId}/seats/${seat}`);
       const displayName = (playerNameInput.value||'').trim();
-      const color = playerColorInput.value || '#22aaff';
+      const color = '#22aaff';
       try{
         const success = await runTransaction(db, async (tx) => {
           const snap = await tx.get(seatRef);
@@ -2372,5 +2493,10 @@ window.spawnToken = async function(){
     function updateEndRoomButtonVisibilityWrapper(){ updateEndRoomButtonVisibility(); }
 
   </script>
+  
+  
+  
+  
+  
 </body>
 </html>
