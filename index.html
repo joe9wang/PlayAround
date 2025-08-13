@@ -275,10 +275,9 @@
             <input id="join-room-id" type="text" class="field" placeholder="例: room-alpha / 1234" />
           </div>
 
-          <label class="lobby-label">プレイヤー名 / 色</label>
+          <label class="lobby-label">プレイヤー名</label>
           <div class="row" style="margin-bottom:8px;">
             <input id="player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
-            <input id="player-color" type="color" value="#22aaff" title="プレイヤーカラー" />
           </div>
 
           <label class="lobby-label">座席を選択</label>
@@ -306,10 +305,9 @@
             <button id="create-room-btn" class="btn">作成</button>
           </div>
 
-          <label class="lobby-label">プレイヤー名 / 色</label>
+          <label class="lobby-label">プレイヤー名</label>
           <div class="row" style="margin-bottom:12px;">
             <input id="new-player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
-            <input id="new-player-color" type="color" value="#22aaff" title="プレイヤーカラー" />
           </div>
 
           <label class="lobby-label">作成後に参加する座席</label>
@@ -489,7 +487,6 @@
     const lobby = document.getElementById('lobby');
     const joinRoomInput = document.getElementById('join-room-id');
     const playerNameInput = document.getElementById('player-name');
-    const playerColorInput = document.getElementById('player-color');
     const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
     const startBtn = document.getElementById('start-btn');
     const clearBtn = document.getElementById('clear-btn');
@@ -603,7 +600,6 @@
     newRoomIdInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     newRoomTitleInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     newPlayerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
-    newPlayerColorInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     createSeatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'create'; validateLobby(); }));
 
     function isCenterInsideRect(x, y, rect){
@@ -769,7 +765,6 @@ function randomPointInMainPlay(seat){
       const id = (newRoomIdInput.value||'').trim();
       const title = (newRoomTitleInput.value||'').trim();
       const creatorName  = (newPlayerNameInput.value || '').trim();
-      const creatorColor = (newPlayerColorInput.value || '#22aaff');
       if(!id){ alert('ルームIDを入力してください'); return; }
       if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
       if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
@@ -797,8 +792,7 @@ function randomPointInMainPlay(seat){
         renderFieldLabels();
 
         playerNameInput.value  = creatorName;
-        playerColorInput.value = creatorColor;
-
+        
         joinRoomInput.value = id;
         loadSeatStatus();
 
@@ -1071,10 +1065,8 @@ function randomPointInMainPlay(seat){
         let nameNow = (playerNameInput.value || '').trim();
         if (!nameNow) {
           const rightName  = (newPlayerNameInput.value || '').trim();
-          const rightColor = (newPlayerColorInput.value || '');
           if (rightName) {
             playerNameInput.value  = rightName;
-            if (rightColor) playerColorInput.value = rightColor;
             nameNow = rightName;
           }
         }
@@ -1107,7 +1099,6 @@ function randomPointInMainPlay(seat){
       const room    = (joinRoomInput.value || '').trim();
       const seat    = CURRENT_PLAYER;
       const nameNow = (playerNameInput.value || '').trim();
-      const colorNow = playerColorInput.value || '#22aaff';
 
       if (!room)  { alert('ルームIDを入力してください'); return; }
       if (!nameNow) { alert('プレイヤー名を入力してください'); return; }
@@ -1131,7 +1122,7 @@ function randomPointInMainPlay(seat){
         const ok = await claimSeat(room, seat);
         if (!ok) { alert('開始直前に座席が埋まりました。別の席を選んでください。'); return; }
 
-        currentSeatMap[seat] = { ...(currentSeatMap[seat] || {}), claimedByUid: CURRENT_UID, displayName: nameNow, color: colorNow };
+        currentSeatMap[seat] = { ...(currentSeatMap[seat] || {}), claimedByUid: CURRENT_UID, displayName: nameNow, color: '#22aaff' };
         renderSeatAvailability();
 
         startSession(room, seat);
@@ -1147,7 +1138,7 @@ function randomPointInMainPlay(seat){
     async function claimSeat(roomId, seat){
       const seatRef = doc(db, `rooms/${roomId}/seats/${seat}`);
       const displayName = (playerNameInput.value||'').trim();
-      const color = playerColorInput.value || '#22aaff';
+      const color = '#22aaff';
       try{
         const success = await runTransaction(db, async (tx) => {
           const snap = await tx.get(seatRef);
