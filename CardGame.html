@@ -292,14 +292,12 @@
   border:4px dashed #666;
 }
 
-/* モード切替: mode-card ⇄ mode-board */
-#field.mode-card  .player-area{ display:block; }
-#field.mode-card  #board-layout{ display:none; }
-
-#field.mode-board .player-area{ display:none; }   /* カードゲーム用4区画は隠す */
-#field.mode-board #board-layout{ display:block; } /* ボードゲーム用だけ出す */
     
-    
+    /* モード切替: mode-card ⇄ mode-board
+   ※カードゲーム（既存DOM）はデフォルト表示のまま触らない！
+   → mode-card では一切上書きしない。board のときだけ切り替える。 */
+#field.mode-board .player-area{ display:none; }   /* カード用4区画は隠す */
+#field.mode-board #board-layout{ display:block; } /* ボード用だけ出す */
     
     
     
