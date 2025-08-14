@@ -125,7 +125,7 @@
 
 
     .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; transform-origin:50% 50%; }
-    .card[data-owner="other"]{ cursor:grab; opacity:.95; }
+    .card[data-owner="other"]{ cursor:not-allowed; opacity:.95; }
     .card img{ width:100%; height:100%; border-radius:10px; object-fit:cover; pointer-events:none; user-select:none; image-rendering: -webkit-optimize-contrast; }
     .card.selected{ border:3px solid red; }
 
@@ -244,10 +244,116 @@
       width:100%; height:100%; border:0; padding:10px; font-size:30px; line-height:1.3;
       outline:none; resize:none; background:transparent; color:#111; box-sizing:border-box;
     }
+    
+    
+    
+/* ==== 追加: ボードゲームレイアウト（四隅ハンド + 中央デッキ/捨て札） ==== */
+#board-layout{
+  position:absolute;
+  inset:0;
+  display:none; /* 初期は非表示（mode=board のとき表示） */
+}
+
+
+/* 共有プレイエリア（角の手札と中央ブロック以外の全域） */
+#board-play{
+  position:absolute;
+  inset:0;
+  background:#2d8;        /* 既存の main-play-area と同系色 */
+  border:4px dashed #666; /* 見やすいように枠 */
+  z-index:0;              /* 下地 */
+}
+
+
+
+
+/* 四隅の手札（P1:左上, P2:右上, P3:左下, P4:右下） */
+.board-hand{
+  position:absolute;
+  width:18%;
+  height:24%;
+  background:#228be6; /* 既存 hand と同色 */
+  border:4px dashed #666;
+  box-sizing:border-box;
+  z-index:1;           /* 下地(#board-play)より前面 */
+}
+#board-hand-1{ top:2%;  left:2%;  }
+#board-hand-2{ top:2%;  right:2%; }
+#board-hand-3{ bottom:2%; left:2%; }
+#board-hand-4{ bottom:2%; right:2%; }
+
+/* 中央のデッキ＆捨て札（横並び） */
+#board-center{
+  position:absolute;
+  width:30%;
+  min-width:260px;
+  height:26%;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  z-index:1;           /* 下地(#board-play)より前面 */
+}
+#board-center .center-deck{
+  background:#f90;   /* 既存 deck と同色 */
+  position:relative;
+  border:4px dashed #666;
+}
+#board-center .center-discard{
+  background:#cc6666; /* 既存 discard と同色 */
+  position:relative;
+  border:4px dashed #666;
+}
+
+    
+    /* モード切替: mode-card ⇄ mode-board
+   ※カードゲーム（既存DOM）はデフォルト表示のまま触らない！
+   → mode-card では一切上書きしない。board のときだけ切り替える。 */
+#field.mode-board .player-area{ display:none; }   /* カード用4区画は隠す */
+#field.mode-board #board-layout{ display:block; } /* ボード用だけ出す */
+    
+    
+/* === Host toggle (slider) === */
+.host-toggle{ display:none; margin-top:12px; padding:10px 8px; border-top:1px solid #eee; }
+.switch{ position:relative; display:inline-block; width:50px; height:28px; }
+.switch input{ opacity:0; width:0; height:0; }
+.slider{ position:absolute; inset:0; cursor:pointer; background:#ccc; border-radius:28px; transition:.2s; }
+.slider:before{ content:""; position:absolute; width:22px; height:22px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }
+.switch input:checked + .slider{ background:#0a7; }
+.switch input:checked + .slider:before{ transform: translateX(22px); }
+    
+    
+    
+    
   </style>
+  
+  
+  <style>
+    /* === Brand badge (header left) === */
+    #brand-badge{
+      position:absolute;
+      left:12px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#fff;
+      font-weight:800;
+      font-size:14px;
+      letter-spacing:.4px;
+      background:rgba(0,0,0,.25);
+      padding:2px 8px;
+      border-radius:6px;
+      user-select:none;
+      pointer-events:none; /* ボタンなどの操作を邪魔しない */
+    }
+  </style>
+  
+  
 </head>
 <body>
   <h1>
+    <span id="brand-badge">SOVLENTER</span>
     画像で遊べるボドゲ・カードゲーム（最大4人）
     <span id="session-indicator">ROOM: - / PLAYER: -</span>
   </h1>
@@ -276,12 +382,12 @@
           <div class="lobby-subtitle">既存ルームに参加（非ホスト）</div>
           <label class="lobby-label">参加するルームID</label>
           <div class="row" style="margin-bottom:8px;">
-            <input id="join-room-id" type="text" class="field" placeholder="例: room-alpha / 1234" />
+            <input id="join-room-id" type="text" class="field" placeholder="例: room-abc / 1234" />
           </div>
 
           <label class="lobby-label">プレイヤー名</label>
           <div class="row" style="margin-bottom:8px;">
-            <input id="player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
+            <input id="player-name" type="text" class="field" maxlength="24" placeholder="例: SOLVENTER" />
           </div>
 
           <label class="lobby-label">座席を選択</label>
@@ -292,36 +398,50 @@
             <button class="seat-btn" data-seat="4">P4 <span class="seat-note"></span></button>
           </div>
 
+
           <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
             <button id="start-btn" type="button" class="btn" disabled>開始</button>
-            <button id="clear-btn" type="button" class="btn secondary">クリア</button>
           </div>
+
+
         </section>
 
         <section class="lobby-section">
           <div class="lobby-subtitle">新しいルームを作成して参加（ホスト）</div>
           <label class="lobby-label">新しいルームを作成</label>
           <div class="row" style="margin-bottom:8px;">
-            <input id="new-room-id" type="text" class="field" placeholder="作成するID（例: room-xyz）" />
+            <input id="new-room-id" type="text" class="field" placeholder="例: room-abc / 1234" />
           </div>
-          <div class="row" style="margin-bottom:12px;">
-            <input id="new-room-title" type="text" class="field" placeholder="タイトル（任意）" />
-            <button id="create-room-btn" class="btn">作成</button>
-          </div>
-
+          
           <label class="lobby-label">プレイヤー名</label>
           <div class="row" style="margin-bottom:12px;">
-            <input id="new-player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
+            <input id="new-player-name" type="text" class="field" maxlength="24" placeholder="例: SOLVENTER" />
           </div>
 
-          <label class="lobby-label">作成後に参加する座席</label>
+          <label class="lobby-label">座席を選択</label>
           <div class="seat-grid" id="create-seat-grid">
             <button class="seat-btn" data-create-seat="1">P1</button>
             <button class="seat-btn" data-create-seat="2">P2</button>
             <button class="seat-btn" data-create-seat="3">P3</button>
             <button class="seat-btn" data-create-seat="4">P4</button>
           </div>
+          
+          
+          <!-- ==== 追加: フィールド構成（モード）選択 ==== -->
+<label class="lobby-label" style="margin-top:10px;">フィールド構成を選択</label>
+<div class="row" id="create-mode-row" style="gap:8px;">
+  <button id="pick-mode-card"  type="button" class="btn secondary" aria-pressed="true">🃏 カードゲーム</button>
+  <button id="pick-mode-board" type="button" class="btn secondary" aria-pressed="false">🎲 ボードゲーム</button>
+</div>
 
+
+          <!-- ↓ ここに「作成」ボタンを移動（セクション末尾） -->
+          <div class="row" id="create-btn-row" style="margin-top:16px; justify-content:flex-end;">
+            <button id="create-room-btn" class="btn">作成</button>
+          </div>
+
+          
+          
         </section>
       </div>
     </div>
@@ -357,7 +477,21 @@
       <button onclick="setFieldSize('large')">大</button>
     </div>
 
+
+    <div id="host-otherops" class="host-toggle" aria-live="polite">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <div style="font-size:12px;color:#555;">他プレイヤーのカード操作</div>
+        <div class="row" style="align-items:center; gap:8px;">
+          <label class="switch" title="ONにすると、他人のカードも移動・表裏切替ができる">
+            <input id="toggle-other-ops" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+          <span id="toggle-other-ops-text" style="width:36px; text-align:right; font-weight:700;">OFF</span>
+        </div>
+      </div>
+    </div>
     <button id="end-room-btn" class="danger" style="display:none">🚪 ルームを終了（ホスト）</button>
+
   </div>
 
   <div id="container">
@@ -426,6 +560,25 @@
         <!-- 右下：手札行 -->
         <div class="hand-area"><div class="zone-label">手札エリア</div></div>
       </div>
+      
+      
+  <div id="board-layout">
+   <div id="board-play"><div class="zone-label">プレイエリア（共有）</div></div>
+   <div id="board-hand-1" class="board-hand"><div class="zone-label">手札エリア P1</div></div>
+   <div id="board-hand-2" class="board-hand"><div class="zone-label">手札エリア P2</div></div>
+   <div id="board-hand-3" class="board-hand"><div class="zone-label">手札エリア P3</div></div>
+   <div id="board-hand-4" class="board-hand"><div class="zone-label">手札エリア P4</div></div>
+
+  <div id="board-center">
+    <div class="center-deck"><div class="zone-label">デッキエリア（共有）</div></div>
+    <div class="center-discard"><div class="zone-label">捨て札エリア（共有）</div></div>
+  </div>
+</div>
+      
+      
+      
+      
+      
       
     </div>
   </div>
@@ -590,16 +743,62 @@ getToken(window.appCheck)
     const playerNameInput = document.getElementById('player-name');
     const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
     const startBtn = document.getElementById('start-btn');
-    const clearBtn = document.getElementById('clear-btn');
     const sessionIndicator = document.getElementById('session-indicator');
 
     const newRoomIdInput = document.getElementById('new-room-id');
-    const newRoomTitleInput = document.getElementById('new-room-title');
     const newPlayerNameInput = document.getElementById('new-player-name');
     const newPlayerColorInput = document.getElementById('new-player-color');
     const createRoomBtn = document.getElementById('create-room-btn');
+    
+    
+    // Host-only toggle: 他プレイヤーのカード操作
+    const hostOtherOpsWrap   = document.getElementById('host-otherops');
+    const toggleOtherOpsInput= document.getElementById('toggle-other-ops');
+    const toggleOtherOpsText = document.getElementById('toggle-other-ops-text');
 
+    function applyOtherOpsUI(){
+      const on = !!(CURRENT_ROOM_META?.allowOtherOps);
+      if (toggleOtherOpsInput) toggleOtherOpsInput.checked = on;
+      if (toggleOtherOpsText)  toggleOtherOpsText.textContent = on ? 'ON' : 'OFF';
+    }
+
+    toggleOtherOpsInput?.addEventListener('change', async () => {
+      // ホストだけ変更可能（UIはホストにしか表示しないが二重ガード）
+      const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID && CURRENT_ROOM_META?.hostSeat === CURRENT_PLAYER);
+      if (!isHost) { applyOtherOpsUI(); return; }
+      const val = !!toggleOtherOpsInput.checked;
+      toggleOtherOpsText.textContent = val ? 'ON' : 'OFF';
+      try{
+        await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { allowOtherOps: val, updatedAt: serverTimestamp() }, { merge: true });
+      }catch(e){ console.warn('toggle allowOtherOps failed', e); }
+    });    
+    
+    
     const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
+    
+    
+    // ==== 追加: フィールドモード（'card' | 'board'） ==== 
+let CREATE_FIELD_MODE = 'card';
+
+const pickModeCardBtn  = document.getElementById('pick-mode-card');
+const pickModeBoardBtn = document.getElementById('pick-mode-board');
+
+function updateModePickButtons(){
+  const set = (btn, on) => {
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.classList.toggle('active', on);
+    btn.classList.toggle('secondary', !on);
+  };
+  set(pickModeCardBtn,  CREATE_FIELD_MODE === 'card');
+  set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
+}
+pickModeCardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'card';  updateModePickButtons(); });
+pickModeBoardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'board'; updateModePickButtons(); });
+updateModePickButtons();
+    
+    
+    
+    
 
     // ===== State
     let CREATE_SELECTED_SEAT = 1;
@@ -802,12 +1001,31 @@ async function storageDownloadURL(path) {
   
 
     // UI switching
-    joinRoomInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
+    joinRoomInput.addEventListener('input', () => {
+      ACTIVE_MODE = 'join';
+      validateLobby();
+      const v = (joinRoomInput.value || '').trim();
+      if (!v) {
+        // 入力が空になったら、クリアボタン相当の処理を自動実行
+        CURRENT_PLAYER = null;
+        detachSeatsListener();                 // 座席購読を停止
+        if (unsubscribeRoomDoc) {              // ルームdoc購読も停止
+          unsubscribeRoomDoc();
+          unsubscribeRoomDoc = null;
+        }
+        CURRENT_ROOM_META = null;
+        renderSeatAvailability();
+        renderFieldLabels();
+        updateEndRoomButtonVisibility();
+        renderHPPanel();
+      }
+    });    
+    
+    
     playerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
     seatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'join'; validateLobby(); }));
 
     newRoomIdInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
-    newRoomTitleInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     newPlayerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     createSeatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'create'; validateLobby(); }));
 
@@ -816,39 +1034,79 @@ async function storageDownloadURL(path) {
       const cy = y + CARD_H / 2;
       return cx >= rect.minX && cx <= rect.minX + rect.width && cy >= rect.minY && cy <= rect.minY + rect.height;
     }
-    function getHandBoundsForSeat(seat){
-      const hand = document.querySelector(`.player-${seat} .hand-area`);
-      if(!hand) return null;
-      const handRect  = hand.getBoundingClientRect();
-      const fieldRect = field.getBoundingClientRect();
-      const minX = (handRect.left - fieldRect.left) / zoom;
-      const minY = (handRect.top  - fieldRect.top ) / zoom;
-      const width  = handRect.width  / zoom;
-      const height = handRect.height / zoom;
-      return { minX, minY, width, height };
-    }
-    function getDeckBoundsForSeat(seat){
-      const deck = document.querySelector(`.player-${seat} .deck-area`);
-      if(!deck) return null;
-      const deckRect  = deck.getBoundingClientRect();
-      const fieldRect = field.getBoundingClientRect();
-      const minX = (deckRect.left - fieldRect.left) / zoom;
-      const minY = (deckRect.top  - fieldRect.top)  / zoom;
-      const width  = deckRect.width  / zoom;
-      const height = deckRect.height / zoom;
-      return { minX, minY, width, height };
-    }
-    function getMainPlayBoundsForSeat(seat){
-      const main = document.querySelector(`.player-${seat} .main-play-area`);
-        if(!main) return null;
-          const mainRect  = main.getBoundingClientRect();
-          const fieldRect = field.getBoundingClientRect();
-          const minX = (mainRect.left - fieldRect.left) / zoom;
-          const minY = (mainRect.top  - fieldRect.top ) / zoom;
-          const width  = mainRect.width  / zoom;
-          const height = mainRect.height / zoom;
-          return { minX, minY, width, height };
-    }
+    
+    
+    
+    
+    
+    
+function isBoardMode(){
+  return (CURRENT_ROOM_META?.fieldMode === 'board');
+}
+
+function rectFromEl(el){
+  if(!el) return null;
+  const fieldRect = field.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  const minX = (r.left - fieldRect.left) / zoom;
+  const minY = (r.top  - fieldRect.top ) / zoom;
+  const width  = r.width  / zoom;
+  const height = r.height / zoom;
+  return { minX, minY, width, height };
+}
+
+
+// === 操作権限（ドラッグ/表裏）判定 ===
+function isMyCard(cardEl){ return cardEl?.dataset?.ownerSeat === String(CURRENT_PLAYER); }
+function allowOperateOthers(){ return !!(CURRENT_ROOM_META?.allowOtherOps); }
+// kind: 'move' | 'flip' | 'delete' | 'rotate'
+function canOperateCard(cardEl, kind){
+  if (isMyCard(cardEl)) return true;
+  if (allowOperateOthers()){
+    // 共有ONでも破壊的操作は不可のまま（必要なら広げられます）
+    if (kind === 'delete' || kind === 'rotate') return false;
+    return true; // move / flip を許可
+  }
+  return false;
+}
+
+
+
+
+
+function getHandBoundsForSeat(seat){
+  if (isBoardMode()) {
+    const el = document.getElementById(`board-hand-${seat}`);
+    return rectFromEl(el);
+  } else {
+    const hand = document.querySelector(`.player-${seat} .hand-area`);
+    return rectFromEl(hand);
+  }
+}
+
+function getDeckBoundsForSeat(seat){
+  if (isBoardMode()) {
+    // 共有デッキ（seat は無視）
+    const el = document.querySelector('#board-center .center-deck');
+    return rectFromEl(el);
+  } else {
+    const deck = document.querySelector(`.player-${seat} .deck-area`);
+    return rectFromEl(deck);
+  }
+}
+
+function getMainPlayBoundsForSeat(seat){
+  if (isBoardMode()) {
+    // ボードモードでは角ハンド＆中央以外＝共有プレイエリア
+    const el = document.getElementById('board-play');
+    return rectFromEl(el);
+  } else {
+    const main = document.querySelector(`.player-${seat} .main-play-area`);
+    return rectFromEl(main);
+  }
+}
+
+
     
     
     function setPreview(src) {
@@ -985,7 +1243,6 @@ function randomPointInMainPlay(seat){
     createRoomBtn.addEventListener('click', async () => {
       await ensureAuthReady();
       const id = (newRoomIdInput.value||'').trim();
-      const title = (newRoomTitleInput.value||'').trim();
       const creatorName  = (newPlayerNameInput.value || '').trim();
       if(!id){ alert('ルームIDを入力してください'); return; }
       if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
@@ -997,12 +1254,12 @@ function randomPointInMainPlay(seat){
 
       try{
         await setDoc(doc(db, `rooms/${id}`), {
-          title: title || null,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           hostUid: CURRENT_UID,
           hostDisplayName: creatorName,
           roomClosed: false,
+          fieldMode: CREATE_FIELD_MODE,      // ← 追加
         }, { merge: true });
 
         await resetRoomState(id);
@@ -1217,6 +1474,20 @@ function randomPointInMainPlay(seat){
         nameEl.textContent = displayName ? `${displayName}${isHostSeat ? '（ホスト）' : ''}` : '';
       }
     }
+    
+    
+    // ==== 追加: フィールドモードの適用（DOM切替） ====
+function applyFieldModeLayout(){
+  const mode = (CURRENT_ROOM_META?.fieldMode === 'board') ? 'board' : 'card';
+  const fieldRoot = document.getElementById('field');
+  if (!fieldRoot) return;
+  fieldRoot.classList.toggle('mode-card',  mode === 'card');
+  fieldRoot.classList.toggle('mode-board', mode === 'board');
+}
+    
+    
+    
+    
     function detachSeatsListener(){ if(unsubscribeSeats){ unsubscribeSeats(); unsubscribeSeats = null; } }
 
     function loadSeatStatus(){
@@ -1254,6 +1525,13 @@ function randomPointInMainPlay(seat){
          }
          // 存在する場合の通常処理
          CURRENT_ROOM_META = snap.data();
+         
+         
+         // UI反映
+         applyOtherOpsUI();
+         applyFieldModeLayout();
+         
+         
          IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
          if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
          renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); renderHPPanel();
@@ -1305,15 +1583,6 @@ function randomPointInMainPlay(seat){
       });
     });
 
-    clearBtn.addEventListener('click', () => {
-      joinRoomInput.value = '';
-      CURRENT_PLAYER = null;
-      renderSeatAvailability();
-      detachSeatsListener();
-      joinRoomInput.focus();
-      updateEndRoomButtonVisibility();
-      renderHPPanel();
-    });
 
     startBtn.addEventListener('click', async (ev) => {
       ev.preventDefault();
@@ -1520,6 +1789,7 @@ if (state?.type === 'dice') {
   // クリックで自分のダイスだけ削除
   card.addEventListener('click', async (e) => {
     e.stopPropagation();
+    if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
     try {
       const id = card.dataset.cardId;
       await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
@@ -1666,24 +1936,25 @@ if (state?.type === 'numcounter') {
       //   - 自分の「トークン / カウンター」なら削除
       //   - それ以外の自分のカードは表裏トグル
       card.addEventListener("contextmenu", async (e) => {
-        e.prevent止;
-        const isMine = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
+        e.preventDefault();
         
-const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
-const isToken   = (state?.type === 'token')   || card.classList.contains('token');
-const isNumCtr  = (state?.type === 'numcounter') || card.classList.contains('numcounter');
-if (isCounter || isToken || isNumCtr) {
-  // トークン/カウンターは所有者のみ右クリック削除可（従来どおり）
-  if (isMine) {
-    try {
-      const id = card.dataset.cardId;
-      await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
-    } catch (err) {
-      console.warn('delete token/counter failed', err);
-    }
-  }
-  return; // 他人のは削除不可、通常カードはこの先で表裏トグル
-}
+        
+        // まず種類を判定（トークン/カウンター/数値カウンターの削除はオーナーのみ＝従来通り）
+        const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
+        const isToken   = (state?.type === 'token')   || card.classList.contains('token');
+        const isNumCtr  = (state?.type === 'numcounter') || card.classList.contains('numcounter');
+        if (isCounter || isToken || isNumCtr) {
+          if (!canOperateCard(card, 'delete')) return; // 共有ONでも削除は不可（オーナーのみ）
+          try {
+            const id = card.dataset.cardId;
+            await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+          } catch (err) {
+            console.warn('delete token/counter failed', err);
+          }
+          return;
+        }
+        // ここから通常カードの表裏トグル
+        if (!canOperateCard(card, 'flip')) return;        
         
         
         const isFaceUp = card.dataset.faceUp === 'true';
@@ -1722,6 +1993,7 @@ if (isCounter || isToken || isNumCtr) {
       // ダブルクリックで90°回転（自分のカードのみ）
       card.addEventListener("dblclick", async (e) => {
         e.stopPropagation();
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
         
         // ★ 数値カウンターは回転させない
         if (card.classList.contains('numcounter')) return;
@@ -2047,11 +2319,10 @@ if (data.type === 'numcounter') {
       let startClientX = 0, startClientY = 0;
       let grabOffsetX = 0, grabOffsetY = 0;
 
-card.addEventListener("mousedown", (e) => {
-  if (e.button !== 0) return;
-  if (e.detail > 1) return;
-  // dice は非ドラッグ仕様のままにしたい場合はこの早期 return を残す
-  if (card.classList.contains('dice')) return;
+      card.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
+        if (!canOperateCard(card, 'move')) return;
+        if (e.detail > 1) return;
 
         const rect = field.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
@@ -2598,6 +2869,7 @@ window.spawnToken = async function(){
       const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
       const show = !!(CURRENT_ROOM && isHostUid && isHostSeat);
       if (endRoomBtn) endRoomBtn.style.display = show ? 'block' : 'none';
+      if (hostOtherOpsWrap) hostOtherOpsWrap.style.display = show ? 'block' : 'none';
     }
     endRoomBtn?.addEventListener('click', async () => {
       if (!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID && CURRENT_ROOM_META?.hostSeat === CURRENT_PLAYER)) {
@@ -2643,15 +2915,7 @@ window.spawnToken = async function(){
         handlersBound = true;
       }
       
-      // 初期化のどこか（initializePlayField()内の最後など）に追加
-      field.addEventListener('contextmenu', (e) => {
-        // カード上での右クリックはブラウザメニューを出さない
-        if (e.target.closest('.card')) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }, { capture: true });
-      
+      applyFieldModeLayout();
       
     }
     
