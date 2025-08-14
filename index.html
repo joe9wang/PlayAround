@@ -372,7 +372,14 @@
           <div class="row" style="margin-bottom:8px;">
             <input id="join-room-id" type="text" class="field" placeholder="例: room-abc / 1234" />
           </div>
-
+          
+          <!-- 入室パスワード -->
+          <label class="lobby-label">入室パスワード</label>
+          <div class="row" style="margin-bottom:8px;">
+            <input id="join-room-pass" type="password" class="field"
+              placeholder="ホストが設定した場合は必須" />
+          </div>
+          
           <label class="lobby-label">プレイヤー名</label>
           <div class="row" style="margin-bottom:8px;">
             <input id="player-name" type="text" class="field" maxlength="24" placeholder="名前（例: SOLVENTER）" />
@@ -399,6 +406,13 @@
           <label class="lobby-label">新しいルームを作成</label>
           <div class="row" style="margin-bottom:8px;">
             <input id="new-room-id" type="text" class="field" placeholder="例: room-abc / 1234" />
+          </div>
+          
+          <!-- 入室パスワード（任意設定） -->
+          <label class="lobby-label">入室パスワード（任意）</label>
+          <div class="row" style="margin-bottom:12px;">
+            <input id="new-room-pass" type="password" class="field"
+              placeholder="設定すると参加時に必須" />
           </div>
           
           <label class="lobby-label">プレイヤー名</label>
@@ -735,6 +749,8 @@ getToken(window.appCheck)
 
     const newRoomIdInput = document.getElementById('new-room-id');
     const newPlayerNameInput = document.getElementById('new-player-name');
+    const joinRoomPassInput = document.getElementById('join-room-pass');
+    const newRoomPassInput  = document.getElementById('new-room-pass');
     const newPlayerColorInput = document.getElementById('new-player-color');
     const createRoomBtn = document.getElementById('create-room-btn');
     
@@ -858,8 +874,13 @@ async function storageDownloadURL(path) {
   }
 }
     
+    async function sha256Hex(str){
+      const data = new TextEncoder().encode(str);
+      const buf  = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
     
-
+    
     function updateCardBatched(cardId, patch){
       if(!CURRENT_ROOM) return;
       queueUpdate(pathFor(CURRENT_ROOM, 'cards', cardId), patch);
@@ -1241,13 +1262,20 @@ function randomPointInMainPlay(seat){
       createRoomBtn.textContent = '作成中…';
 
       try{
+      
+        // ▼追加：パスワード読み＆ハッシュ化
+        const passRaw = (newRoomPassInput?.value || '').trim();
+        const joinPassHash = passRaw ? await sha256Hex(passRaw) : null;
+    
         await setDoc(doc(db, `rooms/${id}`), {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           hostUid: CURRENT_UID,
           hostDisplayName: creatorName,
           roomClosed: false,
-          fieldMode: CREATE_FIELD_MODE,      // ← 追加
+          fieldMode: CREATE_FIELD_MODE,     
+          joinPassHash: joinPassHash,
+          hasPassword: !!joinPassHash
         }, { merge: true });
 
         await resetRoomState(id);
@@ -1596,7 +1624,19 @@ function applyFieldModeLayout(){
         });
         const meta = roomSnap.exists() ? roomSnap.data() : null;
         const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
-
+        
+        
+        // ▼追加：ホスト以外は、設定があれば照合
+        if (!iAmHost && meta?.joinPassHash) {
+          const passRaw = (joinRoomPassInput?.value || '').trim();
+          const given   = passRaw ? await sha256Hex(passRaw) : '';
+          if (given !== meta.joinPassHash) {
+            alert('パスワードが違います。');
+            return;
+          }
+        }
+        
+        
         const hostLikelyHere = !!meta?.hostUid || isHostAlive(meta);
         if (!meta || (!hostLikelyHere && !iAmHost)) { alert('ホストが不在のため、このルームには参加できません。'); return; }
         if (iAmHost) IS_ROOM_CREATOR = true;
