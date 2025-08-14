@@ -315,6 +315,17 @@
 #field.mode-board #board-layout{ display:block; } /* ボード用だけ出す */
     
     
+/* === Host toggle (slider) === */
+.host-toggle{ display:none; margin-top:12px; padding:10px 8px; border-top:1px solid #eee; }
+.switch{ position:relative; display:inline-block; width:50px; height:28px; }
+.switch input{ opacity:0; width:0; height:0; }
+.slider{ position:absolute; inset:0; cursor:pointer; background:#ccc; border-radius:28px; transition:.2s; }
+.slider:before{ content:""; position:absolute; width:22px; height:22px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }
+.switch input:checked + .slider{ background:#0a7; }
+.switch input:checked + .slider:before{ transform: translateX(22px); }
+    
+    
+    
     
   </style>
 </head>
@@ -443,7 +454,21 @@
       <button onclick="setFieldSize('large')">大</button>
     </div>
 
+
+    <div id="host-otherops" class="host-toggle" aria-live="polite">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <div style="font-size:12px;color:#555;">他プレイヤーのカード操作</div>
+        <div class="row" style="align-items:center; gap:8px;">
+          <label class="switch" title="ONにすると、他人のカードも移動・表裏切替ができる">
+            <input id="toggle-other-ops" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+          <span id="toggle-other-ops-text" style="width:36px; text-align:right; font-weight:700;">OFF</span>
+        </div>
+      </div>
+    </div>
     <button id="end-room-btn" class="danger" style="display:none">🚪 ルームを終了（ホスト）</button>
+
   </div>
 
   <div id="container">
@@ -701,7 +726,31 @@ getToken(window.appCheck)
     const newPlayerNameInput = document.getElementById('new-player-name');
     const newPlayerColorInput = document.getElementById('new-player-color');
     const createRoomBtn = document.getElementById('create-room-btn');
+    
+    
+    // Host-only toggle: 他プレイヤーのカード操作
+    const hostOtherOpsWrap   = document.getElementById('host-otherops');
+    const toggleOtherOpsInput= document.getElementById('toggle-other-ops');
+    const toggleOtherOpsText = document.getElementById('toggle-other-ops-text');
 
+    function applyOtherOpsUI(){
+      const on = !!(CURRENT_ROOM_META?.allowOtherOps);
+      if (toggleOtherOpsInput) toggleOtherOpsInput.checked = on;
+      if (toggleOtherOpsText)  toggleOtherOpsText.textContent = on ? 'ON' : 'OFF';
+    }
+
+    toggleOtherOpsInput?.addEventListener('change', async () => {
+      // ホストだけ変更可能（UIはホストにしか表示しないが二重ガード）
+      const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID && CURRENT_ROOM_META?.hostSeat === CURRENT_PLAYER);
+      if (!isHost) { applyOtherOpsUI(); return; }
+      const val = !!toggleOtherOpsInput.checked;
+      toggleOtherOpsText.textContent = val ? 'ON' : 'OFF';
+      try{
+        await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { allowOtherOps: val, updatedAt: serverTimestamp() }, { merge: true });
+      }catch(e){ console.warn('toggle allowOtherOps failed', e); }
+    });    
+    
+    
     const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
     
     
@@ -982,6 +1031,25 @@ function rectFromEl(el){
   const height = r.height / zoom;
   return { minX, minY, width, height };
 }
+
+
+// === 操作権限（ドラッグ/表裏）判定 ===
+function isMyCard(cardEl){ return cardEl?.dataset?.ownerSeat === String(CURRENT_PLAYER); }
+function allowOperateOthers(){ return !!(CURRENT_ROOM_META?.allowOtherOps); }
+// kind: 'move' | 'flip' | 'delete' | 'rotate'
+function canOperateCard(cardEl, kind){
+  if (isMyCard(cardEl)) return true;
+  if (allowOperateOthers()){
+    // 共有ONでも破壊的操作は不可のまま（必要なら広げられます）
+    if (kind === 'delete' || kind === 'rotate') return false;
+    return true; // move / flip を許可
+  }
+  return false;
+}
+
+
+
+
 
 function getHandBoundsForSeat(seat){
   if (isBoardMode()) {
@@ -1435,7 +1503,11 @@ function applyFieldModeLayout(){
          // 存在する場合の通常処理
          CURRENT_ROOM_META = snap.data();
          
+         
+         // UI反映
+         applyOtherOpsUI();
          applyFieldModeLayout();
+         
          
          IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
          if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
@@ -1842,24 +1914,26 @@ if (state?.type === 'numcounter') {
       //   - それ以外の自分のカードは表裏トグル
       card.addEventListener("contextmenu", async (e) => {
         e.preventDefault();
-        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
         
         
+        // まず種類を判定（トークン/カウンター/数値カウンターの削除はオーナーのみ＝従来通り）
+        const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
+        const isToken   = (state?.type === 'token')   || card.classList.contains('token');
+        const isNumCtr  = (state?.type === 'numcounter') || card.classList.contains('numcounter');
+        if (isCounter || isToken || isNumCtr) {
+          if (!canOperateCard(card, 'delete')) return; // 共有ONでも削除は不可（オーナーのみ）
+          try {
+            const id = card.dataset.cardId;
+            await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+          } catch (err) {
+            console.warn('delete token/counter failed', err);
+          }
+          return;
+        }
+        // ここから通常カードの表裏トグル
+        if (!canOperateCard(card, 'flip')) return;        
         
-const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
-const isToken   = (state?.type === 'token')   || card.classList.contains('token');
-const isNumCtr  = (state?.type === 'numcounter') || card.classList.contains('numcounter');
-if (isCounter || isToken || isNumCtr) {
-  // 生成者（= 自分）だけ削除
-  try {
-    const id = card.dataset.cardId;
-    await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
-  } catch (err) {
-    console.warn('delete token/counter failed', err);
-  }
-  return;
-}
-
+        
         const isFaceUp = card.dataset.faceUp === 'true';
         const nextFaceUp = !isFaceUp;
         card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
@@ -2224,7 +2298,7 @@ if (data.type === 'numcounter') {
 
       card.addEventListener("mousedown", (e) => {
         if (e.button !== 0) return;
-        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+        if (!canOperateCard(card, 'move')) return;
         if (e.detail > 1) return;
 
         const rect = field.getBoundingClientRect();
@@ -2772,6 +2846,7 @@ window.spawnToken = async function(){
       const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
       const show = !!(CURRENT_ROOM && isHostUid && isHostSeat);
       if (endRoomBtn) endRoomBtn.style.display = show ? 'block' : 'none';
+      if (hostOtherOpsWrap) hostOtherOpsWrap.style.display = show ? 'block' : 'none';
     }
     endRoomBtn?.addEventListener('click', async () => {
       if (!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID && CURRENT_ROOM_META?.hostSeat === CURRENT_PLAYER)) {
