@@ -1666,7 +1666,7 @@ if (state?.type === 'numcounter') {
       //   - 自分の「トークン / カウンター」なら削除
       //   - それ以外の自分のカードは表裏トグル
       card.addEventListener("contextmenu", async (e) => {
-        e.prevent止;
+        e.preventDefault();
         const isMine = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
         
 const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
