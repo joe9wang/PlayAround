@@ -534,8 +534,11 @@ getToken(window.appCheck)
     
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app); // Configから自動解決でOK
-
+    // env から注入された storageBucket をそのまま使う
+    const storageBucket = firebaseConfig.storageBucket;
+    const storage = storageBucket ? getStorage(app, `gs://${storageBucket}`) : getStorage(app);
+    
+    
 
   // ▼ロビーのログインUI参照
   const loginBtn   = document.getElementById('login-google');
