@@ -433,7 +433,7 @@
   <div id="preview">
     <div id="preview-top">
       <h2>選択中のカード</h2>
-      <img id="preview-img" src="" alt="プレビュー画像" />
+      <img id="preview-img" alt="プレビュー画像" />
       <div id="preview-info"></div>
     </div>
     <div id="hp-panel" aria-label="HP パネル">
@@ -783,6 +783,19 @@ async function storageDownloadURL(path) {
           const height = mainRect.height / zoom;
           return { minX, minY, width, height };
     }
+    
+    
+    function setPreview(src) {
+  if (typeof src === 'string' && src.trim().length > 0) {
+    previewImg.src = src;
+    previewImg.style.display = 'block';
+  } else {
+    previewImg.removeAttribute('src');   // ← これで “undefined:1” リクエストが出ない
+    previewImg.style.display = 'none';
+  }
+}
+    
+    
 
 // 座席のメインプレイ中央（w,h 指定版）
 function centerOfMainPlay(seat, w, h){
@@ -1561,20 +1574,19 @@ if (state?.type === 'numcounter') {
         selectedCard = card;
 
         const isToken = card.classList.contains('token');
-        if (isToken) {
-          previewImg.src = "";
-          previewImg.style.display = "none";
-        } else {
-          const full = card.dataset.fullUrl || fullImageStore.get(cardId);
-          const thumbEl = card.querySelector('img');
-          if (thumbEl && thumbEl.style.display !== "none") {
-            previewImg.src = full || thumbEl.src;
-            previewImg.style.display = "block";
-          } else {
-            previewImg.src = "";
-            previewImg.style.display = "none";
-          }
-        }
+        
+        
+ if (isToken) {
+   setPreview();                       // 非表示にする
+ } else {
+   const full = card.dataset.fullUrl || fullImageStore.get(cardId);
+   const thumbEl = card.querySelector('img');
+   const src = full || (thumbEl && thumbEl.src) || '';
+   setPreview(src);
+ }
+        
+        
+        
         const ownerPlayerNum = card.dataset.ownerSeat ? `P${card.dataset.ownerSeat}` : "?";
         if (isToken) {
           const t = card.querySelector('.token-input')?.value || '';
@@ -1612,23 +1624,29 @@ if (isCounter || isToken || isNumCtr) {
         const nextFaceUp = !isFaceUp;
         card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
         const imgEl = card.querySelector('img');
-        if (imgEl) {
-          if (nextFaceUp) {
-            imgEl.style.display = 'block'; card.style.backgroundColor = '#fff';
-            if (selectedCard === card) {
-              const full = fullImageStore.get(cardId);
-              previewImg.src = full || imgEl.src; previewImg.style.display = 'block';
-            }
-          } else {
-            imgEl.style.display = 'none'; card.style.backgroundColor = '#000';
-            if (selectedCard === card) { previewImg.src = ''; previewImg.style.display = 'none'; }
-          }
-        }
+        
+        
+ if (imgEl) {
+   if (nextFaceUp) {
+     ...
+     if (selectedCard === card) {
+       const full = fullImageStore.get(cardId);
+       setPreview(full || imgEl.src);
+     }
+   } else {
+     imgEl.style.display = 'none'; card.style.backgroundColor = '#000';
+     if (selectedCard === card) setPreview();
+   }
+ }      
+        
+        
         const tokenEl = card.querySelector('.token-input');
-        if (tokenEl) {
-          if (nextFaceUp) { tokenEl.style.display = 'block'; card.style.backgroundColor = '#fff'; }
-          else { tokenEl.style.display = 'none'; card.style.backgroundColor = '#000'; if (selectedCard === card) { previewImg.src=''; previewImg.style.display='none'; } }
-        }
+        
+ if (tokenEl) {
+   if (nextFaceUp) { tokenEl.style.display = 'block'; card.style.backgroundColor = '#fff'; }
+   else { tokenEl.style.display = 'none'; card.style.backgroundColor = '#000'; if (selectedCard === card) setPreview(); }
+ }        
+        
         updateCardBatched(cardId, { faceUp: nextFaceUp });
       });
 
@@ -2022,7 +2040,7 @@ if (data.type === 'numcounter') {
         if (++count >= 450){ await batch.commit(); count=0; }
       }
       if (count>0) await batch.commit();
-      previewImg.src = ""; previewImg.style.display = "none";
+      setPreview();
     }
 
     window.faceUpAll = async function(){
@@ -2284,7 +2302,7 @@ window.spawnToken = async function(){
           if (el) { el.remove(); cardDomMap.delete(id); }
           fullImageStore.delete(id);
         });
-        if (previewImg) { previewImg.src = ''; previewImg.style.display = 'none'; }
+        if (previewImg) { setPreview(); }
         alert(`削除しました（${removedIds.length}枚）`);
       } catch (e) {
         console.error(e);
@@ -2346,13 +2364,9 @@ window.spawnToken = async function(){
       selectedCard = el;
       const full = fullImageStore.get(cardId);
       const thumbEl = el.querySelector('img');
-      if (thumbEl && thumbEl.style.display !== 'none') {
-        previewImg.src = full || thumbEl.src;
-        previewImg.style.display = 'block';
-      } else {
-        previewImg.src = '';
-        previewImg.style.display = 'none';
-      }
+            
+      setPreview((thumbEl && thumbEl.style.display !== 'none') ? (full || thumbEl.src) : '');
+      
       const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
       previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
     }
@@ -2503,8 +2517,7 @@ window.spawnToken = async function(){
         if (selectedCard) {
           selectedCard.classList.remove("selected");
           selectedCard = null;
-          previewImg.src = "";
-          previewImg.style.display = "none";
+          setPreview();
         }
       });
     }
