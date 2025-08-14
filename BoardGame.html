@@ -2646,11 +2646,14 @@ window.spawnToken = async function(){
       // 初期化のどこか（initializePlayField()内の最後など）に追加
       field.addEventListener('contextmenu', (e) => {
         // カード上での右クリックはブラウザメニューを出さない
-        if (e.target.closest('.card')) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }, { capture: true });
+        
+  // カード上ではメニュー抑制しない（カード側の handler に任せる）
+  if (!e.target.closest('.card')) {
+    e.preventDefault();
+  }        
+  
+  
+}); // capture も不要
       
       
     }
