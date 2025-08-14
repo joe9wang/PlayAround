@@ -376,11 +376,7 @@
           <div class="row" style="margin-bottom:8px;">
             <input id="new-room-id" type="text" class="field" placeholder="作成するID（例: room-xyz）" />
           </div>
-          <div class="row" style="margin-bottom:12px;">
-            <input id="new-room-title" type="text" class="field" placeholder="タイトル（任意）" />
-            <button id="create-room-btn" class="btn">作成</button>
-          </div>
-
+          
           <label class="lobby-label">プレイヤー名</label>
           <div class="row" style="margin-bottom:12px;">
             <input id="new-player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
@@ -401,6 +397,13 @@
   <button id="pick-mode-card"  type="button" class="btn secondary" aria-pressed="true">🃏 カードゲーム</button>
   <button id="pick-mode-board" type="button" class="btn secondary" aria-pressed="false">🎲 ボードゲーム</button>
 </div>
+
+
+          <!-- ↓ ここに「作成」ボタンを移動（セクション末尾） -->
+          <div class="row" id="create-btn-row" style="margin-top:16px; justify-content:flex-end;">
+            <button id="create-room-btn" class="btn">作成</button>
+          </div>
+
           
           
         </section>
@@ -694,7 +697,6 @@ getToken(window.appCheck)
     const sessionIndicator = document.getElementById('session-indicator');
 
     const newRoomIdInput = document.getElementById('new-room-id');
-    const newRoomTitleInput = document.getElementById('new-room-title');
     const newPlayerNameInput = document.getElementById('new-player-name');
     const newPlayerColorInput = document.getElementById('new-player-color');
     const createRoomBtn = document.getElementById('create-room-btn');
@@ -931,7 +933,6 @@ async function storageDownloadURL(path) {
     seatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'join'; validateLobby(); }));
 
     newRoomIdInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
-    newRoomTitleInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     newPlayerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     createSeatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'create'; validateLobby(); }));
 
@@ -1130,7 +1131,6 @@ function randomPointInMainPlay(seat){
     createRoomBtn.addEventListener('click', async () => {
       await ensureAuthReady();
       const id = (newRoomIdInput.value||'').trim();
-      const title = (newRoomTitleInput.value||'').trim();
       const creatorName  = (newPlayerNameInput.value || '').trim();
       if(!id){ alert('ルームIDを入力してください'); return; }
       if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
@@ -1142,7 +1142,6 @@ function randomPointInMainPlay(seat){
 
       try{
         await setDoc(doc(db, `rooms/${id}`), {
-          title: title || null,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           hostUid: CURRENT_UID,
