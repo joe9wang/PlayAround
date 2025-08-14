@@ -453,6 +453,13 @@
       </div>
     </div>
   </div>
+  
+  
+  
+  <!-- process 未定義エラー対策（ブラウザ用の最小ポリフィル） -->
+  <script>window.process = window.process || { env: {} };</script>
+  
+  
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
@@ -474,6 +481,7 @@
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
   
   
+  
   // ===== Firebase（★ここはプレースホルダ。デプロイ時に置換される）
   const firebaseConfig = {
     apiKey: "__NEXT_PUBLIC_FIREBASE_API_KEY__",
@@ -488,13 +496,30 @@
   // App Check（reCAPTCHA v3）
   if (typeof window !== "undefined") {
     const siteKey = "__NEXT_PUBLIC_APPCHECK_KEY__";
-    if (siteKey && !siteKey.startsWith("__")) {
+    
+  if (siteKey && !siteKey.startsWith("__")) {
+    try {
       initializeAppCheck(app, {
         provider: new ReCaptchaV3Provider(siteKey),
         isTokenAutoRefreshEnabled: true
       });
+      console.log('[AppCheck] initialized');
+    } catch (e) {
+      console.warn('[AppCheck] init failed; continuing without it', e);
     }
-  }
+  }    
+    
+ }
+    
+    // …initializeApp(firebaseConfig) の後、initializeAppCheck() ブロックのすぐ下に追加
+import { getApps } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getToken } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app-check.js";
+
+console.log('apps:', getApps().length); // 1 以上ならOK
+getToken()
+  .then(t => console.log('AppCheck token OK', !!t.token))
+  .catch(e => console.error('AppCheck error', e));
+    
     
     const auth = getAuth(app);
     const db = getFirestore(app);
