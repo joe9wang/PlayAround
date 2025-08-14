@@ -467,10 +467,10 @@
 
   import {
     getAuth, signInAnonymously, onAuthStateChanged,
-    GoogleAuthProvider,
-    signInWithPopup, linkWithPopup,
-    signInWithRedirect, linkWithRedirect, getRedirectResult,
-    signOut, updateProfile
+   GoogleAuthProvider,
+   signInWithPopup, linkWithPopup, signInWithCredential,
+   signInWithRedirect, linkWithRedirect, getRedirectResult,
+   signOut, updateProfile
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 
   import {
@@ -752,9 +752,20 @@ async function storageDownloadURL(path) {
       if (cu && !cu.displayName && name) await updateProfile(cu, { displayName: name });
       alert('ログインしました。');
     } catch (e) {
-      console.warn('[PopupSignIn] failed', e?.code, e?.message, e);
-      // 代表的なポップアップ失敗コード → 自動でリダイレクトへ切替
-      const code = e?.code || '';
+    
+    console.warn('[PopupSignIn] failed', e);
+    const code = e?.code || '';
+
+    // すでに別ユーザーにリンク済み → その既存ユーザーでサインインに切り替え
+    if (code === 'auth/credential-already-in-use') {
+      const cred = GoogleAuthProvider.credentialFromError(e);
+      if (cred) {
+        await signInWithCredential(auth, cred);  // 既存Googleアカウントでログイン
+        alert('既存のGoogleアカウントでログインしました。');
+        return;
+      }
+    }
+      
       const popupErrors = [
         'auth/popup-blocked',
         'auth/popup-closed-by-user',
