@@ -353,7 +353,7 @@
 
           <label class="lobby-label">プレイヤー名</label>
           <div class="row" style="margin-bottom:8px;">
-            <input id="player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
+            <input id="player-name" type="text" class="field" maxlength="24" placeholder="名前（例: SOLVENTER）" />
           </div>
 
           <label class="lobby-label">座席を選択</label>
@@ -364,10 +364,12 @@
             <button class="seat-btn" data-seat="4">P4 <span class="seat-note"></span></button>
           </div>
 
+
           <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
             <button id="start-btn" type="button" class="btn" disabled>開始</button>
-            <button id="clear-btn" type="button" class="btn secondary">クリア</button>
           </div>
+
+
         </section>
 
         <section class="lobby-section">
@@ -379,10 +381,10 @@
           
           <label class="lobby-label">プレイヤー名</label>
           <div class="row" style="margin-bottom:12px;">
-            <input id="new-player-name" type="text" class="field" maxlength="24" placeholder="名前（例: Alice）" />
+            <input id="new-player-name" type="text" class="field" maxlength="24" placeholder="名前（例: SOLVENTER）" />
           </div>
 
-          <label class="lobby-label">作成後に参加する座席</label>
+          <label class="lobby-label">座席を選択</label>
           <div class="seat-grid" id="create-seat-grid">
             <button class="seat-btn" data-create-seat="1">P1</button>
             <button class="seat-btn" data-create-seat="2">P2</button>
@@ -693,7 +695,6 @@ getToken(window.appCheck)
     const playerNameInput = document.getElementById('player-name');
     const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
     const startBtn = document.getElementById('start-btn');
-    const clearBtn = document.getElementById('clear-btn');
     const sessionIndicator = document.getElementById('session-indicator');
 
     const newRoomIdInput = document.getElementById('new-room-id');
@@ -928,7 +929,27 @@ async function storageDownloadURL(path) {
   
 
     // UI switching
-    joinRoomInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
+    joinRoomInput.addEventListener('input', () => {
+      ACTIVE_MODE = 'join';
+      validateLobby();
+      const v = (joinRoomInput.value || '').trim();
+      if (!v) {
+        // 入力が空になったら、クリアボタン相当の処理を自動実行
+        CURRENT_PLAYER = null;
+        detachSeatsListener();                 // 座席購読を停止
+        if (unsubscribeRoomDoc) {              // ルームdoc購読も停止
+          unsubscribeRoomDoc();
+          unsubscribeRoomDoc = null;
+        }
+        CURRENT_ROOM_META = null;
+        renderSeatAvailability();
+        renderFieldLabels();
+        updateEndRoomButtonVisibility();
+        renderHPPanel();
+      }
+    });    
+    
+    
     playerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
     seatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'join'; validateLobby(); }));
 
@@ -1467,15 +1488,6 @@ function applyFieldModeLayout(){
       });
     });
 
-    clearBtn.addEventListener('click', () => {
-      joinRoomInput.value = '';
-      CURRENT_PLAYER = null;
-      renderSeatAvailability();
-      detachSeatsListener();
-      joinRoomInput.focus();
-      updateEndRoomButtonVisibility();
-      renderHPPanel();
-    });
 
     startBtn.addEventListener('click', async (ev) => {
       ev.preventDefault();
