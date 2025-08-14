@@ -335,6 +335,22 @@
 .switch input:checked + .slider:before{ transform: translateX(22px); }
     
     
+/* === パスワードエラーの視覚フィードバック === */
+.field.is-error{
+  border:2px solid #e53935 !important;
+  box-shadow:0 0 0 3px rgba(229,57,53,.15) inset;
+}
+.shake{ animation: shake-h 0.35s ease; }
+@keyframes shake-h{
+  0%{transform:translateX(0);}
+  20%{transform:translateX(-6px);}
+  40%{transform:translateX(6px);}
+  60%{transform:translateX(-5px);}
+  80%{transform:translateX(5px);}
+  100%{transform:translateX(0);}
+}
+    
+    
     
     
   </style>
@@ -1031,6 +1047,18 @@ async function storageDownloadURL(path) {
     });    
     
     
+    // パスワードの再入力でエラー装飾を解除
+joinRoomPassInput?.addEventListener('input', () => {
+  if (joinRoomPassInput.classList.contains('is-error')) {
+    joinRoomPassInput.classList.remove('is-error');
+    joinRoomPassInput.removeAttribute('aria-invalid');
+  }
+});
+    
+    
+    
+    
+    
     playerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'join'; validateLobby(); });
     seatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'join'; validateLobby(); }));
 
@@ -1638,13 +1666,27 @@ const canSkipPassword = isHostUid && isHostSeat;
 if (meta?.joinPassHash && !canSkipPassword) {
   const passRaw = (joinRoomPassInput?.value || '').trim();
   const given   = passRaw ? await sha256Hex(passRaw) : '';
+
   if (given !== meta.joinPassHash) {
-    alert('パスワードが違います。');
-    // 開始ボタンの表示を元に戻して終了
+    // 視覚フィードバック（赤枠＆振動）
+    if (joinRoomPassInput) {
+      joinRoomPassInput.classList.add('is-error','shake');
+      joinRoomPassInput.setAttribute('aria-invalid','true');
+      joinRoomPassInput.focus();
+      // アニメ終了で振動クラスだけ外す（赤枠は入力し直すまで残す）
+      joinRoomPassInput.addEventListener('animationend', () => {
+        joinRoomPassInput.classList.remove('shake');
+      }, { once:true });
+      // 選択状態にしてすぐ打ち直せるように
+      joinRoomPassInput.select?.();
+    }
+    // （必要ならアラートは外してOK）
+    // alert('パスワードが違います。');
     startBtn.disabled = false;
     startBtn.textContent = oldText;
     return;
   }
+  
 }
         
         
