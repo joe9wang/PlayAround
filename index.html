@@ -396,98 +396,104 @@
       </div>
       
       <div class="lobby-grid">
-  <div class="lobby-subtitle" data-i18n="join.section">既存ルームに参加（非ホスト）</div>
-  <label class="lobby-label" data-i18n="join.roomId">参加するルームID</label>
-  <div class="row" style="margin-bottom:8px;">
-    <input id="join-room-id" type="text" class="field"
-           placeholder="例: room-abc / 1234"
-           data-i18n-placeholder="join.roomId.ph" />
-  </div>
-  
-  
-  
-          
-          <!-- 入室パスワード -->
-<label class="lobby-label" data-i18n="join.password">入室パスワード</label>
-  <div class="row" style="margin-bottom:8px;">
-    <input id="join-room-pass" type="password" class="field"
-           placeholder="ホストが設定した場合は必須"
-           data-i18n-placeholder="join.password.ph" />
-  </div>
-            
-           <label class="lobby-label" data-i18n="join.name">プレイヤー名</label>
-  <div class="row" style="margin-bottom:8px;">
-    <input id="player-name" type="text" class="field" maxlength="24"
-           placeholder="名前（例: SOLVENTER）"
-           data-i18n-placeholder="join.name.ph" />
-  </div>
+        <!-- Join (left column) -->
+        <section class="lobby-section" aria-labelledby="join-title">
+          <div id="join-title" class="lobby-subtitle" data-i18n="join.section">既存ルームに参加（非ホスト）</div>
 
-          <label class="lobby-label" data-i18n="join.chooseSeat">座席を選択</label>
-  <!-- 開始ボタン -->
-  <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
-    <button id="start-btn" type="button" class="btn" disabled data-i18n="join.start">開始</button>
-  </div>
-
-
-          <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
-            <button id="start-btn" type="button" class="btn" disabled>開始</button>
+          <label class="lobby-label" data-i18n="join.roomId">参加するルームID</label>
+          <div class="row" style="margin-bottom:8px;">
+            <input id="join-room-id" type="text" class="field"
+                   placeholder="例: room-abc / 1234"
+                   data-i18n-placeholder="join.roomId.ph" />
           </div>
 
+          <label class="lobby-label" data-i18n="join.password">入室パスワード</label>
+          <div class="row" style="margin-bottom:8px;">
+            <input id="join-room-pass" type="password" class="field"
+                   placeholder="ホストが設定した場合は必須"
+                   data-i18n-placeholder="join.password.ph" />
+          </div>
 
+          <label class="lobby-label" data-i18n="join.name">プレイヤー名</label>
+          <div class="row" style="margin-bottom:8px;">
+            <input id="player-name" type="text" class="field" maxlength="24"
+                   placeholder="名前（例: SOLVENTER）"
+                   data-i18n-placeholder="join.name.ph" />
+          </div>
+
+          <label class="lobby-label" data-i18n="join.chooseSeat">座席を選択</label>
+          <!-- join 用の座席グリッド（IDは付けない：JSが :not(#create-seat-grid) で拾う） -->
+          <div class="seat-grid" role="group" aria-label="Join seats">
+            <button type="button" class="seat-btn" data-seat="1">P1 <span class="seat-note"></span></button>
+            <button type="button" class="seat-btn" data-seat="2">P2 <span class="seat-note"></span></button>
+            <button type="button" class="seat-btn" data-seat="3">P3 <span class="seat-note"></span></button>
+            <button type="button" class="seat-btn" data-seat="4">P4 <span class="seat-note"></span></button>
+          </div>
+
+          <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
+            <button id="start-btn" type="button" class="btn" disabled data-i18n="join.start">開始</button>
+          </div>
         </section>
 
-        <section class="lobby-section">
- <div class="lobby-subtitle" data-i18n="create.section">新しいルームを作成して参加（ホスト）</div>
+        <!-- Create (right column) -->
+        <section class="lobby-section" aria-labelledby="create-title">
+          <div id="create-title" class="lobby-subtitle" data-i18n="create.section">新しいルームを作成して参加（ホスト）</div>
 
-  <label class="lobby-label" data-i18n="create.roomId">新しいルームを作成</label>
-  <div class="row" style="margin-bottom:8px;">
-    <input id="new-room-id" type="text" class="field"
-           placeholder="例: room-abc / 1234"
-           data-i18n-placeholder="create.roomId.ph" />
-  </div>
-            
-          <!-- 入室パスワード（任意設定） -->
-<label class="lobby-label" data-i18n="create.password">入室パスワード（任意）</label>
-  <div class="row" style="margin-bottom:12px;">
-    <input id="new-room-pass" type="password" class="field"
-           placeholder="設定すると参加時に必須"
-           data-i18n-placeholder="create.password.ph" />
-  </div>
-            
-<label class="lobby-label" data-i18n="create.name">プレイヤー名</label>
-  <div class="row" style="margin-bottom:12px;">
-    <input id="new-player-name" type="text" class="field" maxlength="24"
-           placeholder="名前（例: SOLVENTER）"
-           data-i18n-placeholder="create.name.ph" />
-  </div>
+          <label class="lobby-label" data-i18n="create.roomId">新しいルームを作成</label>
+          <div class="row" style="margin-bottom:8px;">
+            <input id="new-room-id" type="text" class="field"
+                   placeholder="例: room-abc / 1234"
+                   data-i18n-placeholder="create.roomId.ph" />
+          </div>
 
-<label class="lobby-label" data-i18n="create.chooseSeat">座席を選択</label>
+          <label class="lobby-label" data-i18n="create.password">入室パスワード（任意）</label>
+          <div class="row" style="margin-bottom:12px;">
+            <input id="new-room-pass" type="password" class="field"
+                   placeholder="設定すると参加時に必須"
+                   data-i18n-placeholder="create.password.ph" />
+          </div>
 
-  <label class="lobby-label" style="margin-top:10px;" data-i18n="create.chooseMode">フィールド構成を選択</label>
-  <div class="row" id="create-mode-row" style="gap:8px;">
-    <button id="pick-mode-card"  type="button" class="btn secondary" aria-pressed="true"  data-i18n="create.mode.card">🃏 カードゲーム</button>
-    <button id="pick-mode-board" type="button" class="btn secondary" aria-pressed="false" data-i18n="create.mode.board">🎲 ボードゲーム</button>
-  </div>
-            
-          
-          <!-- ==== 追加: フィールド構成（モード）選択 ==== -->
-<label class="lobby-label" style="margin-top:10px;">フィールド構成を選択</label>
-<div class="row" id="create-mode-row" style="gap:8px;">
-  <button id="pick-mode-card"  type="button" class="btn secondary" aria-pressed="true">🃏 カードゲーム</button>
-  <button id="pick-mode-board" type="button" class="btn secondary" aria-pressed="false">🎲 ボードゲーム</button>
-</div>
+          <label class="lobby-label" data-i18n="create.name">プレイヤー名</label>
+          <div class="row" style="margin-bottom:12px;">
+            <input id="new-player-name" type="text" class="field" maxlength="24"
+                   placeholder="名前（例: SOLVENTER）"
+                   data-i18n-placeholder="create.name.ph" />
+          </div>
 
+          <label class="lobby-label" data-i18n="create.chooseSeat">座席を選択</label>
+          <!-- create 用の座席グリッド（JSが #create-seat-grid を参照） -->
+          <div id="create-seat-grid" class="seat-grid" role="group" aria-label="Create seats">
+            <button type="button" class="seat-btn" data-create-seat="1">P1</button>
+            <button type="button" class="seat-btn" data-create-seat="2">P2</button>
+            <button type="button" class="seat-btn" data-create-seat="3">P3</button>
+            <button type="button" class="seat-btn" data-create-seat="4">P4</button>
+          </div>
 
-          <!-- ↓ ここに「作成」ボタンを移動（セクション末尾） -->
+          <label class="lobby-label" style="margin-top:10px;" data-i18n="create.chooseMode">フィールド構成を選択</label>
+          <div class="row" id="create-mode-row" style="gap:8px;">
+            <button id="pick-mode-card"  type="button" class="btn secondary" aria-pressed="true"  data-i18n="create.mode.card">🃏 カードゲーム</button>
+            <button id="pick-mode-board" type="button" class="btn secondary" aria-pressed="false" data-i18n="create.mode.board">🎲 ボードゲーム</button>
+          </div>
+
           <div class="row" id="create-btn-row" style="margin-top:16px; justify-content:flex-end;">
-    <button id="create-room-btn" class="btn" data-i18n="create.createBtn">作成</button>
-  </div>
-
-
-          
-          
+            <button id="create-room-btn" class="btn" data-i18n="create.createBtn">作成</button>
+          </div>
         </section>
-      </div>
+      </div>      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
     </div>
   </div>
 
