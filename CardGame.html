@@ -244,6 +244,65 @@
       width:100%; height:100%; border:0; padding:10px; font-size:30px; line-height:1.3;
       outline:none; resize:none; background:transparent; color:#111; box-sizing:border-box;
     }
+    
+    
+    
+/* ==== 追加: ボードゲームレイアウト（四隅ハンド + 中央デッキ/捨て札） ==== */
+#board-layout{
+  position:absolute;
+  inset:0;
+  display:none; /* 初期は非表示（mode=board のとき表示） */
+}
+
+/* 四隅の手札（P1:左上, P2:右上, P3:左下, P4:右下） */
+.board-hand{
+  position:absolute;
+  width:18%;
+  height:24%;
+  background:#228be6; /* 既存 hand と同色 */
+  border:4px dashed #666;
+  box-sizing:border-box;
+}
+#board-hand-1{ top:2%;  left:2%;  }
+#board-hand-2{ top:2%;  right:2%; }
+#board-hand-3{ bottom:2%; left:2%; }
+#board-hand-4{ bottom:2%; right:2%; }
+
+/* 中央のデッキ＆捨て札（横並び） */
+#board-center{
+  position:absolute;
+  width:30%;
+  min-width:260px;
+  height:26%;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+}
+#board-center .center-deck{
+  background:#f90;   /* 既存 deck と同色 */
+  position:relative;
+  border:4px dashed #666;
+}
+#board-center .center-discard{
+  background:#cc6666; /* 既存 discard と同色 */
+  position:relative;
+  border:4px dashed #666;
+}
+
+/* モード切替: mode-card ⇄ mode-board */
+#field.mode-card  .player-area{ display:block; }
+#field.mode-card  #board-layout{ display:none; }
+
+#field.mode-board .player-area{ display:none; }   /* カードゲーム用4区画は隠す */
+#field.mode-board #board-layout{ display:block; } /* ボードゲーム用だけ出す */
+    
+    
+    
+    
+    
   </style>
 </head>
 <body>
@@ -321,7 +380,16 @@
             <button class="seat-btn" data-create-seat="3">P3</button>
             <button class="seat-btn" data-create-seat="4">P4</button>
           </div>
-
+          
+          
+          <!-- ==== 追加: フィールド構成（モード）選択 ==== -->
+<label class="lobby-label" style="margin-top:10px;">フィールド構成を選択</label>
+<div class="row" id="create-mode-row" style="gap:8px;">
+  <button id="pick-mode-card"  type="button" class="btn secondary" aria-pressed="true">🃏 カードゲーム</button>
+  <button id="pick-mode-board" type="button" class="btn secondary" aria-pressed="false">🎲 ボードゲーム</button>
+</div>
+          
+          
         </section>
       </div>
     </div>
@@ -426,6 +494,25 @@
         <!-- 右下：手札行 -->
         <div class="hand-area"><div class="zone-label">手札エリア</div></div>
       </div>
+      
+      
+<!-- ==== 追加: ボードゲーム用レイアウト ==== -->
+<div id="board-layout">
+  <div id="board-hand-1" class="board-hand"><div class="zone-label">手札エリア P1</div></div>
+  <div id="board-hand-2" class="board-hand"><div class="zone-label">手札エリア P2</div></div>
+  <div id="board-hand-3" class="board-hand"><div class="zone-label">手札エリア P3</div></div>
+  <div id="board-hand-4" class="board-hand"><div class="zone-label">手札エリア P4</div></div>
+
+  <div id="board-center">
+    <div class="center-deck"><div class="zone-label">デッキエリア（共有）</div></div>
+    <div class="center-discard"><div class="zone-label">捨て札エリア（共有）</div></div>
+  </div>
+</div>
+      
+      
+      
+      
+      
       
     </div>
   </div>
@@ -600,6 +687,30 @@ getToken(window.appCheck)
     const createRoomBtn = document.getElementById('create-room-btn');
 
     const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
+    
+    
+    // ==== 追加: フィールドモード（'card' | 'board'） ==== 
+let CREATE_FIELD_MODE = 'card';
+
+const pickModeCardBtn  = document.getElementById('pick-mode-card');
+const pickModeBoardBtn = document.getElementById('pick-mode-board');
+
+function updateModePickButtons(){
+  const set = (btn, on) => {
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.classList.toggle('active', on);
+    btn.classList.toggle('secondary', !on);
+  };
+  set(pickModeCardBtn,  CREATE_FIELD_MODE === 'card');
+  set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
+}
+pickModeCardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'card';  updateModePickButtons(); });
+pickModeBoardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'board'; updateModePickButtons(); });
+updateModePickButtons();
+    
+    
+    
+    
 
     // ===== State
     let CREATE_SELECTED_SEAT = 1;
@@ -816,39 +927,60 @@ async function storageDownloadURL(path) {
       const cy = y + CARD_H / 2;
       return cx >= rect.minX && cx <= rect.minX + rect.width && cy >= rect.minY && cy <= rect.minY + rect.height;
     }
-    function getHandBoundsForSeat(seat){
-      const hand = document.querySelector(`.player-${seat} .hand-area`);
-      if(!hand) return null;
-      const handRect  = hand.getBoundingClientRect();
-      const fieldRect = field.getBoundingClientRect();
-      const minX = (handRect.left - fieldRect.left) / zoom;
-      const minY = (handRect.top  - fieldRect.top ) / zoom;
-      const width  = handRect.width  / zoom;
-      const height = handRect.height / zoom;
-      return { minX, minY, width, height };
-    }
-    function getDeckBoundsForSeat(seat){
-      const deck = document.querySelector(`.player-${seat} .deck-area`);
-      if(!deck) return null;
-      const deckRect  = deck.getBoundingClientRect();
-      const fieldRect = field.getBoundingClientRect();
-      const minX = (deckRect.left - fieldRect.left) / zoom;
-      const minY = (deckRect.top  - fieldRect.top)  / zoom;
-      const width  = deckRect.width  / zoom;
-      const height = deckRect.height / zoom;
-      return { minX, minY, width, height };
-    }
-    function getMainPlayBoundsForSeat(seat){
-      const main = document.querySelector(`.player-${seat} .main-play-area`);
-        if(!main) return null;
-          const mainRect  = main.getBoundingClientRect();
-          const fieldRect = field.getBoundingClientRect();
-          const minX = (mainRect.left - fieldRect.left) / zoom;
-          const minY = (mainRect.top  - fieldRect.top ) / zoom;
-          const width  = mainRect.width  / zoom;
-          const height = mainRect.height / zoom;
-          return { minX, minY, width, height };
-    }
+    
+    
+    
+    
+    
+    
+function isBoardMode(){
+  return (CURRENT_ROOM_META?.fieldMode === 'board');
+}
+
+function rectFromEl(el){
+  if(!el) return null;
+  const fieldRect = field.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  const minX = (r.left - fieldRect.left) / zoom;
+  const minY = (r.top  - fieldRect.top ) / zoom;
+  const width  = r.width  / zoom;
+  const height = r.height / zoom;
+  return { minX, minY, width, height };
+}
+
+function getHandBoundsForSeat(seat){
+  if (isBoardMode()) {
+    const el = document.getElementById(`board-hand-${seat}`);
+    return rectFromEl(el);
+  } else {
+    const hand = document.querySelector(`.player-${seat} .hand-area`);
+    return rectFromEl(hand);
+  }
+}
+
+function getDeckBoundsForSeat(seat){
+  if (isBoardMode()) {
+    // 共有デッキ（seat は無視）
+    const el = document.querySelector('#board-center .center-deck');
+    return rectFromEl(el);
+  } else {
+    const deck = document.querySelector(`.player-${seat} .deck-area`);
+    return rectFromEl(deck);
+  }
+}
+
+function getMainPlayBoundsForSeat(seat){
+  if (isBoardMode()) {
+    // ボードモードでは中央ブロック全体を「プレイ相当」とみなす
+    const el = document.getElementById('board-center');
+    return rectFromEl(el);
+  } else {
+    const main = document.querySelector(`.player-${seat} .main-play-area`);
+    return rectFromEl(main);
+  }
+}
+
+
     
     
     function setPreview(src) {
@@ -1003,6 +1135,7 @@ function randomPointInMainPlay(seat){
           hostUid: CURRENT_UID,
           hostDisplayName: creatorName,
           roomClosed: false,
+          fieldMode: CREATE_FIELD_MODE,      // ← 追加
         }, { merge: true });
 
         await resetRoomState(id);
@@ -1217,6 +1350,20 @@ function randomPointInMainPlay(seat){
         nameEl.textContent = displayName ? `${displayName}${isHostSeat ? '（ホスト）' : ''}` : '';
       }
     }
+    
+    
+    // ==== 追加: フィールドモードの適用（DOM切替） ====
+function applyFieldModeLayout(){
+  const mode = (CURRENT_ROOM_META?.fieldMode === 'board') ? 'board' : 'card';
+  const fieldRoot = document.getElementById('field');
+  if (!fieldRoot) return;
+  fieldRoot.classList.toggle('mode-card',  mode === 'card');
+  fieldRoot.classList.toggle('mode-board', mode === 'board');
+}
+    
+    
+    
+    
     function detachSeatsListener(){ if(unsubscribeSeats){ unsubscribeSeats(); unsubscribeSeats = null; } }
 
     function loadSeatStatus(){
@@ -1254,6 +1401,9 @@ function randomPointInMainPlay(seat){
          }
          // 存在する場合の通常処理
          CURRENT_ROOM_META = snap.data();
+         
+         applyFieldModeLayout();
+         
          IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
          if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
          renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); renderHPPanel();
@@ -2642,6 +2792,9 @@ window.spawnToken = async function(){
         bindAreaColorHandlers();
         handlersBound = true;
       }
+      
+      applyFieldModeLayout();
+      
     }
     
     
