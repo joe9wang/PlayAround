@@ -482,6 +482,8 @@
   
   
   
+  
+  
   // ===== Firebase（★ここはプレースホルダ。デプロイ時に置換される）
   const firebaseConfig = {
     apiKey: "__NEXT_PUBLIC_FIREBASE_API_KEY__",
@@ -492,6 +494,11 @@
     appId: "__NEXT_PUBLIC_FIREBASE_APP_ID__"
   };
   const app = initializeApp(firebaseConfig);
+  
+  
+  
+  
+  
 
   // App Check（reCAPTCHA v3）
   if (typeof window !== "undefined") {
@@ -613,6 +620,19 @@ getToken(window.appCheck)
         try{ await batch.commit(); }catch(e){ console.warn('batch commit failed', e); }
       }
     }
+    
+    
+    // Storage の安全なダウンロードURLを取得（SDK 任せ）
+async function storageDownloadURL(path) {
+  try {
+    return await getDownloadURL(ref(storage, path));
+  } catch (e) {
+    console.warn('[Storage] getDownloadURL failed:', path, e.code || e.message);
+    return null;
+  }
+}
+    
+    
 
     function updateCardBatched(cardId, patch){
       if(!CURRENT_ROOM) return;
@@ -1652,6 +1672,35 @@ if (isCounter || isToken || isNumCtr) {
       }
       
       
+      
+      // --- ここから追加：旧形式URL（/o?name= を含む）を安全なURLへ自動移行 ---
+      if (data?.imageUrl && /\/o\?name=/.test(data.imageUrl)) {
+        (async () => {
+          try {
+            const id = card.dataset.cardId;
+            // 既存の保存規約：rooms/{ROOM}/cards/{ID}/(thumb|full).jpg
+            const base = `rooms/${CURRENT_ROOM}/cards/${id}`;
+            const thumbRef = ref(storage, `${base}/thumb.jpg`);
+            const fullRef  = ref(storage, `${base}/full.jpg`);
+            const [thumbUrl, fullUrl] = await Promise.all([
+              getDownloadURL(thumbRef),
+              getDownloadURL(fullRef),
+            ]);
+            if (img) img.src = thumbUrl;
+            card.dataset.fullUrl = fullUrl;
+            await updateDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), {
+              imageUrl: thumbUrl,
+              fullUrl,
+              updatedAt: serverTimestamp()
+            });
+            console.log('[migrate] fixed legacy imageUrl for', id);
+          } catch (e) {
+            console.warn('[migrate] failed to fix legacy url', e);
+          }
+        })();
+      }
+      // --- 追加ここまで ---
+
       
 if (data.type === 'numcounter') {
   card.classList.add('numcounter');
