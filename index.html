@@ -467,7 +467,10 @@
 
   import {
     getAuth, signInAnonymously, onAuthStateChanged,
-    GoogleAuthProvider, signInWithPopup, linkWithPopup, signOut, updateProfile
+    GoogleAuthProvider,
+    signInWithPopup, linkWithPopup,
+    signInWithRedirect, linkWithRedirect, getRedirectResult,
+    signOut, updateProfile
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 
   import {
@@ -534,6 +537,28 @@ getToken(window.appCheck)
     
     const auth = getAuth(app);
     const db = getFirestore(app);
+    
+    
+  // ▼ Googleリダイレクト方式の結果を回収（ログイン/リンクの完了）
+  (async () => {
+    try {
+      const res = await getRedirectResult(auth);
+      if (res && res.user) {
+        // displayName 未設定ならフォームの名前を反映（任意）
+        const cu = res.user;
+        const name = (newPlayerNameInput?.value || playerNameInput?.value || '').trim();
+        if (cu && !cu.displayName && name) await updateProfile(cu, { displayName: name });
+        alert('ログインしました。');
+      }
+    } catch (e) {
+      console.warn('[RedirectSignIn] failed', e);
+      // ここでは黙ってUIだけ整える（必要なら alert を出してもOK）
+    }
+  })();
+    
+    
+    
+    
     // env から注入された storageBucket をそのまま使う
     const storageBucket = firebaseConfig.storageBucket;
     const storage = storageBucket ? getStorage(app, `gs://${storageBucket}`) : getStorage(app);
@@ -691,30 +716,49 @@ async function storageDownloadURL(path) {
   // Googleプロバイダ
   const google = new GoogleAuthProvider();
 
-  // 匿名ユーザーなら linkWithPopup で“昇格”。既にログイン済みなら signInWithPopup で再ログイン/切替
+  // 匿名→Googleへ“昇格” or 通常ログイン
+  // まず Popup を試し、代表的な失敗は Redirect にフォールバック
   loginBtn?.addEventListener('click', async () => {
+    const tryRedirect = async () => {
+      const u = auth.currentUser;
+      if (u && u.isAnonymous) {
+        await linkWithRedirect(u, google);
+      } else {
+        await signInWithRedirect(auth, google);
+      }
+    };
     try {
       loginBtn.disabled = true;
       const u = auth.currentUser;
       if (u && u.isAnonymous) {
-        await linkWithPopup(u, google);  // ★匿名→Googleへ連携（UID維持）
+        await linkWithPopup(u, google);
       } else {
         await signInWithPopup(auth, google);
       }
-      // displayName 未設定なら「プレイヤー名」を反映（任意）
+      // displayName 未設定ならフォームの名前を反映（任意）
       const cu = auth.currentUser;
       const name = (newPlayerNameInput?.value || playerNameInput?.value || '').trim();
-      if (cu && !cu.displayName && name) {
-        await updateProfile(cu, { displayName: name });
-      }
+      if (cu && !cu.displayName && name) await updateProfile(cu, { displayName: name });
       alert('ログインしました。');
     } catch (e) {
-      console.warn(e);
-      alert('ログインに失敗しました。ブラウザのポップアップ許可を確認してください。');
+      console.warn('[PopupSignIn] failed', e);
+      // 代表的なポップアップ失敗コード → 自動でリダイレクトへ切替
+      const code = e?.code || '';
+      const popupErrors = [
+        'auth/popup-blocked',
+        'auth/popup-closed-by-user',
+        'auth/cancelled-popup-request',
+        'auth/operation-not-allowed',   // まれにポリシーで弾かれる
+      ];
+      if (popupErrors.includes(code)) {
+        try { await tryRedirect(); return; } catch (e2) { console.warn('[Redirect fallback] failed', e2); }
+      }
+      alert('ログインに失敗しました。別ブラウザ/ポップアップ許可をお試しください。');
     } finally {
       loginBtn.disabled = false;
     }
   });
+
 
   // ログアウト → すぐ匿名に戻してプレイ継続可
   logoutBtn?.addEventListener('click', async () => {
