@@ -43,6 +43,7 @@ copyFileSync("./privacy.html", `${OUT_DIR}/privacy.html`);
 copyFileSync("./contact.html", `${OUT_DIR}/contact.html`);
 // contact.html を dist にコピー
 copyFileSync("./terms.html", `${OUT_DIR}/terms.html`);
-
+// game.html を dist にコピー
+copyFileSync("./game.html", `${OUT_DIR}/game.html`);
 
 console.log("Injected env vars into dist/index.html");
