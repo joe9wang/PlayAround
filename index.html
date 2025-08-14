@@ -350,31 +350,49 @@
   100%{transform:translateX(0);}
 }
     
-    
+.lang-switch{
+  position:absolute;
+  right:120px;           /* セッション表示の左側に配置 */
+  top:50%;
+  transform:translateY(-50%);
+  font-size:12px;
+  padding:4px 6px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  background:#fff;
+}
     
     
   </style>
 </head>
 <body>
   <h1>
-    画像で遊べるボドゲ・カードゲーム（最大4人）
+    <span data-i18n="app.title">画像で遊べるボドゲ・カードゲーム（最大4人）</span>
     <span class="brand-badge" aria-label="SOLVENTER">SOLVENTER</span>
+    
+    <!-- 言語切替 -->
+    <select id="lang-switch" class="lang-switch" aria-label="Language">
+      <option value="ja">日本語</option>
+      <option value="en">English</option>
+    </select>
+    
+    
     <span id="session-indicator">ROOM: - / PLAYER: -</span>
   </h1>
 
   <div id="lobby" aria-modal="true" role="dialog">
     <div class="lobby-card">
-      <div class="lobby-title">プレイアラウンドへようこそ</div>
+      <div class="lobby-title" data-i18n="lobby.welcome">プレイアラウンドへようこそ</div>
       
       <div class="lobby-links">
-        <a href="/privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> |
-        <a href="/terms.html"   target="_blank" rel="noopener">利用規約</a> |
-        <a href="/contact.html" target="_blank" rel="noopener">お問い合わせ</a>
+        <a href="/privacy.html" target="_blank" rel="noopener" data-i18n="links.privacy">プライバシーポリシー</a> |
+        <a href="/terms.html"   target="_blank" rel="noopener" data-i18n="links.terms">利用規約</a> |
+        <a href="/contact.html" target="_blank" rel="noopener" data-i18n="links.contact">お問い合わせ</a>
       </div>
       
       
       
-      <!-- ▼追加：ロビー上部のログインUI（リンクの直下） -->
+      <!-- ロビー上部のログインUI（リンクの直下） -->
       <div class="lobby-auth" style="text-align:center; margin:8px 0 12px;">
         <button id="login-google"  class="btn secondary" style="padding:8px 12px;">Googleでログイン</button>
         <button id="logout-google" class="btn secondary" style="padding:8px 12px; display:none;">ログアウト</button>
@@ -382,32 +400,34 @@
       </div>
       
       <div class="lobby-grid">
-        <section class="lobby-section">
-          <div class="lobby-subtitle">既存ルームに参加（非ホスト）</div>
-          <label class="lobby-label">参加するルームID</label>
-          <div class="row" style="margin-bottom:8px;">
-            <input id="join-room-id" type="text" class="field" placeholder="例: room-abc / 1234" />
-          </div>
+  <div class="lobby-subtitle" data-i18n="join.section">既存ルームに参加（非ホスト）</div>
+  <label class="lobby-label" data-i18n="join.roomId">参加するルームID</label>
+  <div class="row" style="margin-bottom:8px;">
+    <input id="join-room-id" type="text" class="field"
+           placeholder="例: room-abc / 1234"
+           data-i18n-placeholder="join.roomId.ph" />
+  </div>
           
           <!-- 入室パスワード -->
-          <label class="lobby-label">入室パスワード</label>
-          <div class="row" style="margin-bottom:8px;">
-            <input id="join-room-pass" type="password" class="field"
-              placeholder="ホストが設定した場合は必須" />
-          </div>
-          
-          <label class="lobby-label">プレイヤー名</label>
-          <div class="row" style="margin-bottom:8px;">
-            <input id="player-name" type="text" class="field" maxlength="24" placeholder="名前（例: SOLVENTER）" />
-          </div>
+<label class="lobby-label" data-i18n="join.password">入室パスワード</label>
+  <div class="row" style="margin-bottom:8px;">
+    <input id="join-room-pass" type="password" class="field"
+           placeholder="ホストが設定した場合は必須"
+           data-i18n-placeholder="join.password.ph" />
+  </div>
+            
+           <label class="lobby-label" data-i18n="join.name">プレイヤー名</label>
+  <div class="row" style="margin-bottom:8px;">
+    <input id="player-name" type="text" class="field" maxlength="24"
+           placeholder="名前（例: SOLVENTER）"
+           data-i18n-placeholder="join.name.ph" />
+  </div>
 
-          <label class="lobby-label">座席を選択</label>
-          <div class="seat-grid">
-            <button class="seat-btn" data-seat="1">P1 <span class="seat-note"></span></button>
-            <button class="seat-btn" data-seat="2">P2 <span class="seat-note"></span></button>
-            <button class="seat-btn" data-seat="3">P3 <span class="seat-note"></span></button>
-            <button class="seat-btn" data-seat="4">P4 <span class="seat-note"></span></button>
-          </div>
+          <label class="lobby-label" data-i18n="join.chooseSeat">座席を選択</label>
+  <!-- 開始ボタン -->
+  <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
+    <button id="start-btn" type="button" class="btn" disabled data-i18n="join.start">開始</button>
+  </div>
 
 
           <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
@@ -418,32 +438,38 @@
         </section>
 
         <section class="lobby-section">
-          <div class="lobby-subtitle">新しいルームを作成して参加（ホスト）</div>
-          <label class="lobby-label">新しいルームを作成</label>
-          <div class="row" style="margin-bottom:8px;">
-            <input id="new-room-id" type="text" class="field" placeholder="例: room-abc / 1234" />
-          </div>
-          
-          <!-- 入室パスワード（任意設定） -->
-          <label class="lobby-label">入室パスワード（任意）</label>
-          <div class="row" style="margin-bottom:12px;">
-            <input id="new-room-pass" type="password" class="field"
-              placeholder="設定すると参加時に必須" />
-          </div>
-          
-          <label class="lobby-label">プレイヤー名</label>
-          <div class="row" style="margin-bottom:12px;">
-            <input id="new-player-name" type="text" class="field" maxlength="24" placeholder="名前（例: SOLVENTER）" />
-          </div>
+ <div class="lobby-subtitle" data-i18n="create.section">新しいルームを作成して参加（ホスト）</div>
 
-          <label class="lobby-label">座席を選択</label>
-          <div class="seat-grid" id="create-seat-grid">
-            <button class="seat-btn" data-create-seat="1">P1</button>
-            <button class="seat-btn" data-create-seat="2">P2</button>
-            <button class="seat-btn" data-create-seat="3">P3</button>
-            <button class="seat-btn" data-create-seat="4">P4</button>
-          </div>
-          
+  <label class="lobby-label" data-i18n="create.roomId">新しいルームを作成</label>
+  <div class="row" style="margin-bottom:8px;">
+    <input id="new-room-id" type="text" class="field"
+           placeholder="例: room-abc / 1234"
+           data-i18n-placeholder="create.roomId.ph" />
+  </div>
+            
+          <!-- 入室パスワード（任意設定） -->
+<label class="lobby-label" data-i18n="create.password">入室パスワード（任意）</label>
+  <div class="row" style="margin-bottom:12px;">
+    <input id="new-room-pass" type="password" class="field"
+           placeholder="設定すると参加時に必須"
+           data-i18n-placeholder="create.password.ph" />
+  </div>
+            
+<label class="lobby-label" data-i18n="create.name">プレイヤー名</label>
+  <div class="row" style="margin-bottom:12px;">
+    <input id="new-player-name" type="text" class="field" maxlength="24"
+           placeholder="名前（例: SOLVENTER）"
+           data-i18n-placeholder="create.name.ph" />
+  </div>
+
+<label class="lobby-label" data-i18n="create.chooseSeat">座席を選択</label>
+
+  <label class="lobby-label" style="margin-top:10px;" data-i18n="create.chooseMode">フィールド構成を選択</label>
+  <div class="row" id="create-mode-row" style="gap:8px;">
+    <button id="pick-mode-card"  type="button" class="btn secondary" aria-pressed="true"  data-i18n="create.mode.card">🃏 カードゲーム</button>
+    <button id="pick-mode-board" type="button" class="btn secondary" aria-pressed="false" data-i18n="create.mode.board">🎲 ボードゲーム</button>
+  </div>
+            
           
           <!-- ==== 追加: フィールド構成（モード）選択 ==== -->
 <label class="lobby-label" style="margin-top:10px;">フィールド構成を選択</label>
@@ -455,8 +481,9 @@
 
           <!-- ↓ ここに「作成」ボタンを移動（セクション末尾） -->
           <div class="row" id="create-btn-row" style="margin-top:16px; justify-content:flex-end;">
-            <button id="create-room-btn" class="btn">作成</button>
-          </div>
+    <button id="create-room-btn" class="btn" data-i18n="create.createBtn">作成</button>
+  </div>
+
 
           
           
@@ -948,6 +975,150 @@ async function storageDownloadURL(path) {
   });
   
   
+  
+  
+  
+  
+  // ===== i18n: dictionary & applier =====
+const I18N = {
+  ja: {
+    "app.title": "画像で遊べるボドゲ・カードゲーム（最大4人）",
+
+    "links.privacy": "プライバシーポリシー",
+    "links.terms":   "利用規約",
+    "links.contact": "お問い合わせ",
+
+    "lobby.welcome": "プレイアラウンドへようこそ",
+
+    "join.section":   "既存ルームに参加（非ホスト）",
+    "join.roomId":    "参加するルームID",
+    "join.roomId.ph": "例: room-abc / 1234",
+    "join.password":  "入室パスワード",
+    "join.password.ph":"ホストが設定した場合は必須",
+    "join.name":      "プレイヤー名",
+    "join.name.ph":   "名前（例: SOLVENTER）",
+    "join.chooseSeat":"座席を選択",
+    "join.start":     "開始",
+
+    "create.section":   "新しいルームを作成して参加（ホスト）",
+    "create.roomId":    "新しいルームを作成",
+    "create.roomId.ph": "例: room-abc / 1234",
+    "create.password":  "入室パスワード（任意）",
+    "create.password.ph":"設定すると参加時に必須",
+    "create.name":      "プレイヤー名",
+    "create.name.ph":   "名前（例: SOLVENTER）",
+    "create.chooseSeat":"座席を選択",
+    "create.chooseMode":"フィールド構成を選択",
+    "create.mode.card": "🃏 カードゲーム",
+    "create.mode.board":"🎲 ボードゲーム",
+    "create.createBtn": "作成",
+
+    // alerts
+    "err.roomId":    "ルームIDを入力してください",
+    "err.playerName":"プレイヤー名を入力してください",
+    "err.seat":      "座席を選んでください",
+    "err.passWrong": "パスワードが違います。",
+    "err.hostAbsent":"ホストが不在のため、このルームには参加できません。",
+
+    "auth.loggedIn": "ログインしました。",
+    "auth.loggedOut":"ログアウトしました。",
+    "auth.logoutFail":"ログアウトに失敗しました。"
+  },
+  en: {
+    "app.title": "Play board/card games with images (up to 4)",
+
+    "links.privacy": "Privacy Policy",
+    "links.terms":   "Terms",
+    "links.contact": "Contact",
+
+    "lobby.welcome": "Welcome to PlayAround",
+
+    "join.section":   "Join an existing room (Guest)",
+    "join.roomId":    "Room ID to join",
+    "join.roomId.ph": "e.g., room-abc / 1234",
+    "join.password":  "Join password",
+    "join.password.ph":"Required if host set one",
+    "join.name":      "Player name",
+    "join.name.ph":   "Name (e.g., SOLVENTER)",
+    "join.chooseSeat":"Choose your seat",
+    "join.start":     "Start",
+
+    "create.section":   "Create a new room (Host)",
+    "create.roomId":    "Create a new room",
+    "create.roomId.ph": "e.g., room-abc / 1234",
+    "create.password":  "Join password (optional)",
+    "create.password.ph":"If set, guests must enter it",
+    "create.name":      "Player name",
+    "create.name.ph":   "Name (e.g., SOLVENTER)",
+    "create.chooseSeat":"Choose your seat",
+    "create.chooseMode":"Choose field layout",
+    "create.mode.card": "🃏 Card game",
+    "create.mode.board":"🎲 Board game",
+    "create.createBtn": "Create",
+
+    // alerts
+    "err.roomId":    "Please enter a Room ID.",
+    "err.playerName":"Please enter your player name.",
+    "err.seat":      "Please select a seat.",
+    "err.passWrong": "Wrong password.",
+    "err.hostAbsent":"The host is not available, so you can't join this room.",
+
+    "auth.loggedIn": "Signed in.",
+    "auth.loggedOut":"Signed out.",
+    "auth.logoutFail":"Failed to sign out."
+  }
+};
+
+let LANG = (localStorage.getItem('lang') || '').toLowerCase();
+if (!['ja','en'].includes(LANG)) LANG = (navigator.language||'ja').toLowerCase().startsWith('en') ? 'en' : 'ja';
+document.documentElement.lang = LANG;
+
+function t(key){
+  return (I18N[LANG] && I18N[LANG][key]) || I18N.ja[key] || key;
+}
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+}
+
+// 初期反映＆セレクター連携
+const langSel = document.getElementById('lang-switch');
+if (langSel) {
+  langSel.value = LANG;
+  langSel.addEventListener('change', () => {
+    LANG = langSel.value;
+    localStorage.setItem('lang', LANG);
+    document.documentElement.lang = LANG;
+    applyI18n();
+  });
+}
+applyI18n();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   // Googleプロバイダ
   const google = new GoogleAuthProvider();
 
@@ -1281,9 +1452,9 @@ function randomPointInMainPlay(seat){
       await ensureAuthReady();
       const id = (newRoomIdInput.value||'').trim();
       const creatorName  = (newPlayerNameInput.value || '').trim();
-      if(!id){ alert('ルームIDを入力してください'); return; }
-      if(!creatorName){ alert('プレイヤー名を入力してください'); newPlayerNameInput.focus(); return; }
-      if(!CREATE_SELECTED_SEAT){ alert('作成後に参加する座席を選んでください'); return; }
+      if(!id){ alert(t('err.roomId')); return; }
+      if(!creatorName){ alert(t('err.playerName')); newPlayerNameInput.focus(); return; }
+      if(!CREATE_SELECTED_SEAT){ alert(t('err.seat')); return; }
 
       createRoomBtn.disabled = true;
       const oldText = createRoomBtn.textContent;
@@ -1638,9 +1809,9 @@ function applyFieldModeLayout(){
       const seat    = CURRENT_PLAYER;
       const nameNow = (playerNameInput.value || '').trim();
 
-      if (!room)  { alert('ルームIDを入力してください'); return; }
-      if (!nameNow) { alert('プレイヤー名を入力してください'); return; }
-      if (!seat)  { alert('座席を選択してください'); return; }
+      if (!room)  { alert(t('err.roomId')); return; }
+      if (!nameNow) { alert(t('err.playerName')); return; }
+      if (!seat)  { alert(t('err.seat')); return; }
 
       const oldText = startBtn.textContent;
       startBtn.disabled = true;
@@ -1681,7 +1852,7 @@ if (meta?.joinPassHash && !canSkipPassword) {
       joinRoomPassInput.select?.();
     }
     // （必要ならアラートは外してOK）
-    // alert('パスワードが違います。');
+    // alert(t('err.passWrong'));
     startBtn.disabled = false;
     startBtn.textContent = oldText;
     return;
@@ -1692,7 +1863,7 @@ if (meta?.joinPassHash && !canSkipPassword) {
         
         const hostLikelyHere = !!meta?.hostUid || isHostAlive(meta);
         if (!meta || (!hostLikelyHere && !iAmHost)) {
-          alert('ホストが不在のため、このルームには参加できません。'); return;
+          alert(t('err.hostAbsent')); return;
         }
         if (iAmHost) IS_ROOM_CREATOR = true;
 
