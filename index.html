@@ -499,10 +499,14 @@
     
   if (siteKey && !siteKey.startsWith("__")) {
     try {
-      initializeAppCheck(app, {
+      const appCheck = initializeAppCheck(app, {
         provider: new ReCaptchaV3Provider(siteKey),
         isTokenAutoRefreshEnabled: true
       });
+      
+      // 後で getToken に渡すために保持
+      window.appCheck = appCheck;
+      
       console.log('[AppCheck] initialized');
     } catch (e) {
       console.warn('[AppCheck] init failed; continuing without it', e);
@@ -516,7 +520,7 @@ import { getApps } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app
 import { getToken } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app-check.js";
 
 console.log('apps:', getApps().length); // 1 以上ならOK
-getToken()
+getToken(window.appCheck)
   .then(t => console.log('AppCheck token OK', !!t.token))
   .catch(e => console.error('AppCheck error', e));
     
