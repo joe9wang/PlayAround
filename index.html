@@ -1626,19 +1626,22 @@ if (isCounter || isToken || isNumCtr) {
         const imgEl = card.querySelector('img');
         
         
- if (imgEl) {
-   if (nextFaceUp) {
-     ...
-     if (selectedCard === card) {
-       const full = fullImageStore.get(cardId);
-       setPreview(full || imgEl.src);
-     }
-   } else {
-     imgEl.style.display = 'none'; card.style.backgroundColor = '#000';
-     if (selectedCard === card) setPreview();
-   }
- }      
-        
+        if (imgEl) {
+          if (nextFaceUp) {
+            // 表にする → 画像を表示＆白背景に
+            imgEl.style.display = 'block';
+            card.style.backgroundColor = '#fff';
+            if (selectedCard === card) {
+              const full = card.dataset.fullUrl || fullImageStore.get(cardId);
+              setPreview(full || imgEl.src);
+            }
+          } else {
+            // 裏にする → 画像を隠し黒背景に、プレビューも消す
+            imgEl.style.display = 'none';
+            card.style.backgroundColor = '#000';
+            if (selectedCard === card) setPreview();
+          }
+        }        
         
         const tokenEl = card.querySelector('.token-input');
         
