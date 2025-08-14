@@ -254,6 +254,19 @@
   display:none; /* 初期は非表示（mode=board のとき表示） */
 }
 
+
+/* 共有プレイエリア（角の手札と中央ブロック以外の全域） */
+#board-play{
+  position:absolute;
+  inset:0;
+  background:#2d8;        /* 既存の main-play-area と同系色 */
+  border:4px dashed #666; /* 見やすいように枠 */
+  z-index:0;              /* 下地 */
+}
+
+
+
+
 /* 四隅の手札（P1:左上, P2:右上, P3:左下, P4:右下） */
 .board-hand{
   position:absolute;
@@ -262,6 +275,7 @@
   background:#228be6; /* 既存 hand と同色 */
   border:4px dashed #666;
   box-sizing:border-box;
+  z-index:1;           /* 下地(#board-play)より前面 */
 }
 #board-hand-1{ top:2%;  left:2%;  }
 #board-hand-2{ top:2%;  right:2%; }
@@ -280,6 +294,7 @@
   display:grid;
   grid-template-columns: 1fr 1fr;
   gap:10px;
+  z-index:1;           /* 下地(#board-play)より前面 */
 }
 #board-center .center-deck{
   background:#f90;   /* 既存 deck と同色 */
@@ -494,12 +509,12 @@
       </div>
       
       
-<!-- ==== 追加: ボードゲーム用レイアウト ==== -->
-<div id="board-layout">
-  <div id="board-hand-1" class="board-hand"><div class="zone-label">手札エリア P1</div></div>
-  <div id="board-hand-2" class="board-hand"><div class="zone-label">手札エリア P2</div></div>
-  <div id="board-hand-3" class="board-hand"><div class="zone-label">手札エリア P3</div></div>
-  <div id="board-hand-4" class="board-hand"><div class="zone-label">手札エリア P4</div></div>
+  <div id="board-layout">
+   <div id="board-play"><div class="zone-label">プレイエリア（共有）</div></div>
+   <div id="board-hand-1" class="board-hand"><div class="zone-label">手札エリア P1</div></div>
+   <div id="board-hand-2" class="board-hand"><div class="zone-label">手札エリア P2</div></div>
+   <div id="board-hand-3" class="board-hand"><div class="zone-label">手札エリア P3</div></div>
+   <div id="board-hand-4" class="board-hand"><div class="zone-label">手札エリア P4</div></div>
 
   <div id="board-center">
     <div class="center-deck"><div class="zone-label">デッキエリア（共有）</div></div>
@@ -969,8 +984,8 @@ function getDeckBoundsForSeat(seat){
 
 function getMainPlayBoundsForSeat(seat){
   if (isBoardMode()) {
-    // ボードモードでは中央ブロック全体を「プレイ相当」とみなす
-    const el = document.getElementById('board-center');
+    // ボードモードでは角ハンド＆中央以外＝共有プレイエリア
+    const el = document.getElementById('board-play');
     return rectFromEl(el);
   } else {
     const main = document.querySelector(`.player-${seat} .main-play-area`);
