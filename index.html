@@ -1623,18 +1623,25 @@ function applyFieldModeLayout(){
           const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); });
         });
         const meta = roomSnap.exists() ? roomSnap.data() : null;
-        const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
-        
-        
-        // ▼追加：ホスト以外は、設定があれば照合
-        if (!iAmHost && meta?.joinPassHash) {
-          const passRaw = (joinRoomPassInput?.value || '').trim();
-          const given   = passRaw ? await sha256Hex(passRaw) : '';
-          if (given !== meta.joinPassHash) {
-            alert('パスワードが違います。');
-            return;
-          }
-        }
+
+
+// 「ホストUID かつ ホスト席」の人だけパス免除
+const isHostUid  = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
+const isHostSeat = !!(meta?.hostSeat && seat && meta.hostSeat === seat);
+const canSkipPassword = isHostUid && isHostSeat;
+
+// 共有パスワードが設定されているなら、免除対象以外は必ず検証
+if (meta?.joinPassHash && !canSkipPassword) {
+  const passRaw = (joinRoomPassInput?.value || '').trim();
+  const given   = passRaw ? await sha256Hex(passRaw) : '';
+  if (given !== meta.joinPassHash) {
+    alert('パスワードが違います。');
+    // 開始ボタンの表示を元に戻して終了
+    startBtn.disabled = false;
+    startBtn.textContent = oldText;
+    return;
+  }
+}
         
         
         const hostLikelyHere = !!meta?.hostUid || isHostAlive(meta);
