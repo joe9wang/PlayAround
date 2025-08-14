@@ -125,7 +125,7 @@
 
 
     .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; transform-origin:50% 50%; }
-    .card[data-owner="other"]{ cursor:grab; opacity:.95; }
+    .card[data-owner="other"]{ cursor:not-allowed; opacity:.95; }
     .card img{ width:100%; height:100%; border-radius:10px; object-fit:cover; pointer-events:none; user-select:none; image-rendering: -webkit-optimize-contrast; }
     .card.selected{ border:3px solid red; }
 
@@ -1520,6 +1520,7 @@ if (state?.type === 'dice') {
   // クリックで自分のダイスだけ削除
   card.addEventListener('click', async (e) => {
     e.stopPropagation();
+    if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
     try {
       const id = card.dataset.cardId;
       await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
@@ -1666,26 +1667,25 @@ if (state?.type === 'numcounter') {
       //   - 自分の「トークン / カウンター」なら削除
       //   - それ以外の自分のカードは表裏トグル
       card.addEventListener("contextmenu", async (e) => {
-        e.prevent止;
-        const isMine = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
+        e.preventDefault();
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+        
+        
         
 const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
 const isToken   = (state?.type === 'token')   || card.classList.contains('token');
 const isNumCtr  = (state?.type === 'numcounter') || card.classList.contains('numcounter');
 if (isCounter || isToken || isNumCtr) {
-  // トークン/カウンターは所有者のみ右クリック削除可（従来どおり）
-  if (isMine) {
-    try {
-      const id = card.dataset.cardId;
-      await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
-    } catch (err) {
-      console.warn('delete token/counter failed', err);
-    }
+  // 生成者（= 自分）だけ削除
+  try {
+    const id = card.dataset.cardId;
+    await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+  } catch (err) {
+    console.warn('delete token/counter failed', err);
   }
-  return; // 他人のは削除不可、通常カードはこの先で表裏トグル
+  return;
 }
-        
-        
+
         const isFaceUp = card.dataset.faceUp === 'true';
         const nextFaceUp = !isFaceUp;
         card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
@@ -1722,6 +1722,7 @@ if (isCounter || isToken || isNumCtr) {
       // ダブルクリックで90°回転（自分のカードのみ）
       card.addEventListener("dblclick", async (e) => {
         e.stopPropagation();
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
         
         // ★ 数値カウンターは回転させない
         if (card.classList.contains('numcounter')) return;
@@ -2047,11 +2048,10 @@ if (data.type === 'numcounter') {
       let startClientX = 0, startClientY = 0;
       let grabOffsetX = 0, grabOffsetY = 0;
 
-card.addEventListener("mousedown", (e) => {
-  if (e.button !== 0) return;
-  if (e.detail > 1) return;
-  // dice は非ドラッグ仕様のままにしたい場合はこの早期 return を残す
-  if (card.classList.contains('dice')) return;
+      card.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+        if (e.detail > 1) return;
 
         const rect = field.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
@@ -2642,17 +2642,6 @@ window.spawnToken = async function(){
         bindAreaColorHandlers();
         handlersBound = true;
       }
-      
-      // 初期化のどこか（initializePlayField()内の最後など）に追加
-      field.addEventListener('contextmenu', (e) => {
-        // カード上での右クリックはブラウザメニューを出さない
-        if (e.target.closest('.card')) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }, { capture: true });
-      
-      
     }
     
     

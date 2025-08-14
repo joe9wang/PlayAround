@@ -2047,11 +2047,10 @@ if (data.type === 'numcounter') {
       let startClientX = 0, startClientY = 0;
       let grabOffsetX = 0, grabOffsetY = 0;
 
-card.addEventListener("mousedown", (e) => {
-  if (e.button !== 0) return;
-  if (e.detail > 1) return;
-  // dice は非ドラッグ仕様のままにしたい場合はこの早期 return を残す
-  if (card.classList.contains('dice')) return;
+      card.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
+        if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+        if (e.detail > 1) return;
 
         const rect = field.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
@@ -2642,17 +2641,6 @@ window.spawnToken = async function(){
         bindAreaColorHandlers();
         handlersBound = true;
       }
-      
-      // 初期化のどこか（initializePlayField()内の最後など）に追加
-      field.addEventListener('contextmenu', (e) => {
-        // カード上での右クリックはブラウザメニューを出さない
-        if (e.target.closest('.card')) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }, { capture: true });
-      
-      
     }
     
     
