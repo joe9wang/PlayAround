@@ -1623,6 +1623,10 @@ function applyFieldModeLayout(){
           const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); });
         });
         const meta = roomSnap.exists() ? roomSnap.data() : null;
+        
+        // ★追加：自分がホストかどうか（UID一致）を定義しておく
+        const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
+
 
 
 // 「ホストUID かつ ホスト席」の人だけパス免除
@@ -1645,7 +1649,9 @@ if (meta?.joinPassHash && !canSkipPassword) {
         
         
         const hostLikelyHere = !!meta?.hostUid || isHostAlive(meta);
-        if (!meta || (!hostLikelyHere && !iAmHost)) { alert('ホストが不在のため、このルームには参加できません。'); return; }
+        if (!meta || (!hostLikelyHere && !iAmHost)) {
+          alert('ホストが不在のため、このルームには参加できません。'); return;
+        }
         if (iAmHost) IS_ROOM_CREATOR = true;
 
         const ok = await claimSeat(room, seat);
