@@ -489,12 +489,22 @@
   
   // ===== Firebase（★ここはプレースホルダ。デプロイ時に置換される）
   const firebaseConfig = {
-    apiKey: "__NEXT_PUBLIC_FIREBASE_API_KEY__",
-    authDomain: "__NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN__",
-    projectId: "__NEXT_PUBLIC_FIREBASE_PROJECT_ID__",
-    storageBucket: "__NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET__",
-    messagingSenderId: "__NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID__",
-    appId: "__NEXT_PUBLIC_FIREBASE_APP_ID__"
+//    apiKey: "__NEXT_PUBLIC_FIREBASE_API_KEY__",
+//    authDomain: "__NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN__",
+//    projectId: "__NEXT_PUBLIC_FIREBASE_PROJECT_ID__",
+//    storageBucket: "__NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET__",
+//    messagingSenderId: "__NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID__",
+//    appId: "__NEXT_PUBLIC_FIREBASE_APP_ID__"
+    apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
+    authDomain: "cardgame-f484c.firebaseapp.com",
+    projectId: "cardgame-f484c",
+    storageBucket: "cardgame-f484c.appspot.com",
+    messagingSenderId: "248859224605",
+    appId: "1:248859224605:web:1320093856bc1861c174f4"
+
+
+
+
   };
   const app = initializeApp(firebaseConfig);
   
@@ -505,8 +515,9 @@
 
   // App Check（reCAPTCHA v3）
   if (typeof window !== "undefined") {
-    const siteKey = "__NEXT_PUBLIC_APPCHECK_KEY__";
-    
+    //const siteKey = "__NEXT_PUBLIC_APPCHECK_KEY__";
+    const siteKey = "6LeClaQrAAAAADNTifrjqIOT9_blqXBv8bDkGIHC";
+
   if (siteKey && !siteKey.startsWith("__")) {
     try {
       const appCheck = initializeAppCheck(app, {
@@ -741,7 +752,7 @@ async function storageDownloadURL(path) {
       if (cu && !cu.displayName && name) await updateProfile(cu, { displayName: name });
       alert('ログインしました。');
     } catch (e) {
-      console.warn('[PopupSignIn] failed', e);
+      console.warn('[PopupSignIn] failed', e?.code, e?.message, e);
       // 代表的なポップアップ失敗コード → 自動でリダイレクトへ切替
       const code = e?.code || '';
       const popupErrors = [
@@ -753,7 +764,7 @@ async function storageDownloadURL(path) {
       if (popupErrors.includes(code)) {
         try { await tryRedirect(); return; } catch (e2) { console.warn('[Redirect fallback] failed', e2); }
       }
-      alert('ログインに失敗しました。別ブラウザ/ポップアップ許可をお試しください。');
+      alert(`ログインに失敗しました（${e?.code || 'unknown'}）。別ブラウザ/ポップアップ許可をお試しください。`);
     } finally {
       loginBtn.disabled = false;
     }
