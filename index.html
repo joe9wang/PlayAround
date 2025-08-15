@@ -361,10 +361,10 @@
     
     
 /* === パスワードエラーの視覚フィードバック === */
-.field.is-error{
-  border:2px solid #e53935 !important;
-  box-shadow:0 0 0 3px rgba(229,57,53,.15) inset;
-}
+ .field.is-error{
+   border:2px solid #e53935 !important;
+   box-shadow:0 0 0 3px rgba(229,57,53,.15) inset;
+ }
 .shake{ animation: shake-h 0.35s ease; }
 @keyframes shake-h{
   0%{transform:translateX(0);}
@@ -386,6 +386,50 @@
    border:1px solid #ccc;
    background:#fff;
  }    
+    
+    
+    
+    
+ /* ======== Mobile (<= 768px) layout & touch ======== */
+ @media (max-width: 768px) {
+   :root { --sidebar-w: 100%; --preview-w: 100%; --header-h: 60px; }
+   body { overflow: auto; }
+   h1 { height: var(--header-h); font-size: 16px; gap: .5rem; }
+   .brand-badge { font-size: 12px; left: 8px; }
+   #session-indicator { font-size: 10px; right: 8px; }
+   #upload-area { height: 48px; padding: 0 12px; }
+
+   /* 横3カラム → 縦積み */
+   #sidebar, #container, #preview {
+     width: 100% !important;
+     height: auto !important;
+     float: none;
+     box-shadow: none;
+   }
+   #sidebar { border-right: none; border-bottom: 2px solid #aaa; }
+   #preview { border-left: none; border-top: 2px solid #aaa; }
+
+   #sidebar button { font-size: 12px; padding: 8px; }
+   .lobby-card { width: 96vw; padding: 12px; }
+   .lobby-grid { grid-template-columns: 1fr; }
+   .seat-grid { grid-template-columns: repeat(2, 1fr); }
+   .lobby-lang { top: 8px; right: 8px; }
+   .lang-switch { right: 8px; }
+
+   /* フィールドは縦スクロール前提、横幅は画面に合わせる */
+   #container { min-height: 70vh; }
+   #field { min-width: 100%; min-height: 70vh; }
+
+   /* ブラウザのジェスチャを抑えてアプリ内ジェスチャを優先 */
+   #container, #field, .card { touch-action: none; }
+ }    
+    
+    
+    
+    
+    
+    
+    
     
   </style>
 </head>
@@ -534,7 +578,7 @@
   </div>
 
   <div id="upload-area">
-    📥 カード画像をクリック or ドラッグ＆ドロップで追加
+    📥 画像をタップ（またはドラッグ＆ドロップ）で追加
     <input type="file" id="file-input" multiple accept="image/*" />
   </div>
 
@@ -2120,6 +2164,49 @@ if (state?.type === 'dice') {
   });
 
   card.addEventListener('dblclick',     e => e.preventDefault());
+  
+  
+ // === 長押し（モバイル）で右クリック相当の処理 ===
+ async function handleLongPressOnCard(card, state){
+   const cardId = card.dataset.cardId;
+   const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
+   const isToken   = (state?.type === 'token')   || card.classList.contains('token');
+   const isNumCtr  = (state?.type === 'numcounter') || card.classList.contains('numcounter');
+   if (isCounter || isToken || isNumCtr) {
+     if (!canOperateCard(card, 'delete')) return;
+     try { await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`)); } catch(e){ console.warn(e); }
+     return;
+   }
+   // 通常カード：表裏トグル
+   if (!canOperateCard(card, 'flip')) return;
+   const isFaceUp = card.dataset.faceUp === 'true';
+   const nextFaceUp = !isFaceUp;
+   card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
+   const imgEl = card.querySelector('img');
+   if (imgEl) {
+     if (nextFaceUp) {
+       imgEl.style.display = 'block';
+       card.style.backgroundColor = '#fff';
+       if (selectedCard === card) {
+         const full = card.dataset.fullUrl || fullImageStore.get(cardId);
+         setPreview(full || imgEl.src);
+       }
+     } else {
+       imgEl.style.display = 'none';
+       card.style.backgroundColor = '#000';
+       if (selectedCard === card) setPreview();
+     }
+   }
+   const tokenEl = card.querySelector('.token-input');
+   if (tokenEl) { tokenEl.style.display = nextFaceUp ? 'block' : 'none'; }
+   updateCardBatched(cardId, { faceUp: nextFaceUp });
+ }  
+  
+  
+  
+  
+  
+  
 
   // ダイスはドラッグ不可：makeDraggable は呼ばない
   return card;
@@ -2297,6 +2384,11 @@ if (state?.type === 'numcounter') {
         
         updateCardBatched(cardId, { faceUp: nextFaceUp });
       });
+      
+      
+      
+      
+      
 
       // ダブルクリックで90°回転（自分のカードのみ）
       card.addEventListener("dblclick", async (e) => {
@@ -2313,6 +2405,32 @@ if (state?.type === 'numcounter') {
         card.style.transform = `rotate(${next}deg)`;
         updateCardBatched(cardId, { rotation: next });
       });
+      
+      
+      // === 長押し（0.5s）で右クリック相当（モバイル）
+      {
+        let lpTimer = null, lpFired = false;
+        const LP_MS = 500;
+        const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+        card.addEventListener('touchstart', (ev) => {
+          if (ev.touches.length !== 1) return;
+          lpFired = false;
+          clearLP();
+          lpTimer = setTimeout(() => {
+            lpFired = true;
+            handleLongPressOnCard(card, state);
+          }, LP_MS);
+        }, { passive:true });
+        const cancelLP = () => clearLP();
+        card.addEventListener('touchend', cancelLP);
+        card.addEventListener('touchcancel', cancelLP);
+      }
+      
+      
+      
+      
+      
+      
 
       return card;
     }
@@ -2655,7 +2773,7 @@ if (data.type === 'numcounter') {
           card.style.left = `${x - grabOffsetX}px`;
           card.style.top  = `${y - grabOffsetY}px`;
         };
-
+        
         const onUp = async () => {
           document.removeEventListener("mousemove", onMove);
           document.removeEventListener("mouseup", onUp);
@@ -2672,6 +2790,62 @@ if (data.type === 'numcounter') {
         document.addEventListener("mousemove", onMove);
         document.addEventListener("mouseup", onUp);
       });
+      
+      
+      // === Touch drag (mobile) ===
+      card.addEventListener('touchstart', (e) => {
+        if (!canOperateCard(card, 'move')) return;
+        if (e.touches.length !== 1) return;
+        e.preventDefault();
+        const t = e.touches[0];
+        const rect = field.getBoundingClientRect();
+        const mouseX = (t.clientX - rect.left - panOffsetX) / zoom;
+        const mouseY = (t.clientY - rect.top  - panOffsetY) / zoom;
+
+        startClientX = t.clientX;
+        startClientY = t.clientY;
+        grabOffsetX = mouseX - (parseFloat(card.style.left || '0') || 0);
+        grabOffsetY = mouseY - (parseFloat(card.style.top  || '0') || 0);
+        isDragging = false;
+
+        const onMove = (ev) => {
+          if (ev.touches.length !== 1) return;
+          ev.preventDefault();
+          const tt = ev.touches[0];
+          const dx = tt.clientX - startClientX;
+          const dy = tt.clientY - startClientY;
+          if (!isDragging) {
+            if (Math.hypot(dx, dy) < 5) return;
+            isDragging = true;
+            card.style.cursor = "grabbing";
+            card.style.zIndex = getMaxZIndex() + 1;
+          }
+          const x = (tt.clientX - rect.left - panOffsetX) / zoom;
+          const y = (tt.clientY - rect.top  - panOffsetY) / zoom;
+          card.style.left = `${x - grabOffsetX}px`;
+          card.style.top  = `${y - grabOffsetY}px`;
+        };
+        const onEnd = async () => {
+          document.removeEventListener('touchmove', onMove, { passive:false });
+          document.removeEventListener('touchend', onEnd);
+          document.removeEventListener('touchcancel', onEnd);
+          card.style.cursor = "grab";
+          if (!isDragging) return;
+          isDragging = false;
+          const id = card.dataset.cardId;
+          const x = parseFloat(card.style.left) || 0;
+          const y = parseFloat(card.style.top)  || 0;
+          const zIndex = parseInt(card.style.zIndex) || 1;
+          updateCardBatched(id, { x, y, zIndex });
+        };
+        document.addEventListener('touchmove', onMove, { passive:false });
+        document.addEventListener('touchend', onEnd);
+        document.addEventListener('touchcancel', onEnd);
+      }, { passive:false });      
+      
+      
+      
+      
     }
 
     function getMaxZIndex(){ let max=0; document.querySelectorAll(".card").forEach(c=>{ const z=parseInt(c.style.zIndex)||0; if(z>max) max=z; }); return max; }
@@ -3112,7 +3286,9 @@ window.spawnToken = async function(){
       if (count>0) await batch.commit();
     };
 
+
     function bindPanZoomHandlers(){
+      // === マウスホイールズーム
       field.addEventListener("wheel", e => {
         if(e.ctrlKey) return;
         e.preventDefault();
@@ -3130,6 +3306,7 @@ window.spawnToken = async function(){
         field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
       }, { passive:false });
 
+      // === マウス1本パン
       container.addEventListener("mousedown", e => {
         if (e.button !== 0) return;
         if (e.detail > 1) return;
@@ -3161,6 +3338,64 @@ window.spawnToken = async function(){
         document.addEventListener("mouseup", cleanup);
       });
 
+      // === タッチ：1本指パン / 2本指ピンチズーム
+      let touchMode = { type:null, startDist:0, startZoom:zoom, startPanX:0, startPanY:0, cx:0, cy:0, sx:0, sy:0 };
+
+      const getDist = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const getCenter = (t1, t2) => ({ x:(t1.clientX + t2.clientX)/2, y:(t1.clientY + t2.clientY)/2 });
+
+      container.addEventListener('touchstart', (e) => {
+        if (e.target.closest('.card')) return;  // カード上のタッチはカード側で処理
+        if (e.touches.length === 1) {
+          e.preventDefault();
+          touchMode.type = 'pan';
+          touchMode.sx = e.touches[0].clientX;
+          touchMode.sy = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+          e.preventDefault();
+          touchMode.type = 'pinch';
+          touchMode.startDist = getDist(e.touches[0], e.touches[1]);
+          touchMode.startZoom = zoom;
+          const c = getCenter(e.touches[0], e.touches[1]);
+          const rect = field.getBoundingClientRect();
+          touchMode.cx = c.x - rect.left;
+          touchMode.cy = c.y - rect.top;
+          touchMode.startPanX = panOffsetX;
+          touchMode.startPanY = panOffsetY;
+        }
+      }, { passive:false });
+
+      container.addEventListener('touchmove', (e) => {
+        if (touchMode.type === 'pan' && e.touches.length === 1) {
+          e.preventDefault();
+          const t = e.touches[0];
+          const dx = t.clientX - touchMode.sx;
+          const dy = t.clientY - touchMode.sy;
+          touchMode.sx = t.clientX;
+          touchMode.sy = t.clientY;
+          panOffsetX += dx;
+          panOffsetY += dy;
+          field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
+        } else if (touchMode.type === 'pinch' && e.touches.length === 2) {
+          e.preventDefault();
+          const dist = getDist(e.touches[0], e.touches[1]);
+          let nextZoom = touchMode.startZoom * (dist / Math.max(1, touchMode.startDist));
+          nextZoom = Math.max(0.3, Math.min(nextZoom, 3));
+          // ピンチ中心を維持するようにオフセットを調整
+          const old = touchMode.startZoom;
+          const cx = touchMode.cx, cy = touchMode.cy;
+          panOffsetX = cx - ((cx - touchMode.startPanX) / old) * nextZoom;
+          panOffsetY = cy - ((cy - touchMode.startPanY) / old) * nextZoom;
+          zoom = nextZoom;
+          field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
+        }
+      }, { passive:false });
+
+      const endTouch = () => { touchMode.type = null; };
+      container.addEventListener('touchend', endTouch);
+      container.addEventListener('touchcancel', endTouch);
+
+      // === 余白クリックで選択解除
       field.addEventListener("click", () => {
         if (selectedCard) {
           selectedCard.classList.remove("selected");
@@ -3169,6 +3404,9 @@ window.spawnToken = async function(){
         }
       });
     }
+
+
+
 
     // ===== end room button
     const endRoomBtn = document.getElementById('end-room-btn');
@@ -3214,8 +3452,20 @@ window.spawnToken = async function(){
     // ===== Init
     let zoom = 1, panOffsetX = 0, panOffsetY = 0, selectedCard = null;
 
+
+  // モバイルでは初期ズームを少し下げて全体を見やすく
+  const IS_MOBILE = window.matchMedia('(max-width: 768px)').matches;
+
+
     function initializePlayField(){
       setFieldSize('small');
+      
+      if (IS_MOBILE) {
+        zoom = 0.8;
+        panOffsetX = 0; panOffsetY = 0;
+        field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
+      }
+      
       if (!handlersBound) {
         bindUploadHandlers();
         bindPanZoomHandlers();
