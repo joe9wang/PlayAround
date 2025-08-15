@@ -425,7 +425,15 @@
  }    
     
     
-    
+/* ==== スマホ対応: ロビーウィンドウの高さ制限とスクロール ==== */
+@media (max-width: 768px) {
+  .lobby-card {
+    max-height: 90vh;           /* 画面の高さの90%までに制限 */
+    overflow-y: auto;           /* 縦スクロールを許可 */
+    -webkit-overflow-scrolling: touch; /* iOSでのスムーズスクロール */
+    padding-bottom: 80px;       /* 下部ボタンが隠れない余白 */
+  }
+}    
     
     
     
