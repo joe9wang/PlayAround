@@ -2468,41 +2468,41 @@ function ensureAuthReady(){
       const hb = data.heartbeatAt?.toMillis ? data.heartbeatAt.toMillis() : 0;
       return (Date.now() - hb) > SEAT_STALE_MS;
     }
-
-    function renderSeatAvailability(){
-      const hostHere = isHostAlive(CURRENT_ROOM_META);
-      seatButtons.forEach(btn => {
-        const seat = parseInt(btn.dataset.seat, 10);
-        const note = btn.querySelector('.seat-note');
-        const data = currentSeatMap[seat];
-
-        if(!hostHere){
-          note.textContent = 'ホスト不在';
-          note.style.color = 'red';
-          btn.disabled = true;
-          btn.classList.toggle('active', false);
-          return;
-        }
-
-        const occupied = !!(data && !isSeatStale(data) && data.claimedByUid);
-        if (occupied) {
-          const isHostSeat = (CURRENT_ROOM_META?.hostSeat === seat);
-          note.textContent = (data.displayName || '') + (isHostSeat ? '（ホスト）' : '');
-          note.style.color = '#000';
-        } else {
-          note.textContent = '空き';
-          note.style.color = 'blue';
-        }
-        btn.disabled = occupied;
-        btn.classList.toggle('active', CURRENT_PLAYER === seat);
+    
+    // 追加: 全席が空(=生きていない)かを判定
+    function isRoomEmpty(){
+      return [1,2,3,4].every(s => {
+        const d = currentSeatMap[s];
+        return !d || isSeatStale(d) || !d.claimedByUid;
       });
-
-      renderFieldLabels();
-      validateLobby();
-      updateEndRoomButtonVisibility();
-      renderAreaColors();
-      renderHPPanel();
     }
+
+ function renderSeatAvailability(){
+   const hostHere  = isHostAlive(CURRENT_ROOM_META);
+   const roomEmpty = isRoomEmpty();
+   seatButtons.forEach(btn => {
+     const seat = parseInt(btn.dataset.seat, 10);
+     const note = btn.querySelector('.seat-note');
+     const data = currentSeatMap[seat];
+     const alive = data && !isSeatStale(data) && !!data.claimedByUid;
+     if (alive) {
+       note.textContent = data.displayName || `P${seat}`;
+       btn.disabled = true;
+       btn.classList.remove('free');
+     } else {
+       if (!hostHere && !roomEmpty) {
+         note.textContent = 'ホスト不在';
+         btn.disabled = true;
+         btn.classList.remove('free');
+       } else {
+         note.textContent = '空席';
+         btn.disabled = false;
+         btn.classList.add('free');
+       }
+     }
+   });
+   validateLobby();
+ }
 
 // ===============================
 // HP パネルのレンダリング/操作
@@ -2700,8 +2700,10 @@ function applyFieldModeLayout(){
     }
 
     function validateLobby(){
-      const hostHere = isHostAlive(CURRENT_ROOM_META);
-      if (!hostHere && ACTIVE_MODE === 'join') { startBtn.disabled = true; return; }
+      const hostHere  = isHostAlive(CURRENT_ROOM_META);
+      const roomEmpty = isRoomEmpty();
+      // ホスト不在でも「無人」なら開始OK。「誰か生存中」だけブロック
+      if (!hostHere && !roomEmpty && ACTIVE_MODE === 'join') { startBtn.disabled = true; return; }
       if (ACTIVE_MODE === 'create') { startBtn.disabled = true; return; }
       const roomOk  = !!(joinRoomInput.value||'').trim();
       const nameNow = (playerNameInput.value||'').trim();
@@ -2748,7 +2750,29 @@ function applyFieldModeLayout(){
       const oldText = startBtn.textContent;
       startBtn.disabled = true;
       startBtn.textContent = '開始中…';
-
+      
+      // 追加: 無人ルームの自動復旧 & ホスト引き継ぎ
+      try {
+        const hostHereNow = isHostAlive(CURRENT_ROOM_META);
+        if (!hostHereNow && isRoomEmpty()) {
+          // サブコレクションを掃除し、roomClosedを開け、ホストを自分に
+          await resetRoomState(room);
+          await setDoc(doc(db, `rooms/${room}`), {
+            roomClosed: false,
+            hostUid: CURRENT_UID,
+            hostDisplayName: nameNow,
+            hostSeat: seat,
+            hostHeartbeatAt: serverTimestamp()
+          }, { merge: true });
+          IS_ROOM_CREATOR = true;
+          startHostHeartbeat(room);
+        }
+      } catch (e) {
+        console.warn('[revive-room] failed', e);
+        // 失敗しても通常のJoinは続行（権限で弾かれた場合など）
+      }      
+      
+      
       try {
         const roomSnap = await new Promise(resolve => {
           const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); });
@@ -2866,7 +2890,13 @@ async function claimSeat(roomId, seat){
    if (hostHeartbeatTimer) { clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; }
    hostHeartbeatTimer = setInterval(async () => {
      try{
-       await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
+      // ルームを離脱/閉鎖している間は doc を再生成しない
+      if (!CURRENT_ROOM || CURRENT_ROOM !== roomId) return;
+      if (CURRENT_ROOM_META?.roomClosed) return;
+      await setDoc(
+        doc(db, `rooms/${roomId}`),
+        { hostHeartbeatAt: serverTimestamp() }, { merge: true });
+       
      }catch(e){ console.warn('host HB failed', e); }
    }, HOST_HEARTBEAT_MS);
  }    
@@ -4390,6 +4420,10 @@ const endRoomBtn = document.getElementById('end-room-btn');
 
       // 2) その後に Firestore 側を完全掃除
       await cleanupAndDeleteRoom(CURRENT_ROOM);
+      
+      
+      // 自分の座席 doc も掃除
+      try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
 
         CURRENT_ROOM = null;
         CURRENT_PLAYER = null;
