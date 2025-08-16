@@ -453,31 +453,23 @@
  
  /* 折り畳みハンドル（左右に常時表示） */
  .collapse-handle {
-   position: fixed;
-   top: calc(var(--header-h) + 8px);
-   z-index: 1000;
    display: inline-flex;
    align-items: center;
    justify-content: center;
-   width: 28px;
-   height: 48px;
+   width: 26px;
+   height: 26px;
+   margin-left: 6px;
    border: 1px solid #ccc;
-   border-radius: 12px;
+   border-radius: 6px;
    background: #fff;
    cursor: pointer;
-   opacity: .92;
+   font-size: 14px;
    user-select: none;
  }
- .collapse-handle:hover { box-shadow: 0 2px 10px rgba(0,0,0,.12); }
+ .collapse-handle:hover {
+   background: #f3f3f3;
+ }
  
- /* 左ハンドル（左サイドの外側に張り付く） */
- #toggle-left {
-   left: 8px;
- }
- /* 右ハンドル（右サイドの外側に張り付く） */
- #toggle-right {
-   right: 8px;
- }
  
  /* モバイル縦積み時は控えめな位置に */
  @media (max-width: 768px) {
@@ -689,9 +681,12 @@
    <input accept="image/*" id="file-input" multiple="" type="file"/>
   </div>
   <div id="sidebar">
-   <h2>
-    操作パネル
-   </h2>
+  
+ <h2 style="display:flex; align-items:center;">
+   操作パネル
+   <button id="toggle-left" class="collapse-handle" title="操作パネルの表示/非表示">◀</button>
+ </h2>  
+  
    <button onclick="resetMyCardRotation()">
     &orarr; 全カード向きリセット（自分のカードのみ）
    </button>
@@ -981,9 +976,12 @@
   </div>
   <div id="preview">
    <div id="preview-top">
-    <h2>
-     選択中のカード
-    </h2>
+   
+ <h2 style="display:flex; align-items:center;">
+   選択肢のカード
+   <button id="toggle-right" class="collapse-handle" title="選択肢のカードの表示/非表示">▶</button>
+ </h2>
+   
     <img alt="プレビュー画像" id="preview-img"/>
     <div id="preview-info">
     </div>
