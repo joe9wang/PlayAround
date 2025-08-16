@@ -1577,6 +1577,7 @@ updateModePickButtons();
     
     console.log("UID check", CURRENT_UID, getAuth().currentUser?.uid);
     
+    await ensureAuthReady();
     if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID){
       alert('ルームに参加してから実行してください'); return;
     }
@@ -1608,8 +1609,8 @@ updateModePickButtons();
       if (n>0) await batch.commit();
       alert(`SLOT ${slot} に ${cards.length} 枚保存しました。`);
     }catch(e){
-      console.error(e);
-      alert('セーブに失敗しました。通信状況をご確認ください。');
+      console.error('SAVE ERROR', e?.code, e?.message, e);
+      alert(`セーブに失敗しました（${e?.code||'unknown'}）。コンソールの詳細を確認してください。`);
     }
   }
 
