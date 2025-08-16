@@ -947,6 +947,32 @@
    window.process = window.process || { env: {} };
   </script>
   <script type="module">
+
+/* ====================================================================
+ * PlayAround index.js (inlined) — Annotated Edition
+ * 
+ * 目次（大項目）
+ *  1) Firebase 初期化と App Check
+ *  2) Auth / Firestore / Storage 初期化
+ *  3) DOM要素参照 (UI)
+ *  4) アプリ全体の状態管理
+ *  5) バッチ書き込みキュー
+ *  6) ストレージ/プレビュー/各種ユーティリティ
+ *  7) ホスト監視・ハートビート
+ *  8) ロビー/座席管理（HP含む）
+ *  9) フィールド構成切替（カード/ボード）
+ * 10) セッション開始と購読
+ * 11) カードDOM生成/状態適用
+ * 12) ルーム終了/削除ユーティリティ
+ * 13) 画像アップロードとサムネ生成
+ * 14) ドラッグ/パン/ズーム
+ * 15) 一括操作・生成ユーティリティ（ダイス/トークン/カウンタ）
+ * 16) ルーム終了ボタン制御
+ * 17) フィールド初期化
+ * 
+ * ※ 本ファイルは機能を変更せずに可読性向上のためコメントを追加しています。
+ * ==================================================================== */
+
    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
   import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app-check.js";
 
@@ -972,7 +998,11 @@
   
   
   
-  // ===== Firebase（★ここはプレースホルダ。デプロイ時に置換される）
+  // ===============================
+// Firebase 初期化と App Check
+// ===============================
+// Firebase SDK の読み込み、構成値、App Check の初期化を行います。
+// ===== Firebase（★ここはプレースホルダ。デプロイ時に置換される）
   const firebaseConfig = {
 //    apiKey: "__NEXT_PUBLIC_FIREBASE_API_KEY__",
 //    authDomain: "__NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN__",
@@ -1031,7 +1061,11 @@ getToken(window.appCheck)
   .catch(e => console.error('AppCheck error', e));
     
     
-    const auth = getAuth(app);
+    // ===============================
+// Auth / Firestore / Storage 句の初期化
+// ===============================
+// Auth/DB/Storage のインスタンスを作成し、以降の処理で参照します。
+const auth = getAuth(app);
     const db = getFirestore(app);
     
     
@@ -1069,7 +1103,11 @@ getToken(window.appCheck)
   // まだ匿名で遊べるままにする（既存のまま）
 
 
-    // ===== DOM refs
+    // ===============================
+// DOM要素参照 (UI)
+// ===============================
+// 画面各所の要素を取得して保管します。
+// ===== DOM refs
     const lobby = document.getElementById('lobby');
     const joinRoomInput = document.getElementById('join-room-id');
     const playerNameInput = document.getElementById('player-name');
@@ -1134,7 +1172,25 @@ updateModePickButtons();
     
     
 
-    // ===== State
+    // ===============================
+// アプリ全体の状態管理
+// ===============================
+// 現在のルーム/座席/UID 等のランタイム状態。クォータ対策のための各種周期定数もここで定義。
+// ===== State
+// --- セッション関連 ---
+// CURRENT_ROOM: 参加中のルームID（null のとき未参加）
+// CURRENT_ROOM_META: ルームdocの内容（hostUid/hostSeat/fieldMode など）
+// CURRENT_PLAYER: 自分の座席番号 (1..4)
+// CURRENT_UID: Firebase Auth UID
+//
+// --- 監視/購読ハンドル ---
+// unsubscribeRoomDoc / unsubscribeSeats / unsubscribeCards: Firestore 購読解除用
+// hostWatchTimer / heartbeatTimer / hostHeartbeatTimer: setInterval のID
+//
+// --- 書き込み最適化 ---
+// WRITE_FLUSH_MS: バッチコミット間隔（ms）
+// MAX_BATCH_OPS: 1バッチで行う最大オペレーション数
+// pendingPatches: パス→patch を一時保持するMap
     let CREATE_SELECTED_SEAT = 1;
     createSeatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.createSeat, 10) === 1));
     const picked = document.getElementById('create-seat-picked');
@@ -1168,7 +1224,18 @@ updateModePickButtons();
     
     
 
-    function pathFor(roomId, sub, id){ return `rooms/${roomId}/${sub}/${id}`; }
+    // ===============================
+// バッチ書き込みキュー
+// ===============================
+// Firestore 書き込み回数を抑えるために、更新を一時キューに積んで一定間隔でまとめて commit します。/**
+ * コレクションパスを組み立てるヘルパ
+ * @param {string} roomId - ルームID
+ * @param {string} sub - サブコレ名（cards/seatsなど）
+ * @param {string} id - ドキュメントID
+ * @returns {string} Firestore ドキュメントパス
+ */
+
+function pathFor(roomId, sub, id){ return `rooms/${roomId}/${sub}/${id}`; }
 
     function queueUpdate(path, patch){
       // serverTimestampはここで付けない：無駄な書き込み増を防ぐ
@@ -1195,6 +1262,14 @@ updateModePickButtons();
     
     
     // Storage の安全なダウンロードURLを取得（SDK 任せ）
+// ===============================
+// ストレージ: 安全なダウンロードURL取得ユーティリティ
+// ===============================/**
+ * Storage の安全なダウンロードURLを取得する（失敗時は null）
+ * @param {string} path - gs:// or relative path
+ * @returns {Promise<string} null>|ダウンロードURL
+ */
+
 async function storageDownloadURL(path) {
   try {
     return await getDownloadURL(ref(storage, path));
@@ -1617,7 +1692,15 @@ function getMainPlayBoundsForSeat(seat){
 
     
     
-    function setPreview(src) {
+    // ===============================
+// プレビュー画像の制御
+// ===============================
+// 選択カードのプレビュー表示/非表示を一元管理。/**
+ * 右側プレビューを表示/非表示する
+ * @param {string} src - 画像URL（空/undefinedで非表示）
+ */
+
+function setPreview(src) {
   if (typeof src === 'string' && src.trim().length > 0) {
     previewImg.src = src;
     previewImg.style.display = 'block';
@@ -1629,7 +1712,14 @@ function getMainPlayBoundsForSeat(seat){
     
     
 
-// 座席のメインプレイ中央（w,h 指定版）
+// 座席のメインプレイ中央（w,h 指定版）/**
+ * 座席のプレイエリア中央座標を（幅/高さを考慮して）求める
+ * @param {number} seat - 座席(1..4)
+ * @param {number} w - 要素幅
+ * @param {number} h - 要素高
+ * @returns {object} {x:number,y:number}
+ */
+
 function centerOfMainPlay(seat, w, h){
   const b = getMainPlayBoundsForSeat(seat);
   if(!b) return { x: 0, y: 0 };
@@ -1671,7 +1761,14 @@ function centerOfMainPlay(seat, w, h){
       return { x: Math.round(x), y: Math.round(y) };
     }
 
-    function startHostWatch() {
+    // ===============================
+// ホスト監視
+// ===============================
+// ホスト不在・ルーム終了を検知して参加者を安全に退室させます。/**
+ * ホストが不在/ルーム終了になったかを定期確認し、必要なら強制退室させる
+ */
+
+function startHostWatch() {
       stopHostWatch();
       hostWatchTimer = setInterval(() => {
         if (!CURRENT_ROOM || lobby.style.display !== 'none') return;
@@ -1701,6 +1798,14 @@ function centerOfMainPlay(seat, w, h){
 
 
 // ダイス画像（72x72）を作る関数（重複定義がないことを確認！）
+// ===============================
+// SVGジェネレータ: ダイス画像/カウンター画像
+// ===============================/**
+ * ダイス目 (1..6) のSVG画像 DataURL を生成
+ * @param {number} n - 1..6
+ * @returns {string} data:image/svg+xml;...
+ */
+
 function svgDiceDataUrl(n){
   const size = 72, r = 8, pipR = 6;
   const pip = (cx, cy)=>`<circle cx="${cx}" cy="${cy}" r="${pipR}" fill="#111"/>`;
@@ -1725,6 +1830,11 @@ function svgDiceDataUrl(n){
 
 
 
+/**
+ * プレイエリア内のランダム座標（左上）を返す
+ * @param {number} seat - number
+ * @returns {object} {x,y}
+ */
 
 function randomPointInMainPlay(seat){
   const b = getMainPlayBoundsForSeat(seat);
@@ -1740,7 +1850,15 @@ function randomPointInMainPlay(seat){
     
 
 
-    function ensureAuthReady(){
+    // ===============================
+// 認証準備
+// ===============================
+// UID 初期化完了を待つ Promise。/**
+ * Auth UID が利用可能になるのを待つ Promise を返す
+ * @returns {Promise<void>} 
+ */
+
+function ensureAuthReady(){
       return new Promise((resolve) => {
         if (CURRENT_UID) return resolve();
         const off = onAuthStateChanged(auth, (u) => { if (u) { CURRENT_UID = u.uid; off(); resolve(); } });
@@ -1826,7 +1944,11 @@ function randomPointInMainPlay(seat){
       });
     });
 
-    // ===== seats & lobby
+    // ===============================
+// ロビー/座席管理
+// ===============================
+// 座席の空き状況やホスト在席を購読し、UI へ反映。
+// ===== seats & lobby
     let unsubscribeSeats = null;
     joinRoomInput.addEventListener('change', loadSeatStatus);
     joinRoomInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadSeatStatus(); });
@@ -1880,7 +2002,11 @@ function randomPointInMainPlay(seat){
       renderHPPanel();
     }
 
-    function renderHPPanel(){
+    // ===============================
+// HP パネルのレンダリング/操作
+// ===============================
+// 自席のみ操作可能なシンプルな HP 管理UI。
+function renderHPPanel(){
       const grid = document.getElementById('hp-grid');
       if (!grid) return;
       const rows = [];
@@ -1992,6 +2118,10 @@ function randomPointInMainPlay(seat){
     
     
     // ==== 追加: フィールドモードの適用（DOM切替） ====
+// ===============================
+// フィールド構成切替 (カード/ボード)
+// ===============================
+// roomMeta.fieldMode に応じて DOM を切替え。
 function applyFieldModeLayout(){
   const mode = (CURRENT_ROOM_META?.fieldMode === 'board') ? 'board' : 'card';
   const fieldRoot = document.getElementById('field');
@@ -2183,7 +2313,17 @@ if (meta?.joinPassHash && !canSkipPassword) {
       }
     });
 
-    async function claimSeat(roomId, seat){
+    // ===============================
+// 座席の取得/解放
+// ===============================
+// トランザクションで安全に座席を確保/解放します。/**
+ * 座席をトランザクションで確保（古い/空き/自分なら上書き）
+ * @param {string} roomId - string
+ * @param {number} seat - number
+ * @returns {Promise<boolean>} 成功可否
+ */
+
+async function claimSeat(roomId, seat){
       const seatRef = doc(db, `rooms/${roomId}/seats/${seat}`);
       const displayName = (playerNameInput.value||'').trim();
       const color = '#22aaff';
@@ -2210,7 +2350,11 @@ if (meta?.joinPassHash && !canSkipPassword) {
       try{ await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`)); }catch(e){ console.warn('releaseSeat error', e); }
     }
 
-    // ===== heartbeats (rate-limited)
+    // ===============================
+// ハートビート
+// ===============================
+// ホスト/座席の存活を定期更新し、他クライアントが監視できるようにします。
+// ===== heartbeats (rate-limited)
     let heartbeatTimer = null;
     let hostHeartbeatTimer = null;
 
@@ -2255,7 +2399,16 @@ if (meta?.joinPassHash && !canSkipPassword) {
     let unsubscribeCards = null;
     let handlersBound = false;
 
-    function startSession(roomId, playerId){
+    // ===============================
+// セッション開始
+// ===============================
+// ルーム/座席が決まった後の購読開始やUI初期化。/**
+ * 購読開始/ハートビート開始/UI初期化など、参加開始時の初期化
+ * @param {string} roomId - string
+ * @param {number} playerId - number
+ */
+
+function startSession(roomId, playerId){
       CURRENT_ROOM = roomId; CURRENT_PLAYER = playerId;
       updateEndRoomButtonVisibility();
       sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: P${CURRENT_PLAYER}`;
@@ -2283,7 +2436,14 @@ if (meta?.joinPassHash && !canSkipPassword) {
       renderHPPanel();
     }
 
-    function subscribeCards(){
+    // ===============================
+// カード購読/反映
+// ===============================
+// cards サブコレクションのスナップショットを購読し、DOMへ反映。/**
+ * cards コレクションを購読し、変更を DOM に反映
+ */
+
+function subscribeCards(){
       if(unsubscribeCards){ unsubscribeCards(); unsubscribeCards = null; }
       const qCards = collection(db, `rooms/${CURRENT_ROOM}/cards`);
       unsubscribeCards = onSnapshot(qCards, snap => {
@@ -2315,7 +2475,18 @@ if (meta?.joinPassHash && !canSkipPassword) {
       if (el) applyCardState(el, data);
     }
 
-    function createCardDom(cardId, imageSrc, state){
+    // ===============================
+// カードDOM生成
+// ===============================
+// カードの種類に応じたDOM（通常/トークン/ダイス/数値カウンタ）を生成。/**
+ * カードの種類に応じた DOM を新規生成する（副作用：イベントバインド）
+ * @param {string} cardId - string
+ * @param {string} imageSrc - string
+ * @param {object} state - object
+ * @returns {HTMLElement} 生成したカード要素
+ */
+
+function createCardDom(cardId, imageSrc, state){
       const card = document.createElement("div");
       card.className = "card";
       if (state?.type === 'counter') card.classList.add('counter');
@@ -2637,7 +2808,16 @@ if (state?.type === 'numcounter') {
       return card;
     }
 
-    function applyCardState(card, data){
+    // ===============================
+// カード状態の適用
+// ===============================
+// Firestore 上のデータを DOM に反映。表示制御や旧URLからの移行も実施。/**
+ * Firestore データの内容を既存カードDOMへ適用（表裏表示や移行処理含む）
+ * @param {HTMLElement} card - HTMLElement
+ * @param {object} data - object
+ */
+
+function applyCardState(card, data){
       card.dataset.ownerUid = data.ownerUid || '';
       card.dataset.ownerSeat = (data.ownerSeat!=null) ? String(data.ownerSeat) : '';
       card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
@@ -2740,7 +2920,15 @@ if (data.type === 'numcounter') {
       } catch(_) {}
     }
 
-    async function cleanupAndCloseRoom(roomId){
+    // ===============================
+// ルーム終了/削除ユーティリティ
+// ===============================
+// cards/seats の一括削除と roomClosed フラグの設定、必要に応じて親docも削除。/**
+ * cards/seats を一括削除し roomClosed を立てる
+ * @param {string} roomId - string
+ */
+
+async function cleanupAndCloseRoom(roomId){
       // cards
       const cardsCol = collection(db, `rooms/${roomId}/cards`);
       const cardsSnap = await getDocs(cardsCol);
@@ -2814,7 +3002,11 @@ if (data.type === 'numcounter') {
       updateCardBatched(cardId, patch);
     }
 
-    // ===== Uploads: parallel & thumbnails
+    // ===============================
+// アップロードとサムネ生成
+// ===============================
+// 画像のサムネイル生成、Storage アップロード、Firestore への反映を並列/分割で実行。
+// ===== Uploads: parallel & thumbnails
     const nextFrame = ()=>new Promise(r=>requestAnimationFrame(()=>r()));
     const THUMB_MAX_W = 240;
     const THUMB_MAX_H = 320;
@@ -2941,7 +3133,15 @@ if (data.type === 'numcounter') {
     }
 
     // ===== Existing UI ops (batching applied)
-    function makeDraggable(card){
+    // ===============================
+// ドラッグ/パン/ズーム
+// ===============================
+// カードドラッグとフィールドのパン/ズーム（マウス/タッチ）を制御。/**
+ * カードをドラッグ可能にする（マウス/タッチ対応）
+ * @param {HTMLElement} card - HTMLElement
+ */
+
+function makeDraggable(card){
       const DRAG_THRESHOLD = 5;
       let isDragging = false;
       let startClientX = 0, startClientY = 0;
@@ -3052,7 +3252,14 @@ if (data.type === 'numcounter') {
 
     function getMaxZIndex(){ let max=0; document.querySelectorAll(".card").forEach(c=>{ const z=parseInt(c.style.zIndex)||0; if(z>max) max=z; }); return max; }
 
-    window.faceDownAll = async function(){
+    // ===============================
+// 一括操作 (自分のカードのみ)
+// ===============================
+// 表裏/回転/削除などの一括操作を実装。/**
+ * 自分のカードをすべて裏向きにする（バッチ書き込み）
+ */
+
+window.faceDownAll = async function(){
       const batch = writeBatch(db);
       let count = 0;
       for(const [id, el] of cardDomMap){
@@ -3100,6 +3307,13 @@ if (data.type === 'numcounter') {
 // ===============================
 // 数値カウンター生成（入力＋±ボタン）
 // ===============================
+// ===============================
+// ユーティリティ生成
+// ===============================
+// 数値カウンタ、ダイス、+/- カウンタ、トークン等の生成。/**
+ * 数値カウンター（入力型）を生成して自エリア中央に配置
+ */
+
 window.spawnNumberCounter = async function(){
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
     alert('ルームに参加してから実行してください'); return;
@@ -3137,6 +3351,9 @@ window.spawnNumberCounter = async function(){
     
 // ▼ 置換：6面ダイス処理（中央配置・単一化・最前面・3秒CD）
 let lastDiceAt = 0;
+/**
+ * 6面ダイスを1つだけ生成（3秒クールダウン、クリック/右クリックで自分のもののみ削除）
+ */
 
 window.rollD6 = async function(){
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
@@ -3212,6 +3429,10 @@ function svgCounterDataUrl(label){
     </svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
+/**
+ * ラベル付き丸型カウンター (+1/-1 など) を生成
+ * @param {string} label - 表示ラベル
+ */
 
 window.spawnCounter = async function(label){
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
@@ -3243,7 +3464,11 @@ window.spawnCounter = async function(label){
 
 // ===============================
 // テキストトークン生成（メモ用カード）
-// ===============================
+// ===============================/**
+ * テキストトークン用の薄枠サムネSVGを生成
+ * @returns {string} data:image/svg+xml;...
+ */
+
 function blankTokenThumb(){
   // 120x160 の薄枠だけ付けたサムネ（imgは非表示になるが念のため）
   const w=120,h=160;
@@ -3254,6 +3479,9 @@ function blankTokenThumb(){
     </svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
+/**
+ * テキストトークン（メモ）を生成して自エリア内のランダム位置へ配置
+ */
 
 window.spawnToken = async function(){
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
@@ -3489,7 +3717,13 @@ window.spawnToken = async function(){
     };
 
 
-    function bindPanZoomHandlers(){
+    // ===============================
+// フィールド操作（パン/ズーム/選択解除）
+// ===============================/**
+ * フィールドのパン/ズーム/選択解除、タッチピンチ/パンのハンドラを登録
+ */
+
+function bindPanZoomHandlers(){
       // === マウスホイールズーム
       field.addEventListener("wheel", e => {
         if(e.ctrlKey) return;
@@ -3611,7 +3845,10 @@ window.spawnToken = async function(){
 
 
     // ===== end room button
-    const endRoomBtn = document.getElementById('end-room-btn');
+    // ===============================
+// ルーム終了ボタンの制御
+// ===============================
+const endRoomBtn = document.getElementById('end-room-btn');
     function updateEndRoomButtonVisibility(){
       const isHostUid = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
       const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
@@ -3659,7 +3896,14 @@ window.spawnToken = async function(){
   const IS_MOBILE = window.matchMedia('(max-width: 768px)').matches;
 
 
-    function initializePlayField(){
+    // ===============================
+// フィールド初期化とハンドラ束ね
+// ===============================
+// 初期ズーム/サイズ、ハンドラ初回バインド、モード適用。/**
+ * フィールド初期サイズ/ズームの設定、各種ハンドラ一回登録、モード適用
+ */
+
+function initializePlayField(){
       setFieldSize('small');
       
       if (IS_MOBILE) {
