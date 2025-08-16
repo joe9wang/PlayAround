@@ -872,77 +872,38 @@
   </div>
   <div id="sidebar">
   
- <h2 class="panel-title panel-title--left">
-   <span class="panel-title__text">操作パネル</span>
-   <button id="toggle-left" class="inline-toggle" title="操作パネルの表示/非表示">◀</button>
- </h2>
-  
+   <h2 class="panel-title panel-title--left">
+     <span class="panel-title__text" data-i18n="side.panel">操作パネル</span>
+     <button id="toggle-left" class="inline-toggle"
+             title="操作パネルの表示/非表示"
+             data-i18n-title="side.panel.toggle">◀</button>
+   </h2>  
    
-   <button onclick="openSaveLoadDialog('save')">
-     💾 セーブ
-   </button>
-   <button onclick="openSaveLoadDialog('load')">
-     📂 ロード
-   </button>
-   <button onclick="resetMyCardRotation()">
-    &orarr; 全カード向きリセット（自分のカードのみ）
-   </button>
-   <button id="roll-d6-btn">
-    🎲 6面ダイスを振る
-   </button>
-   <button onclick="faceDownAll()">
-    🂠 裏返す（自分のカードのみ）
-   </button>
-   <button onclick="faceUpAll()">
-    🂡 表にする（自分のカードのみ）
-   </button>
-   <button onclick="shuffleDecks()">
-    🌀 シャッフル（自分のデッキのみ）
-   </button>
-   <button onclick="openMyDeckCardsDialog()">
-    🗃 デッキエリアのカード一覧（自分）
-   </button>
-   <button onclick="openMyCardsDialog()">
-    🗂 全カード一覧（自分）
-   </button>
-   <button onclick="spawnNumberCounter()">
-    🔢 数値カウンター
-   </button>
-   <button onclick="spawnCounter('+1')">
-    ➕1カウンター
-   </button>
-   <button onclick="spawnCounter('+10')">
-    ➕10カウンター
-   </button>
-   <button onclick="spawnCounter('-1')">
-    ➖1カウンター
-   </button>
-   <button onclick="spawnCounter('-10')">
-    ➖10カウンター
-   </button>
-   <button onclick="spawnToken()">
-    📝 トークン作成
-   </button>
-   <button onclick="deleteMyCards()">
-    🗑 全カード削除（自分のカードのみ）
-   </button>
-   <button onclick="alignDecks()">
-    📏 整列（表示のみ）
-   </button>
-   <button onclick="toggleFieldSizeOptions()">
-    🖼 フィールドサイズ変更
-   </button>
+   <button onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
+   <button onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
+   <button onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット（自分のカードのみ）</button>
+   <button id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
+   <button onclick="faceDownAll()" data-i18n="side.faceDown">🂠 裏返す（自分のカードのみ）</button>
+   <button onclick="faceUpAll()" data-i18n="side.faceUp">🂡 表にする（自分のカードのみ）</button>
+   <button onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 シャッフル（自分のデッキのみ）</button>
+   <button onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキエリアのカード一覧（自分）</button>
+    <button onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🗂 全カード一覧（自分）</button>
+   <button onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
+  <button onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1カウンター</button>
+   <button onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10カウンター</button>
+   <button onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1カウンター</button>
+   <button onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10カウンター</button>
+   <button onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
+   <button onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除（自分のカードのみ）</button>
+   <button onclick="alignDecks()" data-i18n="side.align">📏 整列（表示のみ）</button>
+   <button onclick="toggleFieldSizeOptions()" data-i18n="side.fieldSize">🖼 フィールドサイズ変更</button>
    <div id="field-size-options">
-    <button onclick="setFieldSize('small')">
-     小
-    </button>
-    <button onclick="setFieldSize('medium')">
-     中
-    </button>
-    <button onclick="setFieldSize('large')">
-     大
-    </button>
+     <button onclick="setFieldSize('small')"  data-i18n="side.sizeS">小</button>
+     <button onclick="setFieldSize('medium')" data-i18n="side.sizeM">中</button>
+     <button onclick="setFieldSize('large')"  data-i18n="side.sizeL">大</button>
    </div>
+   
+   
    <div aria-live="polite" class="host-toggle" id="host-otherops">
     <div class="row" style="justify-content:space-between; align-items:center;">
      <div style="font-size:12px;color:#555;">
@@ -976,35 +937,25 @@
      </div>
      <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
      <div class="special-area">
-      <div class="zone-label">
-       特殊エリア
-      </div>
+      <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
      </div>
      <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
      <div class="play-area">
       <div class="main-play-area">
-       <div class="zone-label">
-        プレイエリア
-       </div>
+       <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
       </div>
       <div class="deck-stack">
        <div class="discard-area">
-        <div class="zone-label">
-         捨て札エリア
-        </div>
+        <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
        </div>
        <div class="deck-area">
-        <div class="zone-label">
-         デッキエリア
-        </div>
+        <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
        </div>
       </div>
      </div>
      <!-- 右下：手札行 -->
      <div class="hand-area">
-      <div class="zone-label">
-       手札エリア
-      </div>
+      <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
      </div>
     </div>
     <div class="player-area player-2">
@@ -1017,35 +968,25 @@
      </div>
      <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
      <div class="special-area">
-      <div class="zone-label">
-       特殊エリア
-      </div>
+      <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
      </div>
      <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
      <div class="play-area">
       <div class="main-play-area">
-       <div class="zone-label">
-        プレイエリア
-       </div>
+       <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
       </div>
       <div class="deck-stack">
        <div class="discard-area">
-        <div class="zone-label">
-         捨て札エリア
-        </div>
+        <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
        </div>
        <div class="deck-area">
-        <div class="zone-label">
-         デッキエリア
-        </div>
+        <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
        </div>
       </div>
      </div>
      <!-- 右下：手札行 -->
      <div class="hand-area">
-      <div class="zone-label">
-       手札エリア
-      </div>
+      <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
      </div>
     </div>
     <div class="player-area player-3">
@@ -1058,35 +999,25 @@
      </div>
      <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
      <div class="special-area">
-      <div class="zone-label">
-       特殊エリア
-      </div>
+      <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
      </div>
      <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
      <div class="play-area">
       <div class="main-play-area">
-       <div class="zone-label">
-        プレイエリア
-       </div>
+       <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
       </div>
       <div class="deck-stack">
        <div class="discard-area">
-        <div class="zone-label">
-         捨て札エリア
-        </div>
+        <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
        </div>
        <div class="deck-area">
-        <div class="zone-label">
-         デッキエリア
-        </div>
+        <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
        </div>
       </div>
      </div>
      <!-- 右下：手札行 -->
      <div class="hand-area">
-      <div class="zone-label">
-       手札エリア
-      </div>
+      <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
      </div>
     </div>
     <div class="player-area player-4">
@@ -1099,73 +1030,49 @@
      </div>
      <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
      <div class="special-area">
-      <div class="zone-label">
-       特殊エリア
-      </div>
+      <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
      </div>
      <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
      <div class="play-area">
       <div class="main-play-area">
-       <div class="zone-label">
-        プレイエリア
-       </div>
+       <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
       </div>
       <div class="deck-stack">
        <div class="discard-area">
-        <div class="zone-label">
-         捨て札エリア
-        </div>
+        <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
        </div>
        <div class="deck-area">
-        <div class="zone-label">
-         デッキエリア
-        </div>
+        <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
        </div>
       </div>
      </div>
      <!-- 右下：手札行 -->
      <div class="hand-area">
-      <div class="zone-label">
-       手札エリア
-      </div>
+      <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
      </div>
     </div>
     <div id="board-layout">
      <div id="board-play">
-      <div class="zone-label">
-       プレイエリア（共有）
-      </div>
+      <div class="zone-label" data-i18n="zone.play.shared">プレイエリア（共有）</div>
      </div>
      <div class="board-hand" id="board-hand-1">
-      <div class="zone-label">
-       手札エリア P1
-      </div>
+      <div class="zone-label" data-i18n="zone.hand">手札エリア P1</div>
      </div>
      <div class="board-hand" id="board-hand-2">
-      <div class="zone-label">
-       手札エリア P2
-      </div>
+      <div class="zone-label" data-i18n="zone.hand">手札エリア P2</div>
      </div>
      <div class="board-hand" id="board-hand-3">
-      <div class="zone-label">
-       手札エリア P3
-      </div>
+      <div class="zone-label" data-i18n="zone.hand">手札エリア P3</div>
      </div>
      <div class="board-hand" id="board-hand-4">
-      <div class="zone-label">
-       手札エリア P4
-      </div>
+      <div class="zone-label" data-i18n="zone.hand">手札エリア P4</div>
      </div>
      <div id="board-center">
       <div class="center-deck">
-       <div class="zone-label">
-        デッキエリア（共有）
-       </div>
+       <div class="zone-label" data-i18n="zone.deck.shared">デッキエリア（共有）</div>
       </div>
       <div class="center-discard">
-       <div class="zone-label">
-        捨て札エリア（共有）
-       </div>
+       <div class="zone-label" data-i18n="zone.discard.shared">捨て札エリア（共有）</div>
       </div>
      </div>
     </div>
@@ -1174,19 +1081,18 @@
   <div id="preview">
    <div id="preview-top">
    
- <h2 class="panel-title panel-title--right">
-   <button id="toggle-right" class="inline-toggle" title="選択肢のカードの表示/非表示">▶</button>
-   <span class="panel-title__text">選択肢のカード</span>
- </h2>
-   
+   <h2 class="panel-title panel-title--right">
+     <button id="toggle-right" class="inline-toggle"
+             title="選択肢のカードの表示/非表示"
+             data-i18n-title="preview.toggle">▶</button>
+     <span class="panel-title__text" data-i18n="preview.title">選択肢のカード</span>
+   </h2>   
     <img alt="プレビュー画像" id="preview-img"/>
     <div id="preview-info">
     </div>
    </div>
    <div aria-label="HP パネル" id="hp-panel">
-    <div style="font-size:12px;color:#666;margin-bottom:6px;">
-     プレイヤーHP
-    </div>
+    <div style="font-size:12px;color:#666;margin-bottom:6px;" data-i18n="hp.title">プレイヤーHP</div>
     <div id="hp-grid">
     </div>
    </div>
@@ -1844,13 +1750,13 @@ async function storageDownloadURL(path) {
 const I18N = {
   ja: {
     "app.title": "画像で遊べるボドゲ・カードゲーム（最大4人）",
-
+    
     "links.privacy": "プライバシーポリシー",
     "links.terms":   "利用規約",
     "links.contact": "お問い合わせ",
-
+    
     "lobby.welcome": "プレイアラウンドへようこそ",
-
+    
     "join.section":   "既存ルームに参加（非ホスト）",
     "join.roomId":    "参加するルームID",
     "join.roomId.ph": "例: room-abc / 1234",
@@ -1860,7 +1766,7 @@ const I18N = {
     "join.name.ph":   "名前（例: SOLVENTER）",
     "join.chooseSeat":"座席を選択",
     "join.start":     "開始",
-
+    
     "create.section":   "新しいルームを作成して参加（ホスト）",
     "create.roomId":    "新しいルームを作成",
     "create.roomId.ph": "例: room-abc / 1234",
@@ -1873,27 +1779,68 @@ const I18N = {
     "create.mode.card": "🃏 カードゲーム",
     "create.mode.board":"🎲 ボードゲーム",
     "create.createBtn": "作成",
-
+    
+    // --- Side / Panel / Buttons ---
+    "side.panel": "操作パネル",
+    "side.panel.toggle": "操作パネルの表示/非表示",
+    "side.save": "セーブ",
+    "side.load": "ロード",
+    "side.resetFacing": "全カード向きリセット（自分のカードのみ）",
+    "side.rollD6": "6面ダイスを振る",
+    "side.faceDown": "裏返す（自分のカードのみ）",
+    "side.faceUp": "表にする（自分のカードのみ）",
+    "side.shuffle": "シャッフル（自分のデッキのみ）",
+    "side.deckList": "デッキエリアのカード一覧（自分）",
+    "side.allMyCards": "全カード一覧（自分）",
+    "side.numCounter": "数値カウンター",
+    "side.plus1": "＋1カウンター",
+    "side.plus10": "＋10カウンター",
+    "side.minus1": "−1カウンター",
+    "side.minus10": "−10カウンター",
+    "side.token": "トークン作成",
+    "side.deleteMine": "全カード削除（自分のカードのみ）",
+    "side.align": "整列（表示のみ）",
+    "side.fieldSize": "フィールドサイズ変更",
+    "side.sizeS": "小",
+    "side.sizeM": "中",
+    "side.sizeL": "大",
+    
+    // --- Zones ---
+    "zone.special": "特殊エリア",
+    "zone.play": "プレイエリア",
+    "zone.discard": "捨て札エリア",
+    "zone.deck": "デッキエリア",
+    "zone.hand": "手札エリア",
+    "zone.play.shared": "プレイエリア（共有）",
+    "zone.deck.shared": "デッキエリア（共有）",
+    "zone.discard.shared": "捨て札エリア（共有）",
+    
+    // --- Preview / Misc ---
+    "preview.title": "選択肢のカード",
+    "preview.toggle": "選択肢のカードの表示/非表示",
+    "hp.title": "プレイヤーHP",
+    
+    
     // alerts
     "err.roomId":    "ルームIDを入力してください",
     "err.playerName":"プレイヤー名を入力してください",
     "err.seat":      "座席を選んでください",
     "err.passWrong": "パスワードが違います。",
     "err.hostAbsent":"ホストが不在のため、このルームには参加できません。",
-
+    
     "auth.loggedIn": "ログインしました。",
     "auth.loggedOut":"ログアウトしました。",
     "auth.logoutFail":"ログアウトに失敗しました。"
   },
   en: {
     "app.title": "Play board/card games with images (up to 4)",
-
+    
     "links.privacy": "Privacy Policy",
     "links.terms":   "Terms",
     "links.contact": "Contact",
-
+    
     "lobby.welcome": "Welcome to PlayAround",
-
+    
     "join.section":   "Join an existing room (Guest)",
     "join.roomId":    "Room ID to join",
     "join.roomId.ph": "e.g., room-abc / 1234",
@@ -1903,7 +1850,7 @@ const I18N = {
     "join.name.ph":   "Name (e.g., SOLVENTER)",
     "join.chooseSeat":"Choose your seat",
     "join.start":     "Start",
-
+    
     "create.section":   "Create a new room (Host)",
     "create.roomId":    "Create a new room",
     "create.roomId.ph": "e.g., room-abc / 1234",
@@ -1916,14 +1863,54 @@ const I18N = {
     "create.mode.card": "🃏 Card game",
     "create.mode.board":"🎲 Board game",
     "create.createBtn": "Create",
-
+    
+    // --- Side / Panel / Buttons ---
+    "side.panel": "Control Panel",
+    "side.panel.toggle": "Show/Hide control panel",
+    "side.save": "Save",
+    "side.load": "Load",
+    "side.resetFacing": "Reset card orientation (mine only)",
+    "side.rollD6": "Roll a d6",
+    "side.faceDown": "Face-down (mine only)",
+    "side.faceUp": "Face-up (mine only)",
+    "side.shuffle": "Shuffle (my deck only)",
+    "side.deckList": "My deck-area cards",
+    "side.allMyCards": "All my cards",
+    "side.numCounter": "Number counter",
+    "side.plus1": "+1 counter",
+    "side.plus10": "+10 counter",
+    "side.minus1": "−1 counter",
+    "side.minus10": "−10 counter",
+    "side.token": "Create token",
+    "side.deleteMine": "Delete all my cards",
+    "side.align": "Align (visual only)",
+    "side.fieldSize": "Change field size",
+    "side.sizeS": "Small",
+    "side.sizeM": "Medium",
+    "side.sizeL": "Large",
+    
+    // --- Zones ---
+    "zone.special": "Special",
+    "zone.play": "Play area",
+    "zone.discard": "Discard",
+    "zone.deck": "Deck",
+    "zone.hand": "Hand",
+    "zone.play.shared": "Shared play area",
+    "zone.deck.shared": "Shared deck area",
+    "zone.discard.shared": "Shared discard area",
+    
+    // --- Preview / Misc ---
+    "preview.title": "Candidate cards",
+    "preview.toggle": "Show/Hide candidate cards",
+    "hp.title": "Players' HP",
+    
     // alerts
     "err.roomId":    "Please enter a Room ID.",
     "err.playerName":"Please enter your player name.",
     "err.seat":      "Please select a seat.",
     "err.passWrong": "Wrong password.",
     "err.hostAbsent":"The host is not available, so you can't join this room.",
-
+    
     "auth.loggedIn": "Signed in.",
     "auth.loggedOut":"Signed out.",
     "auth.logoutFail":"Failed to sign out."
