@@ -4435,6 +4435,7 @@ const endRoomBtn = document.getElementById('end-room-btn');
         alert('ルームの終了に失敗しました。ネットワークをご確認のうえ再試行してください。');
       } finally {
         endRoomBtn.disabled = false;
+        endRoomBtn.textContent = old; // ← これを追加：ボタン表示を元に戻す
         updateEndRoomButtonVisibility();
       }
     });
