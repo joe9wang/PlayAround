@@ -41,12 +41,16 @@ copyFileSync("./ads.txt", `${OUT_DIR}/ads.txt`);
 copyFileSync("./privacy.html", `${OUT_DIR}/privacy.html`);
 // contact.html を dist にコピー
 copyFileSync("./contact.html", `${OUT_DIR}/contact.html`);
-// contact.html を dist にコピー
+// terms.html を dist にコピー
 copyFileSync("./terms.html", `${OUT_DIR}/terms.html`);
 
 // BoardGame.html を dist にコピー
 //copyFileSync("./BoardGame.html", `${OUT_DIR}/BoardGame.html`);
 // CardGame.html を dist にコピー
 //copyFileSync("./CardGame.html", `${OUT_DIR}/CardGame.html`);
+
+// close-room.ts を dist にコピー
+copyFileSync("./close-room.ts", `${OUT_DIR}/close-room.ts`);
+
 
 console.log("Injected env vars into dist/index.html");

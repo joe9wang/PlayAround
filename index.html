@@ -1174,8 +1174,8 @@
    GoogleAuthProvider,
    signInWithPopup, linkWithPopup, signInWithCredential,
    signInWithRedirect, linkWithRedirect, getRedirectResult,
-   signOut, updateProfile
-  } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+   signOut, updateProfile, onIdTokenChanged, getIdToken
+   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 
   import {
     getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot,
@@ -1251,6 +1251,18 @@ getToken(window.appCheck)
 // ===============================
 // Auth/DB/Storage のインスタンスを作成し、以降の処理で参照します。
 const auth = getAuth(app);
+
+// === IDトークンを保持（sendBeacon でサーバーに本人確認を渡す） ===
+let AUTH_ID_TOKEN = null;
+onIdTokenChanged(auth, async (user) => {
+  try {
+    AUTH_ID_TOKEN = user ? await getIdToken(user, /*forceRefresh*/ true) : null;
+  } catch (e) {
+    console.warn('[auth] getIdToken failed', e);
+    AUTH_ID_TOKEN = null;
+  }
+});
+
     const db = getFirestore(app);
     
     
@@ -2917,6 +2929,24 @@ async function claimSeat(roomId, seat){
 
     let unsubscribeCards = null;
     let handlersBound = false;
+    
+    
+// === ページ終了時専用：サーバーに「このroomを閉じて削除」を確実に依頼 ===
+function sendCloseBeacon(roomId) {
+  if (!roomId || !AUTH_ID_TOKEN) return false;
+  try {
+    const body = JSON.stringify({ roomId, token: AUTH_ID_TOKEN });
+    const blob = new Blob([body], { type: 'application/json' });
+    // Vercel Functions で用意する /api/close-room に投げる
+    return navigator.sendBeacon('/api/close-room', blob);
+  } catch (e) {
+    console.warn('sendBeacon failed', e);
+    return false;
+  }
+}
+    
+    
+    
 
 // ===============================
 // セッション開始
@@ -2950,10 +2980,12 @@ function startSession(roomId, playerId){
         try { stopHeartbeat(); } catch (_) {}
         try { stopHostWatch(); } catch (_) {}
 
-        if (IS_ROOM_CREATOR && CURRENT_ROOM) {
-          // サブコレ削除→roomClosedセット→親doc削除（復活防止のため停止後に実行）
-          cleanupAndDeleteRoom(CURRENT_ROOM).catch(console.warn);
-        }
+   if (IS_ROOM_CREATOR && CURRENT_ROOM) {
+     // ページ終了はクライアントで削除せず、サーバーに依頼
+     const ok = sendCloseBeacon(CURRENT_ROOM);
+     // 念のためフォールバック（Beacon非対応/エラー時のみ）
+     if (!ok) cleanupAndDeleteRoom(CURRENT_ROOM).catch(console.warn);
+   }
 
         try { releaseSeat(roomId, playerId); } catch (_) {}
       };
@@ -2962,7 +2994,21 @@ function startSession(roomId, playerId){
       window.addEventListener('beforeunload', __onLeave);
       // iOS Safari 等のモバイル向け
       window.addEventListener('pagehide', __onLeave, { once: true });
-
+      
+      
+      // 画面が一定時間hiddenなら終了（誤作動防止に少し待つ）
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          setTimeout(() => {
+            if (document.visibilityState === 'hidden' && IS_ROOM_CREATOR && CURRENT_ROOM) {
+              const ok = sendCloseBeacon(CURRENT_ROOM);
+              if (!ok) cleanupAndDeleteRoom(CURRENT_ROOM).catch(console.warn);
+            }
+          }, 20000); // 20秒
+        }
+      });  
+      
+      
       initializePlayField();
       subscribeCards();
       startHostWatch();
