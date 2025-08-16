@@ -517,7 +517,27 @@
    }
  }
 
-
+ /* ===== 見出し内トグル（正方形ボタン） ===== */
+ .inline-toggle {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   width: 28px !important;   /* サイドバーの「button{width:100%}」系を打ち消す */
+   height: 28px !important;
+   min-width: 28px;
+   padding: 0 !important;
+   margin-left: 6px;
+   border: 1px solid #ccc;
+   border-radius: 6px;
+   background: #fff;
+   cursor: pointer;
+   flex: 0 0 28px;           /* 伸び縮みさせない */
+   line-height: 1;
+   user-select: none;
+ }
+ #sidebar h2 .inline-toggle { margin-left: 8px; }
+ #preview h2 .inline-toggle { margin-left: 0; margin-right: 8px; }
+ .inline-toggle:hover { background:#f3f3f3; }
 
   </style>
  </head>
@@ -711,8 +731,8 @@
   
  <h2 style="display:flex; align-items:center;">
    操作パネル
-   <button id="toggle-left" class="collapse-handle" title="操作パネルの表示/非表示">◀</button>
- </h2>  
+   <button id="toggle-left" class="inline-toggle" title="操作パネルの表示/非表示">◀</button>
+ </h2>
   
    <button onclick="resetMyCardRotation()">
     &orarr; 全カード向きリセット（自分のカードのみ）
@@ -1005,8 +1025,8 @@
    <div id="preview-top">
    
  <h2 style="display:flex; align-items:center;">
-   選択肢のカード
-   <button id="toggle-right" class="collapse-handle" title="選択肢のカードの表示/非表示">▶</button>
+   <button id="toggle-right" class="inline-toggle" title="選択肢のカードの表示/非表示">▶</button>
+   <span>選択肢のカード</span>
  </h2>
    
     <img alt="プレビュー画像" id="preview-img"/>
