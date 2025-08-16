@@ -2339,8 +2339,13 @@ function randomPointInMainPlay(seat){
 
 function ensureAuthReady(){
       return new Promise((resolve) => {
+        // すでに auth.currentUser が居るのに CURRENT_UID が古い/空、というケースを潰す
+        const uNow = auth.currentUser;
+        if (uNow && CURRENT_UID !== uNow.uid) CURRENT_UID = uNow.uid;
         if (CURRENT_UID) return resolve();
-        const off = onAuthStateChanged(auth, (u) => { if (u) { CURRENT_UID = u.uid; off(); resolve(); } });
+        const off = onAuthStateChanged(auth, (u) => {
+          if (u) { CURRENT_UID = u.uid; off(); resolve(); }
+        });
       });
     }
 
@@ -2358,15 +2363,33 @@ function ensureAuthReady(){
       createRoomBtn.textContent = '作成中…';
 
       try{
-      
+        
+        // 直前の確定 UID（CURRENT_UID が古い可能性に備え、auth.currentUser を使用）
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+          alert('認証が完了していません。もう一度お試しください。');
+          return;
+        }
+        
         // ▼追加：パスワード読み＆ハッシュ化
         const passRaw = (newRoomPassInput?.value || '').trim();
         const joinPassHash = passRaw ? await sha256Hex(passRaw) : null;
-    
-        await setDoc(doc(db, `rooms/${id}`), {
+        
+        
+        // 既存の同名ルームが他人の所有なら弾く（update 判定で permission-denied になる前に人間に分かるエラーに）
+        const roomRef = doc(db, `rooms/${id}`);
+        const existsSnap = await getDoc(roomRef);
+        if (existsSnap.exists() && existsSnap.data()?.hostUid && existsSnap.data().hostUid !== uid) {
+          alert('このルームIDは他のホストが使用中です。別のIDにしてください。');
+          return;
+        }
+        
+        console.log('[create-room] uid(now)=', auth.currentUser?.uid, 'CURRENT_UID=', CURRENT_UID);
+        
+        await setDoc(roomRef, {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          hostUid: CURRENT_UID,
+          hostUid: uid,
           hostDisplayName: creatorName,
           roomClosed: false,
           fieldMode: CREATE_FIELD_MODE,     
