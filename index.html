@@ -3006,13 +3006,10 @@ function startSession(roomId, playerId){
       window.addEventListener('beforeunload', __onLeave);
       // iOS Safari 等のモバイル向け
       window.addEventListener('pagehide', __onLeave, { once: true });
-
-      // iOSのバックグラウンド遷移でも確実に通知
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-          __onLeave();
-        }
-      }, { once: true });
+      
+      
+      
+      
       
       // 画面が一定時間hiddenなら終了（誤作動防止に少し待つ）
       document.addEventListener('visibilitychange', () => {
