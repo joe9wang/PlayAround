@@ -481,21 +481,46 @@
  }
 
 
+ /* ===== 折り畳み時だけ出る外付けハンドル ===== */
+ .edge-handle {
+   position: fixed;
+   top: calc(var(--header-h) + 12px);
+   z-index: 2000;
+   display: none;            /* デフォルト非表示 */
+   width: 28px;
+   height: 48px;
+   border: 1px solid #ccc;
+   border-radius: 12px;
+   background: #fff;
+   cursor: pointer;
+   align-items: center;
+   justify-content: center;
+   font-size: 16px;
+   user-select: none;
+   box-shadow: 0 2px 10px rgba(0,0,0,.08);
+ }
+ .edge-handle:hover { box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+ .edge-left  { left: 8px; }
+ .edge-right { right: 8px; }
+ /* 折り畳み中だけ表示 */
+ body.collapse-left  .edge-left  { display: inline-flex; }
+ body.collapse-right .edge-right { display: inline-flex; }
+ 
+ /* モバイル時は少し小さく */
+ @media (max-width: 768px) {
+   .edge-handle {
+     top: calc(var(--header-h) + 8px);
+     width: 26px;
+     height: 40px;
+   }
+ }
+
 
 
   </style>
  </head>
  <body>
   <h1>
-  
-  <!-- 折り畳みハンドル：左 -->
-  <button id="toggle-left" class="collapse-handle" title="操作パネルの表示/非表示">
-   ◀
-  </button>  
-  <!-- 折り畳みハンドル：右 -->
-  <button id="toggle-right" class="collapse-handle" title="選択中のカードの表示/非表示">
-    ▶
-  </button>
   
    <span data-i18n="app.title">
     画像で遊べるボドゲ・カードゲーム（最大4人）
@@ -1249,6 +1274,21 @@ updateModePickButtons();
    if (toggleLeftBtn)  toggleLeftBtn.setAttribute('aria-pressed',  left ? 'true' : 'false');
    if (toggleRightBtn) toggleRightBtn.setAttribute('aria-pressed', right ? 'true' : 'false');
  }
+ 
+ // ===== 外付けハンドル（折り畳み時だけ見える） =====
+ const edgeLeft  = document.getElementById('edge-left');
+ const edgeRight = document.getElementById('edge-right');
+ 
+ edgeLeft?.addEventListener('click',  () => {
+   // 左サイド折り畳み中 → 展開
+   localStorage.setItem(LS_COLLAPSE_LEFT, '0');
+   applyCollapseState();
+ });
+ edgeRight?.addEventListener('click', () => {
+   // 右サイド折り畳み中 → 展開
+   localStorage.setItem(LS_COLLAPSE_RIGHT, '0');
+   applyCollapseState();
+ });
  
  function toggleLeft(){
    const left = !(localStorage.getItem(LS_COLLAPSE_LEFT) === '1');
@@ -4016,5 +4056,10 @@ function initializePlayField(){
     // render helpers
     function updateEndRoomButtonVisibilityWrapper(){ updateEndRoomButtonVisibility(); }
   </script>
+  
+  <!-- 折り畳み時だけ表示される外付けハンドル -->
+  <button id="edge-left"  class="edge-handle edge-left"  aria-label="操作パネルを展開">▶</button>
+  <button id="edge-right" class="edge-handle edge-right" aria-label="選択肢のカードを展開">◀</button>  
+  
  </body>
 </html>
