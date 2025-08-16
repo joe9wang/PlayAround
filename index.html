@@ -2917,19 +2917,34 @@ function startSession(roomId, playerId){
       lobby.style.display = 'none';
       startHeartbeat(roomId, playerId);
       if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
-
+      
+      
       joinRoomInput.value = CURRENT_ROOM;
       loadSeatStatus();
 
-      window.addEventListener('beforeunload', () => {
-        stopHeartbeat();
-        stopHostWatch();
+// 離脱時の多重実行防止
+      let __leavingOnce = false;
+      const __onLeave = () => {
+        if (__leavingOnce) return;
+        __leavingOnce = true;
+
+        // 先に全タイマー/購読を停止してから DB を触る
+        try { stopHostHeartbeat(); } catch (_) {}
+        try { stopHeartbeat(); } catch (_) {}
+        try { stopHostWatch(); } catch (_) {}
+
         if (IS_ROOM_CREATOR && CURRENT_ROOM) {
-          cleanupAndCloseRoom(CURRENT_ROOM).catch(console.warn);
-          stopHostHeartbeat();
+          // サブコレ削除→roomClosedセット→親doc削除（復活防止のため停止後に実行）
+          cleanupAndDeleteRoom(CURRENT_ROOM).catch(console.warn);
         }
-        releaseSeat(roomId, playerId);
-      });
+
+        try { releaseSeat(roomId, playerId); } catch (_) {}
+      };
+
+      // PCブラウザ向け
+      window.addEventListener('beforeunload', __onLeave);
+      // iOS Safari 等のモバイル向け
+      window.addEventListener('pagehide', __onLeave, { once: true });
 
       initializePlayField();
       subscribeCards();
@@ -4361,16 +4376,20 @@ const endRoomBtn = document.getElementById('end-room-btn');
       }
       if (!confirm('ルームを終了します。全カードと座席情報が削除され、全員が退出します。よろしいですか？')) return;
 
-      endRoomBtn.disabled = true;
-      try {
-        await cleanupAndDeleteRoom(CURRENT_ROOM);
-        try { if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; } } catch(_) {}
-        try { if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; } } catch(_) {}
-        try { if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; } } catch(_) {}
-        try { stopHeartbeat(); } catch(_) {}
-        try { stopHostHeartbeat(); } catch(_) {}
-        try { stopHostWatch(); } catch(_) {}
-        try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
+    endRoomBtn.disabled = true;
+    const old = endRoomBtn.textContent; endRoomBtn.textContent = '終了中...';
+    try{
+      // 1) 先に全て止める（復活防止）
+      try { stopHostHeartbeat(); } catch (_){}
+      try { stopHeartbeat(); } catch (_){}
+      try { stopHostWatch(); } catch (_){}
+      try { if (unsubscribeCards)    { unsubscribeCards();    unsubscribeCards    = null; } } catch(_){}
+      try { if (unsubscribeSeats)    { unsubscribeSeats();    unsubscribeSeats    = null; } } catch(_){}
+      try { if (unsubscribeRoomDoc)  { unsubscribeRoomDoc();  unsubscribeRoomDoc  = null; } } catch(_){}
+      try { if (CURRENT_ROOM && CURRENT_PLAYER) await releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_){}
+
+      // 2) その後に Firestore 側を完全掃除
+      await cleanupAndDeleteRoom(CURRENT_ROOM);
 
         CURRENT_ROOM = null;
         CURRENT_PLAYER = null;
