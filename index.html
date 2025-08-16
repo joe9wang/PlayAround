@@ -680,6 +680,14 @@
    flex: 0 0 28px;
  }
 
+ /* 見出しテキストを“箱”にしてボタンと同じ高さで中央揃えにする */
+ .panel-title__text{
+   display: flex;                          /* ← インラインではなくフレックス要素に */
+   align-items: center;                    /* ← 中央揃え（縦） */
+   height: var(--panel-title-h);           /* 見出しと同じ高さに固定 */
+   line-height: var(--panel-title-h);      /* 光学的な中央がズレないように */
+ }
+
   </style>
  </head>
  <body>
