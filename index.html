@@ -577,6 +577,33 @@
  #sidebar .panel-title .inline-toggle { margin-left:8px; }
  #preview .panel-title .inline-toggle  { margin-right:8px; }
 
+ /* ===== 見出しの高さズレ修正（ID付きで強制上書き） ===== */
+ #sidebar h2.panel-title {
+   margin: 0 !important;         /* 既存: #sidebar h2 { margin:20px 0 10px } を打ち消し */
+   text-align: right;            /* 右寄せ */
+   height: var(--panel-title-h); /* 高さ固定で右と一致 */
+   min-height: var(--panel-title-h);
+   line-height: var(--panel-title-h);
+   padding: 0 8px;               /* 上下位置の微調整 */
+   font-size: 16px;              /* 必要なら右と同値に */
+   display: flex;
+   align-items: center;
+   gap: 8px;
+ }
+ 
+ #preview h2.panel-title {
+   margin: 0 !important;         /* 既存: #preview h2 { margin:0 0 10px } を打ち消し */
+   text-align: left;
+   height: var(--panel-title-h);
+   min-height: var(--panel-title-h);
+   line-height: var(--panel-title-h);
+   padding: 0 8px;
+   font-size: 16px;
+   display: flex;
+   align-items: center;
+   gap: 8px;
+ }
+
 
   </style>
  </head>
