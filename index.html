@@ -3499,15 +3499,27 @@ async function cleanupAndCloseRoom(roomId){
     
      // ルーム完全削除（サブコレ削除→roomClosedフラグ→親doc削除）
      async function cleanupAndDeleteRoom(roomId){
-       // まず既存処理で cards/seats を全削除し、roomClosed を立てて通知
-       await cleanupAndCloseRoom(roomId);
-       // 次に親ルームドキュメント自体を削除
-       try {
-         await deleteDoc(doc(db, `rooms/${roomId}`));
-       } catch (e) {
-         console.warn('delete room doc failed', e);
-       }
-     }
+  // まず既存処理で cards/seats を全削除し、roomClosed を立てて通知
+  await cleanupAndCloseRoom(roomId);
+  // 次に親ルームドキュメント自体を削除（失敗時は墓標＆TTL）
+  try {
+    await deleteDoc(doc(db, `rooms/${roomId}`));
+  } catch (e) {
+    console.warn('delete room doc failed', e);
+    // 権限NGや競合時の保険：入室不可にする tombstone を残す
+    try {
+      await setDoc(doc(db, `rooms/${roomId}`), {
+        roomClosed: true,
+        tombstone: true,
+        deletedAt: serverTimestamp(),
+        // Firestore TTL を rooms コレクションの "ttl" に設定していれば自動削除
+        ttl: Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) // 10分後
+      }, { merge: true });
+    } catch (e2) {
+      console.warn('tombstone fallback failed', e2);
+    }
+  }
+}
     
     
     
@@ -4406,8 +4418,10 @@ const endRoomBtn = document.getElementById('end-room-btn');
       }
       if (!confirm('ルームを終了します。全カードと座席情報が削除され、全員が退出します。よろしいですか？')) return;
 
-    endRoomBtn.disabled = true;
-    const old = endRoomBtn.textContent; endRoomBtn.textContent = '終了中...';
+      endRoomBtn.disabled = true;
+      const old = endRoomBtn.textContent;
+      endRoomBtn.textContent = '終了中...';
+
     try{
       // 1) 先に全て止める（復活防止）
       try { stopHostHeartbeat(); } catch (_){}
@@ -4435,7 +4449,7 @@ const endRoomBtn = document.getElementById('end-room-btn');
         alert('ルームの終了に失敗しました。ネットワークをご確認のうえ再試行してください。');
       } finally {
         endRoomBtn.disabled = false;
-        endRoomBtn.textContent = old; // ← これを追加：ボタン表示を元に戻す
+        endRoomBtn.textContent = old;   // ← 復帰を追加
         updateEndRoomButtonVisibility();
       }
     });
