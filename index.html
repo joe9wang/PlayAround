@@ -973,8 +973,8 @@
  * ※ 本ファイルは機能を変更せずに可読性向上のためコメントを追加しています。
  * ==================================================================== */
 
-   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-  import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app-check.js";
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+  import { initializeAppCheck, ReCaptchaV3Provider, getToken } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app-check.js";
 
   import {
     getAuth, signInAnonymously, onAuthStateChanged,
@@ -1018,13 +1018,8 @@
     appId: "1:248859224605:web:1320093856bc1861c174f4"
 
 
-
-
   };
   const app = initializeApp(firebaseConfig);
-  
-  
-  
   
   
 
@@ -1050,10 +1045,7 @@
   }    
     
  }
-    
-    // …initializeApp(firebaseConfig) の後、initializeAppCheck() ブロックのすぐ下に追加
-import { getApps } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getToken } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app-check.js";
+
 
 console.log('apps:', getApps().length); // 1 以上ならOK
 getToken(window.appCheck)
