@@ -643,6 +643,42 @@
    padding-bottom: 0;
  }
 
+ /* ===== 見出しの高さと中央揃えを揃える ===== */
+ :root { --panel-title-h: 32px; } /* 必要なら 30〜36px で微調整 */
+ 
+ /* 左右の見出しを同じボックスにする */
+ #sidebar h2.panel-title,
+ #preview h2.panel-title {
+   margin: 0 !important;
+   padding: 0 8px;
+   height: var(--panel-title-h);
+   min-height: var(--panel-title-h);
+   line-height: var(--panel-title-h);
+   display: flex;
+   align-items: center;     /* ← 中央揃えの要 */
+   gap: 8px;
+   font-size: 16px;
+ }
+ /* 左（操作パネル）は右寄せ、右（選択肢のカード）は左寄せ */
+ .panel-title--left  { justify-content: flex-end; }
+ .panel-title--right { justify-content: flex-start; }
+ 
+ /* 見出し内の正方形トグルボタン（100%幅を打ち消す） */
+ .inline-toggle {
+   display: inline-flex;
+   align-items: center;     /* ボタン内の矢印も縦中央 */
+   justify-content: center;
+   width: 28px !important;  /* #sidebar button {width:100%} を無効化 */
+   height: 28px !important;
+   min-width: 28px;
+   padding: 0 !important;
+   border: 1px solid #ccc;
+   border-radius: 6px;
+   background: #fff;
+   cursor: pointer;
+   line-height: 1;
+   flex: 0 0 28px;
+ }
 
   </style>
  </head>
