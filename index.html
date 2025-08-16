@@ -431,10 +431,80 @@
     padding-bottom: 80px;       /* 下部ボタンが隠れない余白 */
   }
 }
+
+
+ /* ===== サイドバー折り畳み（CSS変数で幅を0に） ===== */
+ body.collapse-left  { --sidebar-w: 0px; }
+ body.collapse-right { --preview-w: 0px; }
+ 
+ /* 幅トランジションで気持ちよく */
+ #sidebar, #container, #preview {
+   transition: width .2s ease, max-width .2s ease, min-width .2s ease;
+ }
+ 
+ /* 幅0のとき中身を隠す（描画コスト削減） */
+ body.collapse-left  #sidebar,
+ body.collapse-right #preview {
+   overflow: hidden;
+   border-width: 0 !important;
+   box-shadow: none !important;
+   padding: 0 !important;
+ }
+ 
+ /* 折り畳みハンドル（左右に常時表示） */
+ .collapse-handle {
+   position: fixed;
+   top: calc(var(--header-h) + 8px);
+   z-index: 1000;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   width: 28px;
+   height: 48px;
+   border: 1px solid #ccc;
+   border-radius: 12px;
+   background: #fff;
+   cursor: pointer;
+   opacity: .92;
+   user-select: none;
+ }
+ .collapse-handle:hover { box-shadow: 0 2px 10px rgba(0,0,0,.12); }
+ 
+ /* 左ハンドル（左サイドの外側に張り付く） */
+ #toggle-left {
+   left: 8px;
+ }
+ /* 右ハンドル（右サイドの外側に張り付く） */
+ #toggle-right {
+   right: 8px;
+ }
+ 
+ /* モバイル縦積み時は控えめな位置に */
+ @media (max-width: 768px) {
+   .collapse-handle {
+     top: calc(var(--header-h) + 6px);
+     width: 28px;
+     height: 40px;
+   }
+ }
+
+
+
+
   </style>
  </head>
  <body>
   <h1>
+  
+  <!-- 折り畳みハンドル：左 -->
+  <button id="toggle-left" class="collapse-handle" title="操作パネルの表示/非表示">
+   ◀
+  </button>  
+  <!-- 折り畳みハンドル：右 -->
+  <button id="toggle-right" class="collapse-handle" title="選択中のカードの表示/非表示">
+    ▶
+  </button>
+  
    <span data-i18n="app.title">
     画像で遊べるボドゲ・カードゲーム（最大4人）
    </span>
@@ -1159,6 +1229,52 @@ function updateModePickButtons(){
 pickModeCardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'card';  updateModePickButtons(); });
 pickModeBoardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'board'; updateModePickButtons(); });
 updateModePickButtons();
+    
+    
+ // ===== サイドバー折り畳み（左=操作パネル, 右=プレビュー） =====
+ const toggleLeftBtn  = document.getElementById('toggle-left');
+ const toggleRightBtn = document.getElementById('toggle-right');
+ 
+ // localStorage に保持（リロードしても状態維持）
+ const LS_COLLAPSE_LEFT  = 'pa:collapse-left';
+ const LS_COLLAPSE_RIGHT = 'pa:collapse-right';
+ 
+ function applyCollapseState(){
+   const left  = localStorage.getItem(LS_COLLAPSE_LEFT)  === '1';
+   const right = localStorage.getItem(LS_COLLAPSE_RIGHT) === '1';
+   document.body.classList.toggle('collapse-left',  left);
+   document.body.classList.toggle('collapse-right', right);
+   // ボタンの矢印を状態に合わせる
+   if (toggleLeftBtn)  toggleLeftBtn.textContent  = left  ? '▶' : '◀';
+   if (toggleRightBtn) toggleRightBtn.textContent = right ? '◀' : '▶';
+   // アクセシビリティ（ご参考）
+   if (toggleLeftBtn)  toggleLeftBtn.setAttribute('aria-pressed',  left ? 'true' : 'false');
+   if (toggleRightBtn) toggleRightBtn.setAttribute('aria-pressed', right ? 'true' : 'false');
+ }
+ 
+ function toggleLeft(){
+   const left = !(localStorage.getItem(LS_COLLAPSE_LEFT) === '1');
+   localStorage.setItem(LS_COLLAPSE_LEFT, left ? '1' : '0');
+   applyCollapseState();
+ }
+ function toggleRight(){
+   const right = !(localStorage.getItem(LS_COLLAPSE_RIGHT) === '1');
+   localStorage.setItem(LS_COLLAPSE_RIGHT, right ? '1' : '0');
+   applyCollapseState();
+ }
+ 
+ toggleLeftBtn?.addEventListener('click',  toggleLeft);
+ toggleRightBtn?.addEventListener('click', toggleRight);
+ 
+ // キーボードショートカット（任意）： [ を左、 ] を右
+ window.addEventListener('keydown', (e) => {
+   if (e.key === '[') toggleLeft();
+   if (e.key === ']') toggleRight();
+ });
+ 
+ // 初期反映
+ applyCollapseState();    
+    
     
     
     
