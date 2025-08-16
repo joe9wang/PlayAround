@@ -634,6 +634,30 @@
   justify-content: center; /* 水平中央 */
 }
 
+ /* --- 見出し行の上下余白を左右で完全一致させる --- */
+ #sidebar h2.panel-title,
+ #preview h2.panel-title {
+   margin-top: 0 !important;
+   margin-bottom: 0 !important;
+   padding-top: 0;   /* ここで上下0に固定 */
+   padding-bottom: 0;
+ }
+
+ /* --- 右の矢印だけ光学的に1px上げる（フォントグリフ補正） --- */
+ #preview .inline-toggle {
+   position: relative;
+   top: -1px;  /* まだ低く見える場合は -2px へ */
+ }
+
+ /* 念のため：ボタン内は常に厳密中央 */
+ .inline-toggle {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   line-height: 1; /* 文字高の影響を排除 */
+ }
+
+
 
   </style>
  </head>
