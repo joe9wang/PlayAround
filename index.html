@@ -484,8 +484,9 @@
  /* ===== 折り畳み時だけ出る外付けハンドル ===== */
  .edge-handle {
    position: fixed;
-   top: calc(var(--header-h) + 12px);
-   z-index: 2000;
+   /* ヘッダー高さ + 画像読み込みエリア高さ の少し下 */
+   top: calc(var(--header-h) + var(--upload-h) + 8px);
+    z-index: 2000;
    display: none;            /* デフォルト非表示 */
    width: 28px;
    height: 48px;
@@ -509,7 +510,8 @@
  /* モバイル時は少し小さく */
  @media (max-width: 768px) {
    .edge-handle {
-     top: calc(var(--header-h) + 8px);
+     /* モバイルは #upload-area が 48px なので、それを加味 */
+     top: calc(var(--header-h) + 48px + 6px);
      width: 26px;
      height: 40px;
    }
