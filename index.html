@@ -2414,13 +2414,29 @@ function ensureAuthReady(){
         const joinPassHash = passRaw ? await sha256Hex(passRaw) : null;
         
         
-        // 既存の同名ルームが他人の所有なら弾く（update 判定で permission-denied になる前に人間に分かるエラーに）
+        // 既存の同名ルームが他人の所有でも、
+        // 「誰も座っていない（生きていない）※」なら作成を許可する。
+        // ※ SEAT_STALE_MS を超えた seat は死んでいる扱い（既存の isSeatStale と同義）
         const roomRef = doc(db, `rooms/${id}`);
         const existsSnap = await getDoc(roomRef);
         if (existsSnap.exists() && existsSnap.data()?.hostUid && existsSnap.data().hostUid !== uid) {
-          alert('このルームIDは他のホストが使用中です。別のIDにしてください。');
-          return;
+          // 座席4つを並列取得して“生存者がいるか”を判定
+          const seatDocs = await Promise.all([1,2,3,4].map(n => getDoc(doc(db, `rooms/${id}/seats/${n}`))));
+          const someoneAlive = seatDocs.some(s => {
+            if (!s.exists()) return false;
+            const d = s.data() || {};
+            const hb = d.heartbeatAt?.toMillis ? d.heartbeatAt.toMillis() : 0;
+            const alive = !!d.claimedByUid && (Date.now() - hb) <= SEAT_STALE_MS;
+            return alive;
+          });
+          if (someoneAlive) {
+            // だれかが座っている（まだ生きている）→ 従来どおりブロック
+            alert('このルームIDは他のホストが使用中です。別のIDにしてください。');
+            return;
+          }
+          // 誰も座っていない → 乗っ取りを許可（以降の setDoc/resetRoomState で正常に再初期化）
         }
+
         
         console.log('[create-room] uid(now)=', auth.currentUser?.uid, 'CURRENT_UID=', CURRENT_UID);
         
