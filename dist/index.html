@@ -1263,6 +1263,36 @@ onIdTokenChanged(auth, async (user) => {
   }
 });
 
+
+
+ // === Close room API (sendBeacon or keepalive fetch) ===
+ const BEACON_URL = '/api/close-room';
+ async function sendCloseBeacon(roomId){
+   if (!roomId) return;
+   // IDトークンをボディに同梱（sendBeacon ではヘッダを付けられないため）
+   const payload = JSON.stringify({
+     roomId,
+     idToken: AUTH_ID_TOKEN || null,
+   });
+   try {
+     if (!navigator.sendBeacon) {
+       // iOS/Safari 対策: fetch + keepalive
+       await fetch(BEACON_URL, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: payload,
+         keepalive: true,
+       });
+     } else {
+       const blob = new Blob([payload], { type: 'application/json' });
+       navigator.sendBeacon(BEACON_URL, blob);
+     }
+   } catch (e) {
+     console.warn('[beacon] failed', e);
+   }
+ }
+
+
     const db = getFirestore(app);
     
     
@@ -2931,22 +2961,6 @@ async function claimSeat(roomId, seat){
     let handlersBound = false;
     
     
-// === ページ終了時専用：サーバーに「このroomを閉じて削除」を確実に依頼 ===
-function sendCloseBeacon(roomId) {
-  if (!roomId || !AUTH_ID_TOKEN) return false;
-  try {
-    const body = JSON.stringify({ roomId, token: AUTH_ID_TOKEN });
-    const blob = new Blob([body], { type: 'application/json' });
-    // Vercel Functions で用意する /api/close-room に投げる
-    return navigator.sendBeacon('/api/close-room', blob);
-  } catch (e) {
-    console.warn('sendBeacon failed', e);
-    return false;
-  }
-}
-    
-    
-    
 
 // ===============================
 // セッション開始
@@ -2980,12 +2994,10 @@ function startSession(roomId, playerId){
         try { stopHeartbeat(); } catch (_) {}
         try { stopHostWatch(); } catch (_) {}
 
-   if (IS_ROOM_CREATOR && CURRENT_ROOM) {
-     // ページ終了はクライアントで削除せず、サーバーに依頼
-     const ok = sendCloseBeacon(CURRENT_ROOM);
-     // 念のためフォールバック（Beacon非対応/エラー時のみ）
-     if (!ok) cleanupAndDeleteRoom(CURRENT_ROOM).catch(console.warn);
-   }
+        if (IS_ROOM_CREATOR && CURRENT_ROOM) {
+          // 重要：タブが閉じても到達しやすい手段で通知
+          sendCloseBeacon(CURRENT_ROOM);
+        }
 
         try { releaseSeat(roomId, playerId); } catch (_) {}
       };
@@ -2994,7 +3006,13 @@ function startSession(roomId, playerId){
       window.addEventListener('beforeunload', __onLeave);
       // iOS Safari 等のモバイル向け
       window.addEventListener('pagehide', __onLeave, { once: true });
-      
+
+      // iOSのバックグラウンド遷移でも確実に通知
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          __onLeave();
+        }
+      }, { once: true });
       
       // 画面が一定時間hiddenなら終了（誤作動防止に少し待つ）
       document.addEventListener('visibilitychange', () => {
