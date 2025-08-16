@@ -740,12 +740,14 @@
     </div>
     <!-- ロビー上部のログインUI（リンクの直下） -->
     <div class="lobby-auth" style="text-align:center; margin:8px 0 12px;">
-     <button class="btn secondary" id="login-google" style="padding:8px 12px;">
-      Googleでログイン
-     </button>
-     <button class="btn secondary" id="logout-google" style="padding:8px 12px; display:none;">
-      ログアウト
-     </button>
+       <button class="btn secondary" id="login-google" style="padding:8px 12px;"
+         data-i18n="auth.login">
+         Googleでログイン
+       </button>
+       <button class="btn secondary" id="logout-google" style="padding:8px 12px; display:none;"
+         data-i18n="auth.logout">
+         ログアウト
+       </button>
      <span id="whoami" style="margin-left:8px; color:#555; font-size:12px; display:none;">
      </span>
     </div>
@@ -1798,6 +1800,8 @@ const I18N = {
     "links.contact": "お問い合わせ",
     
     "lobby.welcome": "プレイアラウンドへようこそ",
+    "auth.login":  "Googleでログイン",
+    "auth.logout": "ログアウト",
     
     "join.section":   "既存ルームに参加（非ホスト）",
     "join.roomId":    "参加するルームID",
@@ -1873,6 +1877,8 @@ const I18N = {
     "auth.loggedIn": "ログインしました。",
     "auth.loggedOut":"ログアウトしました。",
     "auth.logoutFail":"ログアウトに失敗しました。"
+    
+    
   },
   en: {
     "app.title": "Play board/card games with images (up to 4)",
@@ -1882,6 +1888,9 @@ const I18N = {
     "links.contact": "Contact",
     
     "lobby.welcome": "Welcome to PlayAround",
+    
+    "auth.login":  "Sign in with Google",
+    "auth.logout": "Sign out",
     
     "join.section":   "Join an existing room (Guest)",
     "join.roomId":    "Room ID to join",
