@@ -1220,12 +1220,12 @@ updateModePickButtons();
 // バッチ書き込みキュー
 // ===============================
 // Firestore 書き込み回数を抑えるために、更新を一時キューに積んで一定間隔でまとめて commit します。/**
- * コレクションパスを組み立てるヘルパ
- * @param {string} roomId - ルームID
- * @param {string} sub - サブコレ名（cards/seatsなど）
- * @param {string} id - ドキュメントID
- * @returns {string} Firestore ドキュメントパス
- */
+// コレクションパスを組み立てるヘルパ
+// @param {string} roomId - ルームID
+// @param {string} sub - サブコレ名（cards/seatsなど）
+// @param {string} id - ドキュメントID
+// @returns {string} Firestore ドキュメントパス
+//
 
 function pathFor(roomId, sub, id){ return `rooms/${roomId}/${sub}/${id}`; }
 
@@ -1257,10 +1257,10 @@ function pathFor(roomId, sub, id){ return `rooms/${roomId}/${sub}/${id}`; }
 // ===============================
 // ストレージ: 安全なダウンロードURL取得ユーティリティ
 // ===============================/**
- * Storage の安全なダウンロードURLを取得する（失敗時は null）
- * @param {string} path - gs:// or relative path
- * @returns {Promise<string} null>|ダウンロードURL
- */
+// Storage の安全なダウンロードURLを取得する（失敗時は null）
+// @param {string} path - gs:// or relative path
+// @returns {Promise<string} null>|ダウンロードURL
+//
 
 async function storageDownloadURL(path) {
   try {
@@ -1684,13 +1684,13 @@ function setPreview(src) {
     
     
 
-// 座席のメインプレイ中央（w,h 指定版）/**
- * 座席のプレイエリア中央座標を（幅/高さを考慮して）求める
- * @param {number} seat - 座席(1..4)
- * @param {number} w - 要素幅
- * @param {number} h - 要素高
- * @returns {object} {x:number,y:number}
- */
+// 座席のメインプレイ中央（w,h 指定版）
+// 座席のプレイエリア中央座標を（幅/高さを考慮して）求める
+// @param {number} seat - 座席(1..4)
+// @param {number} w - 要素幅
+// @param {number} h - 要素高
+// @returns {object} {x:number,y:number}
+//
 
 function centerOfMainPlay(seat, w, h){
   const b = getMainPlayBoundsForSeat(seat);
@@ -1736,9 +1736,9 @@ function centerOfMainPlay(seat, w, h){
 // ===============================
 // ホスト監視
 // ===============================
-// ホスト不在・ルーム終了を検知して参加者を安全に退室させます。/**
- * ホストが不在/ルーム終了になったかを定期確認し、必要なら強制退室させる
- */
+// ホスト不在・ルーム終了を検知して参加者を安全に退室させます。
+// ホストが不在/ルーム終了になったかを定期確認し、必要なら強制退室させる
+//
 
 function startHostWatch() {
       stopHostWatch();
@@ -1773,10 +1773,10 @@ function startHostWatch() {
 // ===============================
 // SVGジェネレータ: ダイス画像/カウンター画像
 // ===============================/**
- * ダイス目 (1..6) のSVG画像 DataURL を生成
- * @param {number} n - 1..6
- * @returns {string} data:image/svg+xml;...
- */
+// ダイス目 (1..6) のSVG画像 DataURL を生成
+// @param {number} n - 1..6
+// @returns {string} data:image/svg+xml;...
+//
 
 function svgDiceDataUrl(n){
   const size = 72, r = 8, pipR = 6;
@@ -1802,11 +1802,11 @@ function svgDiceDataUrl(n){
 
 
 
-/**
- * プレイエリア内のランダム座標（左上）を返す
- * @param {number} seat - number
- * @returns {object} {x,y}
- */
+//
+// プレイエリア内のランダム座標（左上）を返す
+// @param {number} seat - number
+// @returns {object} {x,y}
+//
 
 function randomPointInMainPlay(seat){
   const b = getMainPlayBoundsForSeat(seat);
@@ -1825,10 +1825,10 @@ function randomPointInMainPlay(seat){
 // ===============================
 // 認証準備
 // ===============================
-// UID 初期化完了を待つ Promise。/**
- * Auth UID が利用可能になるのを待つ Promise を返す
- * @returns {Promise<void>} 
- */
+// UID 初期化完了を待つ Promise。
+// Auth UID が利用可能になるのを待つ Promise を返す
+// @returns {Promise<void>} 
+//
 
 function ensureAuthReady(){
       return new Promise((resolve) => {
@@ -2288,12 +2288,12 @@ if (meta?.joinPassHash && !canSkipPassword) {
 // ===============================
 // 座席の取得/解放
 // ===============================
-// トランザクションで安全に座席を確保/解放します。/**
- * 座席をトランザクションで確保（古い/空き/自分なら上書き）
- * @param {string} roomId - string
- * @param {number} seat - number
- * @returns {Promise<boolean>} 成功可否
- */
+// トランザクションで安全に座席を確保/解放します。
+// 座席をトランザクションで確保（古い/空き/自分なら上書き）
+// @param {string} roomId - string
+// @param {number} seat - number
+// @returns {Promise<boolean>} 成功可否
+//
 
 async function claimSeat(roomId, seat){
       const seatRef = doc(db, `rooms/${roomId}/seats/${seat}`);
@@ -2374,11 +2374,11 @@ async function claimSeat(roomId, seat){
 // ===============================
 // セッション開始
 // ===============================
-// ルーム/座席が決まった後の購読開始やUI初期化。/**
- * 購読開始/ハートビート開始/UI初期化など、参加開始時の初期化
- * @param {string} roomId - string
- * @param {number} playerId - number
- */
+// ルーム/座席が決まった後の購読開始やUI初期化。
+// 購読開始/ハートビート開始/UI初期化など、参加開始時の初期化
+// @param {string} roomId - string
+// @param {number} playerId - number
+//
 
 function startSession(roomId, playerId){
       CURRENT_ROOM = roomId; CURRENT_PLAYER = playerId;
@@ -2411,9 +2411,9 @@ function startSession(roomId, playerId){
 // ===============================
 // カード購読/反映
 // ===============================
-// cards サブコレクションのスナップショットを購読し、DOMへ反映。/**
- * cards コレクションを購読し、変更を DOM に反映
- */
+// cards サブコレクションのスナップショットを購読し、DOMへ反映。
+// cards コレクションを購読し、変更を DOM に反映
+//
 
 function subscribeCards(){
       if(unsubscribeCards){ unsubscribeCards(); unsubscribeCards = null; }
@@ -2450,13 +2450,13 @@ function subscribeCards(){
 // ===============================
 // カードDOM生成
 // ===============================
-// カードの種類に応じたDOM（通常/トークン/ダイス/数値カウンタ）を生成。/**
- * カードの種類に応じた DOM を新規生成する（副作用：イベントバインド）
- * @param {string} cardId - string
- * @param {string} imageSrc - string
- * @param {object} state - object
- * @returns {HTMLElement} 生成したカード要素
- */
+// カードの種類に応じたDOM（通常/トークン/ダイス/数値カウンタ）を生成。
+// カードの種類に応じた DOM を新規生成する（副作用：イベントバインド）
+// @param {string} cardId - string
+// @param {string} imageSrc - string
+// @param {object} state - object
+// @returns {HTMLElement} 生成したカード要素
+//
 
 function createCardDom(cardId, imageSrc, state){
       const card = document.createElement("div");
@@ -2549,10 +2549,6 @@ if (state?.type === 'dice') {
   
   
   
-  
-  
-  
-
   // ダイスはドラッグ不可：makeDraggable は呼ばない
   return card;
 }
@@ -2783,11 +2779,11 @@ if (state?.type === 'numcounter') {
 // ===============================
 // カード状態の適用
 // ===============================
-// Firestore 上のデータを DOM に反映。表示制御や旧URLからの移行も実施。/**
- * Firestore データの内容を既存カードDOMへ適用（表裏表示や移行処理含む）
- * @param {HTMLElement} card - HTMLElement
- * @param {object} data - object
- */
+// Firestore 上のデータを DOM に反映。表示制御や旧URLからの移行も実施。
+// Firestore データの内容を既存カードDOMへ適用（表裏表示や移行処理含む）
+// @param {HTMLElement} card - HTMLElement
+// @param {object} data - object
+//
 
 function applyCardState(card, data){
       card.dataset.ownerUid = data.ownerUid || '';
@@ -3105,13 +3101,13 @@ async function cleanupAndCloseRoom(roomId){
     }
 
     // ===== Existing UI ops (batching applied)
-    // ===============================
+// ===============================
 // ドラッグ/パン/ズーム
 // ===============================
-// カードドラッグとフィールドのパン/ズーム（マウス/タッチ）を制御。/**
- * カードをドラッグ可能にする（マウス/タッチ対応）
- * @param {HTMLElement} card - HTMLElement
- */
+// カードドラッグとフィールドのパン/ズーム（マウス/タッチ）を制御。
+// カードをドラッグ可能にする（マウス/タッチ対応）
+// @param {HTMLElement} card - HTMLElement
+//
 
 function makeDraggable(card){
       const DRAG_THRESHOLD = 5;
@@ -3224,12 +3220,12 @@ function makeDraggable(card){
 
     function getMaxZIndex(){ let max=0; document.querySelectorAll(".card").forEach(c=>{ const z=parseInt(c.style.zIndex)||0; if(z>max) max=z; }); return max; }
 
-    // ===============================
+// ===============================
 // 一括操作 (自分のカードのみ)
 // ===============================
-// 表裏/回転/削除などの一括操作を実装。/**
- * 自分のカードをすべて裏向きにする（バッチ書き込み）
- */
+// 表裏/回転/削除などの一括操作を実装。
+// 自分のカードをすべて裏向きにする（バッチ書き込み）
+//
 
 window.faceDownAll = async function(){
       const batch = writeBatch(db);
@@ -3282,9 +3278,9 @@ window.faceDownAll = async function(){
 // ===============================
 // ユーティリティ生成
 // ===============================
-// 数値カウンタ、ダイス、+/- カウンタ、トークン等の生成。/**
- * 数値カウンター（入力型）を生成して自エリア中央に配置
- */
+// 数値カウンタ、ダイス、+/- カウンタ、トークン等の生成。
+// 数値カウンター（入力型）を生成して自エリア中央に配置
+//
 
 window.spawnNumberCounter = async function(){
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
@@ -3401,10 +3397,10 @@ function svgCounterDataUrl(label){
     </svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
-/**
- * ラベル付き丸型カウンター (+1/-1 など) を生成
- * @param {string} label - 表示ラベル
- */
+//
+// ラベル付き丸型カウンター (+1/-1 など) を生成
+// @param {string} label - 表示ラベル
+//
 
 window.spawnCounter = async function(label){
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
@@ -3451,9 +3447,9 @@ function blankTokenThumb(){
     </svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
-/**
- * テキストトークン（メモ）を生成して自エリア内のランダム位置へ配置
- */
+//
+// テキストトークン（メモ）を生成して自エリア内のランダム位置へ配置
+//
 
 window.spawnToken = async function(){
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
@@ -3689,11 +3685,11 @@ window.spawnToken = async function(){
     };
 
 
-    // ===============================
+// ===============================
 // フィールド操作（パン/ズーム/選択解除）
-// ===============================/**
- * フィールドのパン/ズーム/選択解除、タッチピンチ/パンのハンドラを登録
- */
+// ===============================
+// フィールドのパン/ズーム/選択解除、タッチピンチ/パンのハンドラを登録
+//
 
 function bindPanZoomHandlers(){
       // === マウスホイールズーム
@@ -3816,8 +3812,8 @@ function bindPanZoomHandlers(){
 
 
 
-    // ===== end room button
-    // ===============================
+// ===== end room button
+// ===============================
 // ルーム終了ボタンの制御
 // ===============================
 const endRoomBtn = document.getElementById('end-room-btn');
@@ -3868,12 +3864,12 @@ const endRoomBtn = document.getElementById('end-room-btn');
   const IS_MOBILE = window.matchMedia('(max-width: 768px)').matches;
 
 
-    // ===============================
+// ===============================
 // フィールド初期化とハンドラ束ね
 // ===============================
-// 初期ズーム/サイズ、ハンドラ初回バインド、モード適用。/**
- * フィールド初期サイズ/ズームの設定、各種ハンドラ一回登録、モード適用
- */
+// 初期ズーム/サイズ、ハンドラ初回バインド、モード適用。
+// フィールド初期サイズ/ズームの設定、各種ハンドラ一回登録、モード適用
+//
 
 function initializePlayField(){
       setFieldSize('small');
