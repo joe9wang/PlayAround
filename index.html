@@ -539,6 +539,42 @@
  #preview h2 .inline-toggle { margin-left: 0; margin-right: 8px; }
  .inline-toggle:hover { background:#f3f3f3; }
 
+ /* 見出しの共通スタイル（左右で高さを揃える） */
+ :root { --panel-title-h: 32px; }  /* 必要なら 30〜36px で微調整可 */
+ 
+ .panel-title{
+   display:flex;
+   align-items:center;
+   gap:8px;
+   margin:8px;
+   font-size:16px;
+   line-height: var(--panel-title-h);
+   min-height: var(--panel-title-h);
+ }
+ /* 左＝操作パネルは右寄せ／右＝選択肢のカードは左寄せ */
+ .panel-title--left  { justify-content:flex-end; }
+ .panel-title--right { justify-content:flex-start; }
+ 
+ /* 正方形トグル（幅100%系ルールの打ち消し） */
+ .inline-toggle{
+   width:28px !important;
+   height:28px !important;
+   min-width:28px;
+   padding:0 !important;
+   border:1px solid #ccc;
+   border-radius:6px;
+   background:#fff;
+   cursor:pointer;
+   flex:0 0 28px;
+   line-height:1;
+ }
+ .inline-toggle:hover{ background:#f3f3f3; }
+ 
+ /* 余白方向の微調整（左右で配置が逆） */
+ #sidebar .panel-title .inline-toggle { margin-left:8px; }
+ #preview .panel-title .inline-toggle  { margin-right:8px; }
+
+
   </style>
  </head>
  <body>
@@ -729,7 +765,7 @@
   </div>
   <div id="sidebar">
   
- <h2 style="display:flex; align-items:center;">
+ <h2 class="panel-title panel-title--left">
    操作パネル
    <button id="toggle-left" class="inline-toggle" title="操作パネルの表示/非表示">◀</button>
  </h2>
@@ -1024,7 +1060,7 @@
   <div id="preview">
    <div id="preview-top">
    
- <h2 style="display:flex; align-items:center;">
+ <h2 class="panel-title panel-title--right">
    <button id="toggle-right" class="inline-toggle" title="選択肢のカードの表示/非表示">▶</button>
    <span>選択肢のカード</span>
  </h2>
