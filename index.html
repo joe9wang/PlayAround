@@ -1574,6 +1574,9 @@ updateModePickButtons();
   }
 
   async function saveToSlot(slot){
+    
+    console.log("UID check", CURRENT_UID, getAuth().currentUser?.uid);
+    
     if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID){
       alert('ルームに参加してから実行してください'); return;
     }
