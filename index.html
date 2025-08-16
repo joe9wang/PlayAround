@@ -2961,22 +2961,6 @@ async function claimSeat(roomId, seat){
     let handlersBound = false;
     
     
-// === ページ終了時専用：サーバーに「このroomを閉じて削除」を確実に依頼 ===
-function sendCloseBeacon(roomId) {
-  if (!roomId || !AUTH_ID_TOKEN) return false;
-  try {
-    const body = JSON.stringify({ roomId, token: AUTH_ID_TOKEN });
-    const blob = new Blob([body], { type: 'application/json' });
-    // Vercel Functions で用意する /api/close-room に投げる
-    return navigator.sendBeacon('/api/close-room', blob);
-  } catch (e) {
-    console.warn('sendBeacon failed', e);
-    return false;
-  }
-}
-    
-    
-    
 
 // ===============================
 // セッション開始
