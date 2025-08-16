@@ -543,14 +543,17 @@
  :root { --panel-title-h: 32px; }  /* 必要なら 30〜36px で微調整可 */
  
  .panel-title{
-   display:flex;
-   align-items:center;
-   gap:8px;
-   margin:8px;
-   font-size:16px;
-   line-height: var(--panel-title-h);
-   min-height: var(--panel-title-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0; /* 左右で差が出ないように上下マージンを消す */
+  padding: 4px 8px; /* 見出し内の上下位置を微調整 */
+  font-size: 16px;
+  line-height: var(--panel-title-h);
+  min-height: var(--panel-title-h);
+  height: var(--panel-title-h); /* 高さを固定して揃える */ 
  }
+ 
  /* 左＝操作パネルは右寄せ／右＝選択肢のカードは左寄せ */
  .panel-title--left  { justify-content:flex-end; }
  .panel-title--right { justify-content:flex-start; }
