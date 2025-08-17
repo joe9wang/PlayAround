@@ -2375,18 +2375,25 @@ function randomPointInMainPlay(seat){
 // @returns {Promise<void>} 
 //
 
-function ensureAuthReady(){
-      return new Promise((resolve) => {
-        // すでに auth.currentUser が居るのに CURRENT_UID が古い/空、というケースを潰す
-        const uNow = auth.currentUser;
-        if (uNow && CURRENT_UID !== uNow.uid) CURRENT_UID = uNow.uid;
-        if (CURRENT_UID) return resolve();
-        const off = onAuthStateChanged(auth, (u) => {
-          if (u) { CURRENT_UID = u.uid; off(); resolve(); }
-        });
-      });
-    }
+ async function ensureAuthReady(timeoutMs = 8000){
+   // すでに確定していれば即帰る
+   const uNow = auth.currentUser;
+   if (uNow && CURRENT_UID !== uNow.uid) CURRENT_UID = uNow.uid;
+   if (CURRENT_UID) return;
 
+   // ユーザーが居なければ匿名サインインを強制（モバイルSafari等の遅延対策）
+   if (!auth.currentUser) {
+     try { await signInAnonymously(auth); } catch (_) {}
+   }
+
+   // onAuthStateChanged で UID が来るのを待つ（タイムアウト付き）
+   await new Promise((resolve, reject) => {
+     const off = onAuthStateChanged(auth, (u) => {
+       if (u) { CURRENT_UID = u.uid; off(); resolve(); }
+     });
+     setTimeout(() => { try{off();}catch{}; reject(new Error('auth-timeout')); }, timeoutMs);
+   });
+ }
     // ===== create room (host)
     createRoomBtn.addEventListener('click', async () => {
       await ensureAuthReady();
@@ -2408,6 +2415,19 @@ function ensureAuthReady(){
           alert('認証が完了していません。もう一度お試しください。');
           return;
         }
+        
+       // 直前の確定 UID（CURRENT_UID が古い可能性に備え、auth.currentUser を使用）
+       let uid = auth.currentUser?.uid;
+       if (!uid) {
+         // 念のため匿名サインイン→再wait→再取得（ワンショット・リトライ）
+         try { await signInAnonymously(auth); } catch (_) {}
+         try { await ensureAuthReady(6000); } catch (_) {}
+         uid = auth.currentUser?.uid;
+       }
+       if (!uid) {
+         alert(t('err.playerName') /* 適当な既存文言でOK */ + '\n(Please try login again)');
+         return;
+       }        
         
         // ▼追加：パスワード読み＆ハッシュ化
         const passRaw = (newRoomPassInput?.value || '').trim();
