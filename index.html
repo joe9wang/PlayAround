@@ -3108,6 +3108,41 @@ async function claimSeat(roomId, seat){
     let handlersBound = false;
     
     
+    // ==== 退室通知: タブ閉じ/アプリ終了時のみ ====
+    let __lifecycleBound = false;
+    function bindLifecycleHandlers(){
+      if (__lifecycleBound) return; __lifecycleBound = true;
+
+      // 退室処理（「タブ閉じ/終了」のみで呼ぶ）
+      const leaveSafely = async (reason) => {
+        try {
+          if (!CURRENT_ROOM || !CURRENT_PLAYER) return;
+          // できるだけ早く席を解放（非同期ベストエフォート）
+          // Firestore 書き込みはタイミング次第で完了しない可能性もあるが、
+          // pagehide の段階なら概ね実行時間が確保される。
+          await releaseSeat(CURRENT_ROOM, CURRENT_PLAYER);
+        } catch(e) {
+          console.warn('[leaveSafely] failed', e);
+        }
+      };
+
+      // iOS/Safari/Discord内ブラウザ含め「ページを去る」タイミング
+      // - pagehide: iOSでホームへスワイプ/タブを閉じる/インアプリブラウザ閉じ で発火
+      // - beforeunload: 伝統的なタブ閉じやナビゲーション
+      // - freeze: BFCache へ入る直前（Safari/Chrome系の一部）
+      window.addEventListener('pagehide', (e) => { leaveSafely('pagehide'); }, { once: true });
+      window.addEventListener('beforeunload', (e) => { leaveSafely('beforeunload'); }, { once: true });
+      document.addEventListener?.('freeze', () => { leaveSafely('freeze'); }, { once: true });
+
+    }
+    
+    
+    
+    
+    
+    
+    
+    
 
 // ===============================
 // セッション開始
@@ -3157,25 +3192,16 @@ function startSession(roomId, playerId){
       
       
       
-      
-      // 画面が一定時間hiddenなら終了（誤作動防止に少し待つ）
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-          setTimeout(() => {
-            if (document.visibilityState === 'hidden' && IS_ROOM_CREATOR && CURRENT_ROOM) {
-              const ok = sendCloseBeacon(CURRENT_ROOM);
-              if (!ok) cleanupAndDeleteRoom(CURRENT_ROOM).catch(console.warn);
-            }
-          }, 20000); // 20秒
-        }
-      });  
-      
-      
       initializePlayField();
       subscribeCards();
       startHostWatch();
       renderAreaColors();
       renderHPPanel();
+      
+      
+      // タブ/ウィンドウの終了時通知をバインド
+      bindLifecycleHandlers();      
+      
     }
 
 // ===============================
