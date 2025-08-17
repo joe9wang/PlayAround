@@ -1657,10 +1657,13 @@ updateModePickButtons();
     let IS_ROOM_CREATOR = false;
 
     // ===== Quota care: intervals
-    const HOST_STALE_MS = 25000;  // ← 延長（25s）
-    const SEAT_STALE_MS = 70000;  // ← 延長（70s）
-    const HOST_HEARTBEAT_MS = 10000; // ← 10s
-    const SEAT_HEARTBEAT_MS = 20000; // ← 20s
+    const HOST_STALE_MS = 180000;  // ← 延長（25s）
+    const SEAT_STALE_MS = 240000;  // ← 延長（70s）
+    const HOST_HEARTBEAT_MS = 60000; // ← 10s
+    const SEAT_HEARTBEAT_MS = 60000; // ← 20s
+    const ROOM_PING_MS = 60000;      // 60s
+    let __roomPingAt = 0;
+    
 
     // ===== Room idle auto-delete (no one seated for a while)
     // 全席が空席 or STALE の状態が一定時間続いたらルーム削除
@@ -1668,10 +1671,10 @@ updateModePickButtons();
     const ROOM_IDLE_CHECK_MS  = 15 * 1000;     // 15秒ごとに判定
     let roomIdleTimer = null;
     let lastOccupiedAt = Date.now();
-
+    
     const CARD_W = 120;
     const CARD_H = 160;
-
+    
     // ===== Write queue (batching & coalescing)
     const WRITE_FLUSH_MS = 400;     // まとめ書き周期
     const MAX_BATCH_OPS = 450;      // Firestoreの上限に合わせる
@@ -1679,6 +1682,15 @@ updateModePickButtons();
     let flushTimer = null;
     
     
+// === アクティビティ検知（操作がある時だけ頻繁にHB） ===
+const ACTIVE_WINDOW_MS    = 30_000;  // 直近30秒に操作があれば“活動中”
+const IDLE_KEEPALIVE_MS   = 300_000; // 完全放置でも5分に1回はHB
+let   lastActivityAt      = Date.now();
+let   lastSeatHBWriteAt   = 0;
+
+['pointerdown','pointermove','wheel','keydown','touchstart'].forEach(evt => {
+  window.addEventListener(evt, () => { lastActivityAt = Date.now(); }, { passive:true });
+});
     
     
 
@@ -3048,14 +3060,10 @@ async function claimSeat(roomId, seat){
 
  // [HB] host heartbeat
  function startHostHeartbeat(roomId){
-   // ここで直接クリアしてから再セット（未定義参照を避ける）
+   // 専用ループは起動しない（座席HBの中で hostHeartbeatAt を更新）
    if (hostHeartbeatTimer) { clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; }
-   // 開始直後に1回だけ即時更新（intervalを待たない）
-   try{
-     if (CURRENT_ROOM && CURRENT_ROOM === roomId && !(CURRENT_ROOM_META?.roomClosed)) {
-       setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
-     }
-   }catch(e){ console.warn('host HB immediate failed', e); }
+   
+   
    hostHeartbeatTimer = setInterval(async () => {
      try{
       // ルームを離脱/閉鎖している間は doc を再生成しない
@@ -3075,18 +3083,30 @@ async function claimSeat(roomId, seat){
     function stopHostHeartbeat(){ if(hostHeartbeatTimer){ clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; } }
 
  async function startHeartbeat(roomId, seat){
-   stopHeartbeat();
-   hbTimer = setInterval(async () => {
+  stopHeartbeat();
+  heartbeatTimer = setInterval(async () => {
      try{
-       // batched seat heartbeat
-       updateSeatBatched(seat, { heartbeatAt: serverTimestamp() });
-      // 追加: ルーム側にも一定間隔で ping（過書き抑制）
-      // （ROOM_PING_MS / __roomPingAt は既に定義済み）
+     
       const now = Date.now();
+
+      // 直近の操作が無い → 完全スキップ（ただし5分に1回は維持）
+      const active = (now - lastActivityAt) < ACTIVE_WINDOW_MS;
+      const needIdleKeepAlive = (now - lastSeatHBWriteAt) > IDLE_KEEPALIVE_MS;
+      if (active || needIdleKeepAlive) {
+        updateSeatBatched(seat, { heartbeatAt: serverTimestamp() });
+        lastSeatHBWriteAt = now;
+      }
+
+      // ルーム側 ping は 60s に節約
       if (now - __roomPingAt > ROOM_PING_MS) {
         __roomPingAt = now;
-        await setDoc(doc(db, `rooms/${roomId}`), { lastSeatPing: serverTimestamp() }, { merge: true });
+        const patch = { lastSeatPing: serverTimestamp() };
+        // ホストなら hostHeartbeatAt も同梱して1 write にまとめる
+        const iAmHost = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+        if (iAmHost) patch.hostHeartbeatAt = serverTimestamp();
+        await setDoc(doc(db, `rooms/${roomId}`), patch, { merge: true });
       }
+     
      }catch(e){ console.warn('HB error', e); }
    }, SEAT_HEARTBEAT_MS);
  }
