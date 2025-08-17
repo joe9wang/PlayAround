@@ -1753,6 +1753,9 @@ async function storageDownloadURL(path) {
     }
 
     // ===== Presence / host alive
+    
+    const ROOM_EMPTY_GRACE_MS = 2 * 60 * 1000; // 2分: 全席不在が続いたら部屋を自動削除
+    
     function isHostAlive(roomMeta){
       if(!roomMeta?.hostUid) return false;
       if (CURRENT_UID && roomMeta.hostUid === CURRENT_UID) return true;
@@ -2294,27 +2297,44 @@ function centerOfMainPlay(seat, w, h){
 //
 
 function startHostWatch() {
-      stopHostWatch();
-      hostWatchTimer = setInterval(() => {
-        if (!CURRENT_ROOM || lobby.style.display !== 'none') return;
-        if (!CURRENT_ROOM_META) return;
-        const iAmHost  = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
-        const closed   = !!CURRENT_ROOM_META?.roomClosed;
-        const hostHere = isHostAlive(CURRENT_ROOM_META);
-        if (!iAmHost && (closed || !hostHere)) {
-          try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
-          if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; }
-          if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; }
-          if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
-          CURRENT_ROOM = null;
-          CURRENT_PLAYER = null;
-          stopHostWatch();
-          sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
-          lobby.style.display = 'flex';
-          alert('ホストが退室したため、このルームは終了しました。');
-        }
-      }, 5000); // ← 5s
+  stopHostWatch();
+  hostWatchTimer = setInterval(async () => {
+    if (!CURRENT_ROOM_META) return;
+    const meta   = CURRENT_ROOM_META;
+    const roomId = (CURRENT_ROOM || (joinRoomInput?.value||'').trim() || null);
+
+    // 既存: セッション中のゲストを安全に退室させる（ロビーでもwatchは回しつつ、kickはセッション中のみ）
+    if (CURRENT_ROOM) {
+      const iAmHost  = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
+      const closed   = !!meta?.roomClosed;
+      const hostHere = isHostAlive(meta);
+      if (!iAmHost && (closed || !hostHere)) {
+        try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
+        if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; }
+        if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; }
+        if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
+        CURRENT_ROOM = null;
+        CURRENT_PLAYER = null;
+        stopHostWatch();
+        sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
+        lobby.style.display = 'flex';
+        alert('ホストが退室したため、このルームは終了しました。');
+        return;
+      }
     }
+
+    // 追加: 全席不在が続いていたら部屋を自動削除（ロビー表示中でも動く）
+    if (roomId) {
+      const empty      = isRoomEmpty(); // 既存の空室判定
+      const lastPingMs = meta?.lastSeatPing?.toMillis?.() ?? 0;
+      const idleMs     = lastPingMs ? (Date.now() - lastPingMs) : Number.POSITIVE_INFINITY;
+      if (empty && idleMs > ROOM_EMPTY_GRACE_MS) {
+        try { await cleanupAndDeleteRoom(roomId); }
+        catch (e) { console.warn('auto delete failed', e?.code||e); }
+      }
+    }
+  }, 5000); // 5秒ごと
+}
     
     function stopHostWatch() { if (hostWatchTimer) { clearInterval(hostWatchTimer); hostWatchTimer = null; } }
     
@@ -2780,6 +2800,7 @@ function applyFieldModeLayout(){
          
          IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
          if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
+         startHostWatch(); // 追加: ロビー中も空室監視/自動削除を回す
          renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); renderHPPanel();
        });
       
@@ -3022,16 +3043,24 @@ async function claimSeat(roomId, seat){
     
     function stopHostHeartbeat(){ if(hostHeartbeatTimer){ clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; } }
 
-    function startHeartbeat(roomId, seat){
-      stopHeartbeat();
-      heartbeatTimer = setInterval(async () => {
-        try{
-          // batchedでもOKだが、ここは1ドキュメントのみで間隔も長いので直接merge
-          await setDoc(doc(db, `rooms/${roomId}/seats/${seat}`), { claimedByUid: CURRENT_UID, heartbeatAt: serverTimestamp() }, { merge: true });
-        }catch(e){ console.warn('heartbeat failed', e); }
-      }, SEAT_HEARTBEAT_MS);
-    }
-    function stopHeartbeat(){ if(heartbeatTimer){ clearInterval(heartbeatTimer); heartbeatTimer = null; } }
+ async function startHeartbeat(roomId, seat){
+   stopHeartbeat();
+   hbTimer = setInterval(async () => {
+     try{
+       // batched seat heartbeat
+       updateSeatBatched(seat, { heartbeatAt: serverTimestamp() });
+      // 追加: ルーム側にも一定間隔で ping（過書き抑制）
+      // （ROOM_PING_MS / __roomPingAt は既に定義済み）
+      const now = Date.now();
+      if (now - __roomPingAt > ROOM_PING_MS) {
+        __roomPingAt = now;
+        await setDoc(doc(db, `rooms/${roomId}`), { lastSeatPing: serverTimestamp() }, { merge: true });
+      }
+     }catch(e){ console.warn('HB error', e); }
+   }, SEAT_HEARTBEAT_MS);
+ }
+ 
+     function stopHeartbeat(){ if(heartbeatTimer){ clearInterval(heartbeatTimer); heartbeatTimer = null; } }
 
     // ===== Cards / UI
     const field = document.getElementById("field");
