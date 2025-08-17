@@ -1485,6 +1485,7 @@ updateModePickButtons();
     let CREATE_SELECTED_SEAT = 1;
     createSeatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.createSeat, 10) === 1));
     const picked = document.getElementById('create-seat-picked');
+    if (picked) picked.textContent = `P${CREATE_SELECTED_SEAT}`;
 
     let CURRENT_ROOM = null;
     let CURRENT_ROOM_META = null;
@@ -2562,6 +2563,7 @@ function randomPointInMainPlay(seat){
         CREATE_SELECTED_SEAT = parseInt(btn.dataset.createSeat, 10);
         createSeatButtonsEls.forEach(b => b.classList.toggle('active', b === btn));
         const picked = document.getElementById('create-seat-picked');
+        if (picked) picked.textContent = `P${CREATE_SELECTED_SEAT}`;
       });
     });
 
@@ -2814,7 +2816,18 @@ function applyFieldModeLayout(){
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
 
         // 既存の currentSeatMap 更新はそのまま残してください
-        currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
+        currentSeatMap[idx+1] = snap.exists()
+          ? (() => {
+              const d = snap.data() || {};
+              return {
+                ...(currentSeatMap[idx+1] || {}),
+                displayName: d.displayName || '',
+                claimedByUid: d.claimedByUid || null,
+                heartbeatAt: d.heartbeatAt || null,
+                areaColors: d.areaColors || {}
+              };
+            })()
+          : null;
 
         // === ここから追加：全席の占有/生存状況を判定し、idle 監視の基準時刻を更新 ===
         try {
