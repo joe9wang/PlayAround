@@ -2839,7 +2839,21 @@ function applyFieldModeLayout(){
           // fresh := 「座っていて、かつ heartbeat が STALE ではない」
           const isFresh = (d) => {
             if (!d) return false;
-            const hb = d.heartbeatAt?.toMillis?.() ??
+            const hb =
+              d.heartbeatAt && typeof d.heartbeatAt.toMillis === 'function'
+                ? d.heartbeatAt.toMillis()
+                : 0;
+            return !!d.claimedByUid && (now - hb) < SEAT_STALE_MS;
+          };
+          // 現在の全席の状態から、誰かが“生存”しているかを判定
+          const someoneFresh = [1, 2, 3, 4].some(n => isFresh(currentSeatMap[n]));
+          if (someoneFresh) {
+            // 最後に“だれか座っていた”時刻を更新（この変数名はあなたの実装に合わせて）
+            if (typeof lastNonEmptyAt !== 'undefined') lastNonEmptyAt = now;
+          }
+        } catch (e) {
+          console.warn('idle-watch check error', e);
+        }
 
         renderAreaColors();
         renderSeatAvailability();
