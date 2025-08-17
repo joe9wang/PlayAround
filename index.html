@@ -2816,18 +2816,22 @@ function applyFieldModeLayout(){
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
 
         // 既存の currentSeatMap 更新はそのまま残してください
-        currentSeatMap[idx+1] = snap.exists()
-          ? (() => {
-              const d = snap.data() || {};
-              return {
-                ...(currentSeatMap[idx+1] || {}),
-                displayName: d.displayName || '',
-                claimedByUid: d.claimedByUid || null,
-                heartbeatAt: d.heartbeatAt || null,
-                areaColors: d.areaColors || {}
-              };
-            })()
-          : null;
+        if (snap.exists()) {
+          const d = snap.data() || {};
+          // 互換重視なら Object.assign を使う（spreadが苦手な環境でもOK）
+          currentSeatMap[idx + 1] = Object.assign(
+            {},
+            currentSeatMap[idx + 1] || {},
+            {
+              displayName: d.displayName || '',
+              claimedByUid: d.claimedByUid || null,
+              heartbeatAt: d.heartbeatAt || null,
+              areaColors: d.areaColors || {}
+            }
+          );
+        } else {
+          currentSeatMap[idx + 1] = null;
+        }
 
         // === ここから追加：全席の占有/生存状況を判定し、idle 監視の基準時刻を更新 ===
         try {
