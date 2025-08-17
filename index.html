@@ -2410,14 +2410,14 @@ function randomPointInMainPlay(seat){
       try{
         
         // 直前の確定 UID（CURRENT_UID が古い可能性に備え、auth.currentUser を使用）
-        const uid = auth.currentUser?.uid;
+        let uid = auth.currentUser?.uid;
         if (!uid) {
           alert('認証が完了していません。もう一度お試しください。');
           return;
         }
         
        // 直前の確定 UID（CURRENT_UID が古い可能性に備え、auth.currentUser を使用）
-       let uid = auth.currentUser?.uid;
+       uid = auth.currentUser?.uid;            // 再代入だけにする
        if (!uid) {
          // 念のため匿名サインイン→再wait→再取得（ワンショット・リトライ）
          try { await signInAnonymously(auth); } catch (_) {}
