@@ -2664,7 +2664,7 @@ function renderHPPanel(){
         };
         input?.addEventListener('change', () => commit(parseInt(input.value, 10)));
         minus?.addEventListener('click', () => commit(parseInt(input.value, 10) - 1));
-        plus ?.addEventListener('click', () => commit(parseInt(input.value, 10) + 1));
+        plus?.addEventListener('click', () => commit(parseInt(input.value, 10) + 1));
       });
     }
 
@@ -2814,7 +2814,7 @@ function applyFieldModeLayout(){
       const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
 
         // 既存の currentSeatMap 更新はそのまま残してください
-        currentSeatMap[idx+1] = snap.exists() ? /* 既存の代入ロジック */ : null;
+        currentSeatMap[idx+1] = snap.exists() ? snap.data() : null;
 
         // === ここから追加：全席の占有/生存状況を判定し、idle 監視の基準時刻を更新 ===
         try {
