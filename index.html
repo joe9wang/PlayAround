@@ -2430,11 +2430,28 @@ function ensureAuthReady(){
             return alive;
           });
           if (someoneAlive) {
-            // だれかが座っている（まだ生きている）→ 従来どおりブロック
             alert('このルームIDは他のホストが使用中です。別のIDにしてください。');
             return;
           }
-          // 誰も座っていない → 乗っ取りを許可（以降の setDoc/resetRoomState で正常に再初期化）
+          // ▼ 誰も座っていない → サーバAPIで「乗っ取り」を実行（管理者権限で初期化）
+          try {
+            const payload = JSON.stringify({ roomId: id, idToken: AUTH_ID_TOKEN || null });
+            const res = await fetch('/api/takeover-room', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: payload,
+              keepalive: true
+            });
+            const j = await res.json().catch(() => ({}));
+            if (!res.ok || !j?.ok) {
+              throw new Error(j?.error || `takeover failed (${res.status})`);
+            }
+            // ここまでで rooms/{id} は新ホスト(uid)として初期化済み
+          } catch (e) {
+            console.warn('[takeover]', e);
+            alert('ルームの引き継ぎに失敗しました。別のIDを試すか、しばらく待ってください。');
+            return;
+          }
         }
 
         
