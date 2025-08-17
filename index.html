@@ -1298,6 +1298,7 @@ onIdTokenChanged(auth, async (user) => {
     const db = getFirestore(app);
     
     
+    
   // ▼ Googleリダイレクト方式の結果を回収（ログイン/リンクの完了）
   (async () => {
     try {
@@ -2979,6 +2980,12 @@ async function claimSeat(roomId, seat){
  function startHostHeartbeat(roomId){
    // ここで直接クリアしてから再セット（未定義参照を避ける）
    if (hostHeartbeatTimer) { clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; }
+   // 開始直後に1回だけ即時更新（intervalを待たない）
+   try{
+     if (CURRENT_ROOM && CURRENT_ROOM === roomId && !(CURRENT_ROOM_META?.roomClosed)) {
+       setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
+     }
+   }catch(e){ console.warn('host HB immediate failed', e); }
    hostHeartbeatTimer = setInterval(async () => {
      try{
       // ルームを離脱/閉鎖している間は doc を再生成しない
