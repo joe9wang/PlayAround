@@ -858,6 +858,7 @@
        <button aria-pressed="false" class="btn secondary" data-i18n="create.mode.board" id="pick-mode-board" type="button">
         🎲 ボードゲーム
        </button>
+       <button id="pick-mode-trump" class="btn secondary" data-i18n="create.mode.trump">トランプ</button>
       </div>
       <div class="row" id="create-btn-row" style="margin-top:16px; justify-content:flex-end;">
        <button class="btn" data-i18n="create.createBtn" id="create-room-btn">
@@ -1379,11 +1380,13 @@ onIdTokenChanged(auth, async (user) => {
     const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
     
     
-    // ==== 追加: フィールドモード（'card' | 'board'） ==== 
+// ==== 追加: フィールドモード（'card' | 'board' | 'trump'） ====
 let CREATE_FIELD_MODE = 'card';
 
-const pickModeCardBtn  = document.getElementById('pick-mode-card');
-const pickModeBoardBtn = document.getElementById('pick-mode-board');
+const pickModeCardBtn   = document.getElementById('pick-mode-card');
+const pickModeBoardBtn  = document.getElementById('pick-mode-board');
+const pickModeTrumpBtn  = document.getElementById('pick-mode-trump');
+
 
 function updateModePickButtons(){
   const set = (btn, on) => {
@@ -1393,9 +1396,11 @@ function updateModePickButtons(){
   };
   set(pickModeCardBtn,  CREATE_FIELD_MODE === 'card');
   set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
+  if (pickModeTrumpBtn) set(pickModeTrumpBtn, CREATE_FIELD_MODE === 'trump'); //
 }
 pickModeCardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'card';  updateModePickButtons(); });
 pickModeBoardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'board'; updateModePickButtons(); });
+pickModeTrumpBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'trump'; updateModePickButtons(); });
 updateModePickButtons();
     
     
@@ -1848,6 +1853,7 @@ const I18N = {
     "create.chooseMode":"フィールド構成を選択",
     "create.mode.card": "🃏 カードゲーム",
     "create.mode.board":"🎲 ボードゲーム",
+    "create.mode.trump": "🂠 トランプ",
     "create.createBtn": "作成",
     
     // --- Side / Panel / Buttons ---
@@ -1937,6 +1943,7 @@ const I18N = {
     "create.chooseMode":"Choose field layout",
     "create.mode.card": "🃏 Card game",
     "create.mode.board":"🎲 Board game",
+    "create.mode.trump": "🂠 Playing cards",
     "create.createBtn": "Create",
     
     // --- Side / Panel / Buttons ---
@@ -2518,13 +2525,17 @@ function randomPointInMainPlay(seat){
         
         console.log('[create-room] uid(now)=', auth.currentUser?.uid, 'CURRENT_UID=', CURRENT_UID);
         
+        const isTrump = (CREATE_FIELD_MODE === 'trump');
         await setDoc(roomRef, {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           hostUid: uid,
           hostDisplayName: creatorName,
           roomClosed: false,
-          fieldMode: CREATE_FIELD_MODE,     
+          fieldMode: isTrump ? 'board' : CREATE_FIELD_MODE,
+          allowOtherOps: isTrump ? true : undefined,     
+          initTrump: isTrump ? true : undefined,         
+     
           joinPassHash: joinPassHash,
           hasPassword: !!joinPassHash
         }, { merge: true });
@@ -2557,6 +2568,21 @@ function randomPointInMainPlay(seat){
         CURRENT_PLAYER = CREATE_SELECTED_SEAT;
         seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
         startSession(id, CREATE_SELECTED_SEAT);
+
+        // ★追加: trump モードなら、フィールド初期化（52枚デッキを中央に裏向きで積む）
+        if (CREATE_FIELD_MODE === 'trump') {
+          // DOMの描画安定を少し待ってから
+          setTimeout(async () => {
+            try {
+              await spawnTrumpDeck(id); // 下で定義
+              await setDoc(doc(db, `rooms/${id}`), { trumpInitialized: true, updatedAt: serverTimestamp() }, { merge: true });
+            } catch (e) {
+              console.warn('spawnTrumpDeck failed', e);
+            }
+          }, 50);
+        }
+
+
  } catch (e) {
    console.error('[create-room] failed:', e);
    // エラーコードとメッセージも表示して切り分け容易に
@@ -4229,6 +4255,86 @@ function svgCounterDataUrl(label){
 // ラベル付き丸型カウンター (+1/-1 など) を生成
 // @param {string} label - 表示ラベル
 //
+
+
+// ===============================
+// ★追加: トランプ初期化（中央デッキに 52 枚を裏向きで積む）
+// 画像配置に合わせて TrumpPicture/<suit>_<rank>.png を使用
+// 例: TrumpPicture/spade_A.png, TrumpPicture/heart_10.png など
+// ===============================
+const TRUMP_IMG_BASE = 'TrumpPicture';                 // ← ルートフォルダ（バックスラッシュではなくスラッシュで参照）
+const TRUMP_BACK_URL = `${TRUMP_IMG_BASE}/back.png`;   // ← 今回は表裏トグル時の裏表示は背景黒を使用するため未使用
+const JOKER_URL      = `${TRUMP_IMG_BASE}/joker.png`;
+
+function centerOfBoardDeck(w, h){
+  const r = getDeckBoundsForSeat(1); // boardモード時は共有デッキ（seatはダミー）
+  if (!r) return { x: 0, y: 0 };
+  const x = Math.round(r.minX + (r.width  - w)/2);
+  const y = Math.round(r.minY + (r.height - h)/2);
+  return { x, y };
+}
+
+function buildTrumpFrontUrl(suit, rank){
+  // ファイル命名: spade_A.png / heart_10.png / diamond_Q.png / club_K.png
+  return `${TRUMP_IMG_BASE}/${suit}_${rank}.png`;
+}
+
+async function spawnTrumpDeck(roomId){
+  // 52枚（spade/heart/diamond/club × A,2..10,J,Q,K）を生成。全て裏向き（faceUp:false）
+  const SUITS = ['spade','heart','diamond','club'];
+  const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+  const { x, y } = centerOfBoardDeck(CARD_W, CARD_H);
+  let z = getMaxZIndex() + 1;
+
+  const col = collection(db, `rooms/${roomId}/cards`);
+  let batch = writeBatch(db);
+  let count = 0;
+
+  for (const s of SUITS){
+    for (const r of RANKS){
+      const url = buildTrumpFrontUrl(s, r);
+      const ref = doc(col);
+      batch.set(ref, {
+        imageUrl: url,      // 表面画像（裏向き開始なので最初は非表示）
+        fullUrl:  url,
+        x, y, zIndex: z++,
+        faceUp: false,      // ← 裏向きで開始（既存実装では img を隠し、背景を黒で表現）
+        ownerUid: null,     // 共有物
+        ownerSeat: null,    // 共有物
+        rotation: 0,
+        visibleToAll: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
+   }
+  }
+  if (count > 0) await batch.commit();
+}
+
+  // ★追加: Joker 2枚を山の一番上に積む
+  for (let j = 0; j < 2; j++) {
+    const ref = doc(col);
+    batch.set(ref, {
+      imageUrl: JOKER_URL,
+      fullUrl:  JOKER_URL,
+      x, y, zIndex: z++,        // ← ループ後の z を継続＝最上段に来る
+      faceUp: false,            // 裏向き開始（既存の裏表示仕様を使用）
+      ownerUid: null,
+      ownerSeat: null,
+      rotation: 0,
+      visibleToAll: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
+  }
+  if (count > 0) await batch.commit();
+
+
+
+
 
 window.spawnCounter = async function(label){
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
