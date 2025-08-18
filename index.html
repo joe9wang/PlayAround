@@ -1342,6 +1342,7 @@ onIdTokenChanged(auth, async (user) => {
     const lobby = document.getElementById('lobby');
     const joinRoomInput = document.getElementById('join-room-id');
     const playerNameInput = document.getElementById('player-name');
+    const endRoomBtn     = document.getElementById('end-room-btn');
     const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
     const startBtn = document.getElementById('start-btn');
     const sessionIndicator = document.getElementById('session-indicator');
@@ -4750,7 +4751,6 @@ function bindPanZoomHandlers(){
 // ===============================
 // ルーム終了ボタンの制御
 // ===============================
-const endRoomBtn = document.getElementById('end-room-btn');
     function updateEndRoomButtonVisibility(){
       const isHostUid = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
       const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
