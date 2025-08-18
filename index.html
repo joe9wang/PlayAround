@@ -2526,20 +2526,23 @@ function randomPointInMainPlay(seat){
         
         console.log('[create-room] uid(now)=', auth.currentUser?.uid, 'CURRENT_UID=', CURRENT_UID);
         
-        const isTrump = (CREATE_FIELD_MODE === 'trump');
-        await setDoc(roomRef, {
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          hostUid: uid,
-          hostDisplayName: creatorName,
-          roomClosed: false,
-          fieldMode: isTrump ? 'board' : CREATE_FIELD_MODE,
-          allowOtherOps: isTrump ? true : undefined,     
-          initTrump: isTrump ? true : undefined,         
-     
-          joinPassHash: joinPassHash,
-          hasPassword: !!joinPassHash
-        }, { merge: true });
+ const isTrump = (CREATE_FIELD_MODE === 'trump');
+ const payload = {
+   createdAt: serverTimestamp(),
+   updatedAt: serverTimestamp(),
+   hostUid: uid,
+   hostDisplayName: creatorName,
+   roomClosed: false,
+   fieldMode: isTrump ? 'board' : CREATE_FIELD_MODE,
+   joinPassHash: joinPassHash,
+   hasPassword: !!joinPassHash
+ };
+ // trump のときだけ追加（undefined を書かない）
+ if (isTrump) {
+   payload.allowOtherOps = true;
+   payload.initTrump = true;
+ }
+ await setDoc(roomRef, payload, { merge: true });
 
         await resetRoomState(id);
 
