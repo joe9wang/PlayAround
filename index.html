@@ -4311,17 +4311,15 @@ async function spawnTrumpDeck(roomId){
       if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
    }
   }
-  if (count > 0) await batch.commit();
-}
 
-  // ★追加: Joker 2枚を山の一番上に積む
+  // Joker を2枚、山の一番上として追加（同じバッチで）
   for (let j = 0; j < 2; j++) {
     const ref = doc(col);
     batch.set(ref, {
       imageUrl: JOKER_URL,
       fullUrl:  JOKER_URL,
-      x, y, zIndex: z++,        // ← ループ後の z を継続＝最上段に来る
-      faceUp: false,            // 裏向き開始（既存の裏表示仕様を使用）
+      x, y, zIndex: z++,   // 既存の z の続き＝最前面
+      faceUp: false,
       ownerUid: null,
       ownerSeat: null,
       rotation: 0,
@@ -4332,8 +4330,7 @@ async function spawnTrumpDeck(roomId){
     if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
   }
   if (count > 0) await batch.commit();
-
-
+}
 
 
 
