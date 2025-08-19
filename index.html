@@ -2258,14 +2258,15 @@ function getHandBoundsForSeat(seat){
 }
 
 function getDeckBoundsForSeat(seat){
-  if (isBoardMode()) {
-    // 共有デッキ（seat は無視）
+  // board と trump のときは「中央の共有デッキ（#board-center .center-deck）」を使う
+  const mode = CURRENT_ROOM_META?.fieldMode;
+  if (mode === 'board' || mode === 'trump') {
     const el = document.querySelector('#board-center .center-deck');
     return rectFromEl(el);
-  } else {
-    const deck = document.querySelector(`.player-${seat} .deck-area`);
-    return rectFromEl(deck);
   }
+  // それ以外（通常のカードモード）は各プレイヤーのデッキエリア
+  const deck = document.querySelector(`.player-${seat} .deck-area`);
+  return rectFromEl(deck);
 }
 
 function getMainPlayBoundsForSeat(seat){
