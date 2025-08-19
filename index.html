@@ -2231,6 +2231,22 @@ function rectFromEl(el){
 }
 
 
+ // === レイアウト安定待ち（中央デッキの矩形が正しく測れるまで待つ） ===
+ async function waitForBoardDeckRect(maxWaitMs = 1000){
+   const start = performance.now();
+   // 2フレーム待ち → 計測 → 必要なら繰り返し
+   while (performance.now() - start < maxWaitMs) {
+     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+     const r = getDeckBoundsForSeat(1); // board/trump は共有デッキ
+     if (r && r.width > 0 && r.height > 0) return r;
+   }
+   // 最悪でも null 返し（呼び出し側でフォールバック）
+   return null;
+ }
+
+
+
+
 // === 操作権限（ドラッグ/表裏）判定 ===
 function isMyCard(cardEl){ return cardEl?.dataset?.ownerSeat === String(CURRENT_PLAYER); }
 function allowOperateOthers(){ return !!(CURRENT_ROOM_META?.allowOtherOps); }
@@ -4352,6 +4368,8 @@ async function spawnTrumpDeck(roomId){
   const SUITS = ['spade','heart','diamond','club'];
   const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 
+  // レイアウト確定を待ってから中心を測る（ズレ防止）
+  await waitForBoardDeckRect();
   const { x, y } = centerOfBoardDeck(CARD_W, CARD_H);
   let z = getMaxZIndex() + 1;
 
