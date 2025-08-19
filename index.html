@@ -579,6 +579,16 @@
     line-height: 1.2;
     min-height: 30px;
   }
+  
+  /* ===== セクション見出し（左寄せ・省スペース） ===== */
+  #sidebar .section-label{
+    margin: 2px 0 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-align: left;
+    color: #555;
+  }
+  
   @media (max-width: 768px){
     #sidebar .sl-row > .sl-btn{
       padding: 6px 8px;           /* モバイルでも高さ控えめ */
@@ -935,6 +945,7 @@
      <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
      <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
    </div>
+   <div class="section-label">自分のカード</div>
    <button onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット（自分のカードのみ）</button>
    <button id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
    <button onclick="faceDownAll()" data-i18n="side.faceDown">🂠 裏返す（自分のカードのみ）</button>
