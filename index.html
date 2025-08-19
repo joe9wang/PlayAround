@@ -360,7 +360,15 @@
 // モード切替: mode-card ⇄ mode-board
 //   ※カードゲーム（既存DOM）はデフォルト表示のまま触らない！
 //   → mode-card では一切上書きしない。board のときだけ切り替える。
+/* ボード/トランプ時はカード用 player-area を非表示 */
 #field.mode-board .player-area{ display:none; }   /* カード用4区画は隠す */
+
+/* ボード/トランプ時はプレイエリア内の P1～P4 タグを非表示 */
+#field.mode-board .player-area .player-label { display: none !important; }
+
+/* ボード/トランプ時は特殊エリアの zone-label を非表示 */
+#field.mode-board .special-area .zone-label { display: none !important; }
+
 #field.mode-board #board-layout{ display:block; } /* ボード用だけ出す */
     
     
