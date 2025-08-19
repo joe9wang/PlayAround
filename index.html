@@ -563,7 +563,30 @@
  #sidebar h2 .inline-toggle { margin-left: 8px; }
  #preview h2 .inline-toggle { margin-left: 0; margin-right: 8px; }
  .inline-toggle:hover { background:#f3f3f3; }
-
+ 
+ 
+  /* ===== Save/Load を横2分割＆省スペースに ===== */
+  #sidebar .sl-row{
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 半分ずつ */
+    gap: 6px;
+    margin: 4px 0 8px;
+  }
+  #sidebar .sl-row > .sl-btn{
+    width: 100% !important;       /* 既存の100%幅前提を維持 */
+    padding: 6px 8px !important;  /* 高さを控えめに */
+    font-size: 0.9rem;
+    line-height: 1.2;
+    min-height: 30px;
+  }
+  @media (max-width: 768px){
+    #sidebar .sl-row > .sl-btn{
+      padding: 6px 8px;           /* モバイルでも高さ控えめ */
+      font-size: 12px;            /* 既存のモバイル調整に馴染ませる */
+    }
+  }
+ 
+ 
  /* 見出しの共通スタイル（左右で高さを揃える） */
  :root { --panel-title-h: 32px; }  /* 必要なら 30〜36px で微調整可 */
  
@@ -907,8 +930,11 @@
              data-i18n-title="side.panel.toggle">◀</button>
    </h2>  
    
-   <button onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
-   <button onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
+   <!-- Save/Load: compact two-up row -->
+   <div class="sl-row" role="group" aria-label="Save/Load">
+     <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
+     <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
+   </div>
    <button onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット（自分のカードのみ）</button>
    <button id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
    <button onclick="faceDownAll()" data-i18n="side.faceDown">🂠 裏返す（自分のカードのみ）</button>
