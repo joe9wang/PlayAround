@@ -947,8 +947,10 @@
    </div>
    <div class="section-label">自分のカード</div>
    <button onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
-   <button onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全カード裏返す</button>
-   <button onclick="faceUpAll()" data-i18n="side.faceUp">🂡 全カード表にする</button>
+  <div class="sl-row" role="group" aria-label="Face up/down">
+    <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全カード裏返す</button>
+    <button class="sl-btn" onclick="faceUpAll()"  data-i18n="side.faceUp">🂡 全カード表にする</button>
+  </div>
    <button id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
    <button onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 シャッフル</button>
    <button onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキエリアのカード一覧</button>
