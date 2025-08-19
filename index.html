@@ -580,6 +580,17 @@
     min-height: 30px;
   }
   
+  
+  /* 単独ボタンでも省スペース化（行に包まなくても効く） */
+  #sidebar .sl-btn{
+    width: 100% !important;
+    padding: 6px 8px !important;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    min-height: 30px;
+  }
+  
+  
   /* ===== セクション見出し（左寄せ・省スペース） ===== */
   #sidebar .section-label{
     margin: 2px 0 6px;
@@ -594,6 +605,10 @@
       padding: 6px 8px;           /* モバイルでも高さ控えめ */
       font-size: 12px;            /* 既存のモバイル調整に馴染ませる */
     }
+    #sidebar .sl-btn{
+      padding: 6px 8px;
+      font-size: 12px;
+    }    
   }
  
  
@@ -946,28 +961,28 @@
      <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
    </div>
    <div class="section-label">自分のカード</div>
-   <button onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
+   <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
   <div class="sl-row" role="group" aria-label="Face up/down">
     <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏返す</button>
     <button class="sl-btn" onclick="faceUpAll()"  data-i18n="side.faceUp">🂡 全て表にする</button>
   </div>
-   <button id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
-   <button onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 シャッフル</button>
-   <button onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキエリアのカード一覧</button>
-    <button onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🗂 全カード一覧</button>
-   <button onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
-  <button onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1カウンター</button>
-   <button onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10カウンター</button>
-   <button onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1カウンター</button>
-   <button onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10カウンター</button>
-   <button onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
-   <button onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
-   <button onclick="alignDecks()" data-i18n="side.align">📏 整列（表示のみ）</button>
-   <button onclick="toggleFieldSizeOptions()" data-i18n="side.fieldSize">🖼 フィールドサイズ変更</button>
+   <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
+   <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 シャッフル</button>
+   <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキエリアのカード一覧</button>
+    <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🗂 全カード一覧</button>
+   <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
+  <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1カウンター</button>
+   <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10カウンター</button>
+   <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1カウンター</button>
+   <button class="sl-btn" onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10カウンター</button>
+   <button class="sl-btn" onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
+   <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
+   <button class="sl-btn" onclick="alignDecks()" data-i18n="side.align">📏 整列（表示のみ）</button>
+   <button class="sl-btn" onclick="toggleFieldSizeOptions()" data-i18n="side.fieldSize">🖼 フィールドサイズ変更</button>
    <div id="field-size-options">
-     <button onclick="setFieldSize('small')"  data-i18n="side.sizeS">小</button>
-     <button onclick="setFieldSize('medium')" data-i18n="side.sizeM">中</button>
-     <button onclick="setFieldSize('large')"  data-i18n="side.sizeL">大</button>
+     <button class="sl-btn" onclick="setFieldSize('small')"  data-i18n="side.sizeS">小</button>
+     <button class="sl-btn" onclick="setFieldSize('medium')" data-i18n="side.sizeM">中</button>
+     <button class="sl-btn" onclick="setFieldSize('large')"  data-i18n="side.sizeL">大</button>
    </div>
    
    
@@ -988,7 +1003,7 @@
      </div>
     </div>
    </div>
-   <button class="danger" id="end-room-btn" style="display:none">
+   <button class="danger sl-btn" id="end-room-btn" style="display:none">
     🚪 ルームを終了（ホスト）
    </button>
   </div>
