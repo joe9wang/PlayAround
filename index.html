@@ -2214,7 +2214,9 @@ joinRoomPassInput?.addEventListener('input', () => {
     
     
 function isBoardMode(){
-  return (CURRENT_ROOM_META?.fieldMode === 'board');
+  const m = CURRENT_ROOM_META?.fieldMode;
+  // 'board' と 'trump' をボード系モードとして扱う
+  return (m === 'board' || m === 'trump');
 }
 
 function rectFromEl(el){
@@ -2848,7 +2850,9 @@ function renderHPPanel(){
 // ===============================
 // roomMeta.fieldMode に応じて DOM を切替え。
 function applyFieldModeLayout(){
-  const mode = (CURRENT_ROOM_META?.fieldMode === 'board') ? 'board' : 'card';
+  const m = CURRENT_ROOM_META?.fieldMode;
+  // 'board' と 'trump' をボード系DOMにマップ
+  const mode = (m === 'board' || m === 'trump') ? 'board' : 'card';
   const fieldRoot = document.getElementById('field');
   if (!fieldRoot) return;
   fieldRoot.classList.toggle('mode-card',  mode === 'card');
