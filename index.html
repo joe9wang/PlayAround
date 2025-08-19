@@ -962,22 +962,23 @@
    </div>
    <div class="section-label">自分のカード</div>
    <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
-  <div class="sl-row" role="group" aria-label="Face up/down">
-    <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏返す</button>
-    <button class="sl-btn" onclick="faceUpAll()"  data-i18n="side.faceUp">🂡 全て表にする</button>
-  </div>
+   <div class="sl-row" role="group" aria-label="Face up/down">
+     <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏返す</button>
+     <button class="sl-btn" onclick="faceUpAll()"  data-i18n="side.faceUp">🂡 全て表にする</button>
+   </div>
+   <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
+   <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🗂 全カード一覧</button>
+   <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキのカード一覧</button>
+   <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
+   <div class="section-label">ダイス</div>
    <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
-   <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 シャッフル</button>
-   <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキエリアのカード一覧</button>
-    <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🗂 全カード一覧</button>
+   <div class="section-label">カウンター・トークン</div>
    <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
-  <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1カウンター</button>
+   <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1カウンター</button>
    <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10カウンター</button>
    <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1カウンター</button>
    <button class="sl-btn" onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10カウンター</button>
    <button class="sl-btn" onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
-   <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
-   <button class="sl-btn" onclick="alignDecks()" data-i18n="side.align">📏 整列（表示のみ）</button>
    <button class="sl-btn" onclick="toggleFieldSizeOptions()" data-i18n="side.fieldSize">🖼 フィールドサイズ変更</button>
    <div id="field-size-options">
      <button class="sl-btn" onclick="setFieldSize('small')"  data-i18n="side.sizeS">小</button>
@@ -1971,7 +1972,6 @@ const I18N = {
     "side.minus10": "−10カウンター",
     "side.token": "トークン作成",
     "side.deleteMine": "全カード削除",
-    "side.align": "整列（表示のみ）",
     "side.fieldSize": "フィールドサイズ変更",
     "side.sizeS": "小",
     "side.sizeM": "中",
@@ -2061,7 +2061,6 @@ const I18N = {
     "side.minus10": "−10 counter",
     "side.token": "Create token",
     "side.deleteMine": "Delete all my cards",
-    "side.align": "Align (visual only)",
     "side.fieldSize": "Change field size",
     "side.sizeS": "Small",
     "side.sizeM": "Medium",
@@ -4729,7 +4728,6 @@ window.spawnToken = async function(){
 
     window.toggleFieldSizeOptions = function(){ fieldSizeOptions.style.display = fieldSizeOptions.style.display==="none"?"block":"none"; }
     window.setFieldSize = function(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
-    window.alignDecks = function(){ /* 表示のみ */ }
     window.shuffleDecks = async function(){
       if(!CURRENT_ROOM || !CURRENT_PLAYER) return;
       const srcBounds = getDeckBoundsForSeat(CURRENT_PLAYER);
