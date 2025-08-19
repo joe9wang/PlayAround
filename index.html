@@ -206,6 +206,23 @@
     .room-item:last-child{ border-bottom:0; }
     .room-id{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
     .player-label { position: absolute; top: 6px; left: 6px; font-size: 22px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 2px 8px; border-radius: 4px; pointer-events: none; z-index: 10; }
+    
+    /* 追加（ボード / トランプ用：手札エリア左下に表示） */
+    .board-name {
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      font-size: 18px;
+      font-weight: bold;
+      color: rgba(255,255,255,0.95);
+      background: rgba(0,0,0,0.4);
+      padding: 2px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .board-name .label-seat { margin-right: 4px; }
+    
     .zone-label { position: absolute; right: 4px; bottom: 4px; font-size: 12px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 4px; pointer-events: none; z-index: 5; }
     #create-seat-grid .seat-btn.active{ outline:3px solid #0a7; background:#e9fff7; box-shadow:0 0 0 3px rgba(0,170,119,.15) inset; }
     #create-seat-picked { margin-top:6px; font-size:12px; color:#0a7; font-weight:700; }
@@ -1060,15 +1077,31 @@
      </div>
      <div class="board-hand" id="board-hand-1">
       <div class="zone-label" data-i18n="zone.hand">手札エリア P1</div>
+      <div class="board-name">
+        <span class="label-seat">P1</span>
+        <span class="label-name"></span>
+      </div>
      </div>
      <div class="board-hand" id="board-hand-2">
       <div class="zone-label" data-i18n="zone.hand">手札エリア P2</div>
+      <div class="board-name">
+        <span class="label-seat">P2</span>
+        <span class="label-name"></span>
+      </div>
      </div>
      <div class="board-hand" id="board-hand-3">
       <div class="zone-label" data-i18n="zone.hand">手札エリア P3</div>
+      <div class="board-name">
+        <span class="label-seat">P3</span>
+        <span class="label-name"></span>
+      </div>
      </div>
      <div class="board-hand" id="board-hand-4">
       <div class="zone-label" data-i18n="zone.hand">手札エリア P4</div>
+      <div class="board-name">
+        <span class="label-seat">P4</span>
+        <span class="label-name"></span>
+      </div>
      </div>
      <div id="board-center">
       <div class="center-deck">
@@ -2769,15 +2802,33 @@ function renderHPPanel(){
 
     function renderFieldLabels(){
       for (const s of [1,2,3,4]) {
-        const area   = document.querySelector(`.player-${s}`);
-        const seatEl = area?.querySelector('.player-label .label-seat');
-        const nameEl = area?.querySelector('.player-label .label-name');
-        if(!seatEl || !nameEl) continue;
-        seatEl.textContent = `P${s}`;
-        const seatData = currentSeatMap[s] || null;
-        const displayName = seatData?.displayName || '';
-        const isHostSeat = (CURRENT_ROOM_META?.hostSeat === s);
-        nameEl.textContent = displayName ? `${displayName}${isHostSeat ? '（ホスト）' : ''}` : '';
+        // --- カード用: 既存の .player-label を更新 ---
+        {
+          const area   = document.querySelector(`.player-${s}`);
+          const seatEl = area?.querySelector('.player-label .label-seat');
+          const nameEl = area?.querySelector('.player-label .label-name');
+          if (seatEl) seatEl.textContent = `P${s}`;
+          if (nameEl) {
+            const seatData   = currentSeatMap[s] || null;
+            const displayName= seatData?.displayName || '';
+            const isHostSeat = (CURRENT_ROOM_META?.hostSeat === s);
+            nameEl.textContent = displayName ? `${displayName}${isHostSeat ? '（ホスト）' : ''}` : '';
+          }
+        }
+
+        // --- 追加: ボード / トランプ用の .board-name を更新 ---
+        {
+          const handEl = document.getElementById(`board-hand-${s}`);
+          const seatElB = handEl?.querySelector('.board-name .label-seat');
+          const nameElB = handEl?.querySelector('.board-name .label-name');
+          if (seatElB) seatElB.textContent = `P${s}`;
+          if (nameElB) {
+            const seatData   = currentSeatMap[s] || null;
+            const displayName= seatData?.displayName || '';
+            const isHostSeat = (CURRENT_ROOM_META?.hostSeat === s);
+            nameElB.textContent = displayName ? `${displayName}${isHostSeat ? '（ホスト）' : ''}` : '';
+          }
+        }
       }
     }
     
