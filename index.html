@@ -2713,19 +2713,21 @@ function randomPointInMainPlay(seat){
         seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
         startSession(id, CREATE_SELECTED_SEAT);
 
-        // ★追加: trump モードなら、フィールド初期化（52枚デッキを中央に裏向きで積む）
+        // ★修正: trump モードでは、まず room.fieldMode='trump' を確実に適用してから共有デッキに生成
         if (CREATE_FIELD_MODE === 'trump') {
-          // 共有デッキ矩形が測れるまで待ってから生成（上にズレて出ないようにする）
-          (async () => {
-            try {
-              await spawnTrumpDeck(id);
-              await setDoc(doc(db, `rooms/${id}`), { trumpInitialized: true, updatedAt: serverTimestamp() }, { merge: true });
-            } catch (e) {
-              console.warn('spawnTrumpDeck failed', e);
-            }
-          })();
-        }
+          // 1) ルーム doc に fieldMode を即反映（購読更新を待たずローカルにも反映）
+          await setDoc(doc(db, `rooms/${id}`), { fieldMode: 'trump', updatedAt: serverTimestamp() }, { merge: true });
+          CURRENT_ROOM_META = { ...(CURRENT_ROOM_META || {}), fieldMode: 'trump' };
+          applyFieldModeLayout(); // ボード系DOM(#board-center .center-deck)を有効化
 
+          // 2) 共有デッキ矩形が測れるまで待ってから中央に生成（waitForBoardDeckRect 内で待機）
+          try {
+            await spawnTrumpDeck(id);
+            await setDoc(doc(db, `rooms/${id}`), { trumpInitialized: true, updatedAt: serverTimestamp() }, { merge: true });
+          } catch (e) {
+            console.warn('spawnTrumpDeck failed', e);
+          }
+        }
 
  } catch (e) {
    console.error('[create-room] failed:', e);
