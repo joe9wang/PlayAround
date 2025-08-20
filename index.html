@@ -2448,6 +2448,53 @@ function centerOfMainPlay(seat, w, h){
       const y = b.minY + Math.random() * (maxY - b.minY);
       return { x: Math.round(x), y: Math.round(y) };
     }
+    
+    
+// === トランプ初期デッキ生成（共有デッキ内に出現させる） ===
+// 既存の spawnTrumpDeck がある場合は、こちらで“共有デッキ矩形内に配置する”実装に置換してください。
+async function spawnTrumpDeck(roomId){
+  // 共有デッキの矩形が安定するまで待つ（最大1秒）
+  const deckRect = await waitForBoardDeckRect(1000);
+  // 最悪取れなかった場合でも致命傷にならないようフォールバック
+  const rect = deckRect || getDeckBoundsForSeat(1) || { minX: 40, minY: 40, width: 320, height: 220 };
+
+  // デッキ内（重なり気味）に積むための軽いファン配置
+  // ・中央基準に数pxずつランダムで散らす
+  const cx = rect.minX + rect.width  / 2 - CARD_W/2;
+  const cy = rect.minY + rect.height / 2 - CARD_H/2;
+
+  // 52 枚（ジョーカーなし）。画像割り当てはあなたの既存ロジックに合わせてください。
+  const baseCardsCol = collection(db, `rooms/${roomId}/cards`);
+  let batch = writeBatch(db), n = 0;
+  const nowZ = Date.now() % 10000;
+
+  for (let i = 0; i < 52; i++){
+    const jitterX = (Math.random() * 10) - 5; // ±5px
+    const jitterY = (Math.random() * 10) - 5; // ±5px
+    const payload = {
+      // デッキ内（中央寄せ＋微揺らぎ）に出現
+      x: Math.round(Math.min(Math.max(cx + jitterX, rect.minX), rect.minX + rect.width  - CARD_W)),
+      y: Math.round(Math.min(Math.max(cy + jitterY, rect.minY), rect.minY + rect.height - CARD_H)),
+      zIndex: 1 + i + nowZ,
+      faceUp: false,               // 裏向きで積む
+      rotation: 0,
+      visibleToAll: true,          // 誰でも見える“場のデッキ”
+      type: 'card',
+      imageUrl: '',                // ← あなたのカード画像割り当てロジックに合わせて設定
+      fullUrl:  '',                // ← 同上（不要なら空でOK）
+      ownerUid:  null,             // 共有物として所有者なし（運用に合わせて変更可）
+      ownerSeat: 0,                // 0=共有扱い（運用に合わせて変更可）
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    batch.set(doc(baseCardsCol), payload);
+    if (++n >= 450){ await batch.commit(); batch = writeBatch(db); n = 0; }
+  }
+  if (n > 0) await batch.commit();
+}    
+    
+    
+    
 
 // ===============================
 // ホスト監視
@@ -2714,15 +2761,15 @@ function randomPointInMainPlay(seat){
 
         // ★追加: trump モードなら、フィールド初期化（52枚デッキを中央に裏向きで積む）
         if (CREATE_FIELD_MODE === 'trump') {
-          // DOMの描画安定を少し待ってから
-          setTimeout(async () => {
+          // 共有デッキ矩形が測れるまで待ってから生成（上にズレて出ないようにする）
+          (async () => {
             try {
-              await spawnTrumpDeck(id); // 下で定義
+              await spawnTrumpDeck(id);
               await setDoc(doc(db, `rooms/${id}`), { trumpInitialized: true, updatedAt: serverTimestamp() }, { merge: true });
             } catch (e) {
               console.warn('spawnTrumpDeck failed', e);
             }
-          }, 50);
+          })();
         }
 
 
