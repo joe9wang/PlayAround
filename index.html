@@ -1856,6 +1856,27 @@ async function storageDownloadURL(path) {
   }
 }
     
+    
+    // === Helper: 他人の手札内かどうか（プレビュー用マスク判定） ===
+    function isOtherPlayersHandCard(el){
+      try{
+        if (!el) return false;
+        const viewerSeat = CURRENT_PLAYER;
+        const left = parseFloat(el.style.left) || 0;
+        const top  = parseFloat(el.style.top)  || 0;
+        for (const s of [1,2,3,4]) {
+          const hb = getHandBoundsForSeat(s);
+          if (hb && isCenterInsideRect(left, top, hb)) {
+            return String(s) !== String(viewerSeat);
+          }
+        }
+      }catch(_){}
+      return false;
+    }
+    
+    
+    
+    
     async function sha256Hex(str){
       const data = new TextEncoder().encode(str);
       const buf  = await crypto.subtle.digest('SHA-256', data);
@@ -3631,7 +3652,7 @@ if (state?.type === 'numcounter') {
         const isToken = card.classList.contains('token');
         
         
-  if (isToken) {
+  if (isToken || isOtherPlayersHandCard(card)) {
     setPreview();                       // 非表示にする
   } else {
     // ★ 追加：他プレイヤーの手札内のカードはプレビューを裏のまま（非表示）
@@ -4678,7 +4699,11 @@ window.spawnToken = async function(){
       const full = fullImageStore.get(cardId);
       const thumbEl = el.querySelector('img');
             
-      setPreview((thumbEl && thumbEl.style.display !== 'none') ? (full || thumbEl.src) : '');
+      setPreview(
+        isOtherPlayersHandCard(el)
+          ? ''
+          : ((thumbEl && thumbEl.style.display !== 'none') ? (full || thumbEl.src) : '')
+      );
       
       const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
       previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
