@@ -3533,6 +3533,7 @@ if (state?.type === 'dice') {
    const nextFaceUp = !isFaceUp;
    card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
    const imgEl = card.querySelector('img');
+   
    if (imgEl) {
      if (nextFaceUp) {
        imgEl.style.display = 'block';
@@ -3544,9 +3545,10 @@ if (state?.type === 'dice') {
      } else {
        imgEl.style.display = 'none';
        card.style.backgroundColor = '#000';
-       if (selectedCard === card) setPreview();
+       if (selectedCard === card) setPreview(TRUMP_BACK_URL);
      }
    }
+   
    const tokenEl = card.querySelector('.token-input');
    if (tokenEl) { tokenEl.style.display = nextFaceUp ? 'block' : 'none'; }
    updateCardBatched(cardId, { faceUp: nextFaceUp });
@@ -3652,33 +3654,18 @@ if (state?.type === 'numcounter') {
         const isToken = card.classList.contains('token');
         
         
-  if (isToken || isOtherPlayersHandCard(card)) {
-    setPreview();                       // 非表示にする
-  } else {
-    // ★ 追加：他プレイヤーの手札内のカードはプレビューを裏のまま（非表示）
-    let isOtherHand = false;
-    try {
-      const viewerSeat = CURRENT_PLAYER;
-      const x = parseFloat(card.style.left) || 0;
-      const y = parseFloat(card.style.top)  || 0;
-      for (const s of [1,2,3,4]) {
-        const hb = getHandBoundsForSeat(s);
-        if (hb && isCenterInsideRect(x, y, hb)) {
-          isOtherHand = (String(s) !== String(viewerSeat));
-          break;
-        }
-      }
-    } catch(_) {}
-    if (isOtherHand) {
-      setPreview(); // 裏（非表示）のまま
-    } else {
-      const full = card.dataset.fullUrl || fullImageStore.get(cardId);
-      const thumbEl = card.querySelector('img');
-      const src = full || (thumbEl && thumbEl.src) || '';
-      setPreview(src);
-    }
-  }
-        
+        // プレビュー：他人の手札 or 裏向き → 裏画像、それ以外は表画像
+        if (isToken) {
+          setPreview(); // トークンはプレビューなし
+        } else {
+          const isFaceUp = card.dataset.faceUp === 'true';
+          const full = card.dataset.fullUrl || fullImageStore.get(cardId);
+          const thumbEl = card.querySelector('img');
+          const frontSrc = full || (thumbEl && thumbEl.src) || '';
+          const otherHand = isOtherPlayersHandCard(card); /* 判定関数 */
+          const previewSrc = (otherHand || !isFaceUp) ? TRUMP_BACK_URL : frontSrc;
+          setPreview(previewSrc);
+        }        
         
         const ownerPlayerNum = card.dataset.ownerSeat ? `P${card.dataset.ownerSeat}` : "?";
         if (isToken) {
@@ -3723,7 +3710,6 @@ if (state?.type === 'numcounter') {
         
         if (imgEl) {
           if (nextFaceUp) {
-            // 表にする → 画像を表示＆白背景に
             imgEl.style.display = 'block';
             card.style.backgroundColor = '#fff';
             if (selectedCard === card) {
@@ -3731,12 +3717,11 @@ if (state?.type === 'numcounter') {
               setPreview(full || imgEl.src);
             }
           } else {
-            // 裏にする → 画像を隠し黒背景に、プレビューも消す
             imgEl.style.display = 'none';
             card.style.backgroundColor = '#000';
-            if (selectedCard === card) setPreview();
+            if (selectedCard === card) setPreview(TRUMP_BACK_URL);
           }
-        }        
+        }
         
         const tokenEl = card.querySelector('.token-input');
         
@@ -3906,7 +3891,7 @@ if (data.type === 'numcounter') {
           if (img) { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
           const tokenInput2 = card.querySelector('.token-input');
           if (tokenInput2) { tokenInput2.style.display = 'none'; card.style.backgroundColor = '#000'; }
-          if (selectedCard === card) { setPreview(); } // ★選択中でもプレビューを隠す
+          if (selectedCard === card) { setPreview(TRUMP_BACK_URL); } // ★選択中でもプレビューは「裏面」
         }
       } catch(_) {}
     }
@@ -4698,12 +4683,11 @@ window.spawnToken = async function(){
       selectedCard = el;
       const full = fullImageStore.get(cardId);
       const thumbEl = el.querySelector('img');
-            
-      setPreview(
-        isOtherPlayersHandCard(el)
-          ? ''
-          : ((thumbEl && thumbEl.style.display !== 'none') ? (full || thumbEl.src) : '')
-      );
+      const isFaceUp = el.dataset.faceUp === 'true';
+      const otherHand = isOtherPlayersHandCard(el);
+      const frontSrc = full || (thumbEl && thumbEl.src) || '';
+      const previewSrc = (otherHand || !isFaceUp) ? TRUMP_BACK_URL : frontSrc;
+      setPreview(previewSrc);
       
       const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
       previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
