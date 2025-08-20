@@ -979,11 +979,10 @@
      <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1カウンター</button>
      <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10カウンター</button>
    </div>
-   
-   <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1カウンター</button>
-   <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10カウンター</button>
-   <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1カウンター</button>
-   <button class="sl-btn" onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10カウンター</button>
+   <div class="sl-row" role="group" aria-label="plus1/plus10">
+     <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1カウンター</button>
+     <button class="sl-btn" onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10カウンター</button>
+   </div>
    <button class="sl-btn" onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
    <button class="sl-btn" onclick="toggleFieldSizeOptions()" data-i18n="side.fieldSize">🖼 フィールドサイズ変更</button>
    <div id="field-size-options">
@@ -3632,15 +3631,32 @@ if (state?.type === 'numcounter') {
         const isToken = card.classList.contains('token');
         
         
- if (isToken) {
-   setPreview();                       // 非表示にする
- } else {
-   const full = card.dataset.fullUrl || fullImageStore.get(cardId);
-   const thumbEl = card.querySelector('img');
-   const src = full || (thumbEl && thumbEl.src) || '';
-   setPreview(src);
- }
-        
+  if (isToken) {
+    setPreview();                       // 非表示にする
+  } else {
+    // ★ 追加：他プレイヤーの手札内のカードはプレビューを裏のまま（非表示）
+    let isOtherHand = false;
+    try {
+      const viewerSeat = CURRENT_PLAYER;
+      const x = parseFloat(card.style.left) || 0;
+      const y = parseFloat(card.style.top)  || 0;
+      for (const s of [1,2,3,4]) {
+        const hb = getHandBoundsForSeat(s);
+        if (hb && isCenterInsideRect(x, y, hb)) {
+          isOtherHand = (String(s) !== String(viewerSeat));
+          break;
+        }
+      }
+    } catch(_) {}
+    if (isOtherHand) {
+      setPreview(); // 裏（非表示）のまま
+    } else {
+      const full = card.dataset.fullUrl || fullImageStore.get(cardId);
+      const thumbEl = card.querySelector('img');
+      const src = full || (thumbEl && thumbEl.src) || '';
+      setPreview(src);
+    }
+  }
         
         
         const ownerPlayerNum = card.dataset.ownerSeat ? `P${card.dataset.ownerSeat}` : "?";
@@ -3869,6 +3885,7 @@ if (data.type === 'numcounter') {
           if (img) { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
           const tokenInput2 = card.querySelector('.token-input');
           if (tokenInput2) { tokenInput2.style.display = 'none'; card.style.backgroundColor = '#000'; }
+          if (selectedCard === card) { setPreview(); } // ★選択中でもプレビューを隠す
         }
       } catch(_) {}
     }
