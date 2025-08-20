@@ -974,6 +974,12 @@
    <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
    <div class="section-label">カウンター・トークン</div>
    <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
+   
+   <div class="sl-row" role="group" aria-label="plus1/plus10">
+     <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1カウンター</button>
+     <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10カウンター</button>
+   </div>
+   
    <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1カウンター</button>
    <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10カウンター</button>
    <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1カウンター</button>
@@ -1759,10 +1765,10 @@ updateModePickButtons();
     let IS_ROOM_CREATOR = false;
 
     // ===== Quota care: intervals
-    const HOST_STALE_MS = 180000;  // ← 延長（25s）
-    const SEAT_STALE_MS = 240000;  // ← 延長（70s）
-    const HOST_HEARTBEAT_MS = 60000; // ← 10s
-    const SEAT_HEARTBEAT_MS = 60000; // ← 20s
+    const HOST_STALE_MS = 180000;  // 3min
+    const SEAT_STALE_MS = 600000;  // 10min
+    const HOST_HEARTBEAT_MS = 60000; // 10s
+    const SEAT_HEARTBEAT_MS = 60000; // 20s
     const ROOM_PING_MS = 60000;      // 60s
     let __roomPingAt = 0;
     
@@ -1869,7 +1875,7 @@ async function storageDownloadURL(path) {
 
     // ===== Presence / host alive
     
-    const ROOM_EMPTY_GRACE_MS = 2 * 60 * 1000; // 2分: 全席不在が続いたら部屋を自動削除
+    const ROOM_EMPTY_GRACE_MS = 15 * 60 * 1000; // 15分: 全席不在が続いたら部屋を自動削除
     
     function isHostAlive(roomMeta){
       if(!roomMeta?.hostUid) return false;
