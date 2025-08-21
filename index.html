@@ -4650,11 +4650,14 @@ window.collectMyCardsToDeck = async function () {
       return;
     }
 
-    // デッキ矩形を取得（ボード/トランプ時は中央の共有デッキが返る既存仕様）
-    const deckRect = getDeckBoundsForSeat(CURRENT_PLAYER);
+    // デッキ矩形を取得（ボード/トランプ時は中央の共有デッキ）。未計測なら待機してから再取得
+    let deckRect = getDeckBoundsForSeat(CURRENT_PLAYER);
     if (!deckRect || deckRect.width <= 0 || deckRect.height <= 0) {
-      alert('デッキエリアが見つかりません'); 
-      return;
+      if (isBoardMode()) deckRect = await waitForBoardDeckRect(1000);
+      if (!deckRect || deckRect.width <= 0 || deckRect.height <= 0) {
+        alert('デッキエリアが見つかりません');
+        return;
+      }
     }
 
     // 画面上に存在する「自分のカード」だけを列挙
@@ -4669,28 +4672,12 @@ window.collectMyCardsToDeck = async function () {
       return;
     }
 
-    // デッキ矩形の左上を起点に、少しずつずらして重ならないように配置
-    // （完全グリッドではなく軽いファン配置。必要ならオフセット値を調整してください）
-    const PAD = 8;                                // デッキ枠からの余白
-    const startX = Math.round(deckRect.minX + PAD);
-    const startY = Math.round(deckRect.minY + PAD);
-
-    // ずらし幅（カード幅/高さは既存の定数を利用）
-    // デッキ幅に応じて簡易的に列数を決め、はみ出しを抑えます
-    const stepX = 12;
-    const stepY = 8;
-    const cols = Math.max(1, Math.floor((deckRect.width - PAD*2) / Math.max(stepX, 1)));
-
-    // 既存の最大Zの上に重ねる
+    // ランダム配置：各カードをデッキエリア内のランダム座標へ（重なり回避はしない）
+    // 既存の最大Zより上に順番に積む
     const baseZ = getMaxZIndex() + 1;
-
-    // まとめてバッチ更新（updateCardBatched は内部で queue → flush されます）
     let i = 0;
     for (const { id } of mine) {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const x = startX + col * stepX;
-      const y = startY + row * stepY;
+      const { x, y } = randomPointInDeck(CURRENT_PLAYER);
       updateCardBatched(id, { x, y, zIndex: baseZ + i });
       i++;
     }
