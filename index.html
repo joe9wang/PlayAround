@@ -3990,7 +3990,58 @@ async function cleanupAndCloseRoom(roomId){
         console.warn('resetRoomState failed', e);
       }
     }
+    
+    
+     // ルームを「閉鎖」しつつサブコレクション(cards/seats)を全削除
+     async function cleanupAndCloseRoom(roomId){
+       // cards
+       const cardsCol = collection(db, `rooms/${roomId}/cards`);
+       const cardsSnap = await getDocs(cardsCol);
+       let batch = writeBatch(db); let count = 0;
+       for (const docSnap of cardsSnap.docs) {
+         batch.delete(doc(db, `rooms/${roomId}/cards/${docSnap.id}`));
+         if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
+       }
+       if (count > 0) await batch.commit();
 
+       // seats
+       const seatsCol = collection(db, `rooms/${roomId}/seats`);
+       const seatsSnap = await getDocs(seatsCol);
+       batch = writeBatch(db); count = 0;
+       for (const docSnap of seatsSnap.docs) {
+         batch.delete(doc(db, `rooms/${roomId}/seats/${docSnap.id}`));
+         if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
+       }
+       if (count > 0) await batch.commit();
+
+       // 閉鎖フラグ
+       await setDoc(doc(db, `rooms/${roomId}`), { roomClosed: true, updatedAt: serverTimestamp() }, { merge: true });
+     }
+
+     // ルーム完全削除（サブコレ削除→親doc削除、失敗時は墓標＋TTL）
+     async function cleanupAndDeleteRoom(roomId){
+       await cleanupAndCloseRoom(roomId);
+       try {
+         await deleteDoc(doc(db, `rooms/${roomId}`));
+       } catch (e) {
+         console.warn('delete room doc failed', e);
+         // 権限や競合で削除できない場合の保険（入室不可にする tombstone）
+         try {
+           await setDoc(doc(db, `rooms/${roomId}`), {
+             roomClosed: true,
+             tombstone: true,
+             deletedAt: serverTimestamp(),
+             // Firestore TTL を rooms コレクションに設定していれば自動削除
+             ttl: Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) // 10分後
+           }, { merge: true });
+         } catch (e2) {
+           console.warn('tombstone fallback failed', e2);
+         }
+       }
+     }    
+    
+    
+    
     // ===== queued update API (replaces updateDoc direct calls)
     async function updateCard(cardId, patch){
       // 互換用（今は使っていない）— 直接書かない
@@ -5003,8 +5054,9 @@ function bindPanZoomHandlers(){
       try { if (unsubscribeSeats)    { unsubscribeSeats();    unsubscribeSeats    = null; } } catch(_){}
       try { if (unsubscribeRoomDoc)  { unsubscribeRoomDoc();  unsubscribeRoomDoc  = null; } } catch(_){}
       try { if (CURRENT_ROOM && CURRENT_PLAYER) await releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_){}
-
-      // 2) その後に Firestore 側を完全掃除
+      
+      
+      // 2) Firestore 側を完全掃除（cards / seats 全削除 → 親doc削除）
       await cleanupAndDeleteRoom(CURRENT_ROOM);
       
       
