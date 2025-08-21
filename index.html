@@ -3144,6 +3144,33 @@ function applyFieldModeLayout(){
       
       
       try {
+      
+      
+      
+        // === NEW: ルームが「終了扱い」またはホスト不在なら、ここで完全掃除してから再開する ===
+        // これにより、終了時の削除に失敗してカード/座席が残っていても、再入室時に必ず消える
+        if (meta?.roomClosed || !isHostAlive(meta)) {
+          try {
+            // サブコレクション（cards / seats）を全削除
+            await resetRoomState(room);
+            // ルームを再開（roomClosed を下ろし、現在の自分をホストに）
+            await setDoc(doc(db, `rooms/${room}`), {
+              roomClosed: false,
+              hostUid: CURRENT_UID,
+              hostSeat: seat,
+              hostDisplayName: nameNow,
+              hostHeartbeatAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+            IS_ROOM_CREATOR = true;
+            startHostHeartbeat(room);
+          } catch (e) {
+            console.warn('[auto-cleanup] failed', e);
+            // 失敗しても後続の処理は継続（既存ガードで弾かれる）
+          }
+        }
+      
+      
         const roomSnap = await new Promise(resolve => {
           const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); });
         });
