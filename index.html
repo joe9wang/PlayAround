@@ -966,6 +966,7 @@
      <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏返す</button>
      <button class="sl-btn" onclick="faceUpAll()"  data-i18n="side.faceUp">🂡 全て表にする</button>
    </div>
+   <button class="sl-btn" onclick="collectMyCardsToDeck()" data-i18n="side.collect">全カードを集める</button>
    <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
    <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🗂 全カード一覧</button>
    <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキのカード一覧</button>
@@ -1989,6 +1990,7 @@ const I18N = {
     "side.faceUp": "全て表にする",
     "side.rollD6": "6面ダイスを振る",
     "side.shuffle": "デッキをシャッフル",
+    "side.collect": "全カードを集める",
     "side.deckList": "デッキのカード一覧",
     "side.allMyCards": "全カード一覧",
     "side.numCounter": "数値カウンター",
@@ -2078,6 +2080,8 @@ const I18N = {
     "side.faceUp": "Face-up",
     "side.rollD6": "Roll a d6",
     "side.shuffle": "Shuffle my Deck",
+    "side.collect": "Gather my cards",
+    "side.collect": "Gather my cards",
     "side.deckList": "My deck-area cards",
     "side.allMyCards": "All my cards",
     "side.numCounter": "Number counter",
@@ -4635,7 +4639,72 @@ window.spawnToken = async function(){
     const cardListModal = document.getElementById('card-list-modal');
     const cardListGrid  = document.getElementById('card-list-grid');
     const cardListClose = document.getElementById('card-list-close');
+    
+    
+    
+// === 自分の全カードを自分のデッキエリア（ボード/トランプ時は共有デッキ）へ集める ===
+window.collectMyCardsToDeck = async function () {
+  try {
+    if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+      alert('ルームに参加してから実行してください'); 
+      return;
+    }
 
+    // デッキ矩形を取得（ボード/トランプ時は中央の共有デッキが返る既存仕様）
+    const deckRect = getDeckBoundsForSeat(CURRENT_PLAYER);
+    if (!deckRect || deckRect.width <= 0 || deckRect.height <= 0) {
+      alert('デッキエリアが見つかりません'); 
+      return;
+    }
+
+    // 画面上に存在する「自分のカード」だけを列挙
+    const mine = [];
+    for (const [id, el] of cardDomMap) {
+      if (el?.dataset?.ownerSeat === String(CURRENT_PLAYER)) {
+        mine.push({ id, el });
+      }
+    }
+    if (mine.length === 0) {
+      alert('自分のカードがありません');
+      return;
+    }
+
+    // デッキ矩形の左上を起点に、少しずつずらして重ならないように配置
+    // （完全グリッドではなく軽いファン配置。必要ならオフセット値を調整してください）
+    const PAD = 8;                                // デッキ枠からの余白
+    const startX = Math.round(deckRect.minX + PAD);
+    const startY = Math.round(deckRect.minY + PAD);
+
+    // ずらし幅（カード幅/高さは既存の定数を利用）
+    // デッキ幅に応じて簡易的に列数を決め、はみ出しを抑えます
+    const stepX = 12;
+    const stepY = 8;
+    const cols = Math.max(1, Math.floor((deckRect.width - PAD*2) / Math.max(stepX, 1)));
+
+    // 既存の最大Zの上に重ねる
+    const baseZ = getMaxZIndex() + 1;
+
+    // まとめてバッチ更新（updateCardBatched は内部で queue → flush されます）
+    let i = 0;
+    for (const { id } of mine) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = startX + col * stepX;
+      const y = startY + row * stepY;
+      updateCardBatched(id, { x, y, zIndex: baseZ + i });
+      i++;
+    }
+
+    // flush は既存のバッファリングに任せる（即時に確定させたい場合は明示的 flush を呼ぶ実装に変更可）
+    // 裏表はそのまま（faceUp は更新しない）
+  } catch (e) {
+    console.error(e);
+    alert('カードの移動に失敗しました。ネットワーク状況を確認して再度お試しください。');
+  }
+};
+    
+    
+    
     window.openMyCardsDialog = function(){
       if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
       cardListGrid.innerHTML = '';
