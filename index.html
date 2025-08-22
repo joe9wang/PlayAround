@@ -2859,7 +2859,16 @@ function renderHPPanel(){
     }
 
     // ===== area colors (no change in write count; low frequency)
-    const DEFAULT_AREA_COLORS = { deck:'#ff9900', main:'#22dd88', hand:'#228be6' };
+    // 特殊エリア(special)・捨て札(discard)を追加
+    const DEFAULT_AREA_COLORS = {
+      deck:'#ff9900',
+      main:'#22dd88',
+      hand:'#228be6',
+      special:'#9c27b0', 
+      discard:'#cc6666'  
+    };
+
+
     function getSeatAreaColor(seat, zone){
       const ac = currentSeatMap[seat]?.areaColors || {};
       return ac[zone] || DEFAULT_AREA_COLORS[zone];
@@ -2868,23 +2877,34 @@ function renderHPPanel(){
       for (const seat of [1,2,3,4]) {
         const root = document.querySelector(`.player-${seat}`);
         if (!root) continue;
-        const deck = root.querySelector('.deck-area');
-        const main = root.querySelector('.main-play-area');
-        const hand = root.querySelector('.hand-area');
+        
+        const deck    = root.querySelector('.deck-area');
+        const main    = root.querySelector('.main-play-area');
+        const hand    = root.querySelector('.hand-area');
+        const special = root.querySelector('.special-area');
+        const discard = root.querySelector('.discard-area');
+        
         if (deck) deck.style.background = getSeatAreaColor(seat, 'deck');
         if (main) main.style.background = getSeatAreaColor(seat, 'main');
         if (hand) hand.style.background = getSeatAreaColor(seat, 'hand');
+        if (special) special.style.background = getSeatAreaColor(seat, 'special');
+        if (discard) discard.style.background = getSeatAreaColor(seat, 'discard');
+
       }
     }
     function bindAreaColorHandlers(){
       for (const seat of [1,2,3,4]) {
         const root = document.querySelector(`.player-${seat}`);
         if (!root) continue;
+
         [
-          { el: root.querySelector('.deck-area'), key: 'deck' },
-          { el: root.querySelector('.main-play-area'), key: 'main' },
-          { el: root.querySelector('.hand-area'), key: 'hand' },
+          { el: root.querySelector('.deck-area'),        key: 'deck'    },
+          { el: root.querySelector('.main-play-area'),   key: 'main'    },
+          { el: root.querySelector('.hand-area'),        key: 'hand'    },
+          { el: root.querySelector('.special-area'),     key: 'special' },
+          { el: root.querySelector('.discard-area'),     key: 'discard' },
         ].forEach(({el, key}) => {
+
           if (!el || el.__colorHandlerBound) return;
           el.__colorHandlerBound = true;
           el.classList.add('zone-colorable');
