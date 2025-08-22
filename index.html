@@ -228,6 +228,23 @@
     #create-seat-picked { margin-top:6px; font-size:12px; color:#0a7; font-weight:700; }
     .seat-btn:focus-visible{ outline:3px solid #66aaff; }
 
+
+/* === ゾーンは常に通常カーソルにする === */
+.deck-area,
+.main-play-area,
+.hand-area,
+.special-area,
+.discard-area {
+  cursor: default;  /* ← 指マークにしない */
+}
+
+/* （任意）ドラッグ中は「つかむ」表示をより確実に */
+.card:active {
+  cursor: grabbing;
+}
+
+
+
     .card.counter{ width:60px; height:60px; border-radius:50%; overflow:hidden; }
     .card.counter img{ border-radius:50%; object-fit:cover; }
     
@@ -2908,7 +2925,6 @@ function renderHPPanel(){
           if (!el || el.__colorHandlerBound) return;
           el.__colorHandlerBound = true;
           el.classList.add('zone-colorable');
-          el.style.cursor = 'pointer';
           el.addEventListener('dblclick', async (ev) => {
             ev.stopPropagation();
             if (seat !== CURRENT_PLAYER) return;
