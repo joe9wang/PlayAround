@@ -3180,14 +3180,22 @@ function applyFieldModeLayout(){
       
       
       
+        // まず最新のメタ情報を1回読み込む（以降のロジックで使用）
+        const roomSnap = await new Promise(resolve => {
+          const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); });
+        });
+        const meta = roomSnap.exists() ? roomSnap.data() : null;
+        
+        // ★追加：自分がホストかどうか（UID一致）を定義しておく
+        const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
+
+
         // === NEW: ルームが「終了扱い」またはホスト不在なら、ここで完全掃除してから再開する ===
         // これにより、終了時の削除に失敗してカード/座席が残っていても、再入室時に必ず消える
         if (meta?.roomClosed || !isHostAlive(meta)) {
           try {
-            // サブコレクション（cards / seats）を全削除
-            await resetRoomState(room);
-            // ルームを再開（roomClosed を下ろし、現在の自分をホストに）
-            await setDoc(doc(db, `rooms/${room}`), {
+            await resetRoomState(room); // サブコレクション（cards / seats）を全削除
+            await setDoc(doc(db, `rooms/${room}`), { // ルームを再開
               roomClosed: false,
               hostUid: CURRENT_UID,
               hostSeat: seat,
@@ -3199,19 +3207,8 @@ function applyFieldModeLayout(){
             startHostHeartbeat(room);
           } catch (e) {
             console.warn('[auto-cleanup] failed', e);
-            // 失敗しても後続の処理は継続（既存ガードで弾かれる）
           }
         }
-      
-      
-        const roomSnap = await new Promise(resolve => {
-          const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); });
-        });
-        const meta = roomSnap.exists() ? roomSnap.data() : null;
-        
-        // ★追加：自分がホストかどうか（UID一致）を定義しておく
-        const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
-
 
 
 // 「ホストUID かつ ホスト席」の人だけパス免除
