@@ -2816,15 +2816,10 @@ function randomPointInMainPlay(seat){
        btn.disabled = true;
        btn.classList.remove('free');
      } else {
-       if (!hostHere && !roomEmpty) {
-         note.textContent = 'ホスト不在';
-         btn.disabled = true;
-         btn.classList.remove('free');
-       } else {
-         note.textContent = '空席';
-         btn.disabled = false;
-         btn.classList.add('free');
-       }
+       // 非ホスト参加を許可：ホスト不在でも空席なら座れる
+       note.textContent = '空席';
+       btn.disabled = false;
+       btn.classList.add('free');
      }
    });
    validateLobby();
@@ -3106,10 +3101,10 @@ function applyFieldModeLayout(){
     }
 
     function validateLobby(){
-      const hostHere  = isHostAlive(CURRENT_ROOM_META);
-      const roomEmpty = isRoomEmpty();
-      // ホスト不在でも「無人」なら開始OK。「誰か生存中」だけブロック
-      if (!hostHere && !roomEmpty && ACTIVE_MODE === 'join') { startBtn.disabled = true; return; }
+   const hostHere  = isHostAlive(CURRENT_ROOM_META);
+   const roomEmpty = isRoomEmpty();
+   // 非ホスト参加を許可するため、ホスト在席チェックは行わない
+   // if (!hostHere && !roomEmpty && ACTIVE_MODE === 'join') { startBtn.disabled = true; return; }
       if (ACTIVE_MODE === 'create') { startBtn.disabled = true; return; }
       const roomOk  = !!(joinRoomInput.value||'').trim();
       const nameNow = (playerNameInput.value||'').trim();
@@ -3139,7 +3134,9 @@ function applyFieldModeLayout(){
     });
 
 
-    startBtn.addEventListener('click', async (ev) => {
+ startBtn.addEventListener('click', async (ev) => {
+   // UID 未確定で開始に失敗するのを防ぐ
+   await ensureAuthReady();
       ev.preventDefault();
       ACTIVE_MODE = 'join';
       await ensureAuthReady();
