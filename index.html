@@ -3065,7 +3065,14 @@ function applyFieldModeLayout(){
               displayName: d.displayName || '',
               claimedByUid: d.claimedByUid || null,
               heartbeatAt: d.heartbeatAt || null,
-              areaColors: d.areaColors || {}
+              areaColors: d.areaColors || {},
+              // ← 追加：スナップショットに hp が数値で入っていたときだけ更新。
+              // 無ければ既存の値（保持）を使う。未設定なら 0。
+              hp: (typeof d.hp === 'number')
+                    ? d.hp
+                    : ((currentSeatMap[idx + 1] && typeof currentSeatMap[idx + 1].hp === 'number')
+                        ? currentSeatMap[idx + 1].hp
+                        : 0)
             }
           );
         } else {
