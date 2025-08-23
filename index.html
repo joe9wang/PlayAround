@@ -3103,6 +3103,7 @@ function applyFieldModeLayout(){
 
         renderAreaColors();
         renderSeatAvailability();
+        renderHPPanel();   //座席更新が入ったらHPパネルも即リフレッシュ
       }));
       unsubscribeSeats = () => unsubs.forEach(fn => fn());
     }
