@@ -986,6 +986,10 @@
    <button class="sl-btn" onclick="collectMyCardsToDeck()" data-i18n="side.collect">全カードを集める</button>
    <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
    <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🗂 全カード一覧</button>
+   <div class="sl-row" role="group" aria-label="Face up/down">
+     <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキのカード一覧</button>
+     <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🗑 捨て札のカード一覧</button>
+   </div>
    <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキのカード一覧</button>
    <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🗑 捨て札のカード一覧</button>
    <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
@@ -2010,7 +2014,7 @@ const I18N = {
     "side.shuffle": "デッキをシャッフル",
     "side.collect": "全カードを集める",
     "side.deckList": "デッキのカード一覧",
-    "side.discardList": "捨て札一覧",
+    "side.discardList": "捨て札のカード一覧",
     "side.allMyCards": "全カード一覧",
     "side.numCounter": "数値カウンター",
     "side.plus1": "＋1カウンター",
@@ -4925,7 +4929,7 @@ window.openMyDiscardCardsDialog = function(){
 
   // タイトルを書き換え（モーダルは既存のものを流用）
   const titleEl = document.getElementById('card-list-title');
-  if (titleEl) titleEl.textContent = t('side.discardList') || '捨て札一覧';
+  if (titleEl) titleEl.textContent = t('side.discardList') || '捨て札のカード一覧';
 
   // 捨て札エリアの矩形を取得（モードに応じて個別 or 共有）
   const discardRect = getDiscardBoundsForSeat(CURRENT_PLAYER);
