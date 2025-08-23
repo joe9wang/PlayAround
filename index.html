@@ -987,6 +987,7 @@
    <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
    <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🗂 全カード一覧</button>
    <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキのカード一覧</button>
+   <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🗑 捨て札のカード一覧</button>
    <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
    <div class="section-label">ダイス</div>
    <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
@@ -2009,6 +2010,7 @@ const I18N = {
     "side.shuffle": "デッキをシャッフル",
     "side.collect": "全カードを集める",
     "side.deckList": "デッキのカード一覧",
+    "side.discardList": "捨て札一覧",
     "side.allMyCards": "全カード一覧",
     "side.numCounter": "数値カウンター",
     "side.plus1": "＋1カウンター",
@@ -2100,6 +2102,7 @@ const I18N = {
     "side.collect": "Gather my cards",
     "side.collect": "Gather my cards",
     "side.deckList": "My deck-area cards",
+    "side.discardList": "My discard-area cards",
     "side.allMyCards": "All my cards",
     "side.numCounter": "Number counter",
     "side.plus1": "+1 counter",
@@ -2386,6 +2389,20 @@ function getDeckBoundsForSeat(seat){
   const deck = document.querySelector(`.player-${seat} .deck-area`);
   return rectFromEl(deck);
 }
+
+
+function getDiscardBoundsForSeat(seat){
+  const mode = CURRENT_ROOM_META?.fieldMode;
+  if (mode === 'board' || mode === 'trump') {
+    // 共有レイアウトの中央・捨て札
+    const el = document.querySelector('#board-center .center-discard');
+    return rectFromEl(el);
+  }
+  // 通常レイアウト（各プレイヤーの右列上段の縦スタックの上側）
+  const el = document.querySelector(`.player-${seat} .discard-area`);
+  return rectFromEl(el);
+}
+
 
 function getMainPlayBoundsForSeat(seat){
   if (isBoardMode()) {
@@ -4841,7 +4858,7 @@ window.collectMyCardsToDeck = async function () {
     
     
     
-    // ★追加：自分の「デッキエリア内カード」だけを一覧表示
+    //自分の「デッキエリア内カード」だけを一覧表示
   window.openMyDeckCardsDialog = function(){
     if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
 
@@ -4897,6 +4914,67 @@ window.collectMyCardsToDeck = async function () {
     }
     cardListModal.style.display = 'flex';
   }
+    
+    
+    
+window.openMyDiscardCardsDialog = function(){
+  if (!CURRENT_ROOM || !CURRENT_PLAYER) {
+    alert('ルームに参加してから実行してください'); 
+    return;
+  }
+
+  // タイトルを書き換え（モーダルは既存のものを流用）
+  const titleEl = document.getElementById('card-list-title');
+  if (titleEl) titleEl.textContent = t('side.discardList') || '捨て札一覧';
+
+  // 捨て札エリアの矩形を取得（モードに応じて個別 or 共有）
+  const discardRect = getDiscardBoundsForSeat(CURRENT_PLAYER);
+  if (!discardRect || !discardRect.width || !discardRect.height) {
+    alert('あなたの捨て札エリアが見つかりません');
+    return;
+  }
+
+  // 自分のカードのうち、中心点が捨て札エリア内にあるものだけ抽出
+  cardListGrid.innerHTML = '';
+  const listed = [];
+  for (const [id, el] of cardDomMap) {
+    if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue; // 自分のカードのみ
+    const left = parseFloat(el.style.left) || 0;
+    const top  = parseFloat(el.style.top)  || 0;
+    const cx   = left + CARD_W/2;
+    const cy   = top  + CARD_H/2;
+    if (cx >= discardRect.minX && cx <= discardRect.minX + discardRect.width &&
+        cy >= discardRect.minY && cy <= discardRect.minY + discardRect.height) {
+      const imgEl = el.querySelector('img');
+      const src   = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
+      listed.push({ id, src });
+    }
+  }
+
+  if (listed.length === 0) {
+    const empty = document.createElement('div');
+    empty.textContent = '捨て札エリア内にカードがありません。';
+    empty.style.cssText = 'color:#666;font-size:14px;text-align:center;padding:24px 12px;';
+    cardListGrid.appendChild(empty);
+  } else {
+    listed.forEach(({id, src}) => {
+      const item = document.createElement('div');
+      item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;';
+      item.title = id;
+      const img = document.createElement('img');
+      img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
+      item.appendChild(img);
+      item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
+      item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
+      item.addEventListener('click', async () => {
+        await focusCardById(id);   // 最前面 & プレビュー更新（既存）
+        closeMyCardsDialog();
+      });
+      cardListGrid.appendChild(item);
+    });
+  }
+  cardListModal.style.display = 'flex';
+};    
     
     
     
