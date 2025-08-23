@@ -4789,7 +4789,7 @@ window.collectMyCardsToDeck = async function () {
 window.deleteSelectedMine = async function () {
   try {
     if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
-    const card = window.selectedCard || null;
+    const card = getCurrentlySelectedCard();
     if (!card) { alert('赤枠の「指定カード」を選んでください'); return; }
 
     // 自分のカードかチェック（ownerUid / ownerSeat）
@@ -4817,11 +4817,20 @@ window.deleteSelectedMine = async function () {
 };
 
 
+
+ // 現在選択中のカードを安全に取得（selectedCard / window.selectedCard / DOM を順に見る）
+ function getCurrentlySelectedCard(){
+   // グローバルでないスコープにある selectedCard も拾えるように typeof で存在確認
+   const localSel = (typeof selectedCard !== 'undefined') ? selectedCard : null;
+   return localSel || window.selectedCard || document.querySelector('.card.selected') || null;
+ }
+
+
 // === 指定カードを最背面へ（自分のカード限定） ===
 window.sendSelectedToBack = async function () {
   try {
     if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
-    const card = window.selectedCard || null;
+    const card = getCurrentlySelectedCard();
     if (!card) { alert('赤枠の「指定カード」を選んでください'); return; }
 
     // 自分のカードかチェック
