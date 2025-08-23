@@ -771,6 +771,22 @@
  }
 
 
+  /* === ▼▼ 重なり枚数バッジ ▼▼ === */
+  .overlap-badge{
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%, -50%);
+    font-weight:700;
+    color:#e53935;           /* 赤字 */
+    font-size:22px;
+    line-height:1;
+    text-shadow:0 0 6px rgba(255,255,255,.95), 0 0 12px rgba(255,255,255,.75);
+    pointer-events:none;      /* ドラッグを邪魔しない */
+    user-select:none;
+  }
+  /* （カードに対して中央絶対配置するので .card は position:absolute のままでOK） */
+  /* === ▲▲ 重なり枚数バッジ ▲▲ === */
+
 
   </style>
  </head>
@@ -3756,6 +3772,7 @@ if (state?.type === 'numcounter') {
         // 表示上だけ最前面へ（サーバーへzIndexは書かない：無駄書き減）
         const newZ = getMaxZIndex() + 1;
         card.style.zIndex = newZ;
+        updateOverlapBadges(); //Z順変更で最新化
 
         if (selectedCard) selectedCard.classList.remove("selected");
         card.classList.add("selected");
@@ -4292,6 +4309,7 @@ function makeDraggable(card){
           const y = parseFloat(card.style.top)  || 0;
           const zIndex = parseInt(card.style.zIndex) || 1;
           updateCardBatched(id, { x, y, zIndex });
+          updateOverlapBadges(); //ドラッグ終了で最新化
         };
 
         document.addEventListener("mousemove", onMove);
@@ -4344,6 +4362,7 @@ function makeDraggable(card){
           const y = parseFloat(card.style.top)  || 0;
           const zIndex = parseInt(card.style.zIndex) || 1;
           updateCardBatched(id, { x, y, zIndex });
+          updateOverlapBadges();
         };
         document.addEventListener('touchmove', onMove, { passive:false });
         document.addEventListener('touchend', onEnd);
@@ -4356,6 +4375,77 @@ function makeDraggable(card){
     }
 
     function getMaxZIndex(){ let max=0; document.querySelectorAll(".card").forEach(c=>{ const z=parseInt(c.style.zIndex)||0; if(z>max) max=z; }); return max; }
+
+
+// ★ added: 重なり判定 & バッジ更新 =========================
+function rectOfCard(el){
+  const left = parseFloat(el.style.left) || 0;
+  const top  = parseFloat(el.style.top)  || 0;
+  const w = el.offsetWidth  || 0;
+  const h = el.offsetHeight || 0;
+  return { l:left, t:top, r:left+w, b:top+h };
+}
+function intersects(a,b){
+  // 面積が正に重なるかどうか（辺が接するだけは“重なり”とみなさない）
+  return (a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t);
+}
+function unionFind(n){
+  const p = Array(n).fill(0).map((_,i)=>i);
+  const f = i => p[i]===i ? i : (p[i]=f(p[i]));
+  const u = (a,b)=>{ a=f(a); b=f(b); if(a!==b) p[b]=a; };
+  return { find:f, unite:u, parent:p };
+}
+function ensureBadge(el){
+  let b = el.querySelector('.overlap-badge');
+  if (!b){
+    b = document.createElement('div');
+    b.className = 'overlap-badge';
+    el.appendChild(b);
+  }
+  return b;
+}
+function clearBadge(el){
+  const b = el.querySelector('.overlap-badge');
+  if (b) b.remove();
+}
+// 画面上のカードを重なりクラスタごとに分け、各クラスタの最前面に枚数を表示
+window.updateOverlapBadges = function(){
+  const cards = [...document.querySelectorAll('.card')];
+  if (cards.length === 0) return;
+  // まず全て消す（後で必要なものだけ出す）
+  cards.forEach(clearBadge);
+  // rect & z を取得
+  const rects = cards.map(rectOfCard);
+  const zList = cards.map(el => parseInt(el.style.zIndex || '1', 10) || 1);
+  // Union-Find で重なりクラスタ化
+  const uf = unionFind(cards.length);
+  for (let i=0; i<cards.length; i++){
+    for (let j=i+1; j<cards.length; j++){
+      if (intersects(rects[i], rects[j])) uf.unite(i, j);
+    }
+  }
+  // root -> indices
+  const groups = new Map();
+  for (let i=0; i<cards.length; i++){
+    const r = uf.find(i);
+    if (!groups.has(r)) groups.set(r, []);
+    groups.get(r).push(i);
+  }
+  // 各グループで最前面を探して表示（枚数1は非表示）
+  for (const idxs of groups.values()){
+    const count = idxs.length;
+    if (count <= 1) continue;
+    let topIdx = idxs[0];
+    for (const k of idxs){ if (zList[k] > zList[topIdx]) topIdx = k; }
+    const topEl = cards[topIdx];
+    const badge = ensureBadge(topEl);
+    badge.textContent = String(count);
+  }
+};
+// ===========================================================
+
+
+
 
 // ===============================
 // 一括操作 (自分のカードのみ)
@@ -5078,6 +5168,7 @@ window.openMyDiscardCardsDialog = function(){
         if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
       }
       if (count>0) await batch.commit();
+      updateOverlapBadges(); //一括移動のあとに最新化
     };
 
 
