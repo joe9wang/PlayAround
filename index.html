@@ -991,6 +991,8 @@
      <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🗑 捨て札の一覧</button>
    </div>
    <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
+   <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
+   <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
    <div class="section-label">ダイス</div>
    <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
    <div class="section-label">カウンター・トークン</div>
@@ -2011,16 +2013,18 @@ const I18N = {
     "side.rollD6": "6面ダイスを振る",
     "side.shuffle": "デッキをシャッフル",
     "side.collect": "全カードを集める",
+    "side.allMyCards": "全カード一覧",
     "side.deckList": "デッキの一覧",
     "side.discardList": "捨て札の一覧",
-    "side.allMyCards": "全カード一覧",
+    "side.deleteMine": "全カード削除",
+    "side.deleteSelected": "指定カード削除",
+    "side.sendSelectedBack": "指定カードを最背面",
     "side.numCounter": "数値カウンター",
     "side.plus1": "＋1カウンター",
     "side.plus10": "＋10カウンター",
     "side.minus1": "−1カウンター",
     "side.minus10": "−10カウンター",
     "side.token": "トークン作成",
-    "side.deleteMine": "全カード削除",
     "side.fieldSize": "フィールドサイズ変更",
     "side.sizeS": "小",
     "side.sizeM": "中",
@@ -2105,13 +2109,15 @@ const I18N = {
     "side.allMyCards": "All my cards",
     "side.deckList": "My deck-area cards",
     "side.discardList": "My discard-area cards",
+    "side.deleteMine": "Delete all my cards",
+    "side.deleteSelected": "Delete selected card",
+    "side.sendSelectedBack": "Send selected card to back",
     "side.numCounter": "Number counter",
     "side.plus1": "+1 counter",
     "side.plus10": "+10 counter",
     "side.minus1": "−1 counter",
     "side.minus10": "−10 counter",
     "side.token": "Create token",
-    "side.deleteMine": "Delete all my cards",
     "side.fieldSize": "Change field size",
     "side.sizeS": "Small",
     "side.sizeM": "Medium",
@@ -4693,23 +4699,6 @@ window.spawnToken = async function(){
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
     window.deleteMyCards = async function(){
       if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
       if (!confirm('本当に自分の全カードを削除しますか？この操作は取り消せません。')) return;
@@ -4793,6 +4782,79 @@ window.collectMyCardsToDeck = async function () {
     alert('カードの移動に失敗しました。ネットワーク状況を確認して再度お試しください。');
   }
 };
+    
+    
+    
+// === 指定カード削除（自分のカード限定） ===
+window.deleteSelectedMine = async function () {
+  try {
+    if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+    const card = window.selectedCard || null;
+    if (!card) { alert('赤枠の「指定カード」を選んでください'); return; }
+
+    // 自分のカードかチェック（ownerUid / ownerSeat）
+    const ownerUid  = card.dataset.ownerUid || null;
+    const ownerSeat = card.dataset.ownerSeat || null;
+    const isMine = (ownerUid && ownerUid === CURRENT_UID) || (ownerSeat && String(ownerSeat) === String(CURRENT_PLAYER));
+    if (!isMine) { alert('自分のカードではありません'); return; }
+
+    const id = card.dataset.cardId;
+    if (!id) return;
+
+    // Firestore から削除
+    await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+
+    // 画面からも除去
+    const el = cardDomMap.get(id);
+    if (el) { el.remove(); cardDomMap.delete(id); }
+    fullImageStore?.delete?.(id);
+    if (window.previewImg) { setPreview(); }
+
+  } catch (e) {
+    console.error(e);
+    alert('削除に失敗しました。ネットワーク状況を確認して再度お試しください。');
+  }
+};
+
+
+// === 指定カードを最背面へ（自分のカード限定） ===
+window.sendSelectedToBack = async function () {
+  try {
+    if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+    const card = window.selectedCard || null;
+    if (!card) { alert('赤枠の「指定カード」を選んでください'); return; }
+
+    // 自分のカードかチェック
+    const ownerUid  = card.dataset.ownerUid || null;
+    const ownerSeat = card.dataset.ownerSeat || null;
+    const isMine = (ownerUid && ownerUid === CURRENT_UID) || (ownerSeat && String(ownerSeat) === String(CURRENT_PLAYER));
+    if (!isMine) { alert('自分のカードではありません'); return; }
+
+    const id = card.dataset.cardId;
+    if (!id) return;
+
+    // 画面上に存在する zIndex の最小値を探す
+    let minZ = Infinity;
+    cardDomMap.forEach(el => {
+      const z = parseInt(el.style.zIndex || '1', 10);
+      if (!Number.isNaN(z) && z < minZ) minZ = z;
+    });
+    if (!isFinite(minZ)) minZ = 1;
+
+    // 一番下になるように さらに -1
+    const newZ = minZ - 1;
+
+    // 表示を先に更新（体感即時）
+    card.style.zIndex = newZ;
+
+    // Firestore へも反映（バッチ最適化経由）
+    updateCardBatched(id, { zIndex: newZ });
+
+  } catch (e) {
+    console.error(e);
+    alert('最背面化に失敗しました。');
+  }
+};  
     
     
     
