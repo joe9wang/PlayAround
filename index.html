@@ -3493,6 +3493,8 @@ function subscribeCards(){
           const id = change.doc.id;
           if(change.type === 'removed'){
             const el = cardDomMap.get(id); if(el){ el.remove(); cardDomMap.delete(id); }
+            // ★ 追加: サーバ側の削除を見たらローカル抑止フラグも掃除
+            localDeleteMap.delete(id);
             return;
           }
           upsertCardFromRemote(id, data);
@@ -3504,10 +3506,18 @@ function subscribeCards(){
     const localChangeMap = new Map();
     function markLocal(id){ localChangeMap.set(id, Date.now()); setTimeout(()=>localChangeMap.delete(id), 800); }
     function isLocalRecent(id){ const t = localChangeMap.get(id); return t && (Date.now() - t < 800); }
+    // ★ 追加: 直近でローカル削除したIDを覚えて、再生成を抑止
+    const localDeleteMap = new Map(); // id -> timestamp
+    function markLocalDelete(id){ localDeleteMap.set(id, Date.now()); setTimeout(()=>localDeleteMap.delete(id), 2000); }
+    function isLocallyDeleted(id){ const t = localDeleteMap.get(id); return t && (Date.now() - t < 2000); }
 
     function upsertCardFromRemote(id, data){
       let el = cardDomMap.get(id) || document.querySelector(`[data-card-id="${id}"]`);
       const exists = !!el;
+      // ★ 追加: 直近にローカルで削除したIDは一定時間は無視して再生成しない
+      if (!exists && (isLocallyDeleted(id))) {
+        return;
+      }
       if (!exists && !isLocalRecent(id)) {
         el = createCardDom(id, data.imageUrl, data);
         cardDomMap.set(id, el);
@@ -3559,6 +3569,8 @@ if (state?.type === 'dice') {
     try {
       const id = card.dataset.cardId;
       await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+      markLocal(id);
+      markLocalDelete(id);      
     } catch (e) {
       console.warn('delete dice failed', e);
     }
@@ -3572,6 +3584,8 @@ if (state?.type === 'dice') {
     try {
       const id = card.dataset.cardId;
       await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+      markLocal(id);
+      markLocalDelete(id);
     } catch (e) {
       console.warn('delete dice failed', e);
     }
@@ -3757,6 +3771,9 @@ if (state?.type === 'numcounter') {
           try {
             const id = card.dataset.cardId;
             await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+            // ★ 追加: 直近削除マーキング（差分レースでの復活を防止）
+            markLocal(id);
+            markLocalDelete(id);
           } catch (err) {
             console.warn('delete token/counter failed', err);
           }
