@@ -166,7 +166,6 @@
     await setPersistence(auth, browserLocalPersistence);
 
     const nameEl = document.getElementById('displayName');
-    const uidEl  = document.getElementById('uid');
     const avEl   = document.getElementById('avatar');
 
     function applyUser(u){
@@ -176,10 +175,6 @@
       nameEl.textContent = disp;
       // アバターの頭文字は displayName があればそれ、なければ disp から
       avEl.textContent = (u.displayName || disp || 'P').slice(0,1).toUpperCase();
-      // Google の ID（providerData の uid）。なければ Firebase UID をフォールバック
-      const g = (u.providerData || []).find(p => p.providerId === 'google.com');
-      const googleId = g?.uid || u.uid;
-      uidEl.textContent = `Google ID: ${googleId}`;
     }
 
     onAuthStateChanged(auth, (user) => {
