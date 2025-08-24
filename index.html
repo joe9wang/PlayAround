@@ -1999,6 +1999,12 @@ async function storageDownloadURL(path) {
       logoutBtn && (logoutBtn.style.display = 'none');
       mypageBtn && (mypageBtn.style.display = 'none');   // 匿名時は隠す
       if (whoamiSpan) { whoamiSpan.style.display = 'none'; whoamiSpan.textContent = ''; }
+      
+      // マイページ表示用の情報はクリア
+      localStorage.removeItem('pa:googleUid');
+      localStorage.removeItem('pa:displayName');
+      localStorage.removeItem('pa:photoURL');
+      
     } else {
       loginBtn  && (loginBtn.style.display  = 'none');
       logoutBtn && (logoutBtn.style.display = '');       // 既定表示に戻す
@@ -2007,6 +2013,13 @@ async function storageDownloadURL(path) {
         whoamiSpan.style.display = '';
         whoamiSpan.textContent = `ログイン中：${user.displayName || 'No Name'}`;
       }
+      
+      // ▼GoogleのIDなどを保存（マイページで使う）
+      const provider = (user.providerData || []).find(p => p.providerId === 'google.com');
+      localStorage.setItem('pa:googleUid',  provider?.uid || '');
+      localStorage.setItem('pa:displayName', user.displayName || '');
+      localStorage.setItem('pa:photoURL',    user.photoURL   || '');
+      
     }
   });  
   
