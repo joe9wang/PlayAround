@@ -2016,7 +2016,7 @@ async function storageDownloadURL(path) {
       
       // ▼GoogleのIDなどを保存（マイページで使う）
       const provider = (user.providerData || []).find(p => p.providerId === 'google.com');
-      localStorage.setItem('pa:googleUid',  provider?.uid || '');
+      localStorage.setItem('pa:email',       user.email || '');
       localStorage.setItem('pa:displayName', user.displayName || '');
       localStorage.setItem('pa:photoURL',    user.photoURL   || '');
       

@@ -170,13 +170,16 @@
     const avEl   = document.getElementById('avatar');
 
     function applyUser(u){
-      const disp = u.displayName || 'Player';
+      // 表示名は「メール > displayName > 'Player'」の優先順
+      const email = u.email || '';
+      const disp  = email || u.displayName || 'Player';
       nameEl.textContent = disp;
-      avEl.textContent   = (disp || 'P').slice(0,1).toUpperCase();
-      // Google の ID（providerData の uid）。無ければ Firebase UID をフォールバック。
+      // アバターの頭文字は displayName があればそれ、なければ disp から
+      avEl.textContent = (u.displayName || disp || 'P').slice(0,1).toUpperCase();
+      // Google の ID（providerData の uid）。なければ Firebase UID をフォールバック
       const g = (u.providerData || []).find(p => p.providerId === 'google.com');
       const googleId = g?.uid || u.uid;
-      uidEl.textContent = `UID: ${googleId}`;
+      uidEl.textContent = `Google ID: ${googleId}`;
     }
 
     onAuthStateChanged(auth, (user) => {
