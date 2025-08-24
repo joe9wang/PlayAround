@@ -4900,7 +4900,7 @@ window.collectMyCardsToDeck = async function () {
       alert('ルームに参加してから実行してください');
       return;
     }
-    const ok = confirm('自分の全カードをデッキエリアに集めます。よろしいですか？\n（裏表はそのまま／デッキ内にランダム配置）');
+    const ok = confirm('自分の全カードをデッキエリアに集めます。よろしいですか？\n（裏表はそのまま）');
     if (!ok) return;
     await collectMyCardsToDeck(); // 既存の本体を呼ぶ
   };
