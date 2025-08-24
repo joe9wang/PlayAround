@@ -263,20 +263,21 @@
 }
 
 /* 数値カウンター（横長、±ボタン＋数値入力） */
-.card.numcounter{
-  width: 50px;
-  min-width: 50px;
-  max-width: 50px;
-  height:50px;
-  min-height: 50px;
-  max-height: 50px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-}
-.numcounter .nc-wrap{
+ .card.numcounter{
+   width: 100px;
+   min-width: 100px;
+   max-width: 100px;
+   height: 100px;
+   min-height: 100px;
+   max-height: 100px;
+   border-radius: 24px; /* 半径も2倍に */
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   background: #fff;
+ }
+
+  .numcounter .nc-wrap{
   display:flex;
   align-items:center;
   gap:6px;
@@ -286,21 +287,15 @@
   box-sizing:border-box;
 }
 
-.numcounter .nc-input{
-  width: 40px;       /* 横幅を固定（お好みで調整） */
-  min-width: 40px;
-  max-width: 40px;
-  flex: 0 0 auto;    /* flexによる伸縮を防ぐ */
-  height:28px;
-  border:1px solid #ccc;
-  border-radius:8px;
-  text-align:right;
-  padding:0 6px;
-  font-weight:700;
-  font-size:16px;
-  box-sizing:border-box;
-}
-.numcounter .nc-input:disabled{ opacity:.6; cursor:not-allowed; background:#fafafa; }
+ .numcounter .nc-input{
+   width: 80px;
+   min-width: 80px;
+   max-width: 80px;
+   height: 56px;
+   font-size: 32px;
+ }
+
+    .numcounter .nc-input:disabled{ opacity:.6; cursor:not-allowed; background:#fafafa; }
 
 
 
