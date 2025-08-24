@@ -858,7 +858,7 @@
          ログアウト
        </button>
        <button class="btn secondary" id="btn-mypage"
-          style="padding:8px 12px;"
+          style="padding:8px 12px; display:none;"
           data-i18n="app.mypage"
           onclick="location.href='./mypage.html'">
           マイページ
@@ -1487,6 +1487,7 @@ onIdTokenChanged(auth, async (user) => {
   // ▼ロビーのログインUI参照
   const loginBtn   = document.getElementById('login-google');
   const logoutBtn  = document.getElementById('logout-google');
+  const mypageBtn  = document.getElementById('btn-mypage');
   const whoamiSpan = document.getElementById('whoami');
 
   // まだ匿名で遊べるままにする（既存のまま）
@@ -1983,9 +1984,13 @@ async function storageDownloadURL(path) {
     if (user.isAnonymous) {
       if (loginBtn)  loginBtn.style.display  = '';
       if (logoutBtn) logoutBtn.style.display = 'none';
+      if (mypageBtn) mypageBtn.style.display = 'none';      // 追加: 匿名時は隠す
       if (whoamiSpan){ whoamiSpan.style.display = 'none'; whoamiSpan.textContent = ''; }
     } else {
       if (loginBtn)  loginBtn.style.display  = 'none';
+      if (logoutBtn) logoutBtn.style.display = '';          // 既存の表示ロジックに合わせて空文字で表示
+      if (mypageBtn) mypageBtn.style.display = '';          // ログイン後に表示
+      if (whoamiSpan){ whoamiSpan.style.display = ''; whoamiSpan.textContent = `ログイン中：${user.displayName || 'No Name'}`; }
       if (logoutBtn) logoutBtn.style.display = '';
       if (whoamiSpan){
         whoamiSpan.style.display = '';
