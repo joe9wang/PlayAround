@@ -29,6 +29,29 @@
       font-size:14px; opacity:.98;
     }
     
+    
+/* header: My Page button */
+h1 .header-link{
+  position:absolute;
+  right:150px;
+  top:50%;
+  transform:translateY(-50%);
+  display:inline-flex; align-items:center; gap:.35rem;
+  padding:.35rem .6rem;
+  border-radius:10px;
+  background:#fff; color:#333;
+  font-weight:600;
+  box-shadow:0 1px 2px rgba(0,0,0,.2);
+  text-decoration:none;
+  cursor:pointer;
+  user-select:none;
+}
+h1 .header-link:focus{ outline:2px solid #1976d2; outline-offset:2px; }
+@media (max-width: 720px){
+  h1 .header-link{ right:120px; font-size:12px; padding:.25rem .5rem; }
+}    
+    
+    
     #upload-area { height: var(--upload-h); display:flex; align-items:center; padding:0 16px; text-align:center; background:#fff; cursor:pointer; border-bottom:2px solid #ccc; user-select:none; }
     #file-input { display:none; }
 
@@ -810,6 +833,7 @@
      English
     </option>
    </select>
+   <a href="./mypage.html" class="header-link" data-i18n="app.mypage">👤 マイページ</a>
    <span id="session-indicator">
     ROOM: - / PLAYER: -
    </span>

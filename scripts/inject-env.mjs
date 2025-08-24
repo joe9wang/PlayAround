@@ -6,9 +6,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // 1) 入力/出力ファイル
-const SRC = "./index.html";   // ← リポジトリ直下に index.html がある前提
 const OUT_DIR = "./dist";
-const OUT = `${OUT_DIR}/index.html`;
+const PAGES = ["./index.html", "./mypage.html"];
 
 // 2) 置換マップ（Vercelの環境変数 → プレースホルダ）
 const replMap = {
@@ -21,18 +20,17 @@ const replMap = {
   "__NEXT_PUBLIC_APPCHECK_KEY__": process.env.NEXT_PUBLIC_APPCHECK_KEY || ""
 };
 
-// 3) 読み込み
-let html = readFileSync(SRC, "utf8");
-
-// 4) 置換
-for (const [ph, val] of Object.entries(replMap)) {
-  const safe = String(val).replaceAll(/[$]/g, '$$$$'); // $ をエスケープ
-  html = html.split(ph).join(safe);
-}
-
-// 5) 出力
+// 3) 置換して dist へ出力（複数ページ対応）
 mkdirSync(OUT_DIR, { recursive: true });
-writeFileSync(OUT, html, "utf8");
+for (const src of PAGES) {
+  let html = readFileSync(src, "utf8");   // 読み込み
+  for (const [ph, val] of Object.entries(replMap)) {  // 置換
+    const safe = String(val).replaceAll(/[$]/g, '$$$$');
+    html = html.split(ph).join(safe);
+  }
+  const outPath = `${OUT_DIR}/${src.replace(/^.\//, "")}`; // 例: ./mypage.html → dist/mypage.html
+  writeFileSync(outPath, html, "utf8");      // 出力
+}
 
 // 6) 追加の静的ファイルがあればここでコピー
 // ads.txt を dist にコピー
