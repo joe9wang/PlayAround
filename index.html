@@ -1411,7 +1411,10 @@ getToken(window.appCheck)
 // Auth / Firestore / Storage 句の初期化
 // ===============================
 // Auth/DB/Storage のインスタンスを作成し、以降の処理で参照します。
+import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 const auth = getAuth(app);
+// ログイン状態をタブを越えて復元できるようにする
+await setPersistence(auth, browserLocalPersistence);
 
 // === IDトークンを保持（sendBeacon でサーバーに本人確認を渡す） ===
 let AUTH_ID_TOKEN = null;
@@ -1975,30 +1978,37 @@ async function storageDownloadURL(path) {
       return false;
     }
 
-    signInAnonymously(auth).catch(console.error);
-
+  // 初回の認証状態が確定してから匿名化を判断する
+  let __initialAuthResolved = false;
   onAuthStateChanged(auth, (user) => {
-    if (!user) return;
+    // 初回：復元が無い（user === null）と確定したときだけ匿名でサインイン
+    if (!__initialAuthResolved) {
+      __initialAuthResolved = true;
+      if (!user) {
+        signInAnonymously(auth).catch(console.error);
+        return; // この後もう一度 onAuthStateChanged が来る
+      }
+    }
+
+    if (!user) return; // ここに来るのは稀だが安全のため
     CURRENT_UID = user.uid;
-    // ロビーのボタン表示を更新
+
+    // ロビーのボタン表示を更新（元のロジックを踏襲）
     if (user.isAnonymous) {
-      if (loginBtn)  loginBtn.style.display  = '';
-      if (logoutBtn) logoutBtn.style.display = 'none';
-      if (mypageBtn) mypageBtn.style.display = 'none';      // 追加: 匿名時は隠す
-      if (whoamiSpan){ whoamiSpan.style.display = 'none'; whoamiSpan.textContent = ''; }
+      loginBtn  && (loginBtn.style.display  = '');
+      logoutBtn && (logoutBtn.style.display = 'none');
+      mypageBtn && (mypageBtn.style.display = 'none');   // 匿名時は隠す
+      if (whoamiSpan) { whoamiSpan.style.display = 'none'; whoamiSpan.textContent = ''; }
     } else {
-      if (loginBtn)  loginBtn.style.display  = 'none';
-      if (logoutBtn) logoutBtn.style.display = '';          // 既存の表示ロジックに合わせて空文字で表示
-      if (mypageBtn) mypageBtn.style.display = '';          // ログイン後に表示
-      if (whoamiSpan){ whoamiSpan.style.display = ''; whoamiSpan.textContent = `ログイン中：${user.displayName || 'No Name'}`; }
-      if (logoutBtn) logoutBtn.style.display = '';
-      if (whoamiSpan){
+      loginBtn  && (loginBtn.style.display  = 'none');
+      logoutBtn && (logoutBtn.style.display = '');       // 既定表示に戻す
+      mypageBtn && (mypageBtn.style.display = '');       // ログイン後に表示
+      if (whoamiSpan) {
         whoamiSpan.style.display = '';
         whoamiSpan.textContent = `ログイン中：${user.displayName || 'No Name'}`;
       }
     }
-  });
-  
+  });  
   
   
   
