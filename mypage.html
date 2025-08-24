@@ -142,23 +142,54 @@
 
   <footer>PlayAround © 2025</footer>
 
-  <script>
-    // 将来のAuth/Firestore連携に備えた簡易初期化
-    // ここではダミー表示のみ（後で置き換え）
+  <script type="module">
+    // ===== Firebase Auth を使って、ログイン済みのときだけ表示しつつ
+    // マイページに表示名と Google の ID を反映する =====
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged,
+      setPersistence, browserLocalPersistence
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+
+    // index.html と同じ設定（そのまま再掲）
+    const firebaseConfig = {
+      apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
+      authDomain: "cardgame-f484c.firebaseapp.com",
+      projectId: "cardgame-f484c",
+      storageBucket: "cardgame-f484c.firebasestorage.app",
+      messagingSenderId: "248859224605",
+      appId: "1:248859224605:web:1320093856bc1861c174f4"
+    };
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    // index 側と同じく「LOCAL」永続化（タブを跨いでログイン状態を復元）
+    await setPersistence(auth, browserLocalPersistence);
+
     const nameEl = document.getElementById('displayName');
     const uidEl  = document.getElementById('uid');
     const avEl   = document.getElementById('avatar');
 
-    // 表示名の頭文字でアバター仮表示
-    function setName(name){
-      nameEl.textContent = name || 'Player';
-      avEl.textContent = (name || 'P').slice(0,1).toUpperCase();
+    function applyUser(u){
+      const disp = u.displayName || 'Player';
+      nameEl.textContent = disp;
+      avEl.textContent   = (disp || 'P').slice(0,1).toUpperCase();
+      // Google の ID（providerData の uid）。無ければ Firebase UID をフォールバック。
+      const g = (u.providerData || []).find(p => p.providerId === 'google.com');
+      const googleId = g?.uid || u.uid;
+      uidEl.textContent = `UID: ${googleId}`;
     }
-    setName('Player'); // TODO: 認証後にユーザー名を反映
 
-    uidEl.textContent = 'UID: -'; // TODO: 認証後にUIDを反映
+    onAuthStateChanged(auth, (user) => {
+      // 未ログイン or 匿名ログインなら index に戻す
+      if (!user || user.isAnonymous) {
+        alert('マイページは Google ログインが必要です。');
+        location.href = './index.html';
+        return;
+      }
+      applyUser(user);
+    });
 
-    // 言語（仮）：選択値をlocalStorageに記録（index.html側の仕組みと揃える場合は後で統合）
+    // 言語設定はこれまで通り localStorage を使用
     const langSel = document.getElementById('lang');
     langSel.value = localStorage.getItem('lang') || 'ja';
     langSel.addEventListener('change', () => {
