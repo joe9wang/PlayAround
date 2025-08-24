@@ -778,7 +778,7 @@
     transform:translate(-50%, -50%);
     font-weight:700;
     color:#e53935;           /* 赤字 */
-    font-size:22px;
+    font-size:44px;
     line-height:1;
     text-shadow:0 0 6px rgba(255,255,255,.95), 0 0 12px rgba(255,255,255,.75);
     pointer-events:none;      /* ドラッグを邪魔しない */
@@ -996,15 +996,15 @@
    <div class="section-label">自分のカード</div>
    <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
    <div class="sl-row" role="group" aria-label="Face up/down">
-     <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏返す</button>
-     <button class="sl-btn" onclick="faceUpAll()"  data-i18n="side.faceUp">🂡 全て表にする</button>
+     <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏に</button>
+     <button class="sl-btn" onclick="faceUpAll()"  data-i18n="side.faceUp">🂡 全て表に</button>
    </div>
-   <button class="sl-btn" onclick="collectMyCardsToDeck()" data-i18n="side.collect">全カードを集める</button>
+   <button class="sl-btn" onclick="collectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードを集める</button>
    <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
-   <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🗂 全カード一覧</button>
+   <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 全カード一覧</button>
    <div class="sl-row" role="group" aria-label="Face up/down">
-     <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキの一覧</button>
-     <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🗑 捨て札の一覧</button>
+     <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
+     <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🔍 捨て札一覧</button>
    </div>
    <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
    <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
@@ -1015,12 +1015,20 @@
    <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
    
    <div class="sl-row" role="group" aria-label="plus1/plus10">
-     <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1カウンター</button>
-     <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10カウンター</button>
+     <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1</button>
+     <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10</button>
+   </div>
+   <div class="sl-row" role="group" aria-label="plus50/plus100">
+     <button class="sl-btn" onclick="spawnCounter('+50')" data-i18n="side.plus50">➕50</button>
+     <button class="sl-btn" onclick="spawnCounter('+100')" data-i18n="side.plus100">➕100</button>
    </div>
    <div class="sl-row" role="group" aria-label="plus1/plus10">
-     <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1カウンター</button>
-     <button class="sl-btn" onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10カウンター</button>
+     <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1</button>
+     <button class="sl-btn" onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10</button>
+   </div>
+   <div class="sl-row" role="group" aria-label="plus50/plus100">
+     <button class="sl-btn" onclick="spawnCounter('-50')" data-i18n="side.minus50">➖50</button>
+     <button class="sl-btn" onclick="spawnCounter('-100')" data-i18n="side.minus100">➖100</button>
    </div>
    <button class="sl-btn" onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
    <button class="sl-btn" onclick="toggleFieldSizeOptions()" data-i18n="side.fieldSize">🖼 フィールドサイズ変更</button>
@@ -1032,6 +1040,7 @@
    
    
    <div aria-live="polite" class="host-toggle" id="host-otherops">
+   <div class="section-label">ホスト専用</div>
     <div class="row" style="justify-content:space-between; align-items:center;">
      <div style="font-size:12px;color:#555;">
       他プレイヤーのカード操作
@@ -2021,26 +2030,30 @@ const I18N = {
     // --- Side / Panel / Buttons ---
     "side.panel": "操作パネル",
     "side.panel.toggle": "操作パネルの表示/非表示",
-    "side.save": "セーブ",
-    "side.load": "ロード",
-    "side.resetFacing": "全カード向きリセット",
-    "side.faceDown": "全て裏返す",
-    "side.faceUp": "全て表にする",
-    "side.rollD6": "6面ダイスを振る",
-    "side.shuffle": "デッキをシャッフル",
-    "side.collect": "全カードを集める",
-    "side.allMyCards": "全カード一覧",
-    "side.deckList": "デッキの一覧",
-    "side.discardList": "捨て札の一覧",
-    "side.deleteMine": "全カード削除",
-    "side.deleteSelected": "指定カード削除",
-    "side.sendSelectedBack": "指定カードを最背面",
-    "side.numCounter": "数値カウンター",
-    "side.plus1": "＋1カウンター",
-    "side.plus10": "＋10カウンター",
-    "side.minus1": "−1カウンター",
-    "side.minus10": "−10カウンター",
-    "side.token": "トークン作成",
+    "side.save": "💾 セーブ",
+    "side.load": "📂 ロード",
+    "side.resetFacing": "↻ 全カード向きリセット",
+    "side.faceDown": "🂠 全て裏に",
+    "side.faceUp": "🂡 全て表に",
+    "side.rollD6": "🎲 6面ダイスを振る",
+    "side.shuffle": "⇅ デッキをシャッフル",
+    "side.collect": "❖ 全カードを集める",
+    "side.allMyCards": "🔍 全カード一覧",
+    "side.deckList": "🔍 デッキ一覧",
+    "side.discardList": "🔍 捨て札一覧",
+    "side.deleteMine": "🗑 全カードを削除",
+    "side.deleteSelected": "🗑 指定カードを削除",
+    "side.sendSelectedBack": "⇊ 指定カードを最背面",
+    "side.numCounter": "🔢 数値カウンター",
+    "side.plus1": "➕1",
+    "side.plus10": "➕10",
+    "side.plus50": "➕50",
+    "side.plus100": "➕100",
+    "side.minus1": "➖1",
+    "side.minus10": "➖10",
+    "side.minus50": "➖50",
+    "side.minus100": "➖100",
+    "side.token": "📝 トークン作成",
     "side.fieldSize": "フィールドサイズ変更",
     "side.sizeS": "小",
     "side.sizeM": "中",
@@ -2114,25 +2127,29 @@ const I18N = {
     // --- Side / Panel / Buttons ---
     "side.panel": "Control Panel",
     "side.panel.toggle": "Show/Hide control panel",
-    "side.save": "Save",
-    "side.load": "Load",
-    "side.resetFacing": "Reset card orientation",
-    "side.faceDown": "Face-down",
-    "side.faceUp": "Face-up",
-    "side.rollD6": "Roll a d6",
-    "side.shuffle": "Shuffle my Deck",
-    "side.collect": "Gather my cards",
-    "side.allMyCards": "All my cards",
-    "side.deckList": "My deck-area cards",
-    "side.discardList": "My discard-area cards",
-    "side.deleteMine": "Delete all my cards",
-    "side.deleteSelected": "Delete selected card",
-    "side.sendSelectedBack": "Send selected card to back",
+    "side.save": "💾 Save",
+    "side.load": "📂 Load",
+    "side.resetFacing": "↻ Reset card orientation",
+    "side.faceDown": "🂠 Face-down",
+    "side.faceUp": "🂡 Face-up",
+    "side.rollD6": "🎲 Roll a d6",
+    "side.shuffle": "⇅ Shuffle my Deck",
+    "side.collect": "❖ Gather my cards",
+    "side.allMyCards": "🔍 All my cards",
+    "side.deckList": "🔍 My deck-area cards",
+    "side.discardList": "🔍 My discard-area cards",
+    "side.deleteMine": "🗑 Delete all my cards",
+    "side.deleteSelected": "🗑 Delete selected card",
+    "side.sendSelectedBack": "⇊ Send selected card to back",
     "side.numCounter": "Number counter",
-    "side.plus1": "+1 counter",
-    "side.plus10": "+10 counter",
-    "side.minus1": "−1 counter",
-    "side.minus10": "−10 counter",
+    "side.plus1": "➕1 counter",
+    "side.plus10": "➕10 counter",
+    "side.plus50": "➕50 counter",
+    "side.plus100": "➕100 counter",
+    "side.minus1": "➖1 counter",
+    "side.minus10": "➖10 counter",
+    "side.minus50": "➖50 counter",
+    "side.minus100": "➖100 counter",
     "side.token": "Create token",
     "side.fieldSize": "Change field size",
     "side.sizeS": "Small",
