@@ -853,9 +853,12 @@
          data-i18n="auth.login">
          Googleでログイン
        </button>
-       <a class="btn secondary" href="./mypage.html"
-          style="padding:8px 12px; text-decoration:none;"
-          data-i18n="app.mypage">👤 マイページ</a>
+       <button class="btn secondary" id="btn-mypage"
+          style="padding:8px 12px;"
+          data-i18n="app.mypage"
+          onclick="location.href='./mypage.html'">
+          マイページ
+       </button>
        <button class="btn secondary" id="logout-google" style="padding:8px 12px; display:none;"
          data-i18n="auth.logout">
          ログアウト
@@ -2008,7 +2011,7 @@ const I18N = {
     "lobby.welcome": "プレイアラウンドへようこそ",
     "auth.login":  "Googleでログイン",
     "auth.logout": "ログアウト",
-    "app.mypage" : "👤 マイページ",
+    "app.mypage" : "マイページ",
     
     "join.section":   "既存ルームに参加（非ホスト）",
     "join.roomId":    "参加するルームID",
@@ -2106,7 +2109,7 @@ const I18N = {
     
     "auth.login":  "Sign in with Google",
     "auth.logout": "Sign out",
-    "app.mypage" : "👤 My Page",
+    "app.mypage" : "My Page",
     
     "join.section":   "Join an existing room (Guest)",
     "join.roomId":    "Room ID to join",
