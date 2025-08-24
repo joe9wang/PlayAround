@@ -2011,7 +2011,7 @@ async function storageDownloadURL(path) {
       mypageBtn && (mypageBtn.style.display = '');       // ログイン後に表示
       if (whoamiSpan) {
         whoamiSpan.style.display = '';
-        whoamiSpan.textContent = `ログイン中：${user.displayName || 'No Name'}`;
+        whoamiSpan.textContent = `ログイン中：${user.email || user.displayName || 'No Name'}`;
       }
       
       // ▼GoogleのIDなどを保存（マイページで使う）
