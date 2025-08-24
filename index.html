@@ -383,6 +383,13 @@
 
 #field.mode-board #board-layout{ display:block; } /* ボード用だけ出す */
     
+/* ボードゲーム時だけ全体を1.3倍（カードモードは無影響） */
+#field.mode-board #board-layout{
+  transform: scale(1.3);
+  transform-origin: center center;
+}
+    
+    
     
 /* === Host toggle (slider) === */
 .host-toggle{ display:none; margin-top:12px; padding:10px 8px; border-top:1px solid #eee; }
