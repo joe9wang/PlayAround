@@ -996,18 +996,18 @@
      <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
    </div>
    <div class="section-label">自分のカード</div>
-   <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
-   <div class="sl-row" role="group" aria-label="Face up/down">
-     <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏に</button>
-     <button class="sl-btn" onclick="faceUpAll()"  data-i18n="side.faceUp">🂡 全て表に</button>
-   </div>
-   <button class="sl-btn" onclick="collectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードを集める</button>
-   <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
    <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 全カード一覧</button>
    <div class="sl-row" role="group" aria-label="Face up/down">
      <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
      <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🔍 捨て札一覧</button>
    </div>
+   <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
+   <div class="sl-row" role="group" aria-label="Face up/down">
+     <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏に</button>
+     <button class="sl-btn" onclick="faceUpAll()"  data-i18n="side.faceUp">🂡 全て表に</button>
+   </div>
+   <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
+   <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードを集める</button>
    <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
    <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
    <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
@@ -4891,6 +4891,23 @@ window.collectMyCardsToDeck = async function () {
     alert('カードの移動に失敗しました。ネットワーク状況を確認して再度お試しください。');
   }
 };
+    
+    
+  //集める前に確認ダイアログを出す（削除と同じ体験）
+  window.confirmCollectMyCardsToDeck = async function () {
+    // 削除と同様、参加チェック → 確認 の順に
+    if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+      alert('ルームに参加してから実行してください');
+      return;
+    }
+    const ok = confirm('自分の全カードをデッキエリアに集めます。よろしいですか？\n（裏表はそのまま／デッキ内にランダム配置）');
+    if (!ok) return;
+    await collectMyCardsToDeck(); // 既存の本体を呼ぶ
+  };
+      
+    
+    
+    
     
     
     
