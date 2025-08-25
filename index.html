@@ -821,21 +821,23 @@
   }
   
   
- /* ===== footer ===== */
- .site-footer{
-   background:#fff;
-   border-top:1px solid #e5e7eb;
+/* ===== footer ===== */
+.site-footer{
+  background:#fff;
+  border-top:1px solid #e5e7eb;
   height: var(--footer-h);
   display:flex;
-  align-items:flex-start;   /* ← 上寄せに変更 */
+  align-items:center;      /* 文字の縦位置は中央寄せ */
   justify-content:center;
-  padding-top:4px;          /* ← 少しだけ余白 */
+  padding: 6px 12px;
   color:#555;
-  clear: both;
-  position: relative;
-  line-height:1.4;
- }  
-  
+  z-index:5;
+}
+
+:root { --footer-bump: 6px; }   /* ← 好みで 4〜10px くらい */
+.site-footer__inner{
+  transform: translateY(calc(-1 * var(--footer-bump)));
+}  
   
   
 
