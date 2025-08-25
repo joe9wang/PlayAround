@@ -41,6 +41,9 @@ copyFileSync("./privacy.html", `${OUT_DIR}/privacy.html`);
 copyFileSync("./contact.html", `${OUT_DIR}/contact.html`);
 // terms.html を dist にコピー
 copyFileSync("./terms.html", `${OUT_DIR}/terms.html`);
+copyFileSync("./about.html", `${OUT_DIR}/about.html`);
+copyFileSync("./howto.html", `${OUT_DIR}/howto.html`);
+
 
 // BoardGame.html を dist にコピー
 //copyFileSync("./BoardGame.html", `${OUT_DIR}/BoardGame.html`);

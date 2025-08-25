@@ -10,6 +10,10 @@
   <script async="" crossorigin="anonymous" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665">
   </script>
   <meta charset="utf-8"/>
+  <!-- === Basic SEO / AdSense-friendly metas === -->
+  <meta name="description" content="PlayAroundは、画像を使って最大4人で遊べるオンラインのボード＆カードゲーム。ルームを作成して友だちと手軽に遊べます。">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://www.play-around.app/">
   <title>
    PlayAround
   </title>
@@ -799,10 +803,42 @@
   /* （カードに対して中央絶対配置するので .card は position:absolute のままでOK） */
   /* === ▲▲ 重なり枚数バッジ ▲▲ === */
 
+  /* ====== Global Header / Footer (軽量) ====== */
+  .site-header{position:sticky;top:0;z-index:10000;background:#111;color:#fff;border-bottom:1px solid #222}
+  .site-header__inner{max-width:1200px;margin:0 auto;padding:10px 12px;display:flex;align-items:center;gap:16px}
+  .site-brand{font-weight:800;letter-spacing:.02em;color:#fff;text-decoration:none}
+  .site-nav{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap}
+  .site-nav a{color:#ddd;text-decoration:none;font-size:14px}
+  .site-nav a:hover{color:#fff;text-decoration:underline}
+  .site-footer{margin-top:24px;background:#fafafa;border-top:1px solid #eee;color:#444}
+  .site-footer__inner{max-width:1200px;margin:0 auto;padding:16px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .site-footer__nav{display:flex;gap:14px;flex-wrap:wrap}
+  .site-footer__nav a{color:#444;text-decoration:none;font-size:14px}
+  .site-footer__nav a:hover{text-decoration:underline}
+  @media(max-width:768px){
+    .site-nav{gap:10px}
+    .site-footer__inner{justify-content:flex-start}
+  }
 
   </style>
  </head>
  <body>
+  <!-- === Global Header / Navigation (サイト共通導線) === -->
+  <header class="site-header" role="banner">
+    <div class="site-header__inner">
+      <a class="site-brand" href="/" aria-label="PlayAround Home">PlayAround</a>
+      <nav class="site-nav" aria-label="Global">
+        <a href="/index.html">ホーム</a>
+        <a href="/howto.html">遊び方</a>
+        <a href="/about.html">運営者情報</a>
+        <a href="/privacy.html">プライバシー</a>
+        <a href="/terms.html">利用規約</a>
+        <a href="/contact.html">お問い合わせ</a>
+      </nav>
+    </div>
+  </header> 
+ 
+ 
   <h1>
   
    <span data-i18n="app.title">
@@ -5574,5 +5610,23 @@ function centerOfDeck(seat, w, h){
   <button id="edge-left"  class="edge-handle edge-left"  aria-label="操作パネルを展開">▶</button>
   <button id="edge-right" class="edge-handle edge-right" aria-label="選択肢のカードを展開">◀</button>  
   
+  
+  <!-- === Global Footer (サイト共通導線の再掲) === -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="site-footer__inner">
+      <nav class="site-footer__nav" aria-label="Footer">
+        <a href="/about.html">運営者情報</a>
+        <a href="/howto.html">遊び方</a>
+        <a href="/privacy.html">プライバシーポリシー</a>
+        <a href="/terms.html">利用規約</a>
+        <a href="/contact.html">お問い合わせ</a>
+      </nav>
+      <small>© 2025 SOLVENTER / PlayAround</small>
+    </div>
+  </footer>
+  
  </body>
+ 
+ 
+ 
 </html>
