@@ -1773,11 +1773,16 @@ updateModePickButtons();
       const baseCards = collection(db, `rooms/${CURRENT_ROOM}/cards`);
       let batch = writeBatch(db), n = 0, i = 0;
       const z0 = Date.now() % 10000;
+      
+    //▼この座席のデッキ中央を基準にする（少しずつズラして重なり回避）
+    const basePos = centerOfDeck(CURRENT_PLAYER, CARD_W, CARD_H);
+      
       for (const d of snap.docs){
         const s = d.data() || {};
         const payload = {
-          x: (typeof s.x==='number'? s.x:0) + tinyOffset(i),
-          y: (typeof s.y==='number'? s.y:0) + tinyOffset(i),
+          //▼保存時の x,y は使わず「デッキ中央」にまとめて出す
+          x: basePos.x + tinyOffset(i),
+          y: basePos.y + tinyOffset(i),
           zIndex: (typeof s.zIndex==='number'? s.zIndex:1) + 1 + i + z0,
           faceUp: (s.faceUp!==false),
           rotation: (typeof s.rotation==='number'? s.rotation:0),
@@ -5535,9 +5540,16 @@ function initializePlayField(){
     rollBtn?.addEventListener('click', () => window.rollD6());
     
     
+//▼デッキ中央（w,h考慮）を返す
+function centerOfDeck(seat, w, h){
+  const b = getDeckBoundsForSeat(seat); // board/trumpなら共有デッキ、通常は自席デッキ
+  if (!b) return { x: 0, y: 0 };
+  const x = Math.round(b.minX + (b.width  - (w||0)) / 2);
+  const y = Math.round(b.minY + (b.height - (h||0)) / 2);
+  return { x, y };
+}
     
     
-
     // render helpers
     function updateEndRoomButtonVisibilityWrapper(){ updateEndRoomButtonVisibility(); }
   </script>
