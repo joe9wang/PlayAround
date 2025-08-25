@@ -76,6 +76,20 @@
      .thumbs-grid{ display:grid; grid-template-columns: repeat(5, 80px); gap:8px; }
      .thumbs-grid img{ width:80px; height:80px; object-fit:cover; border-radius:10px; border:1px solid #eee; }    
     
+    /* ▼ モーダル内サムネ（index.html風の小さなカードタイル） */
+    #card-list-grid {
+      /* タイル幅を固定 → 画像が増減しても一定サイズで並ぶ */
+      grid-template-columns: repeat(auto-fill, 120px);
+      justify-content: flex-start; /* 余白時の左寄せ */
+    }
+    #card-list-grid .cl-item{
+      border:1px solid #ddd; border-radius:10px; padding:6px;
+      background:#fff;
+    }
+    #card-list-grid img{
+      width:100%; height:auto; object-fit:contain; border-radius:6px; display:block;
+    }
+    
   </style>
 </head>
 <body>
@@ -370,13 +384,17 @@
           grid.innerHTML = '<div class="muted">画像はありません</div>';
           return;
         }
-        for (const u of urls){
+        urls.forEach((u) => {
+          const item = document.createElement('div');
+          item.className = 'cl-item';
           const img = document.createElement('img');
           img.loading = 'lazy';
           img.decoding = 'async';
+          img.alt = 'カード';
           img.src = u;
-          grid.appendChild(img);
-        }
+          item.appendChild(img);
+          grid.appendChild(item);
+        });
       }catch(_e){
         grid.innerHTML = '<div class="muted">取得に失敗しました</div>';
       }
@@ -411,7 +429,7 @@
       <button id="card-list-close" type="button" style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;">閉じる</button>
     </div>
     <div id="card-list-body" style="padding:12px; overflow:auto;">
-      <div id="card-list-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px;"></div>
+      <div id="card-list-grid" style="display:grid; gap:10px;"></div>
     </div>
   </div>
 </div>
