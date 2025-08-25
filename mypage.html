@@ -65,6 +65,17 @@
     }
     ul.plain{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
     footer{ width:var(--content-w); margin:24px auto 40px; color:#777; font-size:12px; text-align:center; }
+    
+     /* ▼スロット プレビュー用 */
+     .thumbs{ display:flex; gap:6px; margin-top:8px; min-height:44px; align-items:center; flex-wrap:wrap; }
+     .thumbs img{ width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid #eee; }
+     .thumbs .empty{ color:#999; font-size:13px; }
+     .thumbs .more{ font-size:12px; color:#555; }
+     .count{ font-size:12px; color:#777; margin-left:6px; }
+     .slot-list{ margin-top:10px; display:none; }
+     .thumbs-grid{ display:grid; grid-template-columns: repeat(5, 80px); gap:8px; }
+     .thumbs-grid img{ width:80px; height:80px; object-fit:cover; border-radius:10px; border:1px solid #eee; }    
+    
   </style>
 </head>
 <body>
@@ -90,24 +101,54 @@
     <section aria-labelledby="sec-saves">
       <h2 id="sec-saves" data-i18n="mypage.saves">セーブデータ</h2>
       <ul class="plain" id="saveList">
-        <li class="item">
-          <div>
-            <div><strong>スロット1</strong></div>
-            <div class="muted">最終更新: -</div>
-          </div>
-          <div class="right">
-            <a class="small-btn" href="#" data-i18n="common.load">ロード</a>
-          </div>
-        </li>
-        <li class="item">
-          <div>
-            <div><strong>スロット2</strong></div>
-            <div class="muted">最終更新: -</div>
-          </div>
-          <div class="right">
-            <a class="small-btn" href="#" data-i18n="common.load">ロード</a>
-          </div>
-        </li>
+         <!-- ▼スロット1 -->
+         <li class="item">
+           <div>
+             <div>
+               <strong>スロット1</strong><span class="count" id="slot1-count">(0枚)</span>
+             </div>
+             <div class="muted" id="slot1-updated">最終更新: -</div>
+             <div class="thumbs" id="slot1-thumbs"><span class="empty">空き</span></div>
+             <div class="slot-list" id="slot1-list">
+               <div class="thumbs-grid" id="slot1-list-grid"></div>
+             </div>
+           </div>
+           <div class="right">
+             <a class="small-btn slot-list-btn" href="#" data-slot="1">一覧</a>
+           </div>
+         </li>
+         <!-- ▼スロット2 -->
+         <li class="item">
+           <div>
+             <div>
+               <strong>スロット2</strong><span class="count" id="slot2-count">(0枚)</span>
+             </div>
+             <div class="muted" id="slot2-updated">最終更新: -</div>
+             <div class="thumbs" id="slot2-thumbs"><span class="empty">空き</span></div>
+             <div class="slot-list" id="slot2-list">
+               <div class="thumbs-grid" id="slot2-list-grid"></div>
+             </div>
+           </div>
+           <div class="right">
+             <a class="small-btn slot-list-btn" href="#" data-slot="2">一覧</a>
+           </div>
+         </li>
+         <!-- ▼スロット3（新規追加） -->
+         <li class="item">
+           <div>
+             <div>
+               <strong>スロット3</strong><span class="count" id="slot3-count">(0枚)</span>
+             </div>
+             <div class="muted" id="slot3-updated">最終更新: -</div>
+             <div class="thumbs" id="slot3-thumbs"><span class="empty">空き</span></div>
+             <div class="slot-list" id="slot3-list">
+               <div class="thumbs-grid" id="slot3-list-grid"></div>
+             </div>
+           </div>
+           <div class="right">
+             <a class="small-btn slot-list-btn" href="#" data-slot="3">一覧</a>
+           </div>
+         </li>
       </ul>
     </section>
 
@@ -149,7 +190,11 @@
       getAuth, onAuthStateChanged,
       setPersistence, browserLocalPersistence
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
-
+    import {
+      getFirestore, doc, getDoc, collection, getDocs, query, limit
+    } from
+    
+    
     // index.html と同じ設定（そのまま再掲）
     const firebaseConfig = {
       apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
@@ -161,12 +206,115 @@
     };
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db   = getFirestore(app);
     // index 側と同じく「LOCAL」永続化（タブを跨いでログイン状態を復元）
     await setPersistence(auth, browserLocalPersistence);
 
     const nameEl = document.getElementById('displayName');
     const avEl   = document.getElementById('avatar');
+    
+  // ===== セーブデータ表示（サムネ&一覧） =====
+  let CURRENT_UID = null;
+  const slPath = (slot) => `users/${CURRENT_UID}/saves/slot${slot}`;
 
+  async function fetchSlotMeta(slot){
+    const snap = await getDoc(doc(db, slPath(slot)));
+    const d = snap.exists() ? (snap.data() || {}) : {};
+    return {
+      count: d.count || 0,
+      updatedAt: d.updatedAt?.toDate?.() || null
+    };
+  }
+
+  async function fetchSlotThumbs(slot, max=5){
+    const col = collection(db, `${slPath(slot)}/cards`);
+    const snap = await getDocs(query(col, limit(max)));
+    return snap.docs.map(d => {
+      const s = d.data() || {};
+      return s.fullUrl || s.imageUrl || ''; // 保存時のURLをそのまま使う
+    }).filter(Boolean);
+  }
+
+  async function fetchSlotAllUrls(slot){
+    const col = collection(db, `${slPath(slot)}/cards`);
+    const snap = await getDocs(col);
+    return snap.docs.map(d => {
+      const s = d.data() || {};
+      return s.fullUrl || s.imageUrl || '';
+    }).filter(Boolean);
+  }
+
+  function renderThumbs(el, urls, total){
+    el.innerHTML = '';
+    if (total === 0){
+      el.innerHTML = '<span class="empty">空き</span>';
+      return;
+    }
+    urls.forEach(u => {
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = u;
+      el.appendChild(img);
+    });
+    if (total > urls.length){
+      const more = document.createElement('span');
+      more.className = 'more';
+      more.textContent = `+${total - urls.length}`;
+      el.appendChild(more);
+    }
+  }
+
+  async function refreshSaveSlots(){
+    for (const slot of [1,2,3]){
+      const { count, updatedAt } = await fetchSlotMeta(slot);
+      const thumbs = await fetchSlotThumbs(slot, 5);
+      const tEl  = document.getElementById(`slot${slot}-thumbs`);
+      const cEl  = document.getElementById(`slot${slot}-count`);
+      const uEl  = document.getElementById(`slot${slot}-updated`);
+      if (cEl) cEl.textContent = `(${count}枚)`;
+      if (uEl) uEl.textContent = `最終更新: ${updatedAt ? updatedAt.toLocaleString() : '-'}`;
+      if (tEl) renderThumbs(tEl, thumbs, count);
+    }
+  }
+
+  async function toggleSlotList(slot){
+    const wrap = document.getElementById(`slot${slot}-list`);
+    const grid = document.getElementById(`slot${slot}-list-grid`);
+    if (!wrap || !grid) return;
+    const willOpen = (wrap.style.display !== 'block');
+    // 他のスロットは閉じる
+    for (const s of [1,2,3]){
+      const w = document.getElementById(`slot${s}-list`);
+      if (w) w.style.display = 'none';
+    }
+    if (!willOpen) return;
+    wrap.style.display = 'block';
+    grid.innerHTML = '';
+    const urls = await fetchSlotAllUrls(slot);
+    if (urls.length === 0){
+      grid.innerHTML = '<div class="muted">画像はありません</div>';
+      return;
+    }
+    urls.forEach(u => {
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = u;
+      grid.appendChild(img);
+    });
+  }
+
+  // 「一覧」ボタンのイベント委譲
+  document.getElementById('saveList')?.addEventListener('click', (e) => {
+    const a = e.target.closest('.slot-list-btn');
+    if (!a) return;
+    e.preventDefault();
+    const slot = parseInt(a.dataset.slot, 10);
+    if (slot) toggleSlotList(slot);
+  });
+    
+    
     function applyUser(u){
       // 表示名は「メール > displayName > 'Player'」の優先順
       const email = u.email || '';
@@ -183,7 +331,10 @@
         location.href = './index.html';
         return;
       }
-      applyUser(user);
+    CURRENT_UID = user.uid;
+    applyUser(user);
+    // ログイン済みになったらスロット情報を描画
+    refreshSaveSlots().catch(console.error);
     });
 
     // 言語設定はこれまで通り localStorage を使用
