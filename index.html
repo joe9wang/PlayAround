@@ -1012,7 +1012,9 @@
      <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
      <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
    </div>
-   <div class="section-label">自分のカード</div>
+   <div class="section-label">自分のカード<br>
+   <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで裏表)</span>
+   </div>
    <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 全カード一覧</button>
    <div class="sl-row" role="group" aria-label="Face up/down">
      <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
@@ -1028,9 +1030,13 @@
    <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
    <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
    <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
-   <div class="section-label">ダイス</div>
+   <div class="section-label">ダイス<br>
+   <span style="font-size:12px;color:#666;">(左クリックか右クリックで削除)</span>
+   </div>
    <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
-   <div class="section-label">カウンター・トークン</div>
+   <div class="section-label">カウンター・トークン<br>
+   <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで削除)</span>
+   </div>
    <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
    
    <div class="sl-row" role="group" aria-label="plus1/plus10">

@@ -29,6 +29,7 @@
       font-size:14px; opacity:.98;
     }
     
+    
     #upload-area { height: var(--upload-h); display:flex; align-items:center; padding:0 16px; text-align:center; background:#fff; cursor:pointer; border-bottom:2px solid #ccc; user-select:none; }
     #file-input { display:none; }
 
@@ -191,6 +192,15 @@
     .lobby-section{ border:1px solid #e3e3e3; border-radius:12px; padding:12px; }
     .lobby-label{ display:block; font-size:12px; color:#555; margin-bottom:6px; }
     .lobby-subtitle{ font-weight:700; margin:0 0 8px; }
+    /* credit: welcome modal footer */
+    .lobby-credit{
+      margin-top:12px;
+      padding-top:10px;
+      border-top:1px solid #eee;
+      text-align:center;
+      font-size:12px;
+      color:#777;
+    }
     .row{ display:flex; gap:8px; align-items:center; }
     .field{ flex:1; padding:10px 12px; font-size:16px; border:1px solid #bbb; border-radius:10px; }
     .btn{ padding:10px 12px; border-radius:10px; border:0; background:#0a7; color:#fff; font-weight:700; cursor:pointer; opacity:.95; }
@@ -206,10 +216,44 @@
     .room-item:last-child{ border-bottom:0; }
     .room-id{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
     .player-label { position: absolute; top: 6px; left: 6px; font-size: 22px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 2px 8px; border-radius: 4px; pointer-events: none; z-index: 10; }
+    
+    /* 追加（ボード / トランプ用：手札エリア左下に表示） */
+    .board-name {
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      font-size: 18px;
+      font-weight: bold;
+      color: rgba(255,255,255,0.95);
+      background: rgba(0,0,0,0.4);
+      padding: 2px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .board-name .label-seat { margin-right: 4px; }
+    
     .zone-label { position: absolute; right: 4px; bottom: 4px; font-size: 12px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 4px; pointer-events: none; z-index: 5; }
     #create-seat-grid .seat-btn.active{ outline:3px solid #0a7; background:#e9fff7; box-shadow:0 0 0 3px rgba(0,170,119,.15) inset; }
     #create-seat-picked { margin-top:6px; font-size:12px; color:#0a7; font-weight:700; }
     .seat-btn:focus-visible{ outline:3px solid #66aaff; }
+
+
+/* === ゾーンは常に通常カーソルにする === */
+.deck-area,
+.main-play-area,
+.hand-area,
+.special-area,
+.discard-area {
+  cursor: default;  /* ← 指マークにしない */
+}
+
+/* （任意）ドラッグ中は「つかむ」表示をより確実に */
+.card:active {
+  cursor: grabbing;
+}
+
+
 
     .card.counter{ width:60px; height:60px; border-radius:50%; overflow:hidden; }
     .card.counter img{ border-radius:50%; object-fit:cover; }
@@ -229,20 +273,21 @@
 }
 
 /* 数値カウンター（横長、±ボタン＋数値入力） */
-.card.numcounter{
-  width: 50px;
-  min-width: 50px;
-  max-width: 50px;
-  height:50px;
-  min-height: 50px;
-  max-height: 50px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-}
-.numcounter .nc-wrap{
+ .card.numcounter{
+   width: 100px;
+   min-width: 100px;
+   max-width: 100px;
+   height: 100px;
+   min-height: 100px;
+   max-height: 100px;
+   border-radius: 24px; /* 半径も2倍に */
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   background: #fff;
+ }
+
+  .numcounter .nc-wrap{
   display:flex;
   align-items:center;
   gap:6px;
@@ -252,21 +297,15 @@
   box-sizing:border-box;
 }
 
-.numcounter .nc-input{
-  width: 40px;       /* 横幅を固定（お好みで調整） */
-  min-width: 40px;
-  max-width: 40px;
-  flex: 0 0 auto;    /* flexによる伸縮を防ぐ */
-  height:28px;
-  border:1px solid #ccc;
-  border-radius:8px;
-  text-align:right;
-  padding:0 6px;
-  font-weight:700;
-  font-size:16px;
-  box-sizing:border-box;
-}
-.numcounter .nc-input:disabled{ opacity:.6; cursor:not-allowed; background:#fafafa; }
+ .numcounter .nc-input{
+   width: 80px;
+   min-width: 80px;
+   max-width: 80px;
+   height: 56px;
+   font-size: 32px;
+ }
+
+    .numcounter .nc-input:disabled{ opacity:.6; cursor:not-allowed; background:#fafafa; }
 
 
 
@@ -343,8 +382,23 @@
 // モード切替: mode-card ⇄ mode-board
 //   ※カードゲーム（既存DOM）はデフォルト表示のまま触らない！
 //   → mode-card では一切上書きしない。board のときだけ切り替える。
+/* ボード/トランプ時はカード用 player-area を非表示 */
 #field.mode-board .player-area{ display:none; }   /* カード用4区画は隠す */
+
+/* ボード/トランプ時はプレイエリア内の P1～P4 タグを非表示 */
+#field.mode-board .player-area .player-label { display: none !important; }
+
+/* ボード/トランプ時は特殊エリアの zone-label を非表示 */
+#field.mode-board .special-area .zone-label { display: none !important; }
+
 #field.mode-board #board-layout{ display:block; } /* ボード用だけ出す */
+    
+/* ボードゲーム時だけ全体を1.3倍（カードモードは無影響） */
+#field.mode-board #board-layout{
+  transform: scale(1.3);
+  transform-origin: center center;
+}
+    
     
     
 /* === Host toggle (slider) === */
@@ -538,7 +592,55 @@
  #sidebar h2 .inline-toggle { margin-left: 8px; }
  #preview h2 .inline-toggle { margin-left: 0; margin-right: 8px; }
  .inline-toggle:hover { background:#f3f3f3; }
-
+ 
+ 
+  /* ===== Save/Load を横2分割＆省スペースに ===== */
+  #sidebar .sl-row{
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 半分ずつ */
+    gap: 6px;
+    margin: 4px 0 8px;
+  }
+  #sidebar .sl-row > .sl-btn{
+    width: 100% !important;       /* 既存の100%幅前提を維持 */
+    padding: 6px 8px !important;  /* 高さを控えめに */
+    font-size: 0.9rem;
+    line-height: 1.2;
+    min-height: 30px;
+  }
+  
+  
+  /* 単独ボタンでも省スペース化（行に包まなくても効く） */
+  #sidebar .sl-btn{
+    width: 100% !important;
+    padding: 6px 8px !important;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    min-height: 30px;
+  }
+  
+  
+  /* ===== セクション見出し（左寄せ・省スペース） ===== */
+  #sidebar .section-label{
+    margin: 2px 0 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-align: left;
+    color: #555;
+  }
+  
+  @media (max-width: 768px){
+    #sidebar .sl-row > .sl-btn{
+      padding: 6px 8px;           /* モバイルでも高さ控えめ */
+      font-size: 12px;            /* 既存のモバイル調整に馴染ませる */
+    }
+    #sidebar .sl-btn{
+      padding: 6px 8px;
+      font-size: 12px;
+    }    
+  }
+ 
+ 
  /* 見出しの共通スタイル（左右で高さを揃える） */
  :root { --panel-title-h: 32px; }  /* 必要なら 30〜36px で微調整可 */
  
@@ -681,6 +783,22 @@
  }
 
 
+  /* === ▼▼ 重なり枚数バッジ ▼▼ === */
+  .overlap-badge{
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%, -50%);
+    font-weight:700;
+    color:#e53935;           /* 赤字 */
+    font-size:44px;
+    line-height:1;
+    text-shadow:0 0 6px rgba(255,255,255,.95), 0 0 12px rgba(255,255,255,.75);
+    pointer-events:none;      /* ドラッグを邪魔しない */
+    user-select:none;
+  }
+  /* （カードに対して中央絶対配置するので .card は position:absolute のままでOK） */
+  /* === ▲▲ 重なり枚数バッジ ▲▲ === */
+
 
   </style>
  </head>
@@ -723,7 +841,7 @@
      </select>
     </div>
     <div class="lobby-title" data-i18n="lobby.welcome">
-     プレイアラウンドへようこそ
+     プレイアラウンドへようこそ！
     </div>
     <div class="lobby-links">
      <a data-i18n="links.privacy" href="/privacy.html" rel="noopener" target="_blank">
@@ -747,6 +865,12 @@
        <button class="btn secondary" id="logout-google" style="padding:8px 12px; display:none;"
          data-i18n="auth.logout">
          ログアウト
+       </button>
+       <button class="btn secondary" id="btn-mypage"
+          style="padding:8px 12px; display:none;"
+          data-i18n="app.mypage"
+          onclick="location.href='./mypage.html'">
+          マイページ
        </button>
      <span id="whoami" style="margin-left:8px; color:#555; font-size:12px; display:none;">
      </span>
@@ -858,6 +982,7 @@
        <button aria-pressed="false" class="btn secondary" data-i18n="create.mode.board" id="pick-mode-board" type="button">
         🎲 ボードゲーム
        </button>
+       <button id="pick-mode-trump" class="btn secondary" data-i18n="create.mode.trump">トランプ</button>
       </div>
       <div class="row" id="create-btn-row" style="margin-top:16px; justify-content:flex-end;">
        <button class="btn" data-i18n="create.createBtn" id="create-room-btn">
@@ -866,6 +991,7 @@
       </div>
      </section>
     </div>
+    <div class="lobby-credit">PlayAround — © 2025 SOLVENTER</div>
    </div>
   </div>
   <div id="upload-area">
@@ -881,32 +1007,59 @@
              data-i18n-title="side.panel.toggle">◀</button>
    </h2>  
    
-   <button onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
-   <button onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
-   <button onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット（自分のカードのみ）</button>
-   <button id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
-   <button onclick="faceDownAll()" data-i18n="side.faceDown">🂠 裏返す（自分のカードのみ）</button>
-   <button onclick="faceUpAll()" data-i18n="side.faceUp">🂡 表にする（自分のカードのみ）</button>
-   <button onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 シャッフル（自分のデッキのみ）</button>
-   <button onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🗃 デッキエリアのカード一覧（自分）</button>
-    <button onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🗂 全カード一覧（自分）</button>
-   <button onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
-  <button onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1カウンター</button>
-   <button onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10カウンター</button>
-   <button onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1カウンター</button>
-   <button onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10カウンター</button>
-   <button onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
-   <button onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除（自分のカードのみ）</button>
-   <button onclick="alignDecks()" data-i18n="side.align">📏 整列（表示のみ）</button>
-   <button onclick="toggleFieldSizeOptions()" data-i18n="side.fieldSize">🖼 フィールドサイズ変更</button>
+   <!-- Save/Load: compact two-up row -->
+   <div class="sl-row" role="group" aria-label="Save/Load">
+     <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
+     <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
+   </div>
+   <div class="section-label">自分のカード</div>
+   <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 全カード一覧</button>
+   <div class="sl-row" role="group" aria-label="Face up/down">
+     <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
+     <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🔍 捨て札一覧</button>
+   </div>
+   <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
+   <div class="sl-row" role="group" aria-label="Face up/down">
+     <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏に</button>
+     <button class="sl-btn" onclick="faceUpAll()"  data-i18n="side.faceUp">🂡 全て表に</button>
+   </div>
+   <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
+   <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードを集める</button>
+   <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
+   <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
+   <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
+   <div class="section-label">ダイス</div>
+   <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
+   <div class="section-label">カウンター・トークン</div>
+   <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
+   
+   <div class="sl-row" role="group" aria-label="plus1/plus10">
+     <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1</button>
+     <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10</button>
+   </div>
+   <div class="sl-row" role="group" aria-label="plus50/plus100">
+     <button class="sl-btn" onclick="spawnCounter('+50')" data-i18n="side.plus50">➕50</button>
+     <button class="sl-btn" onclick="spawnCounter('+100')" data-i18n="side.plus100">➕100</button>
+   </div>
+   <div class="sl-row" role="group" aria-label="plus1/plus10">
+     <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1</button>
+     <button class="sl-btn" onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10</button>
+   </div>
+   <div class="sl-row" role="group" aria-label="plus50/plus100">
+     <button class="sl-btn" onclick="spawnCounter('-50')" data-i18n="side.minus50">➖50</button>
+     <button class="sl-btn" onclick="spawnCounter('-100')" data-i18n="side.minus100">➖100</button>
+   </div>
+   <button class="sl-btn" onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
+   <button class="sl-btn" onclick="toggleFieldSizeOptions()" data-i18n="side.fieldSize">🖼 フィールドサイズ変更</button>
    <div id="field-size-options">
-     <button onclick="setFieldSize('small')"  data-i18n="side.sizeS">小</button>
-     <button onclick="setFieldSize('medium')" data-i18n="side.sizeM">中</button>
-     <button onclick="setFieldSize('large')"  data-i18n="side.sizeL">大</button>
+     <button class="sl-btn" onclick="setFieldSize('small')"  data-i18n="side.sizeS">小</button>
+     <button class="sl-btn" onclick="setFieldSize('medium')" data-i18n="side.sizeM">中</button>
+     <button class="sl-btn" onclick="setFieldSize('large')"  data-i18n="side.sizeL">大</button>
    </div>
    
    
    <div aria-live="polite" class="host-toggle" id="host-otherops">
+   <div class="section-label">ホスト専用</div>
     <div class="row" style="justify-content:space-between; align-items:center;">
      <div style="font-size:12px;color:#555;">
       他プレイヤーのカード操作
@@ -923,7 +1076,7 @@
      </div>
     </div>
    </div>
-   <button class="danger" id="end-room-btn" style="display:none">
+   <button class="danger sl-btn" id="end-room-btn" style="display:none">
     🚪 ルームを終了（ホスト）
    </button>
   </div>
@@ -1059,15 +1212,31 @@
      </div>
      <div class="board-hand" id="board-hand-1">
       <div class="zone-label" data-i18n="zone.hand">手札エリア P1</div>
+      <div class="board-name">
+        <span class="label-seat">P1</span>
+        <span class="label-name"></span>
+      </div>
      </div>
      <div class="board-hand" id="board-hand-2">
       <div class="zone-label" data-i18n="zone.hand">手札エリア P2</div>
+      <div class="board-name">
+        <span class="label-seat">P2</span>
+        <span class="label-name"></span>
+      </div>
      </div>
      <div class="board-hand" id="board-hand-3">
       <div class="zone-label" data-i18n="zone.hand">手札エリア P3</div>
+      <div class="board-name">
+        <span class="label-seat">P3</span>
+        <span class="label-name"></span>
+      </div>
      </div>
      <div class="board-hand" id="board-hand-4">
       <div class="zone-label" data-i18n="zone.hand">手札エリア P4</div>
+      <div class="board-name">
+        <span class="label-seat">P4</span>
+        <span class="label-name"></span>
+      </div>
      </div>
      <div id="board-center">
       <div class="center-deck">
@@ -1125,6 +1294,14 @@
          <button class="slot-btn" data-slot="2" style="flex:1; padding:10px;">SLOT 2</button>
          <button class="slot-btn" data-slot="3" style="flex:1; padding:10px;">SLOT 3</button>
        </div>
+       
+     <!-- ▼スロットごとのプレビュー（各5枚） -->
+     <div class="sl-preview" aria-live="polite" style="margin-bottom:12px;">
+       <div class="slot-preview" data-slot="1"><span class="empty">空き</span></div>
+       <div class="slot-preview" data-slot="2"><span class="empty">空き</span></div>
+       <div class="slot-preview" data-slot="3"><span class="empty">空き</span></div>
+     </div>
+       
        <div style="display:flex; justify-content:flex-end; gap:8px;">
          <button id="sl-cancel">キャンセル</button>
        </div>
@@ -1132,6 +1309,22 @@
      <style>
        #save-load-modal .slot-btn { border:1px solid #ddd; border-radius:8px; }
        #save-load-modal .slot-btn:hover { background:#f5f5f5; }
+       
+   /* ▼プレビューの見た目 */
+   #save-load-modal .sl-preview{
+     display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
+   }
+   #save-load-modal .slot-preview{
+     border:1px solid #eee; border-radius:8px; min-height:76px;
+     padding:6px; display:flex; align-items:center; justify-content:center;
+     flex-wrap:wrap; gap:4px; background:#fafafa;
+   }
+   #save-load-modal .slot-preview img{
+     width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid #ddd;
+   }
+   #save-load-modal .slot-preview .empty{ color:#999; font-size:12px; }
+       
+       
      </style>
    </div>  
   
@@ -1182,7 +1375,7 @@
   import {
     getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot,
     serverTimestamp, runTransaction, deleteDoc, collection, limit,
-    addDoc, where, query, getDocs, writeBatch
+    addDoc, where, query, getDocs, writeBatch, Timestamp
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
   import {
@@ -1252,7 +1445,10 @@ getToken(window.appCheck)
 // Auth / Firestore / Storage 句の初期化
 // ===============================
 // Auth/DB/Storage のインスタンスを作成し、以降の処理で参照します。
+import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 const auth = getAuth(app);
+// ログイン状態をタブを越えて復元できるようにする
+await setPersistence(auth, browserLocalPersistence);
 
 // === IDトークンを保持（sendBeacon でサーバーに本人確認を渡す） ===
 let AUTH_ID_TOKEN = null;
@@ -1328,6 +1524,7 @@ onIdTokenChanged(auth, async (user) => {
   // ▼ロビーのログインUI参照
   const loginBtn   = document.getElementById('login-google');
   const logoutBtn  = document.getElementById('logout-google');
+  const mypageBtn  = document.getElementById('btn-mypage');
   const whoamiSpan = document.getElementById('whoami');
 
   // まだ匿名で遊べるままにする（既存のまま）
@@ -1341,6 +1538,7 @@ onIdTokenChanged(auth, async (user) => {
     const lobby = document.getElementById('lobby');
     const joinRoomInput = document.getElementById('join-room-id');
     const playerNameInput = document.getElementById('player-name');
+    const endRoomBtn     = document.getElementById('end-room-btn');
     const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
     const startBtn = document.getElementById('start-btn');
     const sessionIndicator = document.getElementById('session-indicator');
@@ -1379,11 +1577,13 @@ onIdTokenChanged(auth, async (user) => {
     const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
     
     
-    // ==== 追加: フィールドモード（'card' | 'board'） ==== 
+// ==== 追加: フィールドモード（'card' | 'board' | 'trump'） ====
 let CREATE_FIELD_MODE = 'card';
 
-const pickModeCardBtn  = document.getElementById('pick-mode-card');
-const pickModeBoardBtn = document.getElementById('pick-mode-board');
+const pickModeCardBtn   = document.getElementById('pick-mode-card');
+const pickModeBoardBtn  = document.getElementById('pick-mode-board');
+const pickModeTrumpBtn  = document.getElementById('pick-mode-trump');
+
 
 function updateModePickButtons(){
   const set = (btn, on) => {
@@ -1393,9 +1593,11 @@ function updateModePickButtons(){
   };
   set(pickModeCardBtn,  CREATE_FIELD_MODE === 'card');
   set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
+  if (pickModeTrumpBtn) set(pickModeTrumpBtn, CREATE_FIELD_MODE === 'trump'); //
 }
 pickModeCardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'card';  updateModePickButtons(); });
 pickModeBoardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'board'; updateModePickButtons(); });
+pickModeTrumpBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'trump'; updateModePickButtons(); });
 updateModePickButtons();
     
     
@@ -1581,11 +1783,16 @@ updateModePickButtons();
       const baseCards = collection(db, `rooms/${CURRENT_ROOM}/cards`);
       let batch = writeBatch(db), n = 0, i = 0;
       const z0 = Date.now() % 10000;
+      
+    //▼この座席のデッキ中央を基準にする（少しずつズラして重なり回避）
+    const basePos = centerOfDeck(CURRENT_PLAYER, CARD_W, CARD_H);
+      
       for (const d of snap.docs){
         const s = d.data() || {};
         const payload = {
-          x: (typeof s.x==='number'? s.x:0) + tinyOffset(i),
-          y: (typeof s.y==='number'? s.y:0) + tinyOffset(i),
+          //▼保存時の x,y は使わず「デッキ中央」にまとめて出す
+          x: basePos.x + tinyOffset(i),
+          y: basePos.y + tinyOffset(i),
           zIndex: (typeof s.zIndex==='number'? s.zIndex:1) + 1 + i + z0,
           faceUp: (s.faceUp!==false),
           rotation: (typeof s.rotation==='number'? s.rotation:0),
@@ -1620,6 +1827,10 @@ updateModePickButtons();
     const title = document.getElementById('sl-title');
     if (!modal || !title) return;
     title.textContent = (mode==='save') ? '保存先スロットを選択' : 'ロード元スロットを選択';
+    
+    //▼ロード時にプレビューを更新（非同期）
+    if (mode === 'load') updateSlotPreviews();
+    
     modal.style.display = 'flex';
   }
   // HTMLのonclickから呼べるように window に公開
@@ -1648,7 +1859,50 @@ updateModePickButtons();
     });
   })();    
     
-    
+
+// ▼ 追加：スロットのプレビューを描画（各最大5枚）
+async function updateSlotPreviews(){
+  try{
+    await ensureAuthReady();
+    const wrap = document.querySelector('#save-load-modal .sl-preview');
+    if (!wrap) return;
+    const boxes = Array.from(wrap.querySelectorAll('.slot-preview'));
+    for (const box of boxes){
+      const slot = parseInt(box.dataset.slot, 10);
+      box.innerHTML = '<span class="empty">読み込み中…</span>';
+      try{
+        // users/{UID}/saves/slot{n}/cards から最大5件
+        const cardsRef = collection(db, `${slDocPath(slot)}/cards`);
+        const snap = await getDocs(query(cardsRef, limit(5)));
+        box.innerHTML = '';
+        if (snap.empty){
+          box.innerHTML = '<span class="empty">空き</span>';
+          continue;
+        }
+        for (const d of snap.docs){
+          const s = d.data() || {};
+          // 保存されているURLは fullUrl を優先、なければ Storage 経由で解決
+          let url = s.fullUrl;
+          if (!url && s.imageUrl) url = await storageDownloadURL(s.imageUrl);
+          if (!url) continue;
+          const img = document.createElement('img');
+          img.src = url;
+          img.alt = '';
+          box.appendChild(img);
+        }
+        if (!box.querySelector('img')) {
+          // 画像系が1枚も生成されなかった場合のフォールバック
+          box.innerHTML = '<span class="empty">画像なし</span>';
+        }
+      }catch(e){
+        console.warn('preview fetch failed', e);
+        box.innerHTML = '<span class="empty">取得失敗</span>';
+      }
+    }
+  }catch(e){
+    console.warn('updateSlotPreviews error', e);
+  }
+}    
     
     
     let hostWatchTimer = null;
@@ -1657,10 +1911,10 @@ updateModePickButtons();
     let IS_ROOM_CREATOR = false;
 
     // ===== Quota care: intervals
-    const HOST_STALE_MS = 180000;  // ← 延長（25s）
-    const SEAT_STALE_MS = 240000;  // ← 延長（70s）
-    const HOST_HEARTBEAT_MS = 60000; // ← 10s
-    const SEAT_HEARTBEAT_MS = 60000; // ← 20s
+    const HOST_STALE_MS = 180000;  // 3min
+    const SEAT_STALE_MS = 600000;  // 10min
+    const HOST_HEARTBEAT_MS = 60000; // 10s
+    const SEAT_HEARTBEAT_MS = 60000; // 20s
     const ROOM_PING_MS = 60000;      // 60s
     let __roomPingAt = 0;
     
@@ -1749,6 +2003,27 @@ async function storageDownloadURL(path) {
   }
 }
     
+    
+    // === Helper: 他人の手札内かどうか（プレビュー用マスク判定） ===
+    function isOtherPlayersHandCard(el){
+      try{
+        if (!el) return false;
+        const viewerSeat = CURRENT_PLAYER;
+        const left = parseFloat(el.style.left) || 0;
+        const top  = parseFloat(el.style.top)  || 0;
+        for (const s of [1,2,3,4]) {
+          const hb = getHandBoundsForSeat(s);
+          if (hb && isCenterInsideRect(left, top, hb)) {
+            return String(s) !== String(viewerSeat);
+          }
+        }
+      }catch(_){}
+      return false;
+    }
+    
+    
+    
+    
     async function sha256Hex(str){
       const data = new TextEncoder().encode(str);
       const buf  = await crypto.subtle.digest('SHA-256', data);
@@ -1767,7 +2042,7 @@ async function storageDownloadURL(path) {
 
     // ===== Presence / host alive
     
-    const ROOM_EMPTY_GRACE_MS = 2 * 60 * 1000; // 2分: 全席不在が続いたら部屋を自動削除
+    const ROOM_EMPTY_GRACE_MS = 15 * 60 * 1000; // 15分: 全席不在が続いたら部屋を自動削除
     
     function isHostAlive(roomMeta){
       if(!roomMeta?.hostUid) return false;
@@ -1789,29 +2064,50 @@ async function storageDownloadURL(path) {
       return false;
     }
 
-    signInAnonymously(auth).catch(console.error);
-
+  // 初回の認証状態が確定してから匿名化を判断する
+  let __initialAuthResolved = false;
   onAuthStateChanged(auth, (user) => {
-    if (!user) return;
-    CURRENT_UID = user.uid;
-    // ロビーのボタン表示を更新
-    if (user.isAnonymous) {
-      if (loginBtn)  loginBtn.style.display  = '';
-      if (logoutBtn) logoutBtn.style.display = 'none';
-      if (whoamiSpan){ whoamiSpan.style.display = 'none'; whoamiSpan.textContent = ''; }
-    } else {
-      if (loginBtn)  loginBtn.style.display  = 'none';
-      if (logoutBtn) logoutBtn.style.display = '';
-      if (whoamiSpan){
-        whoamiSpan.style.display = '';
-        whoamiSpan.textContent = `ログイン中：${user.displayName || 'No Name'}`;
+    // 初回：復元が無い（user === null）と確定したときだけ匿名でサインイン
+    if (!__initialAuthResolved) {
+      __initialAuthResolved = true;
+      if (!user) {
+        signInAnonymously(auth).catch(console.error);
+        return; // この後もう一度 onAuthStateChanged が来る
       }
     }
-  });
-  
-  
-  
-  
+
+    if (!user) return; // ここに来るのは稀だが安全のため
+    CURRENT_UID = user.uid;
+
+    // ロビーのボタン表示を更新（元のロジックを踏襲）
+    if (user.isAnonymous) {
+      loginBtn  && (loginBtn.style.display  = '');
+      logoutBtn && (logoutBtn.style.display = 'none');
+      mypageBtn && (mypageBtn.style.display = 'none');   // 匿名時は隠す
+      if (whoamiSpan) { whoamiSpan.style.display = 'none'; whoamiSpan.textContent = ''; }
+      
+      // マイページ表示用の情報はクリア
+      localStorage.removeItem('pa:googleUid');
+      localStorage.removeItem('pa:displayName');
+      localStorage.removeItem('pa:photoURL');
+      
+    } else {
+      loginBtn  && (loginBtn.style.display  = 'none');
+      logoutBtn && (logoutBtn.style.display = '');       // 既定表示に戻す
+      mypageBtn && (mypageBtn.style.display = '');       // ログイン後に表示
+      if (whoamiSpan) {
+        whoamiSpan.style.display = '';
+        whoamiSpan.textContent = `ログイン中：${user.email || user.displayName || 'No Name'}`;
+      }
+      
+      // ▼GoogleのIDなどを保存（マイページで使う）
+      const provider = (user.providerData || []).find(p => p.providerId === 'google.com');
+      localStorage.setItem('pa:email',       user.email || '');
+      localStorage.setItem('pa:displayName', user.displayName || '');
+      localStorage.setItem('pa:photoURL',    user.photoURL   || '');
+      
+    }
+  });  
   
   
   // ===== i18n: dictionary & applier =====
@@ -1823,9 +2119,10 @@ const I18N = {
     "links.terms":   "利用規約",
     "links.contact": "お問い合わせ",
     
-    "lobby.welcome": "プレイアラウンドへようこそ",
+    "lobby.welcome": "プレイアラウンドへようこそ！",
     "auth.login":  "Googleでログイン",
     "auth.logout": "ログアウト",
+    "app.mypage" : "マイページ",
     
     "join.section":   "既存ルームに参加（非ホスト）",
     "join.roomId":    "参加するルームID",
@@ -1848,28 +2145,36 @@ const I18N = {
     "create.chooseMode":"フィールド構成を選択",
     "create.mode.card": "🃏 カードゲーム",
     "create.mode.board":"🎲 ボードゲーム",
+    "create.mode.trump": "🂠 トランプ",
     "create.createBtn": "作成",
     
     // --- Side / Panel / Buttons ---
     "side.panel": "操作パネル",
     "side.panel.toggle": "操作パネルの表示/非表示",
-    "side.save": "セーブ",
-    "side.load": "ロード",
-    "side.resetFacing": "全カード向きリセット（自分のカードのみ）",
-    "side.rollD6": "6面ダイスを振る",
-    "side.faceDown": "裏返す（自分のカードのみ）",
-    "side.faceUp": "表にする（自分のカードのみ）",
-    "side.shuffle": "シャッフル（自分のデッキのみ）",
-    "side.deckList": "デッキエリアのカード一覧（自分）",
-    "side.allMyCards": "全カード一覧（自分）",
-    "side.numCounter": "数値カウンター",
-    "side.plus1": "＋1カウンター",
-    "side.plus10": "＋10カウンター",
-    "side.minus1": "−1カウンター",
-    "side.minus10": "−10カウンター",
-    "side.token": "トークン作成",
-    "side.deleteMine": "全カード削除（自分のカードのみ）",
-    "side.align": "整列（表示のみ）",
+    "side.save": "💾 セーブ",
+    "side.load": "📂 ロード",
+    "side.resetFacing": "↻ 全カード向きリセット",
+    "side.faceDown": "🂠 全て裏に",
+    "side.faceUp": "🂡 全て表に",
+    "side.rollD6": "🎲 6面ダイスを振る",
+    "side.shuffle": "⇅ デッキをシャッフル",
+    "side.collect": "❖ 全カードを集める",
+    "side.allMyCards": "🔍 全カード一覧",
+    "side.deckList": "🔍 デッキ一覧",
+    "side.discardList": "🔍 捨て札一覧",
+    "side.deleteMine": "🗑 全カードを削除",
+    "side.deleteSelected": "🗑 指定カードを削除",
+    "side.sendSelectedBack": "⇊ 指定カードを最背面",
+    "side.numCounter": "🔢 数値カウンター",
+    "side.plus1": "➕1",
+    "side.plus10": "➕10",
+    "side.plus50": "➕50",
+    "side.plus100": "➕100",
+    "side.minus1": "➖1",
+    "side.minus10": "➖10",
+    "side.minus50": "➖50",
+    "side.minus100": "➖100",
+    "side.token": "📝 トークン作成",
     "side.fieldSize": "フィールドサイズ変更",
     "side.sizeS": "小",
     "side.sizeM": "中",
@@ -1911,10 +2216,11 @@ const I18N = {
     "links.terms":   "Terms",
     "links.contact": "Contact",
     
-    "lobby.welcome": "Welcome to PlayAround",
+    "lobby.welcome": "Welcome to PlayAround!",
     
     "auth.login":  "Sign in with Google",
     "auth.logout": "Sign out",
+    "app.mypage" : "My Page",
     
     "join.section":   "Join an existing room (Guest)",
     "join.roomId":    "Room ID to join",
@@ -1937,28 +2243,36 @@ const I18N = {
     "create.chooseMode":"Choose field layout",
     "create.mode.card": "🃏 Card game",
     "create.mode.board":"🎲 Board game",
+    "create.mode.trump": "🂠 Playing cards",
     "create.createBtn": "Create",
     
     // --- Side / Panel / Buttons ---
     "side.panel": "Control Panel",
     "side.panel.toggle": "Show/Hide control panel",
-    "side.save": "Save",
-    "side.load": "Load",
-    "side.resetFacing": "Reset card orientation (mine only)",
-    "side.rollD6": "Roll a d6",
-    "side.faceDown": "Face-down (mine only)",
-    "side.faceUp": "Face-up (mine only)",
-    "side.shuffle": "Shuffle (my deck only)",
-    "side.deckList": "My deck-area cards",
-    "side.allMyCards": "All my cards",
+    "side.save": "💾 Save",
+    "side.load": "📂 Load",
+    "side.resetFacing": "↻ Reset card orientation",
+    "side.faceDown": "🂠 Face-down",
+    "side.faceUp": "🂡 Face-up",
+    "side.rollD6": "🎲 Roll a d6",
+    "side.shuffle": "⇅ Shuffle my Deck",
+    "side.collect": "❖ Gather my cards",
+    "side.allMyCards": "🔍 All my cards",
+    "side.deckList": "🔍 My deck-area cards",
+    "side.discardList": "🔍 My discard-area cards",
+    "side.deleteMine": "🗑 Delete all my cards",
+    "side.deleteSelected": "🗑 Delete selected card",
+    "side.sendSelectedBack": "⇊ Send selected card to back",
     "side.numCounter": "Number counter",
-    "side.plus1": "+1 counter",
-    "side.plus10": "+10 counter",
-    "side.minus1": "−1 counter",
-    "side.minus10": "−10 counter",
+    "side.plus1": "➕1 counter",
+    "side.plus10": "➕10 counter",
+    "side.plus50": "➕50 counter",
+    "side.plus100": "➕100 counter",
+    "side.minus1": "➖1 counter",
+    "side.minus10": "➖10 counter",
+    "side.minus50": "➖50 counter",
+    "side.minus100": "➖100 counter",
     "side.token": "Create token",
-    "side.deleteMine": "Delete all my cards",
-    "side.align": "Align (visual only)",
     "side.fieldSize": "Change field size",
     "side.sizeS": "Small",
     "side.sizeM": "Medium",
@@ -2165,7 +2479,9 @@ joinRoomPassInput?.addEventListener('input', () => {
     
     
 function isBoardMode(){
-  return (CURRENT_ROOM_META?.fieldMode === 'board');
+  const m = CURRENT_ROOM_META?.fieldMode;
+  // 'board' と 'trump' をボード系モードとして扱う
+  return (m === 'board' || m === 'trump');
 }
 
 function rectFromEl(el){
@@ -2178,6 +2494,22 @@ function rectFromEl(el){
   const height = r.height / zoom;
   return { minX, minY, width, height };
 }
+
+
+ // === レイアウト安定待ち（中央デッキの矩形が正しく測れるまで待つ） ===
+ async function waitForBoardDeckRect(maxWaitMs = 1000){
+   const start = performance.now();
+   // 2フレーム待ち → 計測 → 必要なら繰り返し
+   while (performance.now() - start < maxWaitMs) {
+     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+     const r = getDeckBoundsForSeat(1); // board/trump は共有デッキ
+     if (r && r.width > 0 && r.height > 0) return r;
+   }
+   // 最悪でも null 返し（呼び出し側でフォールバック）
+   return null;
+ }
+
+
 
 
 // === 操作権限（ドラッグ/表裏）判定 ===
@@ -2209,15 +2541,30 @@ function getHandBoundsForSeat(seat){
 }
 
 function getDeckBoundsForSeat(seat){
-  if (isBoardMode()) {
-    // 共有デッキ（seat は無視）
+  // board と trump のときは「中央の共有デッキ（#board-center .center-deck）」を使う
+  const mode = CURRENT_ROOM_META?.fieldMode;
+  if (mode === 'board' || mode === 'trump') {
     const el = document.querySelector('#board-center .center-deck');
     return rectFromEl(el);
-  } else {
-    const deck = document.querySelector(`.player-${seat} .deck-area`);
-    return rectFromEl(deck);
   }
+  // それ以外（通常のカードモード）は各プレイヤーのデッキエリア
+  const deck = document.querySelector(`.player-${seat} .deck-area`);
+  return rectFromEl(deck);
 }
+
+
+function getDiscardBoundsForSeat(seat){
+  const mode = CURRENT_ROOM_META?.fieldMode;
+  if (mode === 'board' || mode === 'trump') {
+    // 共有レイアウトの中央・捨て札
+    const el = document.querySelector('#board-center .center-discard');
+    return rectFromEl(el);
+  }
+  // 通常レイアウト（各プレイヤーの右列上段の縦スタックの上側）
+  const el = document.querySelector(`.player-${seat} .discard-area`);
+  return rectFromEl(el);
+}
+
 
 function getMainPlayBoundsForSeat(seat){
   if (isBoardMode()) {
@@ -2301,7 +2648,8 @@ function centerOfMainPlay(seat, w, h){
       const y = b.minY + Math.random() * (maxY - b.minY);
       return { x: Math.round(x), y: Math.round(y) };
     }
-
+    
+    
 // ===============================
 // ホスト監視
 // ===============================
@@ -2518,16 +2866,23 @@ function randomPointInMainPlay(seat){
         
         console.log('[create-room] uid(now)=', auth.currentUser?.uid, 'CURRENT_UID=', CURRENT_UID);
         
-        await setDoc(roomRef, {
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          hostUid: uid,
-          hostDisplayName: creatorName,
-          roomClosed: false,
-          fieldMode: CREATE_FIELD_MODE,     
-          joinPassHash: joinPassHash,
-          hasPassword: !!joinPassHash
-        }, { merge: true });
+ const isTrump = (CREATE_FIELD_MODE === 'trump');
+ const payload = {
+   createdAt: serverTimestamp(),
+   updatedAt: serverTimestamp(),
+   hostUid: uid,
+   hostDisplayName: creatorName,
+   roomClosed: false,
+   fieldMode: isTrump ? 'board' : CREATE_FIELD_MODE,
+   joinPassHash: joinPassHash,
+   hasPassword: !!joinPassHash
+ };
+ // trump のときだけ追加（undefined を書かない）
+ if (isTrump) {
+   payload.allowOtherOps = true;
+   payload.initTrump = true;
+ }
+ await setDoc(roomRef, payload, { merge: true });
 
         await resetRoomState(id);
 
@@ -2557,6 +2912,23 @@ function randomPointInMainPlay(seat){
         CURRENT_PLAYER = CREATE_SELECTED_SEAT;
         seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
         startSession(id, CREATE_SELECTED_SEAT);
+
+        // ★修正: trump モードでは、まず room.fieldMode='trump' を確実に適用してから共有デッキに生成
+        if (CREATE_FIELD_MODE === 'trump') {
+          // 1) ルーム doc に fieldMode を即反映（購読更新を待たずローカルにも反映）
+          await setDoc(doc(db, `rooms/${id}`), { fieldMode: 'trump', updatedAt: serverTimestamp() }, { merge: true });
+          CURRENT_ROOM_META = { ...(CURRENT_ROOM_META || {}), fieldMode: 'trump' };
+          applyFieldModeLayout(); // ボード系DOM(#board-center .center-deck)を有効化
+
+          // 2) 共有デッキ矩形が測れるまで待ってから中央に生成（waitForBoardDeckRect 内で待機）
+          try {
+            await spawnTrumpDeck(id);
+            await setDoc(doc(db, `rooms/${id}`), { trumpInitialized: true, updatedAt: serverTimestamp() }, { merge: true });
+          } catch (e) {
+            console.warn('spawnTrumpDeck failed', e);
+          }
+        }
+
  } catch (e) {
    console.error('[create-room] failed:', e);
    // エラーコードとメッセージも表示して切り分け容易に
@@ -2623,15 +2995,10 @@ function randomPointInMainPlay(seat){
        btn.disabled = true;
        btn.classList.remove('free');
      } else {
-       if (!hostHere && !roomEmpty) {
-         note.textContent = 'ホスト不在';
-         btn.disabled = true;
-         btn.classList.remove('free');
-       } else {
-         note.textContent = '空席';
-         btn.disabled = false;
-         btn.classList.add('free');
-       }
+       // 非ホスト参加を許可：ホスト不在でも空席なら座れる
+       note.textContent = '空席';
+       btn.disabled = false;
+       btn.classList.add('free');
      }
    });
    validateLobby();
@@ -2683,7 +3050,16 @@ function renderHPPanel(){
     }
 
     // ===== area colors (no change in write count; low frequency)
-    const DEFAULT_AREA_COLORS = { deck:'#ff9900', main:'#22dd88', hand:'#228be6' };
+    // 特殊エリア(special)・捨て札(discard)を追加
+    const DEFAULT_AREA_COLORS = {
+      deck:'#ff9900',
+      main:'#22dd88',
+      hand:'#228be6',
+      special:'#9c27b0', 
+      discard:'#cc6666'  
+    };
+
+
     function getSeatAreaColor(seat, zone){
       const ac = currentSeatMap[seat]?.areaColors || {};
       return ac[zone] || DEFAULT_AREA_COLORS[zone];
@@ -2692,27 +3068,37 @@ function renderHPPanel(){
       for (const seat of [1,2,3,4]) {
         const root = document.querySelector(`.player-${seat}`);
         if (!root) continue;
-        const deck = root.querySelector('.deck-area');
-        const main = root.querySelector('.main-play-area');
-        const hand = root.querySelector('.hand-area');
+        
+        const deck    = root.querySelector('.deck-area');
+        const main    = root.querySelector('.main-play-area');
+        const hand    = root.querySelector('.hand-area');
+        const special = root.querySelector('.special-area');
+        const discard = root.querySelector('.discard-area');
+        
         if (deck) deck.style.background = getSeatAreaColor(seat, 'deck');
         if (main) main.style.background = getSeatAreaColor(seat, 'main');
         if (hand) hand.style.background = getSeatAreaColor(seat, 'hand');
+        if (special) special.style.background = getSeatAreaColor(seat, 'special');
+        if (discard) discard.style.background = getSeatAreaColor(seat, 'discard');
+
       }
     }
     function bindAreaColorHandlers(){
       for (const seat of [1,2,3,4]) {
         const root = document.querySelector(`.player-${seat}`);
         if (!root) continue;
+
         [
-          { el: root.querySelector('.deck-area'), key: 'deck' },
-          { el: root.querySelector('.main-play-area'), key: 'main' },
-          { el: root.querySelector('.hand-area'), key: 'hand' },
+          { el: root.querySelector('.deck-area'),        key: 'deck'    },
+          { el: root.querySelector('.main-play-area'),   key: 'main'    },
+          { el: root.querySelector('.hand-area'),        key: 'hand'    },
+          { el: root.querySelector('.special-area'),     key: 'special' },
+          { el: root.querySelector('.discard-area'),     key: 'discard' },
         ].forEach(({el, key}) => {
+
           if (!el || el.__colorHandlerBound) return;
           el.__colorHandlerBound = true;
           el.classList.add('zone-colorable');
-          el.style.cursor = 'pointer';
           el.addEventListener('dblclick', async (ev) => {
             ev.stopPropagation();
             if (seat !== CURRENT_PLAYER) return;
@@ -2739,15 +3125,33 @@ function renderHPPanel(){
 
     function renderFieldLabels(){
       for (const s of [1,2,3,4]) {
-        const area   = document.querySelector(`.player-${s}`);
-        const seatEl = area?.querySelector('.player-label .label-seat');
-        const nameEl = area?.querySelector('.player-label .label-name');
-        if(!seatEl || !nameEl) continue;
-        seatEl.textContent = `P${s}`;
-        const seatData = currentSeatMap[s] || null;
-        const displayName = seatData?.displayName || '';
-        const isHostSeat = (CURRENT_ROOM_META?.hostSeat === s);
-        nameEl.textContent = displayName ? `${displayName}${isHostSeat ? '（ホスト）' : ''}` : '';
+        // --- カード用: 既存の .player-label を更新 ---
+        {
+          const area   = document.querySelector(`.player-${s}`);
+          const seatEl = area?.querySelector('.player-label .label-seat');
+          const nameEl = area?.querySelector('.player-label .label-name');
+          if (seatEl) seatEl.textContent = `P${s}`;
+          if (nameEl) {
+            const seatData   = currentSeatMap[s] || null;
+            const displayName= seatData?.displayName || '';
+            const isHostSeat = (CURRENT_ROOM_META?.hostSeat === s);
+            nameEl.textContent = displayName ? `${displayName}${isHostSeat ? '（ホスト）' : ''}` : '';
+          }
+        }
+
+        // --- 追加: ボード / トランプ用の .board-name を更新 ---
+        {
+          const handEl = document.getElementById(`board-hand-${s}`);
+          const seatElB = handEl?.querySelector('.board-name .label-seat');
+          const nameElB = handEl?.querySelector('.board-name .label-name');
+          if (seatElB) seatElB.textContent = `P${s}`;
+          if (nameElB) {
+            const seatData   = currentSeatMap[s] || null;
+            const displayName= seatData?.displayName || '';
+            const isHostSeat = (CURRENT_ROOM_META?.hostSeat === s);
+            nameElB.textContent = displayName ? `${displayName}${isHostSeat ? '（ホスト）' : ''}` : '';
+          }
+        }
       }
     }
     
@@ -2758,7 +3162,9 @@ function renderHPPanel(){
 // ===============================
 // roomMeta.fieldMode に応じて DOM を切替え。
 function applyFieldModeLayout(){
-  const mode = (CURRENT_ROOM_META?.fieldMode === 'board') ? 'board' : 'card';
+  const m = CURRENT_ROOM_META?.fieldMode;
+  // 'board' と 'trump' をボード系DOMにマップ
+  const mode = (m === 'board' || m === 'trump') ? 'board' : 'card';
   const fieldRoot = document.getElementById('field');
   if (!fieldRoot) return;
   fieldRoot.classList.toggle('mode-card',  mode === 'card');
@@ -2838,7 +3244,14 @@ function applyFieldModeLayout(){
               displayName: d.displayName || '',
               claimedByUid: d.claimedByUid || null,
               heartbeatAt: d.heartbeatAt || null,
-              areaColors: d.areaColors || {}
+              areaColors: d.areaColors || {},
+              // ← 追加：スナップショットに hp が数値で入っていたときだけ更新。
+              // 無ければ既存の値（保持）を使う。未設定なら 0。
+              hp: (typeof d.hp === 'number')
+                    ? d.hp
+                    : ((currentSeatMap[idx + 1] && typeof currentSeatMap[idx + 1].hp === 'number')
+                        ? currentSeatMap[idx + 1].hp
+                        : 0)
             }
           );
         } else {
@@ -2869,15 +3282,16 @@ function applyFieldModeLayout(){
 
         renderAreaColors();
         renderSeatAvailability();
+        renderHPPanel();   //座席更新が入ったらHPパネルも即リフレッシュ
       }));
       unsubscribeSeats = () => unsubs.forEach(fn => fn());
     }
 
     function validateLobby(){
-      const hostHere  = isHostAlive(CURRENT_ROOM_META);
-      const roomEmpty = isRoomEmpty();
-      // ホスト不在でも「無人」なら開始OK。「誰か生存中」だけブロック
-      if (!hostHere && !roomEmpty && ACTIVE_MODE === 'join') { startBtn.disabled = true; return; }
+   const hostHere  = isHostAlive(CURRENT_ROOM_META);
+   const roomEmpty = isRoomEmpty();
+   // 非ホスト参加を許可するため、ホスト在席チェックは行わない
+   // if (!hostHere && !roomEmpty && ACTIVE_MODE === 'join') { startBtn.disabled = true; return; }
       if (ACTIVE_MODE === 'create') { startBtn.disabled = true; return; }
       const roomOk  = !!(joinRoomInput.value||'').trim();
       const nameNow = (playerNameInput.value||'').trim();
@@ -2907,7 +3321,9 @@ function applyFieldModeLayout(){
     });
 
 
-    startBtn.addEventListener('click', async (ev) => {
+ startBtn.addEventListener('click', async (ev) => {
+   // UID 未確定で開始に失敗するのを防ぐ
+   await ensureAuthReady();
       ev.preventDefault();
       ACTIVE_MODE = 'join';
       await ensureAuthReady();
@@ -2948,6 +3364,10 @@ function applyFieldModeLayout(){
       
       
       try {
+      
+      
+      
+        // まず最新のメタ情報を1回読み込む（以降のロジックで使用）
         const roomSnap = await new Promise(resolve => {
           const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); });
         });
@@ -2956,6 +3376,26 @@ function applyFieldModeLayout(){
         // ★追加：自分がホストかどうか（UID一致）を定義しておく
         const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
 
+
+        // === NEW: ルームが「終了扱い」またはホスト不在なら、ここで完全掃除してから再開する ===
+        // これにより、終了時の削除に失敗してカード/座席が残っていても、再入室時に必ず消える
+        if (meta?.roomClosed || !isHostAlive(meta)) {
+          try {
+            await resetRoomState(room); // サブコレクション（cards / seats）を全削除
+            await setDoc(doc(db, `rooms/${room}`), { // ルームを再開
+              roomClosed: false,
+              hostUid: CURRENT_UID,
+              hostSeat: seat,
+              hostDisplayName: nameNow,
+              hostHeartbeatAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+            IS_ROOM_CREATOR = true;
+            startHostHeartbeat(room);
+          } catch (e) {
+            console.warn('[auto-cleanup] failed', e);
+          }
+        }
 
 
 // 「ホストUID かつ ホスト席」の人だけパス免除
@@ -3240,6 +3680,8 @@ function subscribeCards(){
           const id = change.doc.id;
           if(change.type === 'removed'){
             const el = cardDomMap.get(id); if(el){ el.remove(); cardDomMap.delete(id); }
+            // ★ 追加: サーバ側の削除を見たらローカル抑止フラグも掃除
+            localDeleteMap.delete(id);
             return;
           }
           upsertCardFromRemote(id, data);
@@ -3251,10 +3693,18 @@ function subscribeCards(){
     const localChangeMap = new Map();
     function markLocal(id){ localChangeMap.set(id, Date.now()); setTimeout(()=>localChangeMap.delete(id), 800); }
     function isLocalRecent(id){ const t = localChangeMap.get(id); return t && (Date.now() - t < 800); }
+    // ★ 追加: 直近でローカル削除したIDを覚えて、再生成を抑止
+    const localDeleteMap = new Map(); // id -> timestamp
+    function markLocalDelete(id){ localDeleteMap.set(id, Date.now()); setTimeout(()=>localDeleteMap.delete(id), 2000); }
+    function isLocallyDeleted(id){ const t = localDeleteMap.get(id); return t && (Date.now() - t < 2000); }
 
     function upsertCardFromRemote(id, data){
       let el = cardDomMap.get(id) || document.querySelector(`[data-card-id="${id}"]`);
       const exists = !!el;
+      // ★ 追加: 直近にローカルで削除したIDは一定時間は無視して再生成しない
+      if (!exists && (isLocallyDeleted(id))) {
+        return;
+      }
       if (!exists && !isLocalRecent(id)) {
         el = createCardDom(id, data.imageUrl, data);
         cardDomMap.set(id, el);
@@ -3306,6 +3756,8 @@ if (state?.type === 'dice') {
     try {
       const id = card.dataset.cardId;
       await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+      markLocal(id);
+      markLocalDelete(id);      
     } catch (e) {
       console.warn('delete dice failed', e);
     }
@@ -3319,6 +3771,8 @@ if (state?.type === 'dice') {
     try {
       const id = card.dataset.cardId;
       await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+      markLocal(id);
+      markLocalDelete(id);
     } catch (e) {
       console.warn('delete dice failed', e);
     }
@@ -3344,6 +3798,7 @@ if (state?.type === 'dice') {
    const nextFaceUp = !isFaceUp;
    card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
    const imgEl = card.querySelector('img');
+   
    if (imgEl) {
      if (nextFaceUp) {
        imgEl.style.display = 'block';
@@ -3355,9 +3810,10 @@ if (state?.type === 'dice') {
      } else {
        imgEl.style.display = 'none';
        card.style.backgroundColor = '#000';
-       if (selectedCard === card) setPreview();
+       if (selectedCard === card) setPreview(TRUMP_BACK_URL);
      }
    }
+   
    const tokenEl = card.querySelector('.token-input');
    if (tokenEl) { tokenEl.style.display = nextFaceUp ? 'block' : 'none'; }
    updateCardBatched(cardId, { faceUp: nextFaceUp });
@@ -3455,6 +3911,7 @@ if (state?.type === 'numcounter') {
         // 表示上だけ最前面へ（サーバーへzIndexは書かない：無駄書き減）
         const newZ = getMaxZIndex() + 1;
         card.style.zIndex = newZ;
+        updateOverlapBadges(); //Z順変更で最新化
 
         if (selectedCard) selectedCard.classList.remove("selected");
         card.classList.add("selected");
@@ -3463,16 +3920,18 @@ if (state?.type === 'numcounter') {
         const isToken = card.classList.contains('token');
         
         
- if (isToken) {
-   setPreview();                       // 非表示にする
- } else {
-   const full = card.dataset.fullUrl || fullImageStore.get(cardId);
-   const thumbEl = card.querySelector('img');
-   const src = full || (thumbEl && thumbEl.src) || '';
-   setPreview(src);
- }
-        
-        
+        // プレビュー：他人の手札 or 裏向き → 裏画像、それ以外は表画像
+        if (isToken) {
+          setPreview(); // トークンはプレビューなし
+        } else {
+          const isFaceUp = card.dataset.faceUp === 'true';
+          const full = card.dataset.fullUrl || fullImageStore.get(cardId);
+          const thumbEl = card.querySelector('img');
+          const frontSrc = full || (thumbEl && thumbEl.src) || '';
+          const otherHand = isOtherPlayersHandCard(card); /* 判定関数 */
+          const previewSrc = (otherHand || !isFaceUp) ? TRUMP_BACK_URL : frontSrc;
+          setPreview(previewSrc);
+        }        
         
         const ownerPlayerNum = card.dataset.ownerSeat ? `P${card.dataset.ownerSeat}` : "?";
         if (isToken) {
@@ -3500,6 +3959,9 @@ if (state?.type === 'numcounter') {
           try {
             const id = card.dataset.cardId;
             await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+            // ★ 追加: 直近削除マーキング（差分レースでの復活を防止）
+            markLocal(id);
+            markLocalDelete(id);
           } catch (err) {
             console.warn('delete token/counter failed', err);
           }
@@ -3517,7 +3979,6 @@ if (state?.type === 'numcounter') {
         
         if (imgEl) {
           if (nextFaceUp) {
-            // 表にする → 画像を表示＆白背景に
             imgEl.style.display = 'block';
             card.style.backgroundColor = '#fff';
             if (selectedCard === card) {
@@ -3525,12 +3986,11 @@ if (state?.type === 'numcounter') {
               setPreview(full || imgEl.src);
             }
           } else {
-            // 裏にする → 画像を隠し黒背景に、プレビューも消す
             imgEl.style.display = 'none';
             card.style.backgroundColor = '#000';
-            if (selectedCard === card) setPreview();
+            if (selectedCard === card) setPreview(TRUMP_BACK_URL);
           }
-        }        
+        }
         
         const tokenEl = card.querySelector('.token-input');
         
@@ -3700,6 +4160,7 @@ if (data.type === 'numcounter') {
           if (img) { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
           const tokenInput2 = card.querySelector('.token-input');
           if (tokenInput2) { tokenInput2.style.display = 'none'; card.style.backgroundColor = '#000'; }
+          if (selectedCard === card) { setPreview(TRUMP_BACK_URL); } // ★選択中でもプレビューは「裏面」
         }
       } catch(_) {}
     }
@@ -3754,7 +4215,7 @@ async function cleanupAndCloseRoom(roomId){
         tombstone: true,
         deletedAt: serverTimestamp(),
         // Firestore TTL を rooms コレクションの "ttl" に設定していれば自動削除
-        ttl: Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) // 10分後
+        ttl: new Date(Date.now() + 10 * 60 * 1000) // 10分後
       }, { merge: true });
     } catch (e2) {
       console.warn('tombstone fallback failed', e2);
@@ -3791,7 +4252,11 @@ async function cleanupAndCloseRoom(roomId){
         console.warn('resetRoomState failed', e);
       }
     }
-
+    
+    
+    
+    
+    
     // ===== queued update API (replaces updateDoc direct calls)
     async function updateCard(cardId, patch){
       // 互換用（今は使っていない）— 直接書かない
@@ -3983,6 +4448,7 @@ function makeDraggable(card){
           const y = parseFloat(card.style.top)  || 0;
           const zIndex = parseInt(card.style.zIndex) || 1;
           updateCardBatched(id, { x, y, zIndex });
+          updateOverlapBadges(); //ドラッグ終了で最新化
         };
 
         document.addEventListener("mousemove", onMove);
@@ -4035,6 +4501,7 @@ function makeDraggable(card){
           const y = parseFloat(card.style.top)  || 0;
           const zIndex = parseInt(card.style.zIndex) || 1;
           updateCardBatched(id, { x, y, zIndex });
+          updateOverlapBadges();
         };
         document.addEventListener('touchmove', onMove, { passive:false });
         document.addEventListener('touchend', onEnd);
@@ -4047,6 +4514,77 @@ function makeDraggable(card){
     }
 
     function getMaxZIndex(){ let max=0; document.querySelectorAll(".card").forEach(c=>{ const z=parseInt(c.style.zIndex)||0; if(z>max) max=z; }); return max; }
+
+
+// ★ added: 重なり判定 & バッジ更新 =========================
+function rectOfCard(el){
+  const left = parseFloat(el.style.left) || 0;
+  const top  = parseFloat(el.style.top)  || 0;
+  const w = el.offsetWidth  || 0;
+  const h = el.offsetHeight || 0;
+  return { l:left, t:top, r:left+w, b:top+h };
+}
+function intersects(a,b){
+  // 面積が正に重なるかどうか（辺が接するだけは“重なり”とみなさない）
+  return (a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t);
+}
+function unionFind(n){
+  const p = Array(n).fill(0).map((_,i)=>i);
+  const f = i => p[i]===i ? i : (p[i]=f(p[i]));
+  const u = (a,b)=>{ a=f(a); b=f(b); if(a!==b) p[b]=a; };
+  return { find:f, unite:u, parent:p };
+}
+function ensureBadge(el){
+  let b = el.querySelector('.overlap-badge');
+  if (!b){
+    b = document.createElement('div');
+    b.className = 'overlap-badge';
+    el.appendChild(b);
+  }
+  return b;
+}
+function clearBadge(el){
+  const b = el.querySelector('.overlap-badge');
+  if (b) b.remove();
+}
+// 画面上のカードを重なりクラスタごとに分け、各クラスタの最前面に枚数を表示
+window.updateOverlapBadges = function(){
+  const cards = [...document.querySelectorAll('.card')];
+  if (cards.length === 0) return;
+  // まず全て消す（後で必要なものだけ出す）
+  cards.forEach(clearBadge);
+  // rect & z を取得
+  const rects = cards.map(rectOfCard);
+  const zList = cards.map(el => parseInt(el.style.zIndex || '1', 10) || 1);
+  // Union-Find で重なりクラスタ化
+  const uf = unionFind(cards.length);
+  for (let i=0; i<cards.length; i++){
+    for (let j=i+1; j<cards.length; j++){
+      if (intersects(rects[i], rects[j])) uf.unite(i, j);
+    }
+  }
+  // root -> indices
+  const groups = new Map();
+  for (let i=0; i<cards.length; i++){
+    const r = uf.find(i);
+    if (!groups.has(r)) groups.set(r, []);
+    groups.get(r).push(i);
+  }
+  // 各グループで最前面を探して表示（枚数1は非表示）
+  for (const idxs of groups.values()){
+    const count = idxs.length;
+    if (count <= 1) continue;
+    let topIdx = idxs[0];
+    for (const k of idxs){ if (zList[k] > zList[topIdx]) topIdx = k; }
+    const topEl = cards[topIdx];
+    const badge = ensureBadge(topEl);
+    badge.textContent = String(count);
+  }
+};
+// ===========================================================
+
+
+
 
 // ===============================
 // 一括操作 (自分のカードのみ)
@@ -4230,6 +4768,85 @@ function svgCounterDataUrl(label){
 // @param {string} label - 表示ラベル
 //
 
+
+// ===============================
+// ★追加: トランプ初期化（中央デッキに 52 枚を裏向きで積む）
+// 画像配置に合わせて TrumpPicture/<suit>_<rank>.png を使用
+// 例: TrumpPicture/spade_A.png, TrumpPicture/heart_10.png など
+// ===============================
+const TRUMP_IMG_BASE = 'TrumpPicture';                 // ← ルートフォルダ（バックスラッシュではなくスラッシュで参照）
+const TRUMP_BACK_URL = `${TRUMP_IMG_BASE}/back.png`;   // ← 今回は表裏トグル時の裏表示は背景黒を使用するため未使用
+const JOKER_URL      = `${TRUMP_IMG_BASE}/joker.png`;
+
+function centerOfBoardDeck(w, h){
+  const r = getDeckBoundsForSeat(1); // boardモード時は共有デッキ（seatはダミー）
+  if (!r) return { x: 0, y: 0 };
+  const x = Math.round(r.minX + (r.width  - w)/2);
+  const y = Math.round(r.minY + (r.height - h)/2);
+  return { x, y };
+}
+
+function buildTrumpFrontUrl(suit, rank){
+  // ファイル命名: spade_A.png / heart_10.png / diamond_Q.png / club_K.png
+  return `${TRUMP_IMG_BASE}/${suit}_${rank}.png`;
+}
+
+async function spawnTrumpDeck(roomId){
+  // 52枚（spade/heart/diamond/club × A,2..10,J,Q,K）を生成。全て裏向き（faceUp:false）
+  const SUITS = ['spade','heart','diamond','club'];
+  const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+  // レイアウト確定を待ってから中心を測る（ズレ防止）
+  await waitForBoardDeckRect();
+  const { x, y } = centerOfBoardDeck(CARD_W, CARD_H);
+  let z = getMaxZIndex() + 1;
+
+  const col = collection(db, `rooms/${roomId}/cards`);
+  let batch = writeBatch(db);
+  let count = 0;
+
+  for (const s of SUITS){
+    for (const r of RANKS){
+      const url = buildTrumpFrontUrl(s, r);
+      const ref = doc(col);
+      batch.set(ref, {
+        imageUrl: url,      // 表面画像（裏向き開始なので最初は非表示）
+        fullUrl:  url,
+        x, y, zIndex: z++,
+        faceUp: false,      // ← 裏向きで開始（既存実装では img を隠し、背景を黒で表現）
+        ownerUid: null,     // 共有物
+        ownerSeat: null,    // 共有物
+        rotation: 0,
+        visibleToAll: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
+   }
+  }
+
+  // Joker を2枚、山の一番上として追加（同じバッチで）
+  for (let j = 0; j < 2; j++) {
+    const ref = doc(col);
+    batch.set(ref, {
+      imageUrl: JOKER_URL,
+      fullUrl:  JOKER_URL,
+      x, y, zIndex: z++,   // 既存の z の続き＝最前面
+      faceUp: false,
+      ownerUid: null,
+      ownerSeat: null,
+      rotation: 0,
+      visibleToAll: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
+  }
+  if (count > 0) await batch.commit();
+}
+
+
+
 window.spawnCounter = async function(label){
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
     alert('ルームに参加してから実行してください'); return;
@@ -4311,23 +4928,6 @@ window.spawnToken = async function(){
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
     window.deleteMyCards = async function(){
       if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
       if (!confirm('本当に自分の全カードを削除しますか？この操作は取り消せません。')) return;
@@ -4361,7 +4961,158 @@ window.spawnToken = async function(){
     const cardListModal = document.getElementById('card-list-modal');
     const cardListGrid  = document.getElementById('card-list-grid');
     const cardListClose = document.getElementById('card-list-close');
+    
+    
+    
+// === 自分の全カードを自分のデッキエリア（ボード/トランプ時は共有デッキ）へ集める ===
+window.collectMyCardsToDeck = async function () {
+  try {
+    if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+      alert('ルームに参加してから実行してください'); 
+      return;
+    }
 
+    // デッキ矩形を取得（ボード/トランプ時は中央の共有デッキ）。未計測なら待機してから再取得
+    let deckRect = getDeckBoundsForSeat(CURRENT_PLAYER);
+    if (!deckRect || deckRect.width <= 0 || deckRect.height <= 0) {
+      if (isBoardMode()) deckRect = await waitForBoardDeckRect(1000);
+      if (!deckRect || deckRect.width <= 0 || deckRect.height <= 0) {
+        alert('デッキエリアが見つかりません');
+        return;
+      }
+    }
+
+    // 画面上に存在する「自分のカード」だけを列挙
+    const mine = [];
+    for (const [id, el] of cardDomMap) {
+      if (el?.dataset?.ownerSeat === String(CURRENT_PLAYER)) {
+        mine.push({ id, el });
+      }
+    }
+    if (mine.length === 0) {
+      alert('自分のカードがありません');
+      return;
+    }
+
+    // ランダム配置：各カードをデッキエリア内のランダム座標へ（重なり回避はしない）
+    // 既存の最大Zより上に順番に積む
+    const baseZ = getMaxZIndex() + 1;
+    let i = 0;
+    for (const { id } of mine) {
+      const { x, y } = randomPointInDeck(CURRENT_PLAYER);
+      updateCardBatched(id, { x, y, zIndex: baseZ + i });
+      i++;
+    }
+
+    // flush は既存のバッファリングに任せる（即時に確定させたい場合は明示的 flush を呼ぶ実装に変更可）
+    // 裏表はそのまま（faceUp は更新しない）
+  } catch (e) {
+    console.error(e);
+    alert('カードの移動に失敗しました。ネットワーク状況を確認して再度お試しください。');
+  }
+};
+    
+    
+  //集める前に確認ダイアログを出す（削除と同じ体験）
+  window.confirmCollectMyCardsToDeck = async function () {
+    // 削除と同様、参加チェック → 確認 の順に
+    if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+      alert('ルームに参加してから実行してください');
+      return;
+    }
+    const ok = confirm('自分の全カードをデッキエリアに集めます。よろしいですか？\n（裏表はそのまま）');
+    if (!ok) return;
+    await collectMyCardsToDeck(); // 既存の本体を呼ぶ
+  };
+      
+    
+    
+    
+    
+    
+    
+// === 指定カード削除（自分のカード限定） ===
+window.deleteSelectedMine = async function () {
+  try {
+    if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+    const card = getCurrentlySelectedCard();
+    if (!card) { alert('赤枠の「指定カード」を選んでください'); return; }
+
+    // 自分のカードかチェック（ownerUid / ownerSeat）
+    const ownerUid  = card.dataset.ownerUid || null;
+    const ownerSeat = card.dataset.ownerSeat || null;
+    const isMine = (ownerUid && ownerUid === CURRENT_UID) || (ownerSeat && String(ownerSeat) === String(CURRENT_PLAYER));
+    if (!isMine) { alert('自分のカードではありません'); return; }
+
+    const id = card.dataset.cardId;
+    if (!id) return;
+
+    // Firestore から削除
+    await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+
+    // 画面からも除去
+    const el = cardDomMap.get(id);
+    if (el) { el.remove(); cardDomMap.delete(id); }
+    fullImageStore?.delete?.(id);
+    if (window.previewImg) { setPreview(); }
+
+  } catch (e) {
+    console.error(e);
+    alert('削除に失敗しました。ネットワーク状況を確認して再度お試しください。');
+  }
+};
+
+
+
+ // 現在選択中のカードを安全に取得（selectedCard / window.selectedCard / DOM を順に見る）
+ function getCurrentlySelectedCard(){
+   // グローバルでないスコープにある selectedCard も拾えるように typeof で存在確認
+   const localSel = (typeof selectedCard !== 'undefined') ? selectedCard : null;
+   return localSel || window.selectedCard || document.querySelector('.card.selected') || null;
+ }
+
+
+// === 指定カードを最背面へ（自分のカード限定） ===
+window.sendSelectedToBack = async function () {
+  try {
+    if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+    const card = getCurrentlySelectedCard();
+    if (!card) { alert('赤枠の「指定カード」を選んでください'); return; }
+
+    // 自分のカードかチェック
+    const ownerUid  = card.dataset.ownerUid || null;
+    const ownerSeat = card.dataset.ownerSeat || null;
+    const isMine = (ownerUid && ownerUid === CURRENT_UID) || (ownerSeat && String(ownerSeat) === String(CURRENT_PLAYER));
+    if (!isMine) { alert('自分のカードではありません'); return; }
+
+    const id = card.dataset.cardId;
+    if (!id) return;
+
+    // 画面上に存在する zIndex の最小値を探す
+    let minZ = Infinity;
+    cardDomMap.forEach(el => {
+      const z = parseInt(el.style.zIndex || '1', 10);
+      if (!Number.isNaN(z) && z < minZ) minZ = z;
+    });
+    if (!isFinite(minZ)) minZ = 1;
+
+    // 一番下になるように さらに -1
+    const newZ = minZ - 1;
+
+    // 表示を先に更新（体感即時）
+    card.style.zIndex = newZ;
+
+    // Firestore へも反映（バッチ最適化経由）
+    updateCardBatched(id, { zIndex: newZ });
+
+  } catch (e) {
+    console.error(e);
+    alert('最背面化に失敗しました。');
+  }
+};  
+    
+    
+    
     window.openMyCardsDialog = function(){
       if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
       cardListGrid.innerHTML = '';
@@ -4412,8 +5163,11 @@ window.spawnToken = async function(){
       selectedCard = el;
       const full = fullImageStore.get(cardId);
       const thumbEl = el.querySelector('img');
-            
-      setPreview((thumbEl && thumbEl.style.display !== 'none') ? (full || thumbEl.src) : '');
+      const isFaceUp = el.dataset.faceUp === 'true';
+      const otherHand = isOtherPlayersHandCard(el);
+      const frontSrc = full || (thumbEl && thumbEl.src) || '';
+      const previewSrc = (otherHand || !isFaceUp) ? TRUMP_BACK_URL : frontSrc;
+      setPreview(previewSrc);
       
       const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
       previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
@@ -4422,7 +5176,7 @@ window.spawnToken = async function(){
     
     
     
-    // ★追加：自分の「デッキエリア内カード」だけを一覧表示
+    //自分の「デッキエリア内カード」だけを一覧表示
   window.openMyDeckCardsDialog = function(){
     if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
 
@@ -4481,12 +5235,72 @@ window.spawnToken = async function(){
     
     
     
+window.openMyDiscardCardsDialog = function(){
+  if (!CURRENT_ROOM || !CURRENT_PLAYER) {
+    alert('ルームに参加してから実行してください'); 
+    return;
+  }
+
+  // タイトルを書き換え（モーダルは既存のものを流用）
+  const titleEl = document.getElementById('card-list-title');
+  if (titleEl) titleEl.textContent = t('side.discardList') || '捨て札のカード一覧';
+
+  // 捨て札エリアの矩形を取得（モードに応じて個別 or 共有）
+  const discardRect = getDiscardBoundsForSeat(CURRENT_PLAYER);
+  if (!discardRect || !discardRect.width || !discardRect.height) {
+    alert('あなたの捨て札エリアが見つかりません');
+    return;
+  }
+
+  // 自分のカードのうち、中心点が捨て札エリア内にあるものだけ抽出
+  cardListGrid.innerHTML = '';
+  const listed = [];
+  for (const [id, el] of cardDomMap) {
+    if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue; // 自分のカードのみ
+    const left = parseFloat(el.style.left) || 0;
+    const top  = parseFloat(el.style.top)  || 0;
+    const cx   = left + CARD_W/2;
+    const cy   = top  + CARD_H/2;
+    if (cx >= discardRect.minX && cx <= discardRect.minX + discardRect.width &&
+        cy >= discardRect.minY && cy <= discardRect.minY + discardRect.height) {
+      const imgEl = el.querySelector('img');
+      const src   = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
+      listed.push({ id, src });
+    }
+  }
+
+  if (listed.length === 0) {
+    const empty = document.createElement('div');
+    empty.textContent = '捨て札エリア内にカードがありません。';
+    empty.style.cssText = 'color:#666;font-size:14px;text-align:center;padding:24px 12px;';
+    cardListGrid.appendChild(empty);
+  } else {
+    listed.forEach(({id, src}) => {
+      const item = document.createElement('div');
+      item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;';
+      item.title = id;
+      const img = document.createElement('img');
+      img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
+      item.appendChild(img);
+      item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
+      item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
+      item.addEventListener('click', async () => {
+        await focusCardById(id);   // 最前面 & プレビュー更新（既存）
+        closeMyCardsDialog();
+      });
+      cardListGrid.appendChild(item);
+    });
+  }
+  cardListModal.style.display = 'flex';
+};    
+    
+    
+    
     
     
 
     window.toggleFieldSizeOptions = function(){ fieldSizeOptions.style.display = fieldSizeOptions.style.display==="none"?"block":"none"; }
     window.setFieldSize = function(size){ const sizes={ small:[3000,1500], medium:[5000,2500], large:[10000,5000] }; const [w,h]=sizes[size]||sizes.small; field.style.width=`${w}px`; field.style.height=`${h}px`; field.style.transform=`translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
-    window.alignDecks = function(){ /* 表示のみ */ }
     window.shuffleDecks = async function(){
       if(!CURRENT_ROOM || !CURRENT_PLAYER) return;
       const srcBounds = getDeckBoundsForSeat(CURRENT_PLAYER);
@@ -4510,6 +5324,7 @@ window.spawnToken = async function(){
         if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
       }
       if (count>0) await batch.commit();
+      updateOverlapBadges(); //一括移動のあとに最新化
     };
 
 
@@ -4644,7 +5459,6 @@ function bindPanZoomHandlers(){
 // ===============================
 // ルーム終了ボタンの制御
 // ===============================
-const endRoomBtn = document.getElementById('end-room-btn');
     function updateEndRoomButtonVisibility(){
       const isHostUid = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
       const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
@@ -4672,8 +5486,9 @@ const endRoomBtn = document.getElementById('end-room-btn');
       try { if (unsubscribeSeats)    { unsubscribeSeats();    unsubscribeSeats    = null; } } catch(_){}
       try { if (unsubscribeRoomDoc)  { unsubscribeRoomDoc();  unsubscribeRoomDoc  = null; } } catch(_){}
       try { if (CURRENT_ROOM && CURRENT_PLAYER) await releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_){}
-
-      // 2) その後に Firestore 側を完全掃除
+      
+      
+      // 2) Firestore 側を完全掃除（cards / seats 全削除 → 親doc削除）
       await cleanupAndDeleteRoom(CURRENT_ROOM);
       
       
@@ -4735,9 +5550,16 @@ function initializePlayField(){
     rollBtn?.addEventListener('click', () => window.rollD6());
     
     
+//▼デッキ中央（w,h考慮）を返す
+function centerOfDeck(seat, w, h){
+  const b = getDeckBoundsForSeat(seat); // board/trumpなら共有デッキ、通常は自席デッキ
+  if (!b) return { x: 0, y: 0 };
+  const x = Math.round(b.minX + (b.width  - (w||0)) / 2);
+  const y = Math.round(b.minY + (b.height - (h||0)) / 2);
+  return { x, y };
+}
     
     
-
     // render helpers
     function updateEndRoomButtonVisibilityWrapper(){ updateEndRoomButtonVisibility(); }
   </script>

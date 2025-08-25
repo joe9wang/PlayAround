@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <title>My Page - PlayAround</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <!-- 同じファビコン等（必要に応じて） -->
+  <link href="/favicon.ico" rel="icon" sizes="any"/>
+  <link href="/favicon-32.png?v=1" rel="icon" sizes="32x32" type="image/png"/>
+  <link href="/favicon-16.png?v=1" rel="icon" sizes="16x16" type="image/png"/>
+  <link href="/apple-touch-icon.png?v=1" rel="apple-touch-icon" sizes="180x180"/>
+  <link href="/site.webmanifest" rel="manifest"/>
+
+  <style>
+    :root{
+      --header-h: 72px;
+      --content-w: min(1100px, 92vw);
+      --gap: 16px;
+      --card-r: 14px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      margin:0; background:#f4f6f8; color:#222;
+    }
+    header{
+      height:var(--header-h); background:#444; color:#fff; display:flex; align-items:center; gap:12px;
+      padding:0 14px; position:sticky; top:0; z-index:10;
+    }
+    header .title{ font-size:18px; font-weight:800; letter-spacing:.02em; }
+    header .spacer{ flex:1; }
+    header a.btn{
+      text-decoration:none; background:#fff; color:#333; padding:.45rem .7rem; border-radius:10px;
+      display:inline-flex; align-items:center; gap:.4rem; box-shadow:0 1px 2px rgba(0,0,0,.2);
+      font-weight:600;
+    }
+    main{ width:var(--content-w); margin: 18px auto 64px; display:flex; flex-direction:column; gap:22px; }
+    section{
+      background:#fff; border-radius:var(--card-r); box-shadow:0 1px 3px rgba(0,0,0,.08);
+      padding:18px;
+    }
+    section h2{ margin:0 0 10px; font-size:18px; }
+    .grid{ display:grid; gap:var(--gap); }
+    .grid.cols-2{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .grid.cols-3{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+    @media (max-width: 900px){
+      .grid.cols-3{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @media (max-width: 640px){
+      .grid.cols-2, .grid.cols-3{ grid-template-columns: 1fr; }
+    }
+    .kv{ display:flex; align-items:center; gap:16px; }
+    .avatar{
+      width:72px; height:72px; border-radius:50%; background:#e9eef3; display:inline-flex; align-items:center; justify-content:center;
+      font-size:28px; font-weight:800; color:#666; user-select:none;
+    }
+    .muted{ color:#666; font-size:13px; }
+    .item{
+      border:1px solid #eee; border-radius:12px; padding:12px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .item strong{ font-size:15px; }
+    .right a.small-btn{
+      text-decoration:none; border:1px solid #ddd; padding:.35rem .6rem; border-radius:10px; color:#333; background:#fafafa;
+    }
+    ul.plain{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
+    footer{ width:var(--content-w); margin:24px auto 40px; color:#777; font-size:12px; text-align:center; }
+    
+     /* ▼スロット プレビュー用 */
+     .thumbs{ display:flex; gap:6px; margin-top:8px; min-height:44px; align-items:center; flex-wrap:wrap; }
+     .thumbs img{ width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid #eee; }
+     .thumbs .empty{ color:#999; font-size:13px; }
+     .thumbs .more{ font-size:12px; color:#555; }
+     .count{ font-size:12px; color:#777; margin-left:6px; }
+     .slot-list{ margin-top:10px; display:none; }
+     .thumbs-grid{ display:grid; grid-template-columns: repeat(5, 80px); gap:8px; }
+     .thumbs-grid img{ width:80px; height:80px; object-fit:cover; border-radius:10px; border:1px solid #eee; }    
+    
+    /* ▼ モーダル内サムネ（index.html風の小さなカードタイル） */
+    #card-list-grid {
+      /* タイル幅を固定 → 画像が増減しても一定サイズで並ぶ */
+      grid-template-columns: repeat(auto-fill, 120px);
+      justify-content: flex-start; /* 余白時の左寄せ */
+    }
+    #card-list-grid .cl-item{
+      border:1px solid #ddd; border-radius:10px; padding:6px;
+      background:#fff;
+    }
+    #card-list-grid img{
+      width:100%; height:auto; object-fit:contain; border-radius:6px; display:block;
+    }
+    
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title" data-i18n="mypage.title">👤 マイページ</div>
+    <div class="spacer"></div>
+    <a class="btn" href="./index.html" data-i18n="mypage.back">← ゲームへ戻る</a>
+  </header>
+
+  <main>
+    <!-- プロフィール -->
+    <section aria-labelledby="sec-profile">
+      <h2 id="sec-profile" data-i18n="mypage.profile">プロフィール</h2>
+      <div class="kv">
+        <div class="avatar" id="avatar">P</div>
+        <div>
+          <div><strong id="displayName">Player</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- セーブデータ一覧（後でFirestore連携する想定） -->
+    <section aria-labelledby="sec-saves">
+      <h2 id="sec-saves" data-i18n="mypage.saves">セーブデータ</h2>
+      <ul class="plain" id="saveList">
+         <!-- ▼スロット1 -->
+         <li class="item">
+           <div>
+             <div>
+               <strong>スロット1</strong><span class="count" id="slot1-count">(0枚)</span>
+             </div>
+             <div class="muted" id="slot1-updated">最終更新: -</div>
+             <div class="thumbs" id="slot1-thumbs"><span class="empty">空き</span></div>
+             <div class="slot-list" id="slot1-list">
+               <div class="thumbs-grid" id="slot1-list-grid"></div>
+             </div>
+           </div>
+           <div class="right">
+             <a class="small-btn slot-list-btn" href="#" data-slot="1">一覧</a>
+           </div>
+         </li>
+         <!-- ▼スロット2 -->
+         <li class="item">
+           <div>
+             <div>
+               <strong>スロット2</strong><span class="count" id="slot2-count">(0枚)</span>
+             </div>
+             <div class="muted" id="slot2-updated">最終更新: -</div>
+             <div class="thumbs" id="slot2-thumbs"><span class="empty">空き</span></div>
+             <div class="slot-list" id="slot2-list">
+               <div class="thumbs-grid" id="slot2-list-grid"></div>
+             </div>
+           </div>
+           <div class="right">
+             <a class="small-btn slot-list-btn" href="#" data-slot="2">一覧</a>
+           </div>
+         </li>
+         <!-- ▼スロット3（新規追加） -->
+         <li class="item">
+           <div>
+             <div>
+               <strong>スロット3</strong><span class="count" id="slot3-count">(0枚)</span>
+             </div>
+             <div class="muted" id="slot3-updated">最終更新: -</div>
+             <div class="thumbs" id="slot3-thumbs"><span class="empty">空き</span></div>
+             <div class="slot-list" id="slot3-list">
+               <div class="thumbs-grid" id="slot3-list-grid"></div>
+             </div>
+           </div>
+           <div class="right">
+             <a class="small-btn slot-list-btn" href="#" data-slot="3">一覧</a>
+           </div>
+         </li>
+      </ul>
+    </section>
+
+  </main>
+
+  <footer>PlayAround — © 2025 SOLVENTER</footer>
+
+  <script type="module">
+    // ===== Firebase Auth を使って、ログイン済みのときだけ表示しつつ
+    // マイページに表示名と Google の ID を反映する =====
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged,
+      setPersistence, browserLocalPersistence
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+    import {
+      getFirestore, doc, getDoc, collection, getDocs, query, limit
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+    import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
+    
+    
+    // index.html と同じ設定（そのまま再掲）
+    const firebaseConfig = {
+      apiKey: "AIzaSyCy-r6L1NgyHcqvsfpkyNPDJq9uMvv2CMM",
+      authDomain: "cardgame-f484c.firebaseapp.com",
+      projectId: "cardgame-f484c",
+      storageBucket: "cardgame-f484c.firebasestorage.app",
+      messagingSenderId: "248859224605",
+      appId: "1:248859224605:web:1320093856bc1861c174f4"
+    };
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const storage = getStorage(app);
+
+    // Storage の安全なダウンロードURL取得（必要な時だけ使用）
+    async function storageDownloadURL(path){
+      if (!path) return '';
+      try { return await getDownloadURL(ref(storage, path)); }
+      catch(_) { return ''; }
+    }
+    const db   = getFirestore(app);
+    // index 側と同じく「LOCAL」永続化（タブを跨いでログイン状態を復元）
+    await setPersistence(auth, browserLocalPersistence);
+
+    const nameEl = document.getElementById('displayName');
+    const avEl   = document.getElementById('avatar');
+    
+  // ===== セーブデータ表示（サムネ&一覧） =====
+  let CURRENT_UID = null;
+  const slPath = (slot) => `users/${CURRENT_UID}/saves/slot${slot}`;
+
+  async function fetchSlotMeta(slot){
+    const snap = await getDoc(doc(db, slPath(slot)));
+    const d = snap.exists() ? (snap.data() || {}) : {};
+    return {
+      count: d.count || 0,
+      updatedAt: d.updatedAt?.toDate?.() || null
+    };
+  }
+
+  async function fetchSlotThumbs(slot, max=5){
+    const col = collection(db, `${slPath(slot)}/cards`);
+    const snap = await getDocs(query(col, limit(max)));
+    return snap.docs.map(d => {
+      const s = d.data() || {};
+      return s.fullUrl || s.imageUrl || ''; // 保存時のURLをそのまま使う
+    }).filter(Boolean);
+  }
+
+  async function fetchSlotAllUrls(slot){
+    const col = collection(db, `${slPath(slot)}/cards`);
+    const snap = await getDocs(col);
+    return snap.docs.map(d => {
+      const s = d.data() || {};
+      return s.fullUrl || s.imageUrl || '';
+    }).filter(Boolean);
+  }
+
+  function renderThumbs(el, urls, total){
+    el.innerHTML = '';
+    if (total === 0){
+      el.innerHTML = '<span class="empty">空き</span>';
+      return;
+    }
+    urls.forEach(u => {
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = u;
+      el.appendChild(img);
+    });
+    if (total > urls.length){
+      const more = document.createElement('span');
+      more.className = 'more';
+      more.textContent = `+${total - urls.length}`;
+      el.appendChild(more);
+    }
+  }
+
+  async function refreshSaveSlots(){
+    for (const slot of [1,2,3]){
+      const { count, updatedAt } = await fetchSlotMeta(slot);
+      const thumbs = await fetchSlotThumbs(slot, 5);
+      const tEl  = document.getElementById(`slot${slot}-thumbs`);
+      const cEl  = document.getElementById(`slot${slot}-count`);
+      const uEl  = document.getElementById(`slot${slot}-updated`);
+      if (cEl) cEl.textContent = `(${count}枚)`;
+      if (uEl) uEl.textContent = `最終更新: ${updatedAt ? updatedAt.toLocaleString() : '-'}`;
+      if (tEl) renderThumbs(tEl, thumbs, count);
+    }
+  }
+
+  async function toggleSlotList(slot){
+    const wrap = document.getElementById(`slot${slot}-list`);
+    const grid = document.getElementById(`slot${slot}-list-grid`);
+    if (!wrap || !grid) return;
+    const willOpen = (wrap.style.display !== 'block');
+    // 他のスロットは閉じる
+    for (const s of [1,2,3]){
+      const w = document.getElementById(`slot${s}-list`);
+      if (w) w.style.display = 'none';
+    }
+    if (!willOpen) return;
+    wrap.style.display = 'block';
+    grid.innerHTML = '';
+    const urls = await fetchSlotAllUrls(slot);
+    if (urls.length === 0){
+      grid.innerHTML = '<div class="muted">画像はありません</div>';
+      return;
+    }
+    urls.forEach(u => {
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = u;
+      grid.appendChild(img);
+    });
+  }
+
+  // 「一覧」ボタンのイベント委譲 → モーダルを開く
+  document.getElementById('saveList')?.addEventListener('click', (e) => {
+    const a = e.target.closest('.slot-list-btn');
+    if (!a) return;
+    e.preventDefault();
+    const slot = parseInt(a.dataset.slot, 10);
+    if (slot) openSlotModal(slot);
+  });    
+    
+    function applyUser(u){
+      // 表示名は「メール > displayName > 'Player'」の優先順
+      const email = u.email || '';
+      const disp  = email || u.displayName || 'Player';
+      nameEl.textContent = disp;
+      // アバターの頭文字は displayName があればそれ、なければ disp から
+      avEl.textContent = (u.displayName || disp || 'P').slice(0,1).toUpperCase();
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      // 未ログイン or 匿名ログインなら index に戻す
+      if (!user || user.isAnonymous) {
+        alert('マイページは Google ログインが必要です。');
+        location.href = './index.html';
+        return;
+      }
+    CURRENT_UID = user.uid;
+    applyUser(user);
+    // ログイン済みになったらスロット情報を描画
+    refreshSaveSlots().catch(console.error);
+    });
+    
+    
+    // ▼ スロット画像を「カード一覧」モーダルで表示
+    async function openSlotModal(slot){
+      const modal = document.getElementById('card-list-modal');
+      const grid  = document.getElementById('card-list-grid');
+      const title = document.getElementById('card-list-title');
+      if (!modal || !grid || !title) return;
+      title.textContent = `スロット${slot}のカード一覧`;
+      modal.style.display = 'flex';
+      grid.innerHTML = '<div class="muted">読み込み中…</div>';
+      try{
+        const urls = await fetchSlotAllUrls(slot);
+        grid.innerHTML = '';
+        if (urls.length === 0){
+          grid.innerHTML = '<div class="muted">画像はありません</div>';
+          return;
+        }
+        urls.forEach((u) => {
+          const item = document.createElement('div');
+          item.className = 'cl-item';
+          const img = document.createElement('img');
+          img.loading = 'lazy';
+          img.decoding = 'async';
+          img.alt = 'カード';
+          img.src = u;
+          item.appendChild(img);
+          grid.appendChild(item);
+        });
+      }catch(_e){
+        grid.innerHTML = '<div class="muted">取得に失敗しました</div>';
+      }
+    }
+    
+    
+  // モーダルの閉じる挙動（イベント委譲：要素が後で挿入されてもOK）
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    // 「閉じる」ボタン
+    if (t.id === 'card-list-close') {
+      const m = document.getElementById('card-list-modal');
+      if (m) m.style.display = 'none';
+    }
+    // 背景クリックで閉じる
+    if (t.id === 'card-list-modal') {
+      t.style.display = 'none';
+    }
+  });
+  
+  
+  </script>
+  
+
+<!-- ▼ index.html と同じ見た目の「カード一覧」モーダルを追加 -->
+<div id="card-list-modal" role="dialog" aria-modal="true"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:10000;">
+  <div id="card-list-sheet" style="width:min(920px, 92vw); max-height:80vh; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
+    <div id="card-list-header" style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
+      <div id="card-list-title" style="font-weight:700;">自分のカード一覧</div>
+      <button id="card-list-close" type="button" style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;">閉じる</button>
+    </div>
+    <div id="card-list-body" style="padding:12px; overflow:auto;">
+      <div id="card-list-grid" style="display:grid; gap:10px;"></div>
+    </div>
+  </div>
+</div>
+  
+  
+</body>
+</html>
