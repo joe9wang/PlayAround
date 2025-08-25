@@ -1284,6 +1284,14 @@
          <button class="slot-btn" data-slot="2" style="flex:1; padding:10px;">SLOT 2</button>
          <button class="slot-btn" data-slot="3" style="flex:1; padding:10px;">SLOT 3</button>
        </div>
+       
+     <!-- ▼スロットごとのプレビュー（各5枚） -->
+     <div class="sl-preview" aria-live="polite" style="margin-bottom:12px;">
+       <div class="slot-preview" data-slot="1"><span class="empty">空き</span></div>
+       <div class="slot-preview" data-slot="2"><span class="empty">空き</span></div>
+       <div class="slot-preview" data-slot="3"><span class="empty">空き</span></div>
+     </div>
+       
        <div style="display:flex; justify-content:flex-end; gap:8px;">
          <button id="sl-cancel">キャンセル</button>
        </div>
@@ -1291,6 +1299,22 @@
      <style>
        #save-load-modal .slot-btn { border:1px solid #ddd; border-radius:8px; }
        #save-load-modal .slot-btn:hover { background:#f5f5f5; }
+       
+   /* ▼プレビューの見た目 */
+   #save-load-modal .sl-preview{
+     display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
+   }
+   #save-load-modal .slot-preview{
+     border:1px solid #eee; border-radius:8px; min-height:76px;
+     padding:6px; display:flex; align-items:center; justify-content:center;
+     flex-wrap:wrap; gap:4px; background:#fafafa;
+   }
+   #save-load-modal .slot-preview img{
+     width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid #ddd;
+   }
+   #save-load-modal .slot-preview .empty{ color:#999; font-size:12px; }
+       
+       
      </style>
    </div>  
   
@@ -1788,6 +1812,10 @@ updateModePickButtons();
     const title = document.getElementById('sl-title');
     if (!modal || !title) return;
     title.textContent = (mode==='save') ? '保存先スロットを選択' : 'ロード元スロットを選択';
+    
+    //▼ロード時にプレビューを更新（非同期）
+    if (mode === 'load') updateSlotPreviews();
+    
     modal.style.display = 'flex';
   }
   // HTMLのonclickから呼べるように window に公開
@@ -1816,7 +1844,50 @@ updateModePickButtons();
     });
   })();    
     
-    
+
+// ▼ 追加：スロットのプレビューを描画（各最大5枚）
+async function updateSlotPreviews(){
+  try{
+    await ensureAuthReady();
+    const wrap = document.querySelector('#save-load-modal .sl-preview');
+    if (!wrap) return;
+    const boxes = Array.from(wrap.querySelectorAll('.slot-preview'));
+    for (const box of boxes){
+      const slot = parseInt(box.dataset.slot, 10);
+      box.innerHTML = '<span class="empty">読み込み中…</span>';
+      try{
+        // users/{UID}/saves/slot{n}/cards から最大5件
+        const cardsRef = collection(db, `${slDocPath(slot)}/cards`);
+        const snap = await getDocs(query(cardsRef, limit(5)));
+        box.innerHTML = '';
+        if (snap.empty){
+          box.innerHTML = '<span class="empty">空き</span>';
+          continue;
+        }
+        for (const d of snap.docs){
+          const s = d.data() || {};
+          // 保存されているURLは fullUrl を優先、なければ Storage 経由で解決
+          let url = s.fullUrl;
+          if (!url && s.imageUrl) url = await storageDownloadURL(s.imageUrl);
+          if (!url) continue;
+          const img = document.createElement('img');
+          img.src = url;
+          img.alt = '';
+          box.appendChild(img);
+        }
+        if (!box.querySelector('img')) {
+          // 画像系が1枚も生成されなかった場合のフォールバック
+          box.innerHTML = '<span class="empty">画像なし</span>';
+        }
+      }catch(e){
+        console.warn('preview fetch failed', e);
+        box.innerHTML = '<span class="empty">取得失敗</span>';
+      }
+    }
+  }catch(e){
+    console.warn('updateSlotPreviews error', e);
+  }
+}    
     
     
     let hostWatchTimer = null;
