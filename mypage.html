@@ -166,32 +166,6 @@
       </ul>
     </section>
 
-    <!-- 自分のカード（将来：アップロード履歴の一覧を表示） -->
-    <section aria-labelledby="sec-cards">
-      <h2 id="sec-cards" data-i18n="mypage.cards">自分のカード</h2>
-      <div class="grid cols-3" id="cardList">
-        <div class="item"><strong>（サンプル）カードA</strong><span class="muted">画像未設定</span></div>
-        <div class="item"><strong>（サンプル）カードB</strong><span class="muted">画像未設定</span></div>
-        <div class="item"><strong>（サンプル）カードC</strong><span class="muted">画像未設定</span></div>
-      </div>
-    </section>
-
-    <!-- 設定（将来：言語切替や既定動作） -->
-    <section aria-labelledby="sec-settings">
-      <h2 id="sec-settings" data-i18n="mypage.settings">設定</h2>
-      <div class="item">
-        <div>
-          <div><strong data-i18n="mypage.lang">言語</strong></div>
-          <div class="muted" data-i18n="mypage.lang_desc">UIの表示言語を選択します。</div>
-        </div>
-        <div class="right">
-          <select id="lang" aria-label="Language">
-            <option value="ja">日本語</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-      </div>
-    </section>
   </main>
 
   <footer>PlayAround © 2025</footer>
@@ -357,14 +331,6 @@
     applyUser(user);
     // ログイン済みになったらスロット情報を描画
     refreshSaveSlots().catch(console.error);
-    });
-
-    // 言語設定はこれまで通り localStorage を使用
-    const langSel = document.getElementById('lang');
-    langSel.value = localStorage.getItem('lang') || 'ja';
-    langSel.addEventListener('change', () => {
-      localStorage.setItem('lang', langSel.value);
-      alert('言語設定を保存しました（デモ）。');
     });
     
     
