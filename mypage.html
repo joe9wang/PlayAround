@@ -314,15 +314,14 @@
     });
   }
 
-  // 「一覧」ボタンのイベント委譲
+  // 「一覧」ボタンのイベント委譲 → モーダルを開く
   document.getElementById('saveList')?.addEventListener('click', (e) => {
     const a = e.target.closest('.slot-list-btn');
     if (!a) return;
     e.preventDefault();
     const slot = parseInt(a.dataset.slot, 10);
-    if (slot) toggleSlotList(slot);
-  });
-    
+    if (slot) openSlotModal(slot);
+  });    
     
     function applyUser(u){
       // 表示名は「メール > displayName > 'Player'」の優先順
@@ -353,6 +352,70 @@
       localStorage.setItem('lang', langSel.value);
       alert('言語設定を保存しました（デモ）。');
     });
+    
+    
+    // ▼ スロット画像を「カード一覧」モーダルで表示
+    async function openSlotModal(slot){
+      const modal = document.getElementById('card-list-modal');
+      const grid  = document.getElementById('card-list-grid');
+      const title = document.getElementById('card-list-title');
+      if (!modal || !grid || !title) return;
+      title.textContent = `スロット${slot}のカード一覧`;
+      modal.style.display = 'flex';
+      grid.innerHTML = '<div class="muted">読み込み中…</div>';
+      try{
+        const urls = await fetchSlotAllUrls(slot);
+        grid.innerHTML = '';
+        if (urls.length === 0){
+          grid.innerHTML = '<div class="muted">画像はありません</div>';
+          return;
+        }
+        for (const u of urls){
+          const img = document.createElement('img');
+          img.loading = 'lazy';
+          img.decoding = 'async';
+          img.src = u;
+          grid.appendChild(img);
+        }
+      }catch(_e){
+        grid.innerHTML = '<div class="muted">取得に失敗しました</div>';
+      }
+    }
+    
+    
+  // モーダルの閉じる挙動（イベント委譲：要素が後で挿入されてもOK）
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    // 「閉じる」ボタン
+    if (t.id === 'card-list-close') {
+      const m = document.getElementById('card-list-modal');
+      if (m) m.style.display = 'none';
+    }
+    // 背景クリックで閉じる
+    if (t.id === 'card-list-modal') {
+      t.style.display = 'none';
+    }
+  });
+  
+  
   </script>
+  
+
+<!-- ▼ index.html と同じ見た目の「カード一覧」モーダルを追加 -->
+<div id="card-list-modal" role="dialog" aria-modal="true"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:10000;">
+  <div id="card-list-sheet" style="width:min(920px, 92vw); max-height:80vh; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
+    <div id="card-list-header" style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
+      <div id="card-list-title" style="font-weight:700;">自分のカード一覧</div>
+      <button id="card-list-close" type="button" style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;">閉じる</button>
+    </div>
+    <div id="card-list-body" style="padding:12px; overflow:auto;">
+      <div id="card-list-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px;"></div>
+    </div>
+  </div>
+</div>
+  
+  
 </body>
 </html>
