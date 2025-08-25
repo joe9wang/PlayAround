@@ -825,12 +825,15 @@
  .site-footer{
    background:#fff;
    border-top:1px solid #e5e7eb;
-   min-height: var(--footer-h);
-   display:flex; align-items:center; justify-content:center;
-   padding: 6px 12px; color:#555; z-index: 5;
-   clear: both;        /* ← float している #sidebar / #container / #preview の下に必ず配置 */
-   position: relative; /* ← 念のため重なり対策 */
-
+  height: var(--footer-h);
+  display:flex;
+  align-items:flex-start;   /* ← 上寄せに変更 */
+  justify-content:center;
+  padding-top:4px;          /* ← 少しだけ余白 */
+  color:#555;
+  clear: both;
+  position: relative;
+  line-height:1.4;
  }  
   
   
