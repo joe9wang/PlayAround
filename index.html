@@ -824,15 +824,13 @@
   
 /* ===== footer ===== */
 .site-footer{
-  background:#fff;
-  border-top:1px solid #e5e7eb;
-  height: var(--footer-h);
-  display:flex;
-  align-items:center;      /* 文字の縦位置は中央寄せ */
-  justify-content:center;
-  padding: 6px 12px;
-  color:#555;
-  z-index:5;
+   background:#fff;
+   border-top:1px solid #e5e7eb;
+   min-height: var(--footer-h);
+   display:flex; align-items:center; justify-content:center;
+   padding: 6px 12px; color:#555; z-index: 5;
+   clear: both;        /* ← float している #sidebar / #container / #preview の下に必ず配置 */
+   position: relative; /* ← 念のため重なり対策 */
 }
 
 :root { --footer-bump: 6px; }   /* ← 好みで 4〜10px くらい */
