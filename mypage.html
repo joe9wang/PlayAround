@@ -192,7 +192,8 @@
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
     import {
       getFirestore, doc, getDoc, collection, getDocs, query, limit
-    } from
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+    import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
     
     
     // index.html と同じ設定（そのまま再掲）
@@ -206,6 +207,14 @@
     };
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const storage = getStorage(app);
+
+    // Storage の安全なダウンロードURL取得（必要な時だけ使用）
+    async function storageDownloadURL(path){
+      if (!path) return '';
+      try { return await getDownloadURL(ref(storage, path)); }
+      catch(_) { return ''; }
+    }
     const db   = getFirestore(app);
     // index 側と同じく「LOCAL」永続化（タブを跨いでログイン状態を復元）
     await setPersistence(auth, browserLocalPersistence);
