@@ -4,22 +4,98 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="PlayAroundの遊び方。ルーム作成からカード操作、デッキ・手札・捨て札まで基本操作を解説。">
 <link rel="canonical" href="https://www.play-around.app/howto.html">
-</head><body>
-<header><h1>遊び方</h1></header>
-<main>
-<ol>
-  <li><strong>ルームを作成</strong>：タイトルの「新しいルームを作成」を押し、座席（P1〜P4）を選んで「作成」。任意で入室パスワードを設定できます。</li>
-  <li><strong>参加</strong>：友だちにはルームIDとパスワードを共有。参加者は座席を選んで「開始」。</li>
-  <li><strong>画像をカード化</strong>：画像ファイルをドラッグ&ドロップで追加。ダブルクリックで回転、右クリックで表裏。</li>
-  <li><strong>エリア</strong>：プレイ、デッキ、捨て札、手札、特殊の各エリアを使い分けます。</li>
-  <li><strong>便利機能</strong>：シャッフル、数値カウンター、＋1/＋10/＋50/＋100、ダイス、トークンなど。</li>
-</ol>
 
-<h2>ヒント</h2>
-<ul>
-  <li>ホストは「全カードを集める」で自分のカードをデッキへ回収できます。</li>
-  <li>他プレイヤーの手札は裏面表示のまま。プレビューも裏のまま表示されます。</li>
-</ul>
+
+<style>
+  :root{
+    --gap:16px; --radius:18px;
+    --shadow:0 8px 24px rgba(0,0,0,.08);
+    --c-m:#a90fb8; /* magenta */
+    --c-g:#2bdc8a; /* green  */
+    --c-r:#ef4444; /* red    */
+    --c-o:#f59e0b; /* orange */
+    --c-b:#1677e6; /* blue   */
+  }
+  body{background:linear-gradient(180deg,#fafbff, #f3f6ff 40%, #fafbff); color:#111827;}
+  header h1{max-width:1100px;margin:24px auto 0;padding:0 20px;font-size:clamp(22px,3vw,32px)}
+  .container{max-width:1100px;margin:0 auto;padding:20px 20px 80px}
+
+  /* === HERO / MOSAIC === */
+  .hero{margin-top:8px}
+  .mosaic{
+    display:grid; gap:var(--gap);
+    grid-template-columns: 1fr 2fr 1.1fr;
+    grid-template-rows: 2fr 2fr 1.2fr;
+    height:clamp(240px,40vw,380px);
+  }
+  .tile{border-radius:var(--radius); box-shadow:var(--shadow); animation:fadeUp .6s ease both}
+  .magenta{grid-row:1/4; grid-column:1/2; background:linear-gradient(180deg,#b523d0,#9b1ba8)}
+  .green  {grid-area:1/2/3/3; background:linear-gradient(180deg,#34d399,#22c55e)}
+  .red    {grid-area:1/3/2/4; background:linear-gradient(180deg,#f66,#ef4444)}
+  .orange {grid-area:2/3/3/4; background:linear-gradient(180deg,#fbbf24,#f59e0b)}
+  .blue   {grid-area:3/2/4/4; background:linear-gradient(180deg,#1d4ed8,#0ea5e9)}
+  .lead{margin:10px 0 0; font-size:clamp(14px,1.8vw,16px); color:#475569}
+
+  /* === STEPS === */
+  ol.steps{counter-reset:step; list-style:none; padding:0; margin:28px 0; display:grid; gap:14px}
+  .steps li{
+    counter-increment:step; position:relative; line-height:1.75;
+    background:#fff; border-radius:14px; padding:16px 16px 16px 60px; box-shadow:var(--shadow)
+  }
+  .steps li::before{
+    content:counter(step); position:absolute; left:16px; top:16px;
+    width:32px; height:32px; border-radius:50%; display:grid; place-items:center;
+    color:#fff; font-weight:700; background:linear-gradient(180deg,var(--c-b),#0ea5e9)
+  }
+  .steps strong{color:#0f766e}
+
+  /* === TIPS / CALLOUT === */
+  .tips{background:#f6fbff; border:1px solid #e5f0ff; border-radius:14px; padding:18px; box-shadow:var(--shadow)}
+  .tiplist{margin:10px 0 0 18px}
+
+  /* small screens */
+  @media (max-width:640px){
+    .mosaic{grid-template-columns: .9fr 1.4fr .9fr}
+    .steps li{padding-left:56px}
+  }
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none}}
+</style>
+
+</head>
+<body>
+<header><h1>遊び方</h1></header>
+<main class="container">
+  <!-- === ヒーロー：添付の色ブロックを再現 === -->
+  <section class="hero" aria-hidden="true">
+    <div class="mosaic">
+      <div class="tile magenta"></div>
+      <div class="tile green"></div>
+      <div class="tile red"></div>
+      <div class="tile orange"></div>
+      <div class="tile blue"></div>
+    </div>
+    <p class="lead">画像をカード化して、最大4人でオンライン対戦。<br>このページでは基本操作をサクッと解説します。</p>
+  </section>
+
+  <!-- === 手順カード === -->
+  <ol class="steps">
+    <li><strong>ルームを作成</strong>：タイトルの「新しいルームを作成」を押し、座席（P1〜P4）を選んで「作成」。任意で入室パスワードを設定できます。</li>
+    <li><strong>参加</strong>：友だちにはルームIDとパスワードを共有。参加者は座席を選んで「開始」。</li>
+    <li><strong>画像をカード化</strong>：画像ファイルをドラッグ&ドロップで追加。ダブルクリックで回転、右クリックで表裏。</li>
+    <li><strong>エリア</strong>：プレイ、デッキ、捨て札、手札、特殊の各エリアを使い分けます。</li>
+    <li><strong>便利機能</strong>：シャッフル、数値カウンター、＋1/＋10/＋50/＋100、ダイス、トークンなど。</li>
+  </ol>
+
+  <!-- === ヒントのコールアウト === -->
+  <section class="tips">
+    <h2>ヒント</h2>
+    <ul class="tiplist">
+      <li>ホストは「全カードを集める」で自分のカードをデッキへ回収できます。</li>
+      <li>他プレイヤーの手札は裏面表示のまま。プレビューも裏のまま表示されます。</li>
+    </ul>
+  </section>
 </main>
+
 <footer><p>PlayAround — © 2025 SOLVENTER</p></footer>
 </body></html>
