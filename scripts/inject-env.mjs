@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // 1) 入力/出力ファイル
 const OUT_DIR = "./dist";
-const PAGES = ["./index.html", "./mypage.html"];
+const PAGES = ["./index.html", "./game.html", "./mypage.html"];
 
 // 2) 置換マップ（Vercelの環境変数 → プレースホルダ）
 const replMap = {
