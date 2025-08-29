@@ -43,6 +43,8 @@ copyFileSync("./contact.html", `${OUT_DIR}/contact.html`);
 copyFileSync("./terms.html", `${OUT_DIR}/terms.html`);
 copyFileSync("./about.html", `${OUT_DIR}/about.html`);
 copyFileSync("./howto.html", `${OUT_DIR}/howto.html`);
+copyFileSync("./news.html", `${OUT_DIR}/news.html`);
+copyFileSync("./Geki-Mahjong.html", `${OUT_DIR}/Geki-Mahjong.html`);
 
 
 // BoardGame.html を dist にコピー
