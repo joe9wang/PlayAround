@@ -164,6 +164,31 @@
     transition:transform .15s ease, box-shadow .35s ease, background-position .6s ease;
     position:relative; overflow:hidden;
   }
+  
+  
+  /* 緑色版プレイするボタン */
+ .btn-play-green{
+   font-size:1.3rem;
+   padding:16px 28px;
+   border-radius:14px;
+   font-weight:700;
+   display:inline-flex; align-items:center; gap:.6em;
+   color:#fff; text-decoration:none;
+   background:linear-gradient(135deg, #3cd08e 0%, #218d6a 60%, #3cd08e 100%);
+   background-size:220% 220%;
+   box-shadow:0 8px 20px rgba(144, 238, 144, .55);
+   transition:transform .15s ease, box-shadow .35s ease, background-position .6s ease;
+   position:relative; overflow:hidden;
+ }
+ .btn-play-green:hover{
+   transform:translateY(-1px) scale(1.03);
+   background-position:60% 0;
+   box-shadow:0 12px 28px rgba(144, 238, 144, .45);
+ }
+ .btn-play-green:active{ transform:translateY(0) scale(0.98) }
+
+  
+  
   .btn-play:hover{
     transform:translateY(-2px) scale(1.03);
     background-position:100% 0;
@@ -265,6 +290,14 @@ ChatGPT:
                style="width:40px; height:40px; border-radius:10px; box-shadow:0 6px 16px rgba(0,0,0,.15);" />
           <h1>PlayAround</h1>
         </div>
+        
+        <!-- サイドバーの上部に追加した緑色版「プレイする」ボタン -->
+        <div style="margin:16px 0; text-align:center;">
+          <a href="game.html" class="btn-play-green" aria-label="PlayAroundをプレイする" style="display:inline-block;">
+            ▶ プレイする
+          </a>
+        </div>
+        
         <nav class="nav" style="margin-top:16px">
           <a href="index.html">トップ</a>
           <a href="howto.html">遊び方</a>
