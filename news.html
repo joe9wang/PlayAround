@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PlayAround — お知らせ</title>
+  <meta name="description" content="PlayAroundのお知らせ・更新履歴。最新機能、改善、修正情報をまとめています。">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --gap:16px; --radius:14px;
+      /* index.html と統一のカラーパレット */
+      --purple:#b350be; --green:#3cd08e; --red:#e64a5a;
+      --orange:#f79f27; --blue:#1e82e0;
+      --ink:#0f172a; --bg:#f6f7fb; --card:#ffffff;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family:"Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
+                   "Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic",Meiryo,sans-serif;
+    }
+
+    /* レイアウト（index準拠） */
+    .layout{
+      min-height:100dvh;
+      display:grid;
+      grid-template-columns:260px minmax(0,1fr) 320px;
+      grid-template-rows:1fr auto;
+      gap:var(--gap);
+      padding:var(--gap);
+    }
+
+    /* サイドバー */
+    .sidebar{
+      grid-row:1 / span 2; grid-column:1;
+      background:var(--purple); color:#fff;
+      border-radius:var(--radius); padding:20px 18px;
+      display:flex; flex-direction:column; justify-content:space-between;
+      box-shadow:0 8px 24px rgba(164,10,179,.25);
+    }
+    .brand{ display:flex; align-items:center; gap:12px }
+    .brand h1{ margin:0; font-size:1.2rem; letter-spacing:.2px }
+    .nav{ margin-top:18px; display:grid; gap:10px }
+    .nav a{
+      color:#fff; text-decoration:none; padding:10px 12px; border-radius:10px;
+      background:rgba(255,255,255,.08); backdrop-filter:saturate(140%) blur(2px);
+    }
+    .nav a:hover{ background:rgba(255,255,255,.16) }
+    .credit{ font-size:.8rem; opacity:.85 }
+
+    /* メイン（緑の面） */
+    .hero{
+      grid-column:2; grid-row:1;
+      background:var(--green); border-radius:var(--radius);
+      padding:40px 42px; color:#053021;
+      box-shadow:0 10px 24px rgba(39,217,138,.25);
+    }
+    .hero h2{ margin:0 0 6px; font-size:1.9rem }
+    .hero p.lead{ margin:6px 0 22px; font-size:1.05rem }
+
+    .changelog{
+      background:rgba(255,255,255,.92);
+      border-radius:12px; padding:22px; line-height:1.82;
+      box-shadow:0 8px 18px rgba(0,0,0,.08);
+    }
+    .entry{ margin:0 0 18px; padding:0 0 18px; border-bottom:1px solid #e7eef6 }
+    .entry:last-child{ border-bottom:none; margin-bottom:0; padding-bottom:0 }
+    .entry h3{ margin:0 0 6px; font-size:1.1rem; color:#0b3b2b }
+    .meta{ font-size:.9rem; color:#215f4d; opacity:.9; margin-bottom:8px }
+    .entry ul{ margin:0 0 0 1.2em }
+
+    /* 右上（赤）／右下（橙）カード */
+    .card{
+      border-radius:var(--radius); padding:22px; color:#fff;
+      box-shadow:0 10px 22px rgba(15,23,42,.12);
+    }
+    .card h3{ margin:0 0 10px }
+    .right-top{ grid-column:3; grid-row:1; background:var(--red) }
+    .right-bottom{ grid-column:3; grid-row:1; align-self:end; background:var(--orange); color:#3d2600 }
+
+    /* 下部青帯（CTA） */
+    .cta{
+      grid-column:2 / 4; grid-row:2;
+      background:var(--blue); color:#fff; border-radius:var(--radius);
+      padding:22px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      box-shadow:0 10px 24px rgba(13,115,232,.25);
+    }
+    .btn-white{
+      display:inline-block; background:#fff; color:#0d73e8; text-decoration:none;
+      border-radius:12px; padding:12px 16px; font-weight:700;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 1000px){
+      .layout{ grid-template-columns: minmax(0,1fr); grid-template-rows:auto auto auto auto }
+      .sidebar{ grid-row:auto; grid-column:auto; flex-direction:row; align-items:center; gap:14px }
+      .nav{ grid-auto-flow:column; overflow:auto; white-space:nowrap; gap:8px; margin:0 }
+      .hero, .right-top, .right-bottom, .cta{ grid-column:auto; grid-row:auto }
+      .credit{ display:none }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- サイドバー -->
+    <aside class="sidebar" aria-label="サイドナビゲーション">
+      <div>
+        <div class="brand">
+          <img src="PlayAround-icon.png" alt="PlayAroundアイコン"
+               style="width:40px;height:40px;border-radius:10px;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.15)" />
+          <h1>PlayAround</h1>
+        </div>
+        <nav class="nav" style="margin-top:16px">
+          <a href="index.html">トップ</a>
+          <a href="howto.html">遊び方</a>
+          <a href="news.html">お知らせ</a>
+          <a href="terms.html">利用規約</a>
+          <a href="privacy.html">プライバシーポリシー</a>
+          <a href="contact.html">お問い合わせ</a>
+        </nav>
+      </div>
+      <div class="credit">PlayAround — © 2025 SOLVENTER</div>
+    </aside>
+
+    <!-- メイン（緑） -->
+    <main class="hero" role="main">
+      <header>
+        <h2>お知らせ & 更新履歴</h2>
+        <p class="lead">PlayAround のアップデート情報を掲載しています。最新順で表示します。</p>
+      </header>
+
+      <section class="changelog" aria-labelledby="log">
+        <!-- v0.10 以降：ドキュメント＆ナビ -->
+        <article class="entry">
+          <h3>v0.10 — ドキュメント拡充とナビ整理</h3>
+          <div class="meta">2025-08-30</div>
+          <ul>
+            <li><strong>専用ページ追加：</strong>利用規約（terms.html）／プライバシーポリシー（privacy.html）／遊び方（howto.html）／お問い合わせ（contact.html）。</li>
+            <li><strong>トップと世界観統一：</strong>紫サイドバー・緑メイン・赤／橙カード・青CTAのレイアウトに統一。</li>
+            <li><strong>サイドバー改善：</strong>「利用規約」「プライバシーポリシー」「お問い合わせ」の外部リンク化と順序最適化。</li>
+          </ul>
+        </article>
+
+        <!-- v0.9：既知（indexの記載） -->
+        <article class="entry">
+          <h3>v0.9 — 手札表示とデッキ操作の改善</h3>
+          <div class="meta">2025-08-24〜28</div>
+          <ul>
+            <li>他プレイヤーの<strong>手札は常に裏面</strong>で固定。プレビューでも裏のまま表示に統一。</li>
+            <li><strong>デッキ整列／シャッフル</strong>の挙動を改善し、操作感を向上。</li>
+          </ul>
+        </article>
+
+        <!-- v0.8：共有プレイエリアなど -->
+        <article class="entry">
+          <h3>v0.8 — 共有プレイエリア・個別ズーム＆パン</h3>
+          <div class="meta">2025-08-23〜24</div>
+          <ul>
+            <li><strong>共有プレイエリア</strong>を追加（ボドゲ時）。</li>
+            <li><strong>ズーム＆パンがプレイヤーごと</strong>に独立するよう調整（視点の取り合いを解消）。</li>
+          </ul>
+        </article>
+
+        <!-- v0.7：アップロード＆表裏反転など -->
+        <article class="entry">
+          <h3>v0.7 — 画像複数アップロード・右クリックで表裏反転</h3>
+          <div class="meta">2025-08-21〜23</div>
+          <ul>
+            <li>画像の<strong>複数アップロード</strong>に対応し、カード化が高速に。</li>
+            <li>カードの<strong>右クリックで表裏反転</strong>（裏面は黒ベース＋白縁）。</li>
+            <li>選択カードは<strong>赤枠＆右パネルで拡大プレビュー</strong>。</li>
+          </ul>
+        </article>
+
+        <!-- v0.6：収集・削除系 -->
+        <article class="entry">
+          <h3>v0.6 — 回収＆安全な削除フロー</h3>
+          <div class="meta">2025-08-21〜22</div>
+          <ul>
+            <li><strong>全カードを集める：</strong>自分のカードを自分のデッキ（ボドゲは共有デッキ）へ一括回収。</li>
+            <li><strong>指定カード削除：</strong>選択済みカードに対してのみ実行、確認ダイアログを追加。</li>
+            <li><strong>危険操作の確認ダイアログ</strong>を整備（誤操作防止）。</li>
+          </ul>
+        </article>
+
+        <!-- v0.5：トランプ改良 -->
+        <article class="entry">
+          <h3>v0.5 — トランプ山札の改良</h3>
+          <div class="meta">2025-08-18〜21</div>
+          <ul>
+            <li>ホストが開始したとき、<strong>共有デッキエリア内</strong>に山札が正しく出現するよう修正。</li>
+            <li><strong>ジョーカー2枚</strong>を山札末尾に追加（統一設定）。</li>
+          </ul>
+        </article>
+
+        <!-- v0.4：UI/レイアウト＆カウンター -->
+        <article class="entry">
+          <h3>v0.4 — レイアウト調整とカウンター拡充</h3>
+          <div class="meta">2025-08-20〜24</div>
+          <ul>
+            <li>ボドゲ／カードのモード差を整理。プレイ／デッキ／手札／捨て札／特殊エリアのサイズ＆配置を改善。</li>
+            <li><strong>数値カウンター</strong>に「＋50」「＋100」を追加（表示サイズ調整）。</li>
+          </ul>
+        </article>
+
+        <!-- v0.3：重なり表示 -->
+        <article class="entry">
+          <h3>v0.3 — カード重なり数の可視化</h3>
+          <div class="meta">2025-08-24</div>
+          <ul>
+            <li>重なっている場合、最前面カードの中央に<strong>重なり枚数</strong>を赤字で表示（非重なり時は自動消去）。</li>
+          </ul>
+        </article>
+
+        <!-- v0.2：ルーム管理まわり -->
+        <article class="entry">
+          <h3>v0.2 — ルーム管理とクリーンアップ</h3>
+          <div class="meta">2025-08-21</div>
+          <ul>
+            <li>ホストが<strong>ルーム終了時にカードデータを削除</strong>できるよう整備（残留問題の解消）。</li>
+            <li>在席判定・ハートビートの運用説明を整備。</li>
+          </ul>
+        </article>
+
+        <!-- v0.1：初期リリース -->
+        <article class="entry">
+          <h3>v0.1 — 初期リリース</h3>
+          <div class="meta">2025-08-18</div>
+          <ul>
+            <li>最大4人・ルーム機能・座席選択に対応。</li>
+            <li>画像アップロード→カード化、ドラッグ、回転、表裏反転、デッキ整列＆シャッフルの基本機能を実装。</li>
+            <li>各プレイヤー視点ごとの表示、手札は他人には裏面固定。</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+
+    <!-- 右上カード：次の予定 -->
+    <aside class="card right-top" aria-labelledby="roadmap-title">
+      <h3 id="roadmap-title">今後のロードマップ（案）</h3>
+      <ul style="margin:0; padding-left:1.1em">
+        <li>セーブ／ロードUIの整理と履歴</li>
+        <li>部屋テンプレ（ボドゲ初期配置プリセット）</li>
+        <li>チュートリアルの段階表示</li>
+      </ul>
+    </aside>
+
+    <!-- 右下カード：不具合の報告 -->
+    <aside class="card right-bottom" aria-labelledby="bug-title">
+      <h3 id="bug-title" style="color:#3d2600">不具合の報告・ご要望</h3>
+      <p style="color:#3d2600; margin:0 0 10px">再現手順・端末/ブラウザ情報を添えてご連絡ください。</p>
+      <p style="margin:0"><a href="https://www.play-around.app/contact.html" style="color:#3d2600">▶ お問い合わせページへ</a></p>
+    </aside>
+
+    <!-- 下部CTA：いますぐ遊ぶ -->
+    <section class="cta" role="region" aria-label="今すぐはじめる">
+      <div>
+        <strong style="font-size:1.05rem">いますぐ PlayAround をはじめよう</strong><br>
+        ブラウザだけでOK。インストール不要・無料で遊べます。
+      </div>
+      <div class="cta-actions">
+        <a href="game.html" class="btn-white" aria-label="PlayAroundをプレイする">▶ プレイする</a>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>
