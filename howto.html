@@ -1,101 +1,213 @@
-<!doctype html><html lang="ja"><head>
-<meta charset="utf-8">
-<title>遊び方 | PlayAround</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="PlayAroundの遊び方。ルーム作成からカード操作、デッキ・手札・捨て札まで基本操作を解説。">
-<link rel="canonical" href="https://www.play-around.app/howto.html">
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PlayAround — 遊び方</title>
+  <meta name="description" content="PlayAroundの遊び方。ルーム作成からカード操作、各エリア、便利機能、ショートカット、FAQ、トラブルシュートまで詳しく解説。">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
 
+  <style>
+    :root{
+      --gap:16px; --radius:14px;
+      /* index.html と同じカラーパレット */
+      --purple:#b350be; --green:#3cd08e; --red:#e64a5a;
+      --orange:#f79f27; --blue:#1e82e0;
+      --ink:#0f172a; --bg:#f6f7fb; --card:#ffffff;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family:"Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
+                   "Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic",Meiryo,sans-serif;
+    }
 
-<style>
-  :root{
-    --gap:16px; --radius:18px;
-    --shadow:0 8px 24px rgba(0,0,0,.08);
-    --c-m:#a90fb8; /* magenta */
-    --c-g:#2bdc8a; /* green  */
-    --c-r:#ef4444; /* red    */
-    --c-o:#f59e0b; /* orange */
-    --c-b:#1677e6; /* blue   */
-  }
-  body{background:linear-gradient(180deg,#fafbff, #f3f6ff 40%, #fafbff); color:#111827;}
-  header h1{max-width:1100px;margin:24px auto 0;padding:0 20px;font-size:clamp(22px,3vw,32px)}
-  .container{max-width:1100px;margin:0 auto;padding:20px 20px 80px}
+    /* レイアウト（index準拠） */
+    .layout{
+      min-height:100dvh;
+      display:grid;
+      grid-template-columns:260px minmax(0,1fr) 320px;
+      grid-template-rows:1fr auto;
+      gap:var(--gap);
+      padding:var(--gap);
+    }
 
-  /* === HERO / MOSAIC === */
-  .hero{margin-top:8px}
-  .mosaic{
-    display:grid; gap:var(--gap);
-    grid-template-columns: 1fr 2fr 1.1fr;
-    grid-template-rows: 2fr 2fr 1.2fr;
-    height:clamp(240px,40vw,380px);
-  }
-  .tile{border-radius:var(--radius); box-shadow:var(--shadow); animation:fadeUp .6s ease both}
-  .magenta{grid-row:1/4; grid-column:1/2; background:linear-gradient(180deg,#b523d0,#9b1ba8)}
-  .green  {grid-area:1/2/3/3; background:linear-gradient(180deg,#34d399,#22c55e)}
-  .red    {grid-area:1/3/2/4; background:linear-gradient(180deg,#f66,#ef4444)}
-  .orange {grid-area:2/3/3/4; background:linear-gradient(180deg,#fbbf24,#f59e0b)}
-  .blue   {grid-area:3/2/4/4; background:linear-gradient(180deg,#1d4ed8,#0ea5e9)}
-  .lead{margin:10px 0 0; font-size:clamp(14px,1.8vw,16px); color:#475569}
+    /* サイドバー */
+    .sidebar{
+      grid-row:1 / span 2; grid-column:1;
+      background:var(--purple); color:#fff;
+      border-radius:var(--radius); padding:20px 18px;
+      display:flex; flex-direction:column; justify-content:space-between;
+      box-shadow:0 8px 24px rgba(164,10,179,.25);
+    }
+    .brand{ display:flex; align-items:center; gap:12px }
+    .brand h1{ margin:0; font-size:1.2rem; letter-spacing:.2px }
+    .nav{ margin-top:18px; display:grid; gap:10px }
+    .nav a{
+      color:#fff; text-decoration:none; padding:10px 12px; border-radius:10px;
+      background:rgba(255,255,255,.08); backdrop-filter:saturate(140%) blur(2px);
+    }
+    .nav a:hover{ background:rgba(255,255,255,.16) }
+    .credit{ font-size:.8rem; opacity:.85 }
 
-  /* === STEPS === */
-  ol.steps{counter-reset:step; list-style:none; padding:0; margin:28px 0; display:grid; gap:14px}
-  .steps li{
-    counter-increment:step; position:relative; line-height:1.75;
-    background:#fff; border-radius:14px; padding:16px 16px 16px 60px; box-shadow:var(--shadow)
-  }
-  .steps li::before{
-    content:counter(step); position:absolute; left:16px; top:16px;
-    width:32px; height:32px; border-radius:50%; display:grid; place-items:center;
-    color:#fff; font-weight:700; background:linear-gradient(180deg,var(--c-b),#0ea5e9)
-  }
-  .steps strong{color:#0f766e}
+    /* メイン（緑の面） */
+    .hero{
+      grid-column:2; grid-row:1;
+      background:var(--green); border-radius:var(--radius);
+      padding:40px 42px; color:#053021;
+      box-shadow:0 10px 24px rgba(39,217,138,.25);
+    }
+    .hero h2{ margin:0 0 6px; font-size:1.9rem }
+    .hero p.lead{ margin:6px 0 22px; font-size:1.05rem }
 
-  /* === TIPS / CALLOUT === */
-  .tips{background:#f6fbff; border:1px solid #e5f0ff; border-radius:14px; padding:18px; box-shadow:var(--shadow)}
-  .tiplist{margin:10px 0 0 18px}
+    /* 中のカード */
+    .panel{
+      background:rgba(255,255,255,.9);
+      border-radius:12px; padding:22px; line-height:1.82;
+      box-shadow:0 8px 18px rgba(0,0,0,.08);
+    }
+    .panel h3{ margin:18px 0 8px; font-size:1.15rem; color:#0b3b2b }
+    .panel ul, .panel ol{ margin:0 0 12px 1.2em }
+    .panel p{ margin:0 0 12px }
 
-  /* small screens */
-  @media (max-width:640px){
-    .mosaic{grid-template-columns: .9fr 1.4fr .9fr}
-    .steps li{padding-left:56px}
-  }
+    /* 右上（赤）／右下（橙）カード */
+    .card{
+      border-radius:var(--radius); padding:22px; color:#fff;
+      box-shadow:0 10px 22px rgba(15,23,42,.12);
+    }
+    .card h3{ margin:0 0 10px }
+    .right-top{ grid-column:3; grid-row:1; background:var(--red) }
+    .right-bottom{ grid-column:3; grid-row:1; align-self:end; background:var(--orange); color:#3d2600 }
 
-  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none}}
-</style>
+    /* 下部青帯（CTA） */
+    .cta{
+      grid-column:2 / 4; grid-row:2;
+      background:var(--blue); color:#fff; border-radius:var(--radius);
+      padding:22px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      box-shadow:0 10px 24px rgba(13,115,232,.25);
+    }
+    .btn-white{
+      display:inline-block; background:#fff; color:#0d73e8; text-decoration:none;
+      border-radius:12px; padding:12px 16px; font-weight:700;
+    }
 
+    /* レスポンシブ */
+    @media (max-width: 1000px){
+      .layout{ grid-template-columns: minmax(0,1fr); grid-template-rows:auto auto auto auto }
+      .sidebar{ grid-row:auto; grid-column:auto; flex-direction:row; align-items:center; gap:14px }
+      .nav{ grid-auto-flow:column; overflow:auto; white-space:nowrap; gap:8px; margin:0 }
+      .hero, .right-top, .right-bottom, .cta{ grid-column:auto; grid-row:auto }
+      .credit{ display:none }
+    }
+  </style>
 </head>
 <body>
-<header><h1>遊び方</h1></header>
-<main class="container">
-  <!-- === ヒーロー：添付の色ブロックを再現 === -->
-  <section class="hero" aria-hidden="true">
-    <div class="mosaic">
-      <div class="tile magenta"></div>
-      <div class="tile green"></div>
-      <div class="tile red"></div>
-      <div class="tile orange"></div>
-      <div class="tile blue"></div>
-    </div>
-    <p class="lead">画像をカード化して、最大4人でオンライン対戦。<br>このページでは基本操作をサクッと解説します。</p>
-  </section>
+  <div class="layout">
 
-  <!-- === 手順カード === -->
-  <ol class="steps">
-    <li><strong>ルームを作成</strong>：タイトルの「新しいルームを作成」を押し、座席（P1〜P4）を選んで「作成」。任意で入室パスワードを設定できます。</li>
-    <li><strong>参加</strong>：友だちにはルームIDとパスワードを共有。参加者は座席を選んで「開始」。</li>
-    <li><strong>画像をカード化</strong>：画像ファイルをドラッグ&ドロップで追加。ダブルクリックで回転、右クリックで表裏。</li>
-    <li><strong>エリア</strong>：プレイ、デッキ、捨て札、手札、特殊の各エリアを使い分けます。</li>
-    <li><strong>便利機能</strong>：シャッフル、数値カウンター、＋1/＋10/＋50/＋100、ダイス、トークンなど。</li>
-  </ol>
+    <!-- サイドバー -->
+    <aside class="sidebar" aria-label="サイドナビゲーション">
+      <div>
+        <div class="brand">
+          <img src="PlayAround-icon.png" alt="PlayAroundアイコン"
+               style="width:40px;height:40px;border-radius:10px;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.15)" />
+          <h1>PlayAround</h1>
+        </div>
+        <nav class="nav" style="margin-top:16px">
+          <a href="index.html">トップ</a>
+          <a href="howto.html">遊び方</a>
+          <a href="index.html#news">お知らせ</a>
+          <a href="https://www.play-around.app/terms.html">利用規約</a>
+          <a href="https://www.play-around.app/privacy.html">プライバシーポリシー</a>
+          <a href="https://www.play-around.app/contact.html">お問い合わせ</a>
+        </nav>
+      </div>
+      <div class="credit">PlayAround — © 2025 SOLVENTER</div>
+    </aside>
 
-  <!-- === ヒントのコールアウト === -->
-  <section class="tips">
-    <h2>ヒント</h2>
-    <ul class="tiplist">
-      <li>ホストは「全カードを集める」で自分のカードをデッキへ回収できます。</li>
-      <li>他プレイヤーの手札は裏面表示のまま。プレビューも裏のまま表示されます。</li>
-    </ul>
-  </section>
-</main>
+    <!-- メイン（緑） -->
+    <main class="hero" role="main">
+      <header>
+        <h2>遊び方</h2>
+        <p class="lead">画像をカード化してオンライン対戦。ここでは、部屋の作り方からカード操作、便利機能、困ったときの対処までまとめて解説します。</p>
+      </header>
 
-<footer><p>PlayAround — © 2025 SOLVENTER</p></footer>
-</body></html>
+      <section class="panel" aria-labelledby="quickstart">
+        <h3 id="quickstart">まずはクイックスタート（3ステップ）</h3>
+        <ol>
+          <li><strong>ルーム作成／参加：</strong>ルーム番号を決めて共有。パスがある場合は参加者へ伝えます。</li>
+          <li><strong>座席選択：</strong>P1〜P4から自分の席を選びます（視点やエリア配置に影響）。</li>
+          <li><strong>画像をカード化：</strong>画像をアップロード→場に配置。右クリックで表裏、ダブルクリックで回転。</li>
+        </ol>
+
+        <h3>カードの基本操作</h3>
+        <ul>
+          <li><strong>ドラッグ：</strong>カードをつかんで移動。重なった場合、前面カードが上に。</li>
+          <li><strong>回転：</strong>ダブルクリック、または回転ボタン。</li>
+          <li><strong>表裏反転：</strong>右クリックで瞬時に反転。</li>
+          <li><strong>整列／シャッフル：</strong>デッキエリアで整列・シャッフルを実行。</li>
+          <li><strong>選択表示：</strong>選択中カードは赤枠とプレビュー拡大。</li>
+        </ul>
+
+        <h3>エリアの使い分け</h3>
+        <ul>
+          <li><strong>プレイエリア：</strong>実際にカードを出して勝負・進行する領域。</li>
+          <li><strong>デッキエリア：</strong>自分（または共有）の山札置き場。整列・シャッフルの中心。</li>
+          <li><strong>手札エリア：</strong>自分だけが表を見られる領域。他プレイヤー画面では裏固定。</li>
+          <li><strong>捨て札エリア：</strong>不要カードの置き場。後で回収も可能。</li>
+          <li><strong>特殊エリア：</strong>ゲームごとの独自用途（得点、効果、保留など）。</li>
+        </ul>
+
+        <h3>便利機能（サクッと一覧）</h3>
+        <ul>
+          <li>数値カウンター（＋1/＋10/＋50/＋100）・トークン・ダイス</li>
+          <li>「全カードを集める」：自分のカードをデッキへ回収</li>
+          <li>ズーム＆パン：各プレイヤーごとに独立した視点操作</li>
+        </ul>
+
+        <h3>ショートカット & 操作の小ワザ</h3>
+        <ul>
+          <li><strong>マウスホイール：</strong>拡大・縮小（自分の視点にのみ適用）</li>
+          <li><strong>何も掴んでいない状態でドラッグ：</strong>盤面をパン（移動）</li>
+          <li><strong>カード重なりの見分け：</strong>前面カードが一番手前。プレビューで確認</li>
+        </ul>
+      </section>
+    </main>
+
+    <!-- 右上カード：FAQ -->
+    <aside class="card right-top" aria-labelledby="faq-title">
+      <h3 id="faq-title">よくある質問</h3>
+      <ul style="margin:0; padding-left:1.1em">
+        <li>インストールは必要？ <br>→ 不要。ブラウザだけでOK。</li>
+        <li>料金は？ <br>→ 基本無料。有料機能は別途案内。</li>
+        <li>スマホ対応？ <br>→ はい、主要ブラウザに対応。</li>
+        <li>手札は他人に見える？ <br>→ いいえ。他プレイヤーには裏のまま表示。</li>
+      </ul>
+    </aside>
+
+    <!-- 右下カード：トラブルシュート -->
+    <aside class="card right-bottom" aria-labelledby="trouble-title">
+      <h3 id="trouble-title" style="color:#3d2600">困ったときは</h3>
+      <ol style="margin:0; padding-left:1.2em; color:#3d2600">
+        <li>画面が重い<br>→タブを減らす／ズーム率を下げる／画像サイズを小さめに</li>
+        <li>カードが見切れる<br>→パンで視点移動、ズームアウト</li>
+        <li>同期がおかしい<br>→再読み込み後に同じルームへ再入室</li>
+        <li>不具合報告<br>→<a href="https://www.play-around.app/contact.html" style="color:#3d2600">お問い合わせ</a></li>
+      </ol>
+    </aside>
+
+    <!-- 下部CTA：いますぐ遊ぶ -->
+    <section class="cta" role="region" aria-label="今すぐはじめる">
+      <div>
+        <strong style="font-size:1.05rem">いますぐ PlayAround をはじめよう</strong><br>
+        ブラウザだけでOK。インストール不要・無料で遊べます。
+      </div>
+      <div class="cta-actions">
+        <a href="game.html" class="btn-white" aria-label="PlayAroundをプレイする">▶ プレイする</a>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>
