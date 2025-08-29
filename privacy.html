@@ -1,44 +1,216 @@
-<!doctype html><html lang="ja"><head>
-<meta charset="utf-8">
-<title>プライバシーポリシー | PlayAround</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="PlayAroundのプライバシーポリシー。Cookie、広告（Google AdSense）等の取り扱いを説明します。">
-<link rel="canonical" href="https://www.play-around.app/privacy.html">
-</head><body>
-<header><h1>プライバシーポリシー</h1></header>
-<main>
-<p>PlayAround（以下「当サイト」）は、お客様のプライバシーを尊重し、関連法令に従って個人情報を適切に取り扱います。</p>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PlayAround — プライバシーポリシー</title>
+  <meta name="description" content="PlayAroundのプライバシーポリシー。Cookie、広告（Google AdSense）、アクセス解析、保存期間、ユーザーの権利などの取り扱いを説明します。">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
 
-<h2>1. 取得する情報</h2>
-<ul>
-  <li>お問い合わせ時にお客様が入力する情報（メールアドレス、お名前など）</li>
-  <li>利用状況の把握のためのアクセスログ、Cookie 等の識別子</li>
-</ul>
+  <style>
+    :root{
+      --gap:16px; --radius:14px;
+      /* PlayAround配色（index.htmlと揃え） */
+      --purple:#b350be; --green:#3cd08e; --red:#e64a5a;
+      --orange:#f79f27; --blue:#1e82e0;
+      --ink:#0f172a; --bg:#f6f7fb; --card:#ffffff;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family:"Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
+                   "Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic",Meiryo,sans-serif;
+    }
 
-<h2>2. 利用目的</h2>
-<ul>
-  <li>サービス提供・品質向上のため</li>
-  <li>不具合対応・利用状況の分析のため</li>
-  <li>お問い合わせ対応のため</li>
-</ul>
+    /* レイアウト（index準拠） */
+    .layout{
+      min-height:100dvh;
+      display:grid;
+      grid-template-columns:260px minmax(0,1fr) 320px;
+      grid-template-rows:1fr auto;
+      gap:var(--gap);
+      padding:var(--gap);
+    }
 
-<h2>3. Google AdSense について</h2>
-<p>当サイトは第三者配信の広告サービスである Google AdSense を利用します。Google 等の第三者は、Cookie（広告識別子を含む）を使用してユーザーの過去のアクセス情報に基づき広告を配信します。ユーザーは <a href="https://adssettings.google.com/authenticated" rel="noopener" target="_blank">広告設定</a> でパーソナライズ広告を無効にできます。Google のデータの取り扱いについては <a href="https://policies.google.com/technologies/ads?hl=ja" rel="noopener" target="_blank">こちら</a> をご確認ください。</p>
+    /* サイドバー */
+    .sidebar{
+      grid-row:1 / span 2; grid-column:1;
+      background:var(--purple); color:#fff;
+      border-radius:var(--radius); padding:20px 18px;
+      display:flex; flex-direction:column; justify-content:space-between;
+      box-shadow:0 8px 24px rgba(164,10,179,.25);
+    }
+    .brand{ display:flex; align-items:center; gap:12px }
+    .brand h1{ margin:0; font-size:1.2rem; letter-spacing:.2px }
+    .nav{ margin-top:18px; display:grid; gap:10px }
+    .nav a{
+      color:#fff; text-decoration:none; padding:10px 12px; border-radius:10px;
+      background:rgba(255,255,255,.08); backdrop-filter:saturate(140%) blur(2px);
+    }
+    .nav a:hover{ background:rgba(255,255,255,.16) }
+    .credit{ font-size:.8rem; opacity:.85 }
 
-<h2>4. アクセス解析</h2>
-<p>サイト改善のため解析ツールを使用する場合があります。取得データは匿名で収集され、個人を特定するものではありません。</p>
+    /* メイン（緑の面） */
+    .hero{
+      grid-column:2; grid-row:1;
+      background:var(--green); border-radius:var(--radius);
+      padding:40px 42px; color:#053021;
+      box-shadow:0 10px 24px rgba(39,217,138,.25);
+    }
+    .hero h2{ margin:0 0 6px; font-size:1.9rem }
+    .hero p.lead{ margin:6px 0 22px; font-size:1.05rem }
 
-<h2>5. 外部送信・第三者提供</h2>
-<p>法令に基づく場合を除き、本人の同意なく個人情報を第三者に提供しません。</p>
+    .policy{
+      background:rgba(255,255,255,.9);
+      border-radius:12px; padding:22px; line-height:1.8;
+      box-shadow:0 8px 18px rgba(0,0,0,.08);
+    }
+    .policy h3{ margin:18px 0 8px; font-size:1.15rem; color:#0b3b2b }
+    .policy ul{ margin:0 0 12px 1.2em }
+    .policy p{ margin:0 0 12px }
 
-<h2>6. 安全管理</h2>
-<p>取得した情報は不正アクセス・漏えい防止のため必要かつ適切な安全管理措置を講じます。</p>
+    /* 右上（赤）／右下（橙）カード */
+    .card{
+      border-radius:var(--radius); padding:22px; color:#fff;
+      box-shadow:0 10px 22px rgba(15,23,42,.12);
+    }
+    .card h3{ margin:0 0 10px }
+    .right-top{ grid-column:3; grid-row:1; background:var(--red) }
+    .right-bottom{ grid-column:3; grid-row:1; align-self:end; background:var(--orange); color:#3d2600 }
 
-<h2>7. お問い合わせ</h2>
-<p>個人情報・広告・著作権に関するお問い合わせ：<a href="mailto:solventer.com@gmail.com">solventer.com@gmail.com</a></p>
+    /* 下部青帯（CTA） */
+    .cta{
+      grid-column:2 / 4; grid-row:2;
+      background:var(--blue); color:#fff; border-radius:var(--radius);
+      padding:22px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      box-shadow:0 10px 24px rgba(13,115,232,.25);
+    }
+    .btn-white{
+      display:inline-block; background:#fff; color:#0d73e8; text-decoration:none;
+      border-radius:12px; padding:12px 16px; font-weight:700;
+    }
 
-<h2>8. 改定</h2>
-<p>内容を予告なく改定する場合があります。最新のポリシーは本ページに掲載します。</p>
-</main>
-<footer><p>PlayAround — © 2025 SOLVENTER</p></footer>
-</body></html>
+    /* レスポンシブ */
+    @media (max-width: 1000px){
+      .layout{ grid-template-columns: minmax(0,1fr); grid-template-rows:auto auto auto auto }
+      .sidebar{ grid-row:auto; grid-column:auto; flex-direction:row; align-items:center; gap:14px }
+      .nav{ grid-auto-flow:column; overflow:auto; white-space:nowrap; gap:8px; margin:0 }
+      .hero, .right-top, .right-bottom, .cta{ grid-column:auto; grid-row:auto }
+      .credit{ display:none }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- サイドバー -->
+    <aside class="sidebar" aria-label="サイドナビゲーション">
+      <div>
+        <div class="brand">
+          <img src="PlayAround-icon.png" alt="PlayAroundアイコン"
+               style="width:40px;height:40px;border-radius:10px;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.15)" />
+          <h1>PlayAround</h1>
+        </div>
+        <nav class="nav" style="margin-top:16px">
+          <a href="index.html">トップ</a>
+          <a href="index.html#howto">遊び方</a>
+          <a href="index.html#news">お知らせ</a>
+          <a href="https://www.play-around.app/terms.html">利用規約</a>
+          <a href="https://www.play-around.app/privacy.html">プライバシーポリシー</a>
+          <a href="https://www.play-around.app/contact.html">お問い合わせ</a>
+        </nav>
+      </div>
+      <div class="credit">PlayAround — © 2025 SOLVENTER</div>
+    </aside>
+
+    <!-- メイン（緑） -->
+    <main class="hero" role="main">
+      <header>
+        <h2>プライバシーポリシー</h2>
+        <p class="lead">PlayAround（以下「当サイト」）は、ユーザーのプライバシーを尊重し、関連法令に従って個人情報を適切に取り扱います。</p>
+      </header>
+
+      <section class="policy">
+        <h3>1. 取得する情報</h3>
+        <ul>
+          <li>お問い合わせ時にご入力いただく情報（メールアドレス、氏名など）</li>
+          <li>利用状況の把握のために収集する技術情報（IPアドレス、端末/ブラウザ情報、アクセスログ、Cookie 等の識別子）</li>
+        </ul>
+
+        <h3>2. 利用目的</h3>
+        <ul>
+          <li>サービス提供、機能改善、品質向上のため</li>
+          <li>不具合調査、利用状況の分析、セキュリティ対策のため</li>
+          <li>お問い合わせ対応、重要なお知らせの送付のため</li>
+        </ul>
+
+        <h3>3. Cookie・広告（Google AdSense）</h3>
+        <p>当サイトは第三者配信の広告サービスを利用し、第三者は Cookie（広告識別子を含む）を用いて過去のアクセス情報に基づく広告配信を行います。ユーザーは
+          <a href="https://adssettings.google.com/authenticated" target="_blank" rel="noopener">広告設定</a> にてパーソナライズ広告を無効化できます。各社のデータ取り扱いについては
+          <a href="https://policies.google.com/technologies/ads?hl=ja" target="_blank" rel="noopener">こちら</a> をご確認ください。</p>
+
+        <h3>4. アクセス解析</h3>
+        <p>サイト改善の目的でアクセス解析ツールを使用する場合があります。取得データは統計的に処理され、個人を特定するものではありません。</p>
+
+        <h3>5. 外部送信・第三者提供</h3>
+        <p>法令に基づく場合を除き、本人の同意なく第三者に提供しません。</p>
+
+        <h3>6. 保存期間</h3>
+        <p>収集した情報は、利用目的の達成に必要な範囲で保存し、不要になった場合には遅滞なく削除または匿名化します。</p>
+
+        <h3>7. 安全管理措置</h3>
+        <p>不正アクセス、漏えい、改ざん等を防止するため、必要かつ適切な技術的・組織的安全管理措置を講じます。</p>
+
+        <h3>8. ユーザーの権利</h3>
+        <p>ご本人からの開示、訂正、利用停止、削除等のご請求には、合理的な範囲で対応します。ご連絡は下記窓口までお願いします。</p>
+
+        <h3>9. 児童の個人情報</h3>
+        <p>当サイトは原則として児童を対象としておらず、児童の個人情報を故意に収集しません。</p>
+
+        <h3>10. 国外移転</h3>
+        <p>サービス運用上、情報が保存されるサーバ等が国外に所在する場合があります。その場合も適用法令を遵守します。</p>
+
+        <h3>11. お問い合わせ窓口</h3>
+        <p>個人情報、広告、著作権に関するお問い合わせ：<a href="mailto:solventer.com@gmail.com">solventer.com@gmail.com</a></p>
+
+        <h3>12. 改定</h3>
+        <p>本ポリシーは予告なく改定される場合があります。最新の内容は本ページに掲示します。施行日：2025-08-30</p>
+      </section>
+    </main>
+
+    <!-- 右上カード：簡易要約 -->
+    <aside class="card right-top" aria-labelledby="summary-title">
+      <h3 id="summary-title">要点まとめ</h3>
+      <ul style="margin:0; padding-left:1.1em">
+        <li>Cookieと広告識別子を広告/解析に利用</li>
+        <li>目的：提供・改善・不具合対応・問合せ対応</li>
+        <li>第三者提供は法令等を除き行いません</li>
+      </ul>
+    </aside>
+
+    <!-- 右下カード：ユーザーの選択肢 -->
+    <aside class="card right-bottom" aria-labelledby="controls-title">
+      <h3 id="controls-title" style="color:#3d2600">あなたの選択肢</h3>
+      <ol style="margin:0; padding-left:1.2em; color:#3d2600">
+        <li>広告のパーソナライズ設定を見直す</li>
+        <li>問い合わせで開示・訂正等を請求</li>
+        <li>ブラウザのCookie設定を調整</li>
+      </ol>
+    </aside>
+
+    <!-- 下部CTA：遊びに戻る -->
+    <section class="cta" role="region" aria-label="今すぐはじめる">
+      <div>
+        <strong style="font-size:1.05rem">いますぐ PlayAround をはじめよう</strong><br>
+        ブラウザだけでOK。インストール不要・無料で遊べます。
+      </div>
+      <div class="cta-actions">
+        <a href="game.html" class="btn-white" aria-label="PlayAroundをプレイする">▶ プレイする</a>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>

@@ -1,35 +1,220 @@
-<!doctype html><html lang="ja"><head>
-<meta charset="utf-8">
-<title>利用規約 | PlayAround</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="PlayAroundの利用規約。禁止事項や免責事項などをご案内します。">
-<link rel="canonical" href="https://www.play-around.app/terms.html">
-</head><body>
-<header><h1>利用規約</h1></header>
-<main>
-<p>本規約は、PlayAround（以下「本サービス」）の利用条件を定めるものです。本サービスの利用者（以下「ユーザー」）は、本規約に同意のうえご利用ください。</p>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PlayAround — 利用規約</title>
+  <meta name="description" content="PlayAround の利用規約。禁止事項、ユーザーコンテンツの権利、免責、責任制限、広告・課金、規約の変更などを定めます。">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
 
-<h2>1. 禁止事項</h2>
-<ul>
-  <li>法令または公序良俗に違反する行為</li>
-  <li>知的財産権・プライバシー権を侵害する行為</li>
-  <li>不正アクセス・サーバへの過度な負荷を与える行為</li>
-</ul>
+  <style>
+    :root{
+      --gap:16px; --radius:14px;
+      /* index.html と統一のカラーパレット */
+      --purple:#b350be; --green:#3cd08e; --red:#e64a5a;
+      --orange:#f79f27; --blue:#1e82e0;
+      --ink:#0f172a; --bg:#f6f7fb; --card:#ffffff;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family:"Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
+                   "Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic",Meiryo,sans-serif;
+    }
 
-<h2>2. コンテンツの取り扱い</h2>
-<p>ユーザーがアップロードした画像等の著作権は当該ユーザーに帰属します。ユーザーは自らが権利を有し、又は適法に利用する権利を取得した素材のみを使用してください。</p>
+    /* レイアウト（index.html準拠） */
+    .layout{
+      min-height:100dvh;
+      display:grid;
+      grid-template-columns:260px minmax(0,1fr) 320px;
+      grid-template-rows:1fr auto;
+      gap:var(--gap);
+      padding:var(--gap);
+    }
 
-<h2>3. 免責事項</h2>
-<p>運営者は、サービスの中断・停止、データ消失、第三者による不正行為等によりユーザーに生じた損害について、故意または重過失がある場合を除き責任を負いません。</p>
+    /* サイドバー */
+    .sidebar{
+      grid-row:1 / span 2; grid-column:1;
+      background:var(--purple); color:#fff;
+      border-radius:var(--radius); padding:20px 18px;
+      display:flex; flex-direction:column; justify-content:space-between;
+      box-shadow:0 8px 24px rgba(164,10,179,.25);
+    }
+    .brand{ display:flex; align-items:center; gap:12px }
+    .brand h1{ margin:0; font-size:1.2rem; letter-spacing:.2px }
+    .nav{ margin-top:18px; display:grid; gap:10px }
+    .nav a{
+      color:#fff; text-decoration:none; padding:10px 12px; border-radius:10px;
+      background:rgba(255,255,255,.08); backdrop-filter:saturate(140%) blur(2px);
+    }
+    .nav a:hover{ background:rgba(255,255,255,.16) }
+    .credit{ font-size:.8rem; opacity:.85 }
 
-<h2>4. 広告表示</h2>
-<p>本サービスには第三者による広告が表示されることがあります。広告内容・遷移先サイトについて運営者は責任を負いません。</p>
+    /* メイン（緑の面） */
+    .hero{
+      grid-column:2; grid-row:1;
+      background:var(--green); border-radius:var(--radius);
+      padding:40px 42px; color:#053021;
+      box-shadow:0 10px 24px rgba(39,217,138,.25);
+    }
+    .hero h2{ margin:0 0 6px; font-size:1.9rem }
+    .hero p.lead{ margin:6px 0 22px; font-size:1.05rem }
 
-<h2>5. 規約の変更</h2>
-<p>必要に応じて本規約を変更する場合があります。変更後の規約は本ページに掲示した時点から効力を生じます。</p>
+    .terms{
+      background:rgba(255,255,255,.92);
+      border-radius:12px; padding:22px; line-height:1.82;
+      box-shadow:0 8px 18px rgba(0,0,0,.08);
+    }
+    .terms h3{ margin:18px 0 8px; font-size:1.15rem; color:#0b3b2b }
+    .terms ul{ margin:0 0 12px 1.2em }
+    .terms p{ margin:0 0 12px }
 
-<h2>6. お問い合わせ</h2>
-<p><a href="mailto:solventer.com@gmail.com">solventer.com@gmail.com</a></p>
-</main>
-<footer><p>PlayAround — © 2025 SOLVENTER</p></footer>
-</body></html>
+    /* 右上（赤）／右下（橙）カード */
+    .card{
+      border-radius:var(--radius); padding:22px; color:#fff;
+      box-shadow:0 10px 22px rgba(15,23,42,.12);
+    }
+    .card h3{ margin:0 0 10px }
+    .right-top{ grid-column:3; grid-row:1; background:var(--red) }
+    .right-bottom{ grid-column:3; grid-row:1; align-self:end; background:var(--orange); color:#3d2600 }
+
+    /* 下部青帯（CTA） */
+    .cta{
+      grid-column:2 / 4; grid-row:2;
+      background:var(--blue); color:#fff; border-radius:var(--radius);
+      padding:22px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      box-shadow:0 10px 24px rgba(13,115,232,.25);
+    }
+    .btn-white{
+      display:inline-block; background:#fff; color:#0d73e8; text-decoration:none;
+      border-radius:12px; padding:12px 16px; font-weight:700;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 1000px){
+      .layout{ grid-template-columns: minmax(0,1fr); grid-template-rows:auto auto auto auto }
+      .sidebar{ grid-row:auto; grid-column:auto; flex-direction:row; align-items:center; gap:14px }
+      .nav{ grid-auto-flow:column; overflow:auto; white-space:nowrap; gap:8px; margin:0 }
+      .hero, .right-top, .right-bottom, .cta{ grid-column:auto; grid-row:auto }
+      .credit{ display:none }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- サイドバー -->
+    <aside class="sidebar" aria-label="サイドナビゲーション">
+      <div>
+        <div class="brand">
+          <img src="PlayAround-icon.png" alt="PlayAroundアイコン"
+               style="width:40px;height:40px;border-radius:10px;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.15)" />
+          <h1>PlayAround</h1>
+        </div>
+        <nav class="nav" style="margin-top:16px">
+          <a href="index.html">トップ</a>
+          <a href="index.html#howto">遊び方</a>
+          <a href="index.html#news">お知らせ</a>
+          <a href="https://www.play-around.app/terms.html">利用規約</a>
+          <a href="https://www.play-around.app/privacy.html">プライバシーポリシー</a>
+          <a href="https://www.play-around.app/contact.html">お問い合わせ</a>
+        </nav>
+      </div>
+      <div class="credit">PlayAround — © 2025 SOLVENTER</div>
+    </aside>
+
+    <!-- メイン（緑） -->
+    <main class="hero" role="main">
+      <header>
+        <h2>利用規約</h2>
+        <p class="lead">本規約は、PlayAround（以下「本サービス」）の利用条件を定めるものです。ユーザーは本規約に同意のうえ、本サービスを利用するものとします。</p>
+      </header>
+
+      <section class="terms">
+        <h3>1. 適用範囲・変更</h3>
+        <p>本規約は本サービスに関する一切の関係に適用されます。必要に応じて本規約を変更する場合があり、変更後は本ページへの掲示時に効力を生じます。</p>
+
+        <h3>2. アカウントと利用環境</h3>
+        <ul>
+          <li>ユーザーは自己の責任で端末・回線・ブラウザ等の利用環境を整えます。</li>
+          <li>アカウント機能がある場合、認証情報の管理はユーザーの責任とし、第三者の不正利用があっても当社は責任を負いません。</li>
+        </ul>
+
+        <h3>3. ユーザーコンテンツの取り扱い</h3>
+        <p>ユーザーがアップロードした画像等の著作権は当該ユーザーに帰属します。ユーザーは、適法な権利を有する素材のみを使用してください。</p>
+        <p>ユーザーは、本サービスの提供・表示・保存・バックアップ・不具合調査のために必要な範囲で、当社に対し当該コンテンツの非独占的・無償・世界的な利用（複製・翻案・公衆送信・表示・頒布）の許諾を付与します。</p>
+
+        <h3>4. 禁止事項</h3>
+        <ul>
+          <li>法令または公序良俗に違反する行為</li>
+          <li>第三者の知的財産権・プライバシー権・肖像権の侵害</li>
+          <li>不正アクセス、改ざん、スパム、過度な負荷・妨害行為</li>
+          <li>本サービスで取得した情報の無断転載・転用</li>
+          <li>他者になりすます行為、虚偽申告、詐欺的行為</li>
+        </ul>
+
+        <h3>5. 料金・決済（将来導入時の規定）</h3>
+        <p>有料プランやアイテム課金等を導入する場合、料金・課金条件・解約/返金ポリシーは別途ページにて明示します。決済事業者の障害・規約変更により提供内容を変更・停止することがあります。</p>
+
+        <h3>6. 知的財産権</h3>
+        <p>本サービスに関するプログラム、デザイン、商標等の知的財産権は当社または適法な権利者に帰属します。ユーザーは明示の許諾なく複製・転載・改変・頒布等をしてはなりません。</p>
+
+        <h3>7. 広告・外部サービス</h3>
+        <p>本サービスには第三者の広告が表示される場合があります。広告内容・遷移先について当社は責任を負いません。外部サービスの規約・ポリシーが適用されることがあります。</p>
+
+        <h3>8. 免責事項・保証の否認</h3>
+        <p>当社は、本サービスについて、適合性・有用性・完全性・安全性等につき明示または黙示の保証をしません。ユーザーは自己責任で利用するものとします。</p>
+
+        <h3>9. 責任の制限</h3>
+        <p>当社は、当社の故意または重過失による場合を除き、本サービスの利用に関連してユーザーに生じた損害について責任を負いません。やむを得ず責任を負う場合でも、通常かつ直接の損害に限り、かつ過去12か月間にユーザーが当社に支払った対価（無償の場合は0円）を上限とします。</p>
+
+        <h3>10. サービスの変更・中止</h3>
+        <p>当社は、事前の予告なくサービス内容の全部または一部を変更・中断・終了することがあります。これによりユーザーに損害が生じても、当社は責任を負いません。</p>
+
+        <h3>11. 準拠法・紛争解決</h3>
+        <p>本規約の準拠法は日本法とします。本サービスまたは本規約に関して紛争が生じた場合、当社所在地を管轄する裁判所を第一審の専属的合意管轄裁判所とします。</p>
+
+        <h3>12. 連絡方法</h3>
+        <p>本規約や権利侵害の申告等に関するお問い合わせは、<a href="mailto:solventer.com@gmail.com">solventer.com@gmail.com</a> までご連絡ください。</p>
+
+        <h3>13. 発効・改定</h3>
+        <p>本規約は本ページに掲示した日から効力を生じます。改定後は最新の内容を本ページに掲載します。施行日：2025-08-30</p>
+      </section>
+    </main>
+
+    <!-- 右上カード：クイック要約 -->
+    <aside class="card right-top" aria-labelledby="quick-title">
+      <h3 id="quick-title">要点まとめ</h3>
+      <ul style="margin:0; padding-left:1.1em">
+        <li>ユーザー作品の権利はユーザーに帰属</li>
+        <li>運営は表示・保存等に必要な範囲で利用可</li>
+        <li>不正・権利侵害・高負荷行為はNG</li>
+      </ul>
+    </aside>
+
+    <!-- 右下カード：関連ポリシー -->
+    <aside class="card right-bottom" aria-labelledby="related-title">
+      <h3 id="related-title" style="color:#3d2600">関連ポリシー</h3>
+      <ol style="margin:0; padding-left:1.2em; color:#3d2600">
+        <li><a href="https://www.play-around.app/privacy.html" style="color:#3d2600">プライバシーポリシー</a> を確認</li>
+        <li><a href="https://www.play-around.app/contact.html" style="color:#3d2600">お問い合わせ</a> で相談</li>
+        <li>不正や権利侵害を見つけたら通報</li>
+      </ol>
+    </aside>
+
+    <!-- 下部CTA：遊びに戻る -->
+    <section class="cta" role="region" aria-label="今すぐはじめる">
+      <div>
+        <strong style="font-size:1.05rem">いますぐ PlayAround をはじめよう</strong><br>
+        ブラウザだけでOK。インストール不要・無料で遊べます。
+      </div>
+      <div class="cta-actions">
+        <a href="game.html" class="btn-white" aria-label="PlayAroundをプレイする">▶ プレイする</a>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>
