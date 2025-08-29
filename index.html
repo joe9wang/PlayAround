@@ -148,6 +148,45 @@
     /* リンクの見た目統一 */
     a.btn{ display:inline-block; text-decoration:none }
 
+  /* ===== おしゃれな大ボタン ===== */
+  .btn-play{
+    font-size:1.6rem;
+    padding:22px 44px;
+    border-radius:16px;
+    font-weight:800;
+    letter-spacing:.04em;
+    display:inline-flex; align-items:center; gap:.6em;
+    color:#fff; text-decoration:none;
+    /* パープル基調のグラデーション */
+    background:linear-gradient(135deg, #b350be 0%, #702d85 50%, #b350be 100%);
+    background-size:220% 220%;
+    box-shadow:0 14px 32px rgba(112,45,133,.35);
+    transition:transform .15s ease, box-shadow .35s ease, background-position .6s ease;
+    position:relative; overflow:hidden;
+  }
+  .btn-play:hover{
+    transform:translateY(-2px) scale(1.03);
+    background-position:100% 0;
+    box-shadow:0 20px 44px rgba(112,45,133,.45);
+  }
+  .btn-play:active{ transform:translateY(0) scale(0.99) }
+  .btn-play:focus-visible{
+    outline:none; box-shadow:0 0 0 4px rgba(255,255,255,.6), 0 0 0 8px rgba(179,80,190,.55);
+  }
+  /* シャイン効果 */
+  .btn-play::after{
+    content:""; position:absolute; inset:-40% -30%;
+    background:linear-gradient(105deg, rgba(255,255,255,.0) 0%, rgba(255,255,255,.25) 50%, rgba(255,255,255,.0) 100%);
+    transform:translateX(-120%) rotate(8deg);
+    transition:transform .8s ease;
+    pointer-events:none;
+  }
+  .btn-play:hover::after{ transform:translateX(60%) rotate(8deg) }
+    @media (prefers-reduced-motion: reduce){
+    .btn-play, .btn-play:hover{ transition:none; transform:none }
+    .btn-play::after{ display:none }
+  }
+
     /* ====== レスポンシブ ====== */
     @media (max-width: 1000px){
       .layout{
@@ -187,22 +226,29 @@
     <!-- 中央：ヒーロー（大きい緑） -->
     <main class="hero">
       <div>
-        <h2>ボドゲ・カードを “自由に作り, 自由に遊ぶ”</h2>
-        <p>画像をアップロードしてカード化、ドラッグ＆回転、表裏反転、デッキ化・シャッフルまで。<br>
-           ルーム番号とプレイヤー番号を選ぶだけで、すぐに遊べます。</p>
+        <h2>カードやボドゲを “自由に作り, 自由に遊ぶ”</h2>
+        <p>画像をアップロードしてカード化。すぐに遊ぶことが可能。<br>
+           ダイス・トークン・カウンター機能搭載。ボドゲ・カードゲームのプレイを最大限にサポート！<br>
+           ドラッグ・回転・表裏反転・デッキシャッフル機能搭載。リアルに近いプレイ体験を！<br>
+           ブラウザだけで、すぐにプレイ可能。基本無料・インストール不要！<br>
+           自分だけのカードゲーム・ボードゲームを“すぐに”友達と！<br>
+           2人～4人までのプレイ人数に対応。<br>
+           すぐに遊べる、オリジナルゲームが搭載。<br>
+        </p>
       </div>
 
-      <form class="room" onsubmit="return goRoom(event)">
-        <input id="room" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="ルーム番号（例：1234）" aria-label="ルーム番号">
-        <select id="seat" aria-label="プレイヤー番号">
-          <option value="1">プレイヤー1</option>
-          <option value="2">プレイヤー2</option>
-          <option value="3">プレイヤー3</option>
-          <option value="4">プレイヤー4</option>
-        </select>
-        <button class="btn btn-dark" type="submit">入室する</button>
-        <button class="btn btn-ghost" type="button" onclick="location.href='game.html'">ソロで試す</button>
-      </form>
+      <!-- 中央の画像 -->
+      <div style="text-align:center; margin:28px 0;">
+        <img src="/field-pic.png" alt="プレイイメージ" style="max-width:80%; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.25);" />
+      </div>
+
+      <!-- プレイするボタン -->
+      <div style="text-align:center; margin-top:20px;">
+        <a href="game.html" class="btn-play" aria-label="PlayAroundをプレイする">
+          ▶ プレイする
+        </a>
+      </div>
+
     </main>
 
     <!-- 右上：赤カード（更新情報など） -->
@@ -239,18 +285,5 @@
 
   </div>
 
-  <script>
-    function goRoom(e){
-      e.preventDefault();
-      const room = (document.getElementById('room').value || '').trim();
-      const seat = document.getElementById('seat').value;
-      const q = new URLSearchParams();
-      if(room) q.set('room', room);
-      if(seat) q.set('player', seat);
-      // 既存の game.html に引数で渡す想定
-      location.href = 'game.html' + (q.toString() ? ('?' + q.toString()) : '');
-      return false;
-    }
-  </script>
 </body>
 </html>
