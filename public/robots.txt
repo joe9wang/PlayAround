@@ -1,0 +1,6 @@
+# robots.txt for PlayAround
+User-agent: *
+Allow: /
+
+# サイトマップの場所を明示
+Sitemap: https://www.play-around.app/sitemap.xml
