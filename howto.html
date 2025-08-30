@@ -12,7 +12,8 @@
   <meta name="description" content="PlayAroundの遊び方。ルーム作成からカード操作、各エリア、便利機能、ショートカット、FAQ、トラブルシュートまで詳しく解説。">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
-
+  <link rel="stylesheet" href="./assets/site.css">
+  
   <style>
     :root{
       --gap:16px; --radius:14px;
@@ -111,27 +112,20 @@
 <body>
   <div class="layout">
 
-    <!-- サイドバー -->
-    <aside class="sidebar" aria-label="サイドナビゲーション">
-      <div>
-        <div class="brand">
-          <img src="PlayAround-icon.png" alt="PlayAroundアイコン"
-               style="width:40px;height:40px;border-radius:10px;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.15)" />
-          <h1>PlayAround</h1>
-        </div>
-        <nav class="nav" style="margin-top:16px">
-          <a href="index.html">トップ</a>
-          <a href="howto.html">遊び方</a>
-          <a href="news.html">お知らせ</a>
-          <a href="terms.html">利用規約</a>
-          <a href="privacy.html">プライバシーポリシー</a>
-          <a href="contact.html">お問い合わせ</a>
-          <span style="opacity:.9;margin-top:6px">— オリジナルゲーム —</span>
-          <a href="Geki-Mahjong.html">激・マージャン</a>
-        </nav>
-      </div>
-      <div class="credit">PlayAround — © 2025 SOLVENTER</div>
-    </aside>
+    <!-- 共通サイドバー -->
+    <div id="sidebar-mount"></div>
+    <script>
+      (async () => {
+        const el = document.getElementById('sidebar-mount');
+        for (const url of ["./partials/sidebar.html", "/partials/sidebar.html"]) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (res.ok) { el.innerHTML = await res.text(); return; }
+          } catch {}
+        }
+        console.warn("sidebar.html が見つかりませんでした。");
+      })();
+    </script>
 
     <!-- メイン（緑） -->
     <main class="hero" role="main">
