@@ -1,5 +1,5 @@
 // scripts/inject-env.mjs
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, cpSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,6 +8,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // 1) 入力/出力ファイル
 const OUT_DIR = "./dist";
 const PAGES = ["./index.html", "./game.html", "./mypage.html"];
+// 追加で丸ごとコピーしたいディレクトリ
+const DIRS = ["./assets", "./partials"]; // ← 重要：CSS と サイドバーHTML
 
 // 2) 置換マップ（Vercelの環境変数 → プレースホルダ）
 const replMap = {
@@ -29,10 +31,19 @@ for (const src of PAGES) {
     html = html.split(ph).join(safe);
   }
   const outPath = `${OUT_DIR}/${src.replace(/^.\//, "")}`; // 例: ./mypage.html → dist/mypage.html
+  mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, html, "utf8");      // 出力
 }
 
-// 6) 追加の静的ファイルがあればここでコピー
+// 4) ディレクトリをそのままコピー（Node 18+ の fs.cp を使用）
+for (const d of DIRS) {
+  if (existsSync(d)) {
+    cpSync(d, `${OUT_DIR}/${d.replace(/^.\//, "")}`, { recursive: true });
+  }
+}
+
+
+// 5) 追加の静的ファイルがあればここでコピー
 // ads.txt を dist にコピー
 copyFileSync("./ads.txt", `${OUT_DIR}/ads.txt`);
 // privacy.html を dist にコピー
@@ -53,4 +64,4 @@ copyFileSync("./Geki-Mahjong.html", `${OUT_DIR}/Geki-Mahjong.html`);
 //copyFileSync("./CardGame.html", `${OUT_DIR}/CardGame.html`);
 
 
-console.log("Injected env vars into dist/index.html");
+console.log("Build done: env injected, assets/ & partials/ copied to dist/");
