@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<link rel="stylesheet" href="./assets/site.css">
 
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
      crossorigin="anonymous"></script>
@@ -186,69 +187,6 @@
     /* リンクの見た目統一 */
     a.btn{ display:inline-block; text-decoration:none }
 
-  /* ===== おしゃれな大ボタン ===== */
-  .btn-play{
-    font-size:1.6rem;
-    padding:22px 44px;
-    border-radius:16px;
-    font-weight:800;
-    letter-spacing:.04em;
-    display:inline-flex; align-items:center; gap:.6em;
-    color:#fff; text-decoration:none;
-    /* パープル基調のグラデーション */
-    background:linear-gradient(135deg, #b350be 0%, #702d85 50%, #b350be 100%);
-    background-size:220% 220%;
-    box-shadow:0 14px 32px rgba(112,45,133,.35);
-    transition:transform .15s ease, box-shadow .35s ease, background-position .6s ease;
-    position:relative; overflow:hidden;
-  }
-  
-  
-  /* 緑色版プレイするボタン */
- .btn-play-green{
-   font-size:1.3rem;
-   padding:16px 28px;
-   border-radius:14px;
-   font-weight:700;
-   display:inline-flex; align-items:center; gap:.6em;
-   color:#fff; text-decoration:none;
-   background:linear-gradient(135deg, #3cd08e 0%, #218d6a 60%, #3cd08e 100%);
-   background-size:220% 220%;
-   box-shadow:0 8px 20px rgba(144, 238, 144, .55);
-   transition:transform .15s ease, box-shadow .35s ease, background-position .6s ease;
-   position:relative; overflow:hidden;
- }
- .btn-play-green:hover{
-   transform:translateY(-1px) scale(1.03);
-   background-position:60% 0;
-   box-shadow:0 12px 28px rgba(144, 238, 144, .45);
- }
- .btn-play-green:active{ transform:translateY(0) scale(0.98) }
-
-  
-  
-  .btn-play:hover{
-    transform:translateY(-2px) scale(1.03);
-    background-position:100% 0;
-    box-shadow:0 20px 44px rgba(112,45,133,.45);
-  }
-  .btn-play:active{ transform:translateY(0) scale(0.99) }
-  .btn-play:focus-visible{
-    outline:none; box-shadow:0 0 0 4px rgba(255,255,255,.6), 0 0 0 8px rgba(179,80,190,.55);
-  }
-  /* シャイン効果 */
-  .btn-play::after{
-    content:""; position:absolute; inset:-40% -30%;
-    background:linear-gradient(105deg, rgba(255,255,255,.0) 0%, rgba(255,255,255,.25) 50%, rgba(255,255,255,.0) 100%);
-    transform:translateX(-120%) rotate(8deg);
-    transition:transform .8s ease;
-    pointer-events:none;
-  }
-  .btn-play:hover::after{ transform:translateX(60%) rotate(8deg) }
-    @media (prefers-reduced-motion: reduce){
-    .btn-play, .btn-play:hover{ transition:none; transform:none }
-    .btn-play::after{ display:none }
-  }
   
   
 ChatGPT:
@@ -320,35 +258,25 @@ ChatGPT:
 <body>
   <div class="layout">
 
-    <!-- 左：縦帯（ナビ） -->
-    <aside class="sidebar" aria-label="サイドナビゲーション">
-      <div>
-        <div class="brand">
-          <img src="PlayAround-icon.png" alt="PlayAroundアイコン" 
-               style="width:40px; height:40px; border-radius:10px; box-shadow:0 6px 16px rgba(0,0,0,.15);" />
-          <h1>PlayAround</h1>
-        </div>
-        
-        <!-- サイドバーの上部に追加した緑色版「プレイする」ボタン -->
-        <div style="margin:16px 0; text-align:center;">
-          <a href="game.html" class="btn-play-green" aria-label="PlayAroundをプレイする" style="display:inline-block;">
-            ▶ プレイする
-          </a>
-        </div>
-        
-        <nav class="nav" style="margin-top:16px">
-          <a href="index.html">トップ</a>
-          <a href="howto.html">遊び方</a>
-          <a href="news.html">お知らせ</a>
-          <a href="terms.html">利用規約</a>
-          <a href="privacy.html">プライバシーポリシー</a>
-          <a href="contact.html">お問い合わせ</a>
-          <span style="opacity:.9;margin-top:6px">— オリジナルゲーム —</span>
-          <a href="Geki-Mahjong.html">激・マージャン</a>
-        </nav>
-      </div>
-      <div class="credit">PlayAround — © 2025 SOLVENTER</div>
-    </aside>
+    <!-- 左：縦帯（サイドバー）を共通化 -->
+    <div id="sidebar-mount"></div>
+    <script>
+      (async () => {
+        const el = document.getElementById('sidebar-mount');
+        // 相対→絶対の順でフォールバック読み込み（どちらか存在すればOK）
+        async function loadSidebar() {
+          const tries = ["./partials/sidebar.html", "/partials/sidebar.html"];
+          for (const url of tries) {
+            try {
+              const res = await fetch(url, { cache: "no-store" });
+              if (res.ok) { el.innerHTML = await res.text(); return; }
+            } catch (e) {}
+          }
+          console.warn("sidebar.html が見つかりませんでした。");
+        }
+        loadSidebar();
+      })();
+    </script>
 
     <!-- 中央：ヒーロー（大きい緑） -->
     <main class="hero">

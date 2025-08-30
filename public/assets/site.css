@@ -1,0 +1,97 @@
+/* ==== 緑の「プレイする」ボタン（サイドバー用） ==== */
+.btn-play-green{
+  font-size:1.3rem;
+  padding:16px 28px;
+  border-radius:14px;
+  font-weight:700;
+  display:inline-flex; align-items:center; gap:.6em;
+  color:#fff; text-decoration:none;
+  background:linear-gradient(135deg, #3cd08e 0%, #218d6a 60%, #3cd08e 100%);
+  background-size:220% 220%;
+  box-shadow:0 8px 20px rgba(144, 238, 144, .55);
+  transition:transform .15s ease, box-shadow .35s ease, background-position .6s ease;
+  position:relative; overflow:hidden;
+}
+.btn-play-green:hover{
+  transform:translateY(-1px) scale(1.03);
+  background-position:60% 0;
+  box-shadow:0 12px 28px rgba(144, 238, 144, .45);
+}
+.btn-play-green:active{ transform:translateY(0) scale(0.98) }
+
+
+/* ===== おしゃれな大ボタン（トップ中央の紫） ===== */
+.btn-play{
+  font-size:1.6rem;
+  padding:22px 44px;
+  border-radius:16px;
+  font-weight:800;
+  letter-spacing:.04em;
+  display:inline-flex; align-items:center; gap:.6em;
+  color:#fff; text-decoration:none;
+  background:linear-gradient(135deg, #b350be 0%, #702d85 50%, #b350be 100%);
+  background-size:220% 220%;
+  box-shadow:0 14px 32px rgba(112,45,133,.35);
+  transition:transform .15s ease, box-shadow .35s ease, background-position .6s ease;
+  position:relative; overflow:hidden;
+}
+.btn-play:hover{
+  transform:translateY(-2px) scale(1.03);
+  background-position:100% 0;
+  box-shadow:0 20px 44px rgba(112,45,133,.45);
+}
+.btn-play:active{ transform:translateY(0) scale(0.99) }
+.btn-play:focus-visible{
+  outline:none; box-shadow:0 0 0 4px rgba(255,255,255,.6), 0 0 0 8px rgba(179,80,190,.55);
+}
+/* シャイン効果 */
+.btn-play::after{
+  content:""; position:absolute; inset:-40% -30%;
+  background:linear-gradient(105deg, rgba(255,255,255,.0) 0%, rgba(255,255,255,.25) 50%, rgba(255,255,255,.0) 100%);
+  transform:translateX(-120%) rotate(8deg);
+  transition:transform .8s ease;
+  pointer-events:none;
+}
+.btn-play:hover::after{ transform:translateX(60%) rotate(8deg) }
+
+/* ===== 小さめの紫ボタン（フッターCTA用） ===== */
+.btn-play-small{
+  font-size:1rem;
+  padding:10px 20px;
+  border-radius:12px;
+  font-weight:700;
+  letter-spacing:.02em;
+  display:inline-flex; align-items:center; gap:.4em;
+  color:#fff; text-decoration:none;
+  background:linear-gradient(135deg, #b350be 0%, #702d85 50%, #b350be 100%);
+  background-size:220% 220%;
+  box-shadow:0 6px 16px rgba(112,45,133,.35);
+  transition:transform .15s ease, box-shadow .35s ease, background-position .6s ease;
+  position:relative; overflow:hidden;
+}
+.btn-play-small:hover{
+  transform:translateY(-1px);
+  background-position:100% 0;
+  box-shadow:0 10px 20px rgba(112,45,133,.45);
+}
+.btn-play-small:active{ transform:translateY(0) scale(0.98) }
+.btn-play-small::after{
+  content:""; position:absolute; inset:-40% -30%;
+  background:linear-gradient(105deg, rgba(255,255,255,.0) 0%, rgba(255,255,255,.25) 50%, rgba(255,255,255,.0) 100%);
+  transform:translateX(-120%) rotate(8deg);
+  transition:transform .8s ease;
+  pointer-events:none;
+}
+.btn-play-small:hover::after{ transform:translateX(60%) rotate(8deg) }
+
+/* 省モーション対応（共通） */
+@media (prefers-reduced-motion: reduce){
+  .btn-play, .btn-play:hover,
+  .btn-play-small, .btn-play-small:hover{
+    transition:none; transform:none
+  }
+  .btn-play::after, .btn-play-small::after{ display:none }
+}
+
+
+
