@@ -46,6 +46,10 @@ for (const d of DIRS) {
 // 5) 追加の静的ファイルがあればここでコピー
 // ads.txt を dist にコピー
 copyFileSync("./ads.txt", `${OUT_DIR}/ads.txt`);
+// robots / sitemap（あれば）を dist にコピー
+try { copyFileSync("./robots.txt", `${OUT_DIR}/robots.txt`); } catch {}
+try { copyFileSync("./sitemap.xml", `${OUT_DIR}/sitemap.xml`); } catch {}
+
 // privacy.html を dist にコピー
 copyFileSync("./privacy.html", `${OUT_DIR}/privacy.html`);
 // contact.html を dist にコピー
@@ -56,6 +60,20 @@ copyFileSync("./about.html", `${OUT_DIR}/about.html`);
 copyFileSync("./howto.html", `${OUT_DIR}/howto.html`);
 copyFileSync("./news.html", `${OUT_DIR}/news.html`);
 copyFileSync("./Geki-Mahjong.html", `${OUT_DIR}/Geki-Mahjong.html`);
+
+// 6) ルート直下の画像・アイコン類を dist へコピー（存在するものだけ）
+for (const f of [
+  "./PlayAround-icon.png",
+  "./field-card-pic.png",
+  "./field-board-pic.png",
+  "./favicon.ico",
+  "./favicon-32.png",
+  "./favicon-16.png",
+  "./apple-touch-icon.png"
+]) {
+  try { copyFileSync(f, `${OUT_DIR}/${f.replace(/^.\//, "")}`); } catch {}
+}
+
 
 
 // BoardGame.html を dist にコピー

@@ -1,4 +1,4 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "node scripts/inject-env.mjs",
   "outputDirectory": "dist"
 }
