@@ -8,8 +8,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // 1) 入力/出力ファイル
 const OUT_DIR = "./dist";
 const PAGES = ["./index.html", "./game.html", "./mypage.html"];
-// 追加で丸ごとコピーしたいディレクトリ
-const DIRS = ["./assets", "./partials"]; // ← 重要：CSS と サイドバーHTML
+// 追加で丸ごとコピーしたいディレクトリ（存在する方を dist 配下へ）
+// どちらの配置でも動くように src を二重指定し、出力は固定名にします
+const DIRS = [
+  { src: "./assets",          dest: "assets"   },
+  { src: "./public/assets",   dest: "assets"   },
+  { src: "./partials",        dest: "partials" },
+  { src: "./public/partials", dest: "partials" }
+];
 
 // 2) 置換マップ（Vercelの環境変数 → プレースホルダ）
 const replMap = {
@@ -36,12 +42,12 @@ for (const src of PAGES) {
 }
 
 // 4) ディレクトリをそのままコピー（Node 18+ の fs.cp を使用）
-for (const d of DIRS) {
-  if (existsSync(d)) {
-    cpSync(d, `${OUT_DIR}/${d.replace(/^.\//, "")}`, { recursive: true });
+// 同じ dest への重複コピーは気にせず上書きOK
+for (const { src, dest } of DIRS) {
+  if (existsSync(src)) {
+    cpSync(src, `${OUT_DIR}/${dest}`, { recursive: true });
   }
 }
-
 
 // 5) 追加の静的ファイルがあればここでコピー
 // ads.txt を dist にコピー
