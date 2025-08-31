@@ -51,7 +51,8 @@
     #sidebar button { width:100%; margin-bottom:10px; padding:10px; font-size:14px; cursor:pointer; }
     #sidebar button.danger { background:#c62828; color:#fff; }
     #sidebar button.danger:disabled { opacity:.6; cursor:not-allowed; }
-
+    /* 追加: すべてのサイドバーボタンの無効時スタイル */
+    #sidebar button:disabled { opacity:.6; cursor:not-allowed; }
     #field-size-options { display:none; margin-top:5px; text-align:center; }
     #field-size-options button { width:30%; margin:5px 2%; padding:5px; font-size:13px; }
 
@@ -275,6 +276,18 @@
   background:transparent;
   cursor:pointer; /* クリックで消す */
 }
+
+.card.dice.is-coin{
+  border-radius:50%;
+  overflow:hidden;          /* 円形で切り抜く */
+  background:transparent;
+}
+.card.dice.is-coin img{
+  border-radius:50%;
+  object-fit:cover;         /* 余白なく円いっぱいに表示 */
+}
+
+
 .card.dice img{
   border-radius:8px;
   object-fit:contain;
@@ -1094,10 +1107,17 @@
    <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
    <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
    <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
-   <div class="section-label">ダイス<br>
-   <span style="font-size:12px;color:#666;">(左クリックか右クリックで削除)</span>
-   </div>
-   <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイスを振る</button>
+  <div class="section-label">コイン・ダイス<br>
+  <span style="font-size:12px;color:#666;">(左クリックか右クリックで削除)</span>
+  </div>
+  <div class="sl-row" role="group" aria-label="dice-coin-row1">
+    <button class="sl-btn" id="flip-coin-btn" onclick="flipCoin()" data-i18n="side.flipCoin">🪙 コイン</button>
+    <button class="sl-btn" id="roll-d6-btn"  data-i18n="side.rollD6">🎲 6面ダイス</button>
+  </div>
+  <div class="sl-row" role="group" aria-label="dice-coin-row2">
+    <button class="sl-btn" id="roll-d10-btn" onclick="rollD10()" data-i18n="side.rollD10">🎲 10面ダイス</button>
+    <button class="sl-btn" id="roll-d20-btn" onclick="rollD20()" data-i18n="side.rollD20">🎲 20面ダイス</button>
+  </div>
    <div class="section-label">カウンター・トークン<br>
    <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで削除)</span>
    </div>
@@ -2226,7 +2246,10 @@ const I18N = {
     "side.resetFacing": "↻ 全カード向きリセット",
     "side.faceDown": "🂠 全て裏に",
     "side.faceUp": "🂡 全て表に",
-    "side.rollD6": "🎲 6面ダイスを振る",
+    "side.flipCoin": "🪙 コイン",
+    "side.rollD6": "🎲 6面ダイス",
+    "side.rollD10": "🎲 10面ダイス",
+    "side.rollD20": "🎲 20面ダイス",
     "side.shuffle": "⇅ デッキをシャッフル",
     "side.collect": "❖ 全カードを集める",
     "side.allMyCards": "🔍 全カード一覧",
@@ -2324,7 +2347,10 @@ const I18N = {
     "side.resetFacing": "↻ Reset card orientation",
     "side.faceDown": "🂠 Face-down",
     "side.faceUp": "🂡 Face-up",
+    "side.flipCoin": "🪙 flip a coin",
     "side.rollD6": "🎲 Roll a d6",
+    "side.rollD10": "🎲 Roll a d10",
+    "side.rollD20": "🎲 Roll a d20",
     "side.shuffle": "⇅ Shuffle my Deck",
     "side.collect": "❖ Gather my cards",
     "side.allMyCards": "🔍 All my cards",
@@ -3803,6 +3829,8 @@ function createCardDom(cardId, imageSrc, state){
       
 if (state?.type === 'dice') {
   card.classList.add('dice');     // 小さめ正方形の見た目はCSSで
+  // coin だけは丸く見せたいのでフラグでクラス付与
+  if (state?.diceKind === 'coin') card.classList.add('is-coin');  
   card.style.cursor = 'pointer';
   card.dataset.cardId = cardId;
   card.dataset.ownerUid = state?.ownerUid || '';
@@ -4617,40 +4645,58 @@ function clearBadge(el){
   const b = el.querySelector('.overlap-badge');
   if (b) b.remove();
 }
-// 画面上のカードを重なりクラスタごとに分け、各クラスタの最前面に枚数を表示
-window.updateOverlapBadges = function(){
-  const cards = [...document.querySelectorAll('.card')];
-  if (cards.length === 0) return;
-  // まず全て消す（後で必要なものだけ出す）
-  cards.forEach(clearBadge);
-  // rect & z を取得
-  const rects = cards.map(rectOfCard);
-  const zList = cards.map(el => parseInt(el.style.zIndex || '1', 10) || 1);
-  // Union-Find で重なりクラスタ化
-  const uf = unionFind(cards.length);
-  for (let i=0; i<cards.length; i++){
-    for (let j=i+1; j<cards.length; j++){
-      if (intersects(rects[i], rects[j])) uf.unite(i, j);
-    }
-  }
-  // root -> indices
-  const groups = new Map();
-  for (let i=0; i<cards.length; i++){
-    const r = uf.find(i);
-    if (!groups.has(r)) groups.set(r, []);
-    groups.get(r).push(i);
-  }
-  // 各グループで最前面を探して表示（枚数1は非表示）
-  for (const idxs of groups.values()){
-    const count = idxs.length;
-    if (count <= 1) continue;
-    let topIdx = idxs[0];
-    for (const k of idxs){ if (zList[k] > zList[topIdx]) topIdx = k; }
-    const topEl = cards[topIdx];
-    const badge = ensureBadge(topEl);
-    badge.textContent = String(count);
-  }
-};
+
+ // 画面上のカードを重なりクラスタごとに分け、各クラスタの「最前面の通常カード」に通常カード枚数を表示
+ window.updateOverlapBadges = function(){
+   const all = Array.from(document.querySelectorAll('.card'));
+   if (all.length === 0) return;
+ 
+   // まず全ての既存バッジを消す（必要なものだけ後で付ける）
+   all.forEach(clearBadge);
+ 
+   // 「通常カード」判定（※トークン/各種カウンターはバッジ対象外・カウント対象外）
+   const isReal = (el) => !(
+     el.classList.contains('token') ||
+     el.classList.contains('counter') ||
+     el.classList.contains('numcounter')
+   );
+ 
+   // 位置とZ
+   const rects = all.map(rectOfCard);
+   const zList = all.map(el => parseInt(el.style.zIndex || '1', 10) || 1);
+ 
+   // Union-Find で重なりクラスタ化（※ブリッジ防止のため、判定は全要素で行う）
+   const uf = unionFind(all.length);
+   for (let i=0; i<all.length; i++){
+     for (let j=i+1; j<all.length; j++){
+       if (intersects(rects[i], rects[j])) uf.unite(i, j);
+     }
+   }
+ 
+   // root -> indices
+   const groups = new Map();
+   for (let i=0; i<all.length; i++){
+     const r = uf.find(i);
+     if (!groups.has(r)) groups.set(r, []);
+     groups.get(r).push(i);
+   }
+ 
+   // 各グループごとに、通常カードのみを数え、最前面の「通常カード」にだけ表示
+   groups.forEach((idxList) => {
+     const realIdx = idxList.filter(i => isReal(all[i]));
+     if (realIdx.length <= 1) return; // 0 or 1 枚なら表示しない
+ 
+     // 最前面の「通常カード」を選ぶ（zIndex 高い順・同値はDOM後勝ち）
+     realIdx.sort((a, b) => (zList[a] - zList[b]) || (a - b));
+     const hostIndex = realIdx[realIdx.length - 1];
+     const hostEl = all[hostIndex];
+ 
+     const badge = ensureBadge(hostEl);
+     badge.textContent = String(realIdx.length); // ← 通常カード枚数のみ
+   });
+ }
+
+
 // ===========================================================
 
 
@@ -4761,6 +4807,7 @@ let lastDiceAt = 0;
 
 window.rollD6 = async function(){
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+  disableDiceButtons(3000);
     alert('ルームに参加してから実行してください'); return;
   }
   const now = Date.now();
@@ -4812,7 +4859,164 @@ window.rollD6 = async function(){
     console.error(e);
     alert('ダイス作成に失敗しました。ネットワーク状態を確認してもう一度お試しください。');
   }
+};  
+
+
+  // === 追加: ダイス/コイン系ボタンを一時的に無効化するユーティリティ ===
+  function setDiceButtonsDisabled(disabled){
+    ['roll-d6-btn','roll-d10-btn','roll-d20-btn','flip-coin-btn'].forEach(id=>{
+      const el = document.getElementById(id);
+      if (el) el.disabled = disabled;
+    });
+  }
+  function disableDiceButtons(ms=3000){
+    setDiceButtonsDisabled(true);
+    setTimeout(()=>setDiceButtonsDisabled(false), ms);
+  }
+
+
+
+// ==== 数字表示の汎用ダイスSVG（D10/D20用） ====
+function svgNumberDiceDataUrl(n){
+  const size = 72, r = 8;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+      <rect x="1" y="1" width="${size-2}" height="${size-2}" rx="${r}" ry="${r}" fill="#fff" stroke="#111" stroke-width="2"/>
+      <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle"
+            font-size="${n >= 10 ? 34 : 40}" font-family="ui-sans-serif, system-ui" fill="#111" font-weight="700">${n}</text>
+    </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+// ==== コインSVG（オモテ／ウラ）：背景を一切敷かず、完全な丸＋透過 ====
+function svgCoinDataUrl(face){ // face: 'オモテ' or 'ウラ'
+  const size = 72;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+      <defs><filter id="s"><feDropShadow dx="0" dy="1" stdDeviation="1" flood-opacity="0.35"/></filter></defs>
+      <!-- 余白なし：丸のみ。背景は透明 -->
+      <circle cx="${size/2}" cy="${size/2}" r="${size/2-3}" fill="#ffd54f" stroke="#111" stroke-width="2" filter="url(#s)"/>
+      <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle"
+            font-size="24" font-family="ui-sans-serif, system-ui" fill="#111" font-weight="700">${face}</text>
+    </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+// ==== 既存の自分ダイスを一旦削除して1つに揃える ====
+async function resetMyDiceIfAny(){
+  const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
+  const qOld = query(baseCol, where('type','==','dice'), where('ownerSeat','==', CURRENT_PLAYER));
+  const snap = await getDocs(qOld);
+  if (!snap.empty) {
+    const batch = writeBatch(db);
+    snap.forEach(d => batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${d.id}`)));
+    await batch.commit();
+  }
+}
+
+// ==== D10 ====
+window.rollD10 = async function(){
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+  disableDiceButtons(3000);
+  try{
+    await resetMyDiceIfAny();
+
+    const val = (Math.random()*10|0) + 1;
+    const imgUrl = svgNumberDiceDataUrl(val);
+
+    const SIZE = 72;
+    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
+    const z = getMaxZIndex() + 100;
+
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+      type: 'dice',
+      diceValue: val,
+      imageUrl: imgUrl,
+      fullUrl:  imgUrl,
+      x, y, zIndex: z,
+      faceUp: true,
+      ownerUid: CURRENT_UID,
+      ownerSeat: CURRENT_PLAYER,
+      rotation: 0,
+      visibleToAll: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  }catch(e){
+    console.error(e); alert('10面ダイスの作成に失敗しました。');
+  }
 };
+
+// ==== D20 ====
+window.rollD20 = async function(){
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+  disableDiceButtons(3000);
+  try{
+    await resetMyDiceIfAny();
+
+    const val = (Math.random()*20|0) + 1;
+    const imgUrl = svgNumberDiceDataUrl(val);
+    const SIZE = 72;
+    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
+    const z = getMaxZIndex() + 100;
+
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+      type: 'dice',
+      diceValue: val,
+      imageUrl: imgUrl,
+      fullUrl:  imgUrl,
+      x, y, zIndex: z,
+      faceUp: true,
+      ownerUid: CURRENT_UID,
+      ownerSeat: CURRENT_PLAYER,
+      rotation: 0,
+      visibleToAll: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  }catch(e){
+    console.error(e); alert('20面ダイスの作成に失敗しました。');
+  }
+};
+
+// ==== コイン ====
+window.flipCoin = async function(){
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+  disableDiceButtons(3000);
+  try{
+    await resetMyDiceIfAny();
+
+    const isHeads = Math.random() < 0.5;
+    const faceJP  = isHeads ? 'オモテ' : 'ウラ';
+    const val     = isHeads ? 1 : 2;   // 便宜的に 1=表, 2=裏
+    const imgUrl  = svgCoinDataUrl(faceJP);
+
+    const SIZE = 72;
+    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
+    const z = getMaxZIndex() + 100;
+
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+      type: 'dice',          // 既存の .card.dice の見た目/削除挙動に合わせる
+      diceKind: 'coin',      // ← コイン判定用フラグを保存
+      diceValue: val,
+      imageUrl: imgUrl,
+      fullUrl:  imgUrl,
+      x, y, zIndex: z,
+      faceUp: true,
+      ownerUid: CURRENT_UID,
+      ownerSeat: CURRENT_PLAYER,
+      rotation: 0,
+      visibleToAll: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  }catch(e){
+    console.error(e); alert('コインの作成に失敗しました。');
+  }
+};
+
+
+
     
     
     
