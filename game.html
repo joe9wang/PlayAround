@@ -4807,9 +4807,9 @@ let lastDiceAt = 0;
 
 window.rollD6 = async function(){
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
-  disableDiceButtons(3000);
     alert('ルームに参加してから実行してください'); return;
   }
+  disableDiceButtons(3000);
   const now = Date.now();
   if (now - lastDiceAt < 3000) return; // 早押しガード
   lastDiceAt = now;
