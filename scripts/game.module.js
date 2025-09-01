@@ -2205,8 +2205,11 @@ function seatBackUrl(seat){
   return (s && typeof s.backImageUrl === 'string' && s.backImageUrl) ? s.backImageUrl : null;
 }
 
-// 互換：既存コードに getSeatBackUrl 呼び出しが残っていても動くように
-const getSeatBackUrl = (seat) => seatBackUrl(seat);
+// 席ごとの裏面URL（未設定ならデフォルトのトランプ裏面にフォールバック）
+function getSeatBackUrl(seat){
+  const url = seatBackUrl(seat);
+  return url || TRUMP_BACK_URL;
+}
 
 function applyCardBackStyle(card){
   // 裏面の背景を適用（席の設定がなければ黒）
@@ -4151,13 +4154,6 @@ window.sendSelectedToBack = async function () {
     cardListModal.style.display = 'flex';
   }
     
-    
-    
- // 席ごとの裏面URL（未設定ならデフォルト）
- function getSeatBackUrl(seat){
-   const s = currentSeatMap?.[seat] || null;
-   return s?.backImageUrl || TRUMP_BACK_URL;
- }
     
     
 window.openMyDiscardCardsDialog = function(){
