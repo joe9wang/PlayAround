@@ -1,0 +1,860 @@
+   :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; --upload-h: 56px; --footer-h: 44px; --gheader-h: 44px; --special-w: 14%; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif; margin:0; background:#eee; overflow:hidden; }
+    h1 { background:#444; color:#fff; padding:1em; text-align:center; margin:0; height:var(--header-h); box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:1rem; position:relative; }
+    #session-indicator { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#ddd; font-size:12px; opacity:.9; white-space:nowrap; }
+    
+    /* company name badge */
+    .brand-badge{
+      position:absolute;
+      left:12px; top:50%; transform:translateY(-50%);
+      font-weight:800; letter-spacing:.08em;
+      color:#ffeb3b; text-shadow:0 1px 2px rgba(0,0,0,.5);
+      font-size:14px; opacity:.98;
+    }
+    
+    
+    #upload-area { height: var(--upload-h); display:flex; align-items:center; padding:0 16px; text-align:center; background:#fff; cursor:pointer; border-bottom:2px solid #ccc; user-select:none; }
+    #file-input { display:none; }
+
+    #sidebar {
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--gheader-h) - var(--header-h) - var(--upload-h) - var(--footer-h));
+      float: left; background:#fff; border-right:2px solid #aaa; box-shadow:2px 0 5px rgba(0,0,0,.2);
+      padding:10px; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+    }
+    #sidebar h2 { font-size:14px; text-align:center; margin:20px 0 10px; }
+    #sidebar button { width:100%; margin-bottom:10px; padding:10px; font-size:14px; cursor:pointer; }
+    #sidebar button.danger { background:#c62828; color:#fff; }
+    #sidebar button.danger:disabled { opacity:.6; cursor:not-allowed; }
+    /* 追加: すべてのサイドバーボタンの無効時スタイル */
+    #sidebar button:disabled { opacity:.6; cursor:not-allowed; }
+    #field-size-options { display:none; margin-top:5px; text-align:center; }
+    #field-size-options button { width:30%; margin:5px 2%; padding:5px; font-size:13px; }
+
+    #container{
+      width: calc(100% - var(--sidebar-w) - var(--preview-w));
+      height: calc(100vh - var(--gheader-h) - var(--header-h) - var(--upload-h) - var(--footer-h));
+      overflow:hidden; position:relative; float:left; background:#f7f7f7;
+    }
+    #field { position:absolute; transform-origin:0 0; background:none; }
+    
+    
+    .player-1{ top:0; left:0; } .player-2{ top:0; left:50%; } .player-3{ top:50%; left:0; } .player-4{ top:50%; left:50%; }
+    .special-area{ grid-column: 1 / 2; grid-row: 1 / 3; background:#9c27b0; position:relative; }
+    
+.player-area {
+  position:absolute;
+  width:50%;
+  height:50%;
+  border:5px dashed #666;
+  box-sizing:border-box;
+  display:grid;
+  grid-template-columns: var(--special-w) 1fr; /* 左: 特殊 / 右: メイン */
+  grid-template-rows: 2fr 1fr; /* 上: プレイ / 下: 手札 */
+  gap:6px;
+}
+
+/* モーダル内リンク */
+.lobby-links{
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  margin-bottom: 8px;
+  color: #555;
+}
+.lobby-links a{
+  margin: 0 8px;
+  color: #0a7;
+  text-decoration: underline;
+  margin: 0 5px;
+}
+
+/* 左の縦帯：特殊エリア（プレイ＋手札の左） */
+.special-area{
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+  background:#9c27b0;
+  position:relative;
+}
+
+/* 右上：プレイ行（左=プレイ、右=デッキ縦スタック） */
+.play-area{
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  position:relative;
+  z-index:0;
+  display:grid;
+  /* プレイ : スタック = 9 : 1（縮小を許可） */
+  grid-template-columns: minmax(0, 10fr) minmax(0, 2fr);
+  gap:6px;
+  min-width: 0;        
+}
+
+/* 念のためプレイヤー領域の右列側（= .play-areaの親）も縮小許可 */
+.player-area { min-width: 0; }
+
+/* グリッド内の各アイテムがちゃんと縮むように */
+.main-play-area,
+.deck-stack,
+.discard-area,
+.deck-area {
+  min-width: 0;
+}
+
+
+.main-play-area{ background:#2d8; position:relative; }
+
+/* デッキ縦スタック（上=捨て札、下=デッキ） */
+.deck-stack{
+  display:grid;
+  grid-template-rows: 1fr 1fr;
+  gap:6px;
+}
+.discard-area{ background:#cc6666; position:relative; } /* 捨て札 */
+.deck-area{ background:#f90; position:relative; }       /* デッキ */
+
+/* 右下：手札行（従来と同じ比率で下段） */
+.hand-area{
+  grid-column: 2 / 3;
+  grid-row: 2 / 3;
+  position:relative;
+  background:#228be6;
+  z-index:0;
+}
+    
+
+
+    .card{ width:120px; height:160px; position:absolute; border:2px solid #333; border-radius:10px; box-shadow:2px 2px 5px rgba(0,0,0,.4); background:#fff; cursor:grab; user-select:none; transition:border .2s; z-index:1; transform-origin:50% 50%; }
+    .card[data-owner="other"]{ cursor:not-allowed; opacity:.95; }
+    .card img{ width:100%; height:100%; border-radius:10px; object-fit:cover; pointer-events:none; user-select:none; image-rendering: -webkit-optimize-contrast; }
+    .card.selected{ border:3px solid red; }
+
+    #preview{
+      width: var(--preview-w);
+      height: calc(100vh - var(--gheader-h) - var(--header-h) - var(--upload-h) - var(--footer-h));
+      float:right; background:#fff; border-left:2px solid #aaa; box-shadow:-2px 0 5px rgba(0,0,0,.2);
+      padding:10px; box-sizing:border-box; display:flex; flex-direction:column;
+    }
+    #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; }
+    #preview-img{ width:100%; height:auto; border-radius:10px; display:none; }
+    #preview-top { flex:2 1 0; overflow:auto; }
+    #hp-panel { flex:1 1 0; border-top:1px solid #eee; padding:8px 6px; }
+    #hp-grid { display:grid; grid-template-columns: 1fr; gap:8px; }
+    .hp-row { display:flex; align-items:center; gap:8px; }
+    .hp-seat { width:36px; font-weight:700; text-align:center; }
+    .hp-name { flex:1; min-width:0; color:#555; font-size:12px; }
+    .hp-value { width:72px; text-align:right; }
+    .hp-input { width:80px; padding:6px 8px; border:1px solid #ccc; border-radius:8px; text-align:right; }
+    .hp-btn { padding:6px 10px; border:1px solid #ccc; border-radius:8px; background:#f6f6f6; cursor:pointer; }
+    .hp-btn:disabled, .hp-input:disabled { opacity:.6; cursor:not-allowed; }
+
+    #lobby{ position:fixed; inset:0; background:rgba(0,0,0,.58); display:flex; align-items:center; justify-content:center; z-index:9999; }
+    .lobby-card{ width:min(920px, 96vw); background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:18px; box-sizing:border-box; position:relative; }
+    .lobby-grid{ display:grid; grid-template-columns: 1.15fr 1fr; gap:14px; }
+    .lobby-title{ font-size:20px; font-weight:700; margin:4px 0 12px; text-align:center; }
+    
+    
+ /* ロビー右上の言語切替 */
+ .lobby-lang{
+   position:absolute;
+   top:10px;
+   right:12px;
+   display:flex;
+   align-items:center;
+   gap:6px;
+   z-index:2;
+ }
+ .lobby-lang-label{ font-size:12px; font-weight:600; color:#555; }
+ .lang-switch-inline{
+   font-size:12px;
+   padding:4px 6px;
+   border-radius:8px;
+   border:1px solid #ccc;
+   background:#fff;
+ }
+    
+    .lobby-section{ border:1px solid #e3e3e3; border-radius:12px; padding:12px; }
+    .lobby-label{ display:block; font-size:12px; color:#555; margin-bottom:6px; }
+    .lobby-subtitle{ font-weight:700; margin:0 0 8px; }
+    /* credit: welcome modal footer */
+    .lobby-credit{
+      margin-top:12px;
+      padding-top:10px;
+      border-top:1px solid #eee;
+      text-align:center;
+      font-size:12px;
+      color:#777;
+    }
+    .row{ display:flex; gap:8px; align-items:center; }
+    .field{ flex:1; padding:10px 12px; font-size:16px; border:1px solid #bbb; border-radius:10px; }
+    .btn{ padding:10px 12px; border-radius:10px; border:0; background:#0a7; color:#fff; font-weight:700; cursor:pointer; opacity:.95; }
+    .btn:disabled{ background:#9ab; cursor:not-allowed; opacity:.7; }
+    .btn.secondary{ background:#eee; color:#333; border:1px solid #ccc; }
+    .seat-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-top:8px; }
+    .seat-btn{ padding:12px 0; border-radius:10px; border:1px solid #bbb; background:#fafafa; cursor:pointer; font-weight:600; position:relative; }
+    .seat-btn.active{ outline:3px solid #0a7; background:#e9fff7; }
+    .seat-btn[disabled]{ background:#eee; color:#888; border-color:#ddd; cursor:not-allowed; }
+    .seat-note{ position:absolute; inset:auto 8px 6px auto; font-size:10px; color:#666; }
+    .room-list{ max-height:320px; overflow:auto; border:1px solid #e5e5e5; border-radius:10px; }
+    .room-item{ display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #f0f0f0; }
+    .room-item:last-child{ border-bottom:0; }
+    .room-id{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; }
+    .player-label { position: absolute; top: 6px; left: 6px; font-size: 22px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 2px 8px; border-radius: 4px; pointer-events: none; z-index: 10; }
+    
+    /* 追加（ボード / トランプ用：手札エリア左下に表示） */
+    .board-name {
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      font-size: 18px;
+      font-weight: bold;
+      color: rgba(255,255,255,0.95);
+      background: rgba(0,0,0,0.4);
+      padding: 2px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .board-name .label-seat { margin-right: 4px; }
+    
+    .zone-label { position: absolute; right: 4px; bottom: 4px; font-size: 12px; font-weight: bold; color: rgba(255, 255, 255, 0.95); background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 4px; pointer-events: none; z-index: 5; }
+    #create-seat-grid .seat-btn.active{ outline:3px solid #0a7; background:#e9fff7; box-shadow:0 0 0 3px rgba(0,170,119,.15) inset; }
+    #create-seat-picked { margin-top:6px; font-size:12px; color:#0a7; font-weight:700; }
+    .seat-btn:focus-visible{ outline:3px solid #66aaff; }
+
+
+/* === ゾーンは常に通常カーソルにする === */
+.deck-area,
+.main-play-area,
+.hand-area,
+.special-area,
+.discard-area {
+  cursor: default;  /* ← 指マークにしない */
+}
+
+/* （任意）ドラッグ中は「つかむ」表示をより確実に */
+.card:active {
+  cursor: grabbing;
+}
+
+
+
+    .card.counter{ width:60px; height:60px; border-radius:50%; overflow:hidden; }
+    .card.counter img{ border-radius:50%; object-fit:cover; }
+    
+    .card.dice{
+  width:72px;
+  height:72px;
+  border:none;
+  box-shadow:none;
+  border-radius:8px;
+  background:transparent;
+  cursor:pointer; /* クリックで消す */
+}
+
+.card.dice.is-coin{
+  border-radius:50%;
+  overflow:hidden;          /* 円形で切り抜く */
+  background:transparent;
+}
+.card.dice.is-coin img{
+  border-radius:50%;
+  object-fit:cover;         /* 余白なく円いっぱいに表示 */
+}
+
+
+.card.dice img{
+  border-radius:8px;
+  object-fit:contain;
+}
+
+/* 数値カウンター（横長、±ボタン＋数値入力） */
+ .card.numcounter{
+   width: 100px;
+   min-width: 100px;
+   max-width: 100px;
+   height: 100px;
+   min-height: 100px;
+   max-height: 100px;
+   border-radius: 24px; /* 半径も2倍に */
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   background: #fff;
+ }
+
+  .numcounter .nc-wrap{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  width:100%;
+  height:100%;
+  padding:6px;
+  box-sizing:border-box;
+}
+
+ .numcounter .nc-input{
+   width: 80px;
+   min-width: 80px;
+   max-width: 80px;
+   height: 56px;
+   font-size: 32px;
+ }
+
+    .numcounter .nc-input:disabled{ opacity:.6; cursor:not-allowed; background:#fafafa; }
+
+
+
+
+    .card.token{ background:#fff; display:flex; align-items:stretch; justify-content:stretch; overflow:hidden; }
+    .card.token .token-input{
+      width:100%; height:100%; border:0; padding:10px; font-size:30px; line-height:1.3;
+      outline:none; resize:none; background:transparent; color:#111; box-sizing:border-box;
+    }
+    
+    
+    
+/* ==== 追加: ボードゲームレイアウト（四隅ハンド + 中央デッキ/捨て札） ==== */
+#board-layout{
+  position:absolute;
+  inset:0;
+  display:none; /* 初期は非表示（mode=board のとき表示） */
+}
+
+
+/* 共有プレイエリア（角の手札と中央ブロック以外の全域） */
+#board-play{
+  position:absolute;
+  inset:0;
+  background:#2d8;        /* 既存の main-play-area と同系色 */
+  border:4px dashed #666; /* 見やすいように枠 */
+  z-index:0;              /* 下地 */
+}
+
+
+
+
+/* 四隅の手札（P1:左上, P2:右上, P3:左下, P4:右下） */
+.board-hand{
+  position:absolute;
+  width:18%;
+  height:24%;
+  background:#228be6; /* 既存 hand と同色 */
+  border:4px dashed #666;
+  box-sizing:border-box;
+  z-index:1;           /* 下地(#board-play)より前面 */
+}
+#board-hand-1{ top:2%;  left:2%;  }
+#board-hand-2{ top:2%;  right:2%; }
+#board-hand-3{ bottom:2%; left:2%; }
+#board-hand-4{ bottom:2%; right:2%; }
+
+/* 中央のデッキ＆捨て札（横並び） */
+#board-center{
+  position:absolute;
+  width:30%;
+  min-width:260px;
+  height:26%;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  z-index:1;           /* 下地(#board-play)より前面 */
+}
+#board-center .center-deck{
+  background:#f90;   /* 既存 deck と同色 */
+  position:relative;
+  border:4px dashed #666;
+}
+#board-center .center-discard{
+  background:#cc6666; /* 既存 discard と同色 */
+  position:relative;
+  border:4px dashed #666;
+}
+
+    
+// モード切替: mode-card ⇄ mode-board
+//   ※カードゲーム（既存DOM）はデフォルト表示のまま触らない！
+//   → mode-card では一切上書きしない。board のときだけ切り替える。
+/* ボード/トランプ時はカード用 player-area を非表示 */
+#field.mode-board .player-area{ display:none; }   /* カード用4区画は隠す */
+
+/* ボード/トランプ時はプレイエリア内の P1～P4 タグを非表示 */
+#field.mode-board .player-area .player-label { display: none !important; }
+
+/* ボード/トランプ時は特殊エリアの zone-label を非表示 */
+#field.mode-board .special-area .zone-label { display: none !important; }
+
+#field.mode-board #board-layout{ display:block; } /* ボード用だけ出す */
+    
+/* ボードゲーム時だけ全体を1.3倍（カードモードは無影響） */
+#field.mode-board #board-layout{
+  transform: scale(1.3);
+  transform-origin: center center;
+}
+    
+    
+    
+/* === Host toggle (slider) === */
+.host-toggle{ display:none; margin-top:12px; padding:10px 8px; border-top:1px solid #eee; }
+.switch{ position:relative; display:inline-block; width:50px; height:28px; }
+.switch input{ opacity:0; width:0; height:0; }
+.slider{ position:absolute; inset:0; cursor:pointer; background:#ccc; border-radius:28px; transition:.2s; }
+.slider:before{ content:""; position:absolute; width:22px; height:22px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }
+.switch input:checked + .slider{ background:#0a7; }
+.switch input:checked + .slider:before{ transform: translateX(22px); }
+    
+    
+/* === パスワードエラーの視覚フィードバック === */
+ .field.is-error{
+   border:2px solid #e53935 !important;
+   box-shadow:0 0 0 3px rgba(229,57,53,.15) inset;
+ }
+.shake{ animation: shake-h 0.35s ease; }
+@keyframes shake-h{
+  0%{transform:translateX(0);}
+  20%{transform:translateX(-6px);}
+  40%{transform:translateX(6px);}
+  60%{transform:translateX(-5px);}
+  80%{transform:translateX(5px);}
+  100%{transform:translateX(0);}
+}
+    
+ .lang-switch{
+   position:absolute;
+   right:240px;
+   top:50%;
+   transform:translateY(-50%);
+   font-size:12px;
+   padding:4px 6px;
+   border-radius:8px;
+   border:1px solid #ccc;
+   background:#fff;
+ }    
+    
+    
+    
+    
+ /* ======== Mobile (<= 768px) layout & touch ======== */
+ @media (max-width: 768px) {
+   :root { --sidebar-w: 100%; --preview-w: 100%; --header-h: 60px; }
+   body { overflow: auto; }
+   h1 { height: var(--header-h); font-size: 16px; gap: .5rem; }
+   .brand-badge { font-size: 12px; left: 8px; }
+   #session-indicator { font-size: 10px; right: 8px; }
+   #upload-area { height: 48px; padding: 0 12px; }
+
+   /* 横3カラム → 縦積み */
+   #sidebar, #container, #preview {
+     width: 100% !important;
+     height: auto !important;
+     float: none;
+     box-shadow: none;
+   }
+   #sidebar { border-right: none; border-bottom: 2px solid #aaa; }
+   #preview { border-left: none; border-top: 2px solid #aaa; }
+
+   #sidebar button { font-size: 12px; padding: 8px; }
+   .lobby-card { width: 96vw; padding: 12px; }
+   .lobby-grid { grid-template-columns: 1fr; }
+   .seat-grid { grid-template-columns: repeat(2, 1fr); }
+   .lobby-lang { top: 8px; right: 8px; }
+   .lang-switch { right: 8px; }
+
+   /* フィールドは縦スクロール前提、横幅は画面に合わせる */
+   #container { min-height: 70vh; }
+   #field { min-width: 100%; min-height: 70vh; }
+
+   /* ブラウザのジェスチャを抑えてアプリ内ジェスチャを優先 */
+   #container, #field, .card { touch-action: none; }
+ }    
+    
+    
+/* ==== スマホ対応: ロビーウィンドウの高さ制限とスクロール ==== */
+@media (max-width: 768px) {
+  .lobby-card {
+    max-height: 90vh;           /* 画面の高さの90%までに制限 */
+    overflow-y: auto;           /* 縦スクロールを許可 */
+    -webkit-overflow-scrolling: touch; /* iOSでのスムーズスクロール */
+    padding-bottom: 80px;       /* 下部ボタンが隠れない余白 */
+  }
+}
+
+
+ /* ===== サイドバー折り畳み（CSS変数で幅を0に） ===== */
+ body.collapse-left  { --sidebar-w: 0px; }
+ body.collapse-right { --preview-w: 0px; }
+ 
+ /* 幅トランジションで気持ちよく */
+ #sidebar, #container, #preview {
+   transition: width .2s ease, max-width .2s ease, min-width .2s ease;
+ }
+ 
+ /* 幅0のとき中身を隠す（描画コスト削減） */
+ body.collapse-left  #sidebar,
+ body.collapse-right #preview {
+   overflow: hidden;
+   border-width: 0 !important;
+   box-shadow: none !important;
+   padding: 0 !important;
+ }
+ 
+ /* 折り畳みハンドル（左右に常時表示） */
+ .collapse-handle {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   width: 26px;
+   height: 26px;
+   margin-left: 6px;
+   border: 1px solid #ccc;
+   border-radius: 6px;
+   background: #fff;
+   cursor: pointer;
+   font-size: 14px;
+   user-select: none;
+ }
+ .collapse-handle:hover {
+   background: #f3f3f3;
+ }
+ 
+ 
+ /* モバイル縦積み時は控えめな位置に */
+ @media (max-width: 768px) {
+   .collapse-handle {
+     top: calc(var(--header-h) + 6px);
+     width: 28px;
+     height: 40px;
+   }
+ }
+
+
+ /* ===== 折り畳み時だけ出る外付けハンドル ===== */
+ .edge-handle {
+   position: fixed;
+   /* ヘッダー高さ + 画像読み込みエリア高さ の少し下 */
+   top: calc(var(--gheader-h) + var(--header-h) + var(--upload-h) + 8px);
+    z-index: 2000;
+   display: none;            /* デフォルト非表示 */
+   width: 28px;
+   height: 48px;
+   border: 1px solid #ccc;
+   border-radius: 12px;
+   background: #fff;
+   cursor: pointer;
+   align-items: center;
+   justify-content: center;
+   font-size: 16px;
+   user-select: none;
+   box-shadow: 0 2px 10px rgba(0,0,0,.08);
+ }
+ .edge-handle:hover { box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+ .edge-left  { left: 8px; }
+ .edge-right { right: 8px; }
+ /* 折り畳み中だけ表示 */
+ body.collapse-left  .edge-left  { display: inline-flex; }
+ body.collapse-right .edge-right { display: inline-flex; }
+ 
+ /* モバイル時は少し小さく */
+ @media (max-width: 768px) {
+   .edge-handle {
+     /* モバイルは #upload-area が 48px なので、それを加味 */
+     top: calc(var(--gheader-h) + var(--header-h) + 48px + 6px);
+     width: 26px;
+     height: 40px;
+   }
+ }
+
+ /* ===== 見出し内トグル（正方形ボタン） ===== */
+ .inline-toggle {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   width: 28px !important;   /* サイドバーの「button{width:100%}」系を打ち消す */
+   height: 28px !important;
+   min-width: 28px;
+   padding: 0 !important;
+   margin-left: 6px;
+   border: 1px solid #ccc;
+   border-radius: 6px;
+   background: #fff;
+   cursor: pointer;
+   flex: 0 0 28px;           /* 伸び縮みさせない */
+   line-height: 1;
+   user-select: none;
+ }
+ #sidebar h2 .inline-toggle { margin-left: 8px; }
+ #preview h2 .inline-toggle { margin-left: 0; margin-right: 8px; }
+ .inline-toggle:hover { background:#f3f3f3; }
+ 
+ 
+  /* ===== Save/Load を横2分割＆省スペースに ===== */
+  #sidebar .sl-row{
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 半分ずつ */
+    gap: 6px;
+    margin: 4px 0 8px;
+  }
+  #sidebar .sl-row > .sl-btn{
+    width: 100% !important;       /* 既存の100%幅前提を維持 */
+    padding: 6px 8px !important;  /* 高さを控えめに */
+    font-size: 0.9rem;
+    line-height: 1.2;
+    min-height: 30px;
+  }
+  
+  
+  /* 単独ボタンでも省スペース化（行に包まなくても効く） */
+  #sidebar .sl-btn{
+    width: 100% !important;
+    padding: 6px 8px !important;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    min-height: 30px;
+  }
+  
+  
+  /* ===== セクション見出し（左寄せ・省スペース） ===== */
+  #sidebar .section-label{
+    margin: 2px 0 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-align: left;
+    color: #555;
+  }
+  
+  @media (max-width: 768px){
+    #sidebar .sl-row > .sl-btn{
+      padding: 6px 8px;           /* モバイルでも高さ控えめ */
+      font-size: 12px;            /* 既存のモバイル調整に馴染ませる */
+    }
+    #sidebar .sl-btn{
+      padding: 6px 8px;
+      font-size: 12px;
+    }    
+  }
+ 
+ 
+ /* 見出しの共通スタイル（左右で高さを揃える） */
+ :root { --panel-title-h: 32px; }  /* 必要なら 30〜36px で微調整可 */
+ 
+ .panel-title{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0; /* 左右で差が出ないように上下マージンを消す */
+  padding: 4px 8px; /* 見出し内の上下位置を微調整 */
+  font-size: 16px;
+  line-height: var(--panel-title-h);
+  min-height: var(--panel-title-h);
+  height: var(--panel-title-h); /* 高さを固定して揃える */ 
+ }
+ 
+ /* 左＝操作パネルは右寄せ／右＝選択肢のカードは左寄せ */
+ .panel-title--left  { justify-content:flex-end; }
+ .panel-title--right { justify-content:flex-start; }
+ 
+ /* 正方形トグル（幅100%系ルールの打ち消し） */
+ .inline-toggle{
+   width:28px !important;
+   height:28px !important;
+   min-width:28px;
+   padding:0 !important;
+   border:1px solid #ccc;
+   border-radius:6px;
+   background:#fff;
+   cursor:pointer;
+   flex:0 0 28px;
+   line-height:1;
+ }
+ .inline-toggle:hover{ background:#f3f3f3; }
+ 
+ /* 余白方向の微調整（左右で配置が逆） */
+ #sidebar .panel-title .inline-toggle { margin-left:8px; }
+ #preview .panel-title .inline-toggle  { margin-right:8px; }
+
+ /* ===== 見出しの高さズレ修正（ID付きで強制上書き） ===== */
+ #sidebar h2.panel-title {
+   margin: 0 !important;         /* 既存: #sidebar h2 { margin:20px 0 10px } を打ち消し */
+   text-align: right;            /* 右寄せ */
+   height: var(--panel-title-h); /* 高さ固定で右と一致 */
+   min-height: var(--panel-title-h);
+   line-height: var(--panel-title-h);
+   padding: 0 8px;               /* 上下位置の微調整 */
+   font-size: 16px;              /* 必要なら右と同値に */
+   display: flex;
+   align-items: center;
+   gap: 8px;
+ }
+ 
+ #preview h2.panel-title {
+   margin: 0 !important;         /* 既存: #preview h2 { margin:0 0 10px } を打ち消し */
+   text-align: left;
+   height: var(--panel-title-h);
+   min-height: var(--panel-title-h);
+   line-height: var(--panel-title-h);
+   padding: 0 8px;
+   font-size: 16px;
+   display: flex;
+   align-items: center;
+   gap: 8px;
+ }
+
+ /* 右サイド（選択肢のカード）も高さを強制揃え */
+ #preview h2.panel-title {
+   margin: 0 !important;
+   padding: 0 8px;
+   height: var(--panel-title-h);
+   min-height: var(--panel-title-h);
+   line-height: var(--panel-title-h);
+   font-size: 16px;
+   display: flex;
+   align-items: center;
+   gap: 8px;
+ }
+
+/* 左右のトグルボタンの縦位置を統一 */
+.inline-toggle {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px;
+  padding: 0 !important;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  flex: 0 0 28px;
+  line-height: 1;
+  display: flex;
+  align-items: center;   /* 垂直中央 */
+  justify-content: center; /* 水平中央 */
+}
+
+ /* --- 見出し行の上下余白を左右で完全一致させる --- */
+ #sidebar h2.panel-title,
+ #preview h2.panel-title {
+   margin-top: 0 !important;
+   margin-bottom: 0 !important;
+   padding-top: 0;   /* ここで上下0に固定 */
+   padding-bottom: 0;
+ }
+
+ /* ===== 見出しの高さと中央揃えを揃える ===== */
+ :root { --panel-title-h: 32px; } /* 必要なら 30〜36px で微調整 */
+ 
+ /* 左右の見出しを同じボックスにする */
+ #sidebar h2.panel-title,
+ #preview h2.panel-title {
+   margin: 0 !important;
+   padding: 0 8px;
+   height: var(--panel-title-h);
+   min-height: var(--panel-title-h);
+   line-height: var(--panel-title-h);
+   display: flex;
+   align-items: center;     /* ← 中央揃えの要 */
+   gap: 8px;
+   font-size: 16px;
+ }
+ /* 左（操作パネル）は右寄せ、右（選択肢のカード）は左寄せ */
+ .panel-title--left  { justify-content: flex-end; }
+ .panel-title--right { justify-content: flex-start; }
+ 
+ /* 見出し内の正方形トグルボタン（100%幅を打ち消す） */
+ .inline-toggle {
+   display: inline-flex;
+   align-items: center;     /* ボタン内の矢印も縦中央 */
+   justify-content: center;
+   width: 28px !important;  /* #sidebar button {width:100%} を無効化 */
+   height: 28px !important;
+   min-width: 28px;
+   padding: 0 !important;
+   border: 1px solid #ccc;
+   border-radius: 6px;
+   background: #fff;
+   cursor: pointer;
+   line-height: 1;
+   flex: 0 0 28px;
+ }
+
+
+  /* === ▼▼ 重なり枚数バッジ ▼▼ === */
+  .overlap-badge{
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%, -50%);
+    font-weight:700;
+    color:#e53935;           /* 赤字 */
+    font-size:44px;
+    line-height:1;
+    text-shadow:0 0 6px rgba(255,255,255,.95), 0 0 12px rgba(255,255,255,.75);
+    pointer-events:none;      /* ドラッグを邪魔しない */
+    user-select:none;
+  }
+  /* （カードに対して中央絶対配置するので .card は position:absolute のままでOK） */
+  /* === ▲▲ 重なり枚数バッジ ▲▲ === */
+
+  /* ====== Global Header / Footer (軽量) ====== */
+  .site-header{position:sticky;top:0;z-index:10000;background:#111;color:#fff;border-bottom:1px solid #222}
+  .site-header__inner{max-width:1200px;margin:0 auto;padding:10px 12px;display:flex;align-items:center;gap:16px}
+  .site-brand{font-weight:800;letter-spacing:.02em;color:#fff;text-decoration:none}
+  .site-nav{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap}
+  .site-nav a{color:#ddd;text-decoration:none;font-size:14px}
+  .site-nav a:hover{color:#fff;text-decoration:underline}
+  .site-footer{margin-top:24px;background:#fafafa;border-top:1px solid #eee;color:#444}
+  .site-footer__inner{
+    max-width:1200px;
+    margin:0 auto;
+    padding:4px 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .site-footer__nav{display:flex;gap:14px;flex-wrap:wrap}
+  .site-footer__nav a{color:#444;text-decoration:none;font-size:14px}
+  .site-footer__nav a:hover{text-decoration:underline}
+  @media(max-width:768px){
+    .site-nav{gap:10px}
+    .site-footer__inner{justify-content:flex-start}
+  }
+  
+  
+/* ===== footer ===== */
+.site-footer{
+   background:#fff;
+   border-top:1px solid #e5e7eb;
+   min-height: var(--footer-h);
+   display:flex; align-items:center; justify-content:center;
+   padding: 6px 12px; color:#555; z-index: 5;
+   clear: both;        /* ← float している #sidebar / #container / #preview の下に必ず配置 */
+   position: relative; /* ← 念のため重なり対策 */
+}
+
+
+
+       #save-load-modal .slot-btn { border:1px solid #ddd; border-radius:8px; }
+       #save-load-modal .slot-btn:hover { background:#f5f5f5; }
+       
+   /* ▼プレビューの見た目 */
+   #save-load-modal .sl-preview{
+     display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
+   }
+   #save-load-modal .slot-preview{
+     border:1px solid #eee; border-radius:8px; min-height:76px;
+     padding:6px; display:flex; align-items:center; justify-content:center;
+     flex-wrap:wrap; gap:4px; background:#fafafa;
+   }
+   #save-load-modal .slot-preview img{
+     width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid #ddd;
+   }
+   #save-load-modal .slot-preview .empty{ color:#999; font-size:12px; }
+
+
+
+
+
+
+
