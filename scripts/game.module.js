@@ -665,6 +665,79 @@ async function storageDownloadURL(path) {
     return null;
   }
 }
+
+
+
+
+// ===== カード背面画像（座席ごと）: ピッカー → Storage → seats 更新 =====
+let __cardBackInput = null;
+
+function bindBackImageInput(input) {
+  if (!input || input.__bound) return;
+  input.__bound = true;
+  // ファイル選択後の処理（Storage へアップロード→座席docに保存）
+  input.addEventListener('change', async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    // 参加チェック
+    if (!CURRENT_ROOM || !CURRENT_PLAYER) {
+      alert('ルームに参加してから実行してください');
+      return;
+    }
+    try {
+      // 一意なパスを作る（例: rooms/{room}/seats/p{seat}/card-back/{ts}-{hash}.png）
+      const ts = Date.now();
+      const h  = await sha256Hex(`${CURRENT_ROOM}:${CURRENT_PLAYER}:${ts}:${file.name}`);
+      const path = `rooms/${CURRENT_ROOM}/seats/p${CURRENT_PLAYER}/card-back/${ts}-${h}.png`;
+
+      // Storage にアップロード
+      const r = ref(storage, path);
+      const ab = await file.arrayBuffer();
+      await uploadBytes(r, new Blob([ab]));
+
+      // 参照URLは Storage パスで持ち、必要時に `getDownloadURL` で解決
+      updateSeatBatched(CURRENT_PLAYER, {
+        backImageUrl: path,
+        updatedAt: serverTimestamp(),
+      });
+
+      // 自分の画面は即時反映
+      refreshCardBacksForSeat(CURRENT_PLAYER);
+    } catch (e) {
+      console.warn('[card-back] upload failed', e);
+      alert('アップロードに失敗しました。通信状況をご確認ください。');
+    } finally {
+      // 連続選択できるように value をクリア
+      input.value = '';
+    }
+  });
+}
+
+// 操作パネルのボタンから呼ぶ。hidden input を作成/再利用して開く
+function openBackImagePicker() {
+  __cardBackInput = __cardBackInput || document.getElementById('card-back-input') || (() => {
+    const i = document.createElement('input');
+    i.type = 'file';
+    i.accept = 'image/*';
+    i.id = 'card-back-input';
+    i.hidden = true;
+    document.body.appendChild(i);
+    return i;
+  })();
+  bindBackImageInput(__cardBackInput);
+  __cardBackInput.click();
+}
+// HTMLから直接呼べるよう window 公開
+Object.assign(window, { openBackImagePicker });
+
+
+
+
+
+
+
+
+
     
     
     // === Helper: 他人の手札内かどうか（プレビュー用マスク判定） ===
@@ -2640,7 +2713,9 @@ if (state?.type === 'numcounter') {
           const thumbEl = card.querySelector('img');
           const frontSrc = full || (thumbEl && thumbEl.src) || '';
           const otherHand = isOtherPlayersHandCard(card); /* 判定関数 */
-          const previewSrc = (otherHand || !isFaceUp) ? TRUMP_BACK_URL : frontSrc;
+          const previewSrc = (!isFaceUp || otherHand)
+            ? getSeatBackUrl(ownerSeat)
+            : frontSrc;
           setPreview(previewSrc);
         }        
         
@@ -2887,7 +2962,12 @@ if (data.type === 'numcounter') {
           if (img) { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
           const tokenInput2 = card.querySelector('.token-input');
           if (tokenInput2) { tokenInput2.style.display = 'none'; card.style.backgroundColor = '#000'; }
-          if (selectedCard === card) { setPreview(TRUMP_BACK_URL); } // ★選択中でもプレビューは「裏面」
+          // ★選択中でもプレビューは「その席の裏面」
+          if (selectedCard === card) {
+            const seatData = currentSeatMap?.[insideSeat] || null;
+            const back = seatData?.backImageUrl || TRUMP_BACK_URL;
+            setPreview(back);
+          }
         }
       } catch(_) {}
     }
@@ -4069,7 +4149,9 @@ window.sendSelectedToBack = async function () {
       const isFaceUp = el.dataset.faceUp === 'true';
       const otherHand = isOtherPlayersHandCard(el);
       const frontSrc = full || (thumbEl && thumbEl.src) || '';
-      const previewSrc = (otherHand || !isFaceUp) ? TRUMP_BACK_URL : frontSrc;
+      const previewSrc = (!isFaceUp || otherHand)
+        ? getSeatBackUrl(ownerSeat)
+        : frontSrc;
       setPreview(previewSrc);
       
       const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
@@ -4136,6 +4218,13 @@ window.sendSelectedToBack = async function () {
     cardListModal.style.display = 'flex';
   }
     
+    
+    
+ // 席ごとの裏面URL（未設定ならデフォルト）
+ function getSeatBackUrl(seat){
+   const s = currentSeatMap?.[seat] || null;
+   return s?.backImageUrl || TRUMP_BACK_URL;
+ }
     
     
 window.openMyDiscardCardsDialog = function(){
