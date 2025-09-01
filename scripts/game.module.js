@@ -38,7 +38,7 @@
   import {
     getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot,
     serverTimestamp, runTransaction, deleteDoc, collection, limit,
-    addDoc, where, query, getDocs, writeBatch, Timestamp
+    addDoc, where, query, getDocs, writeBatch, Timestamp, orderBy 
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
   import {
@@ -2370,6 +2370,8 @@ function startSession(roomId, playerId){
       
       initializePlayField();
       subscribeCards();
+      subscribeChat();          // ←追加：チャット購読を開始
+      bindChatUIOnce();         // ←追加：送信ボタン/Enter送信を有効化
       startHostWatch();
       renderAreaColors();
       renderHPPanel();
@@ -2379,6 +2381,122 @@ function startSession(roomId, playerId){
       bindLifecycleHandlers();      
       
     }
+
+
+// ===== チャット＆操作ログ =====
+let unsubscribeChat = null;
+let chatUIBound = false;
+
+function myDisplayName(){
+  try{
+    const seatData = (typeof CURRENT_PLAYER === 'number' && currentSeatMap) ? (currentSeatMap[CURRENT_PLAYER] || {}) : {};
+    const nameFromSeat = seatData.displayName;
+    const fallback = document.getElementById('new-player-name')?.value;
+    return nameFromSeat || fallback || `P${CURRENT_PLAYER||'-'}`;
+  }catch(_){
+    return `P${CURRENT_PLAYER||'-'}`;
+  }
+}
+
+async function postChat(text){
+  if (!text || !CURRENT_ROOM || !CURRENT_PLAYER) return;
+  try{
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/chat`), {
+      type: 'chat',
+      text: String(text).slice(0, 500),
+      seat: CURRENT_PLAYER,
+      name: myDisplayName(),
+      createdAt: serverTimestamp()
+    });
+  }catch(e){ console.warn('chat send failed', e); }
+}
+
+async function postLog(text){
+  if (!text || !CURRENT_ROOM || !CURRENT_PLAYER) return;
+  try{
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/chat`), {
+      type: 'log',
+      text: String(text),
+      seat: CURRENT_PLAYER,
+      name: myDisplayName(),
+      createdAt: serverTimestamp()
+    });
+  }catch(e){ console.warn('log failed', e); }
+}
+
+function bindChatUIOnce(){
+  if (chatUIBound) return;
+  const input = document.getElementById('chat-input');
+  const send  = document.getElementById('chat-send');
+
+  // 送信ボタン
+  send?.addEventListener('click', async () => {
+    const text = (input?.value || '').trim();
+    if (!text) return;
+    await postChat(text);
+    if (input) input.value = '';
+  });
+
+  // Enter 送信（Shift+Enter で改行）
+  input?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      send?.click();
+    }
+  });
+
+  chatUIBound = true;
+}
+
+function renderChatDoc(d){
+  const data = d.data() || {};
+  const wrap = document.createElement('div');
+  wrap.className = (data.type === 'log') ? 'log' : 'chat';
+  wrap.style.margin = '4px 0';
+
+  const t = data.createdAt?.toDate?.() ? data.createdAt.toDate() : new Date();
+  const hh = String(t.getHours()).padStart(2,'0');
+  const mm = String(t.getMinutes()).padStart(2,'0');
+
+  const head = document.createElement('div');
+  head.style.fontSize = '11px';
+  head.style.color = (data.type === 'log') ? '#888' : '#666';
+  head.textContent = (data.type === 'log') ? `[${hh}:${mm}]` : `[${hh}:${mm}] ${data.name || ''}`;
+
+  const body = document.createElement('div');
+  body.style.whiteSpace = 'pre-wrap';
+  body.textContent = data.text || '';
+
+  wrap.appendChild(head);
+  wrap.appendChild(body);
+  return wrap;
+}
+
+function subscribeChat(){
+  try{ unsubscribeChat?.(); }catch(_){}
+  const listEl = document.getElementById('chat-log');
+  if (!CURRENT_ROOM || !listEl) return;
+
+  listEl.innerHTML = '';
+  const q = query(
+    collection(db, `rooms/${CURRENT_ROOM}/chat`),
+    orderBy('createdAt', 'asc'),
+    limit(200)
+  );
+  unsubscribeChat = onSnapshot(q, (snap) => {
+    const nearBottom = (listEl.scrollTop + listEl.clientHeight) > (listEl.scrollHeight - 40);
+    snap.docChanges().forEach(ch => {
+      if (ch.type === 'added'){
+        listEl.appendChild(renderChatDoc(ch.doc));
+      }
+    });
+    if (nearBottom) listEl.scrollTop = listEl.scrollHeight;
+  });
+}
+
+
+
+
 
 // ===============================
 // カード購読/反映
@@ -3369,6 +3487,7 @@ window.faceDownAll = async function(){
       }
       if (count>0) await batch.commit();
       setPreview();
+      postLog('自分のカードをすべて裏にしました');
     }
 
     window.faceUpAll = async function(){
@@ -3383,6 +3502,7 @@ window.faceDownAll = async function(){
         if (++count >= 450){ await batch.commit(); count=0; }
       }
       if (count>0) await batch.commit();
+      postLog('自分のカードをすべて表にしました');
     }
 
     window.resetMyCardRotation = async function () {
@@ -3434,6 +3554,7 @@ window.spawnNumberCounter = async function(){
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+   
   }catch(e){
     console.error(e);
     alert('数値カウンター作成に失敗しました。');
@@ -3502,6 +3623,7 @@ window.rollD6 = async function(){
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+    postLog(`6面ダイスを振りました → ${val}`);
   } catch(e){
     console.error(e);
     alert('ダイス作成に失敗しました。ネットワーク状態を確認してもう一度お試しください。');
@@ -3589,6 +3711,7 @@ window.rollD10 = async function(){
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+    postLog(`10面ダイスを振りました → ${val}`);
   }catch(e){
     console.error(e); alert('10面ダイスの作成に失敗しました。');
   }
@@ -3621,6 +3744,7 @@ window.rollD20 = async function(){
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+    postLog(`20面ダイスを振りました → ${val}`);
   }catch(e){
     console.error(e); alert('20面ダイスの作成に失敗しました。');
   }
@@ -3657,6 +3781,7 @@ window.flipCoin = async function(){
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+    postLog(`コイントス → ${faceJP}`);
   }catch(e){
     console.error(e); alert('コインの作成に失敗しました。');
   }
@@ -3873,6 +3998,7 @@ window.spawnToken = async function(){
         });
         if (previewImg) { setPreview(); }
         alert(`削除しました（${removedIds.length}枚）`);
+        postLog('自分のカードを全削除しました');
       } catch (e) {
         console.error(e);
         alert('削除に失敗しました。ネットワーク状況を確認して再度お試しください。');
@@ -3944,6 +4070,7 @@ window.collectMyCardsToDeck = async function () {
     const ok = confirm('自分の全カードをデッキエリアに集めます。よろしいですか？\n（裏表はそのまま）');
     if (!ok) return;
     await collectMyCardsToDeck(); // 既存の本体を呼ぶ
+    postLog('自分のカードをデッキに集めました');
   };
       
     
@@ -3976,6 +4103,7 @@ window.deleteSelectedMine = async function () {
     if (el) { el.remove(); cardDomMap.delete(id); }
     fullImageStore?.delete?.(id);
     if (window.previewImg) { setPreview(); }
+    postLog('選択中のカードを削除しました');
 
   } catch (e) {
     console.error(e);
@@ -4025,6 +4153,9 @@ window.sendSelectedToBack = async function () {
 
     // Firestore へも反映（バッチ最適化経由）
     updateCardBatched(id, { zIndex: newZ });
+    
+    postLog('選択中のカードを最背面に送りました');
+    
 
   } catch (e) {
     console.error(e);
@@ -4248,6 +4379,7 @@ window.openMyDiscardCardsDialog = function(){
       }
       if (count>0) await batch.commit();
       updateOverlapBadges(); //一括移動のあとに最新化
+      postLog('デッキをシャッフルしました');
     };
 
 
