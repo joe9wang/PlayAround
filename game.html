@@ -240,6 +240,9 @@
    <input accept="image/*" id="file-input" multiple="" type="file"/>
   </div>
   <div id="sidebar">
+
+  <!-- 操作パネル：ここだけ縦スクロールにする -->
+  <div id="ops-scroll" style="overflow:auto; max-height: calc(100vh - 320px); padding-right:4px;">
   
    <h2 class="panel-title panel-title--left">
      <span class="panel-title__text" data-i18n="side.panel">操作パネル</span>
@@ -337,6 +340,8 @@
    <button class="danger sl-btn" id="end-room-btn" style="display:none">
     🚪 ルームを終了（ホスト）
    </button>
+
+  </div><!-- /#ops-scroll -->
    
    
   <!-- ===== ログ＆チャット（操作パネルとは分離） ===== -->
