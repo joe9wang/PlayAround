@@ -2516,8 +2516,12 @@ if (state?.type === 'dice') {
        }
      } else {
        imgEl.style.display = 'none';
-       card.style.backgroundColor = '#000';
-       if (selectedCard === card) setPreview(TRUMP_BACK_URL);
+       // 席に設定された背面画像を適用（なければ黒）
+       applyCardBackStyle(card);
+       if (selectedCard === card) {
+         const back = seatBackUrl(parseInt(card.dataset.ownerSeat || '0', 10));
+         setPreview(back || '');
+       }
      }
    }
    
@@ -2694,8 +2698,12 @@ if (state?.type === 'numcounter') {
             }
           } else {
             imgEl.style.display = 'none';
-            card.style.backgroundColor = '#000';
-            if (selectedCard === card) setPreview(TRUMP_BACK_URL);
+            // 席に設定された背面画像を適用（なければ黒）
+            applyCardBackStyle(card);
+            if (selectedCard === card) {
+              const back = seatBackUrl(parseInt(card.dataset.ownerSeat || '0', 10));
+              setPreview(back || '');
+            }
           }
         }
         
@@ -2842,20 +2850,20 @@ if (data.type === 'numcounter') {
         card.classList.add('token');
         const tokenInput = card.querySelector('.token-input');
         if (tokenInput) {
-          if (typeof data.tokenText === 'string' && tokenInput.value !== data.tokenText) tokenInput.value = data.tokenText;
-
-//（applyCardState の「一般カード」更新ロジック内）
- if (data.faceUp) {
-   if (img) img.style.display = 'block';
-   card.style.backgroundColor = '#fff';
-   card.style.backgroundImage = '';
-   card.classList.remove('has-back');
- } else {
-   if (img) img.style.display = 'none';
-   applyCardBackStyle(card);              // ← 新: 席の背面画像を適用
- }
-
-          else { tokenInput.style.display = 'none'; card.style.backgroundColor = '#000'; }
+          if (typeof data.tokenText === 'string' && tokenInput.value !== data.tokenText) {
+            tokenInput.value = data.tokenText;
+          }
+          // トークンはテキスト入力の表示/非表示だけを切り替える（通常カードの表裏処理は入れない）
+          if (data.faceUp) {
+            tokenInput.style.display = 'block';
+            card.style.backgroundColor = '#fff';
+            card.style.backgroundImage = '';
+            card.classList.remove('has-back');
+          } else {
+            tokenInput.style.display = 'none';
+            // 背面画像を適用したい場合は次行を有効化。黒で良ければ消してOK。
+            applyCardBackStyle(card);
+          }
           const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
           tokenInput.readOnly = !editable;
           tokenInput.disabled = !editable;
@@ -2863,6 +2871,7 @@ if (data.type === 'numcounter') {
         const img2 = card.querySelector('img');
         if (img2) img2.style.display = 'none';
       }
+
 
       try {
         const viewerSeat = CURRENT_PLAYER;
