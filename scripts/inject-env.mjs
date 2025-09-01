@@ -7,15 +7,23 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // 1) 入力/出力ファイル
 const OUT_DIR = "./dist";
+// 置換対象：HTML（従来どおり）
 const PAGES = ["./index.html", "./game.html", "./mypage.html"];
-// 追加で丸ごとコピーしたいディレクトリ（存在する方を dist 配下へ）
-// どちらの配置でも動くように src を二重指定し、出力は固定名にします
-const DIRS = [
-  { src: "./assets",          dest: "assets"   },
-  { src: "./public/assets",   dest: "assets"   },
-  { src: "./partials",        dest: "partials" },
-  { src: "./public/partials", dest: "partials" }
+// 置換対象：JS/ESM（必要に応じて追加）
+// 例: game.html から外出しした module スクリプトをここに追加
+const JS_MODULES = [
+  "./scripts/game.module.js",   // ← 新しく外出しした本体
+  // "./scripts/他にも置換したい.mjs",
 ];
+
+// 丸ごとコピーするディレクトリ（public 廃止）
+// ※ ここに列挙されたものだけ dist に展開されます
+const DIRS = [
+  { src: "./assets",   dest: "assets"   },
+  { src: "./partials", dest: "partials" },
+  { src: "./scripts",  dest: "scripts"  }, // polyfills.js / 分割JS も配布
+];
+
 
 // 2) 置換マップ（Vercelの環境変数 → プレースホルダ）
 const replMap = {
@@ -28,7 +36,7 @@ const replMap = {
   "__NEXT_PUBLIC_APPCHECK_KEY__": process.env.NEXT_PUBLIC_APPCHECK_KEY || ""
 };
 
-// 3) 置換して dist へ出力（複数ページ対応）
+// 3) 置換して dist へ出力（HTML と JS を別々に処理）
 mkdirSync(OUT_DIR, { recursive: true });
 for (const src of PAGES) {
   let html = readFileSync(src, "utf8");   // 読み込み
@@ -40,6 +48,20 @@ for (const src of PAGES) {
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, html, "utf8");      // 出力
 }
+
+// 3.5) JS/ESM の置換（必要なときだけ。無ければ空配列でOK）
+for (const src of JS_MODULES) {
+  if (!existsSync(src)) continue;
+  let code = readFileSync(src, "utf8");
+  for (const [ph, val] of Object.entries(replMap)) {
+    const safe = String(val).replaceAll(/[$]/g, '$$$$');
+    code = code.split(ph).join(safe);
+  }
+  const outPath = `${OUT_DIR}/${src.replace(/^.\//, "")}`; // 例: ./scripts/game.module.js → dist/scripts/game.module.js
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, code, "utf8");
+}
+
 
 // 4) ディレクトリをそのままコピー（Node 18+ の fs.cp を使用）
 // 同じ dest への重複コピーは気にせず上書きOK
@@ -88,4 +110,5 @@ for (const f of [
 //copyFileSync("./CardGame.html", `${OUT_DIR}/CardGame.html`);
 
 
-console.log("Build done: env injected, assets/ & partials/ copied to dist/");
+console.log("Build done: env injected, assets/ & partials/ & scripts/ copied to dist/");
+
