@@ -2387,6 +2387,19 @@ function startSession(roomId, playerId){
 let unsubscribeChat = null;
 let chatUIBound = false;
 
+// 画面下部にシステム行を追記する小さなユーティリティ
+function appendSystemLine(text){
+  const listEl = document.getElementById('chat-log');
+  if (!listEl) return;
+  const el = document.createElement('div');
+  el.className = 'sys';
+  el.style.cssText = 'color:#a00;font-size:12px;margin:4px 0;';
+  el.textContent = text;
+  listEl.appendChild(el);
+  listEl.scrollTop = listEl.scrollHeight;
+}
+
+
 function myDisplayName(){
   try{
     const seatData = (typeof CURRENT_PLAYER === 'number' && currentSeatMap) ? (currentSeatMap[CURRENT_PLAYER] || {}) : {};
@@ -2408,7 +2421,15 @@ async function postChat(text){
       name: myDisplayName(),
       createdAt: serverTimestamp()
     });
-  }catch(e){ console.warn('chat send failed', e); }
+  }catch(e){
+    console.warn('chat send failed', e);
+    if (e?.code === 'permission-denied'){
+      appendSystemLine('チャット送信が許可されていません（権限）');
+      // 入力UIを無効化
+      document.getElementById('chat-input')?.setAttribute('disabled','');
+      document.getElementById('chat-send')?.setAttribute('disabled','');
+    }
+  }
 }
 
 async function postLog(text){
@@ -2421,7 +2442,12 @@ async function postLog(text){
       name: myDisplayName(),
       createdAt: serverTimestamp()
     });
-  }catch(e){ console.warn('log failed', e); }
+  }catch(e){
+    console.warn('log failed', e);
+    if (e?.code === 'permission-denied'){
+      appendSystemLine('操作ログの書き込みが許可されていません（権限）');
+    }
+  }
 }
 
 function bindChatUIOnce(){
@@ -2491,6 +2517,15 @@ function subscribeChat(){
       }
     });
     if (nearBottom) listEl.scrollTop = listEl.scrollHeight;
+  }, (err) => {
+    console.warn('chat subscribe error', err?.code, err);
+    if (err?.code === 'permission-denied'){
+      appendSystemLine('このプロジェクトの Firestore ルールでチャットの閲覧が許可されていません。');
+      document.getElementById('chat-input')?.setAttribute('disabled','');
+      document.getElementById('chat-send')?.setAttribute('disabled','');
+    } else {
+      appendSystemLine('チャットの読み込みに失敗しました。コンソールをご確認ください。');
+    }
   });
 }
 
