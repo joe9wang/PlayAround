@@ -1914,6 +1914,8 @@ function applyFieldModeLayout(){
               claimedByUid: d.claimedByUid || null,
               heartbeatAt: d.heartbeatAt || null,
               areaColors: d.areaColors || {},
+              // 追加: 背面画像URL（オーナーが選択したもの）
+              backImageUrl: d.backImageUrl || null,              
               // ← 追加：スナップショットに hp が数値で入っていたときだけ更新。
               // 無ければ既存の値（保持）を使う。未設定なら 0。
               hp: (typeof d.hp === 'number')
@@ -1952,6 +1954,9 @@ function applyFieldModeLayout(){
         renderAreaColors();
         renderSeatAvailability();
         renderHPPanel();   //座席更新が入ったらHPパネルも即リフレッシュ
+        // 追加: その席のカード裏背景を再適用
+        refreshCardBacksForSeat(idx + 1);
+        
       }));
       unsubscribeSeats = () => unsubs.forEach(fn => fn());
     }
@@ -2190,6 +2195,37 @@ async function claimSeat(roomId, seat){
     
     
     function stopHostHeartbeat(){ if(hostHeartbeatTimer){ clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; } }
+    
+    
+// === 背面画像関連 ===
+function seatBackUrl(seat){
+  const s = currentSeatMap && currentSeatMap[seat];
+  return (s && typeof s.backImageUrl === 'string' && s.backImageUrl) ? s.backImageUrl : null;
+}
+function applyCardBackStyle(card){
+  // 裏面の背景を適用（席の設定がなければ黒）
+  const seat = parseInt(card.dataset.ownerSeat || '0', 10);
+  const url  = seatBackUrl(seat);
+  card.style.backgroundColor = '#000';
+  if (url){
+    card.classList.add('has-back');
+    card.style.backgroundImage  = `url("${url}")`;
+  }else{
+    card.classList.remove('has-back');
+    card.style.backgroundImage  = '';
+  }
+}
+function refreshCardBacksForSeat(seat){
+  // 指定席の全カードについて、裏向きなら背面を塗り直す
+  cardDomMap.forEach((el) => {
+    if (parseInt(el.dataset.ownerSeat || '0', 10) !== seat) return;
+    const img = el.querySelector('img');
+    const isFaceUp = !!img && img.style.display !== 'none';
+    if (!isFaceUp) applyCardBackStyle(el);
+  });
+}    
+
+
 
  async function startHeartbeat(roomId, seat){
   stopHeartbeat();
@@ -2807,7 +2843,18 @@ if (data.type === 'numcounter') {
         const tokenInput = card.querySelector('.token-input');
         if (tokenInput) {
           if (typeof data.tokenText === 'string' && tokenInput.value !== data.tokenText) tokenInput.value = data.tokenText;
-          if (data.faceUp) { tokenInput.style.display = 'block'; card.style.backgroundColor = '#fff'; }
+
+//（applyCardState の「一般カード」更新ロジック内）
+ if (data.faceUp) {
+   if (img) img.style.display = 'block';
+   card.style.backgroundColor = '#fff';
+   card.style.backgroundImage = '';
+   card.classList.remove('has-back');
+ } else {
+   if (img) img.style.display = 'none';
+   applyCardBackStyle(card);              // ← 新: 席の背面画像を適用
+ }
+
           else { tokenInput.style.display = 'none'; card.style.backgroundColor = '#000'; }
           const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
           tokenInput.readOnly = !editable;
@@ -4440,7 +4487,50 @@ Object.assign(window, {
   // フィールドサイズUI
   toggleFieldSizeOptions,
   setFieldSize,
+  // 背面画像ピッカー起動
+  openBackImagePicker,  
 });
+
+
+// === 背面画像のアップロード／保存 ===
+function openBackImagePicker(){
+  const input = document.getElementById('card-back-input');
+  if (!input) return;
+  input.value = '';
+  input.click();
+}
+
+// ファイル選択時の処理（1枚だけ採用）
+(function bindBackImageInput(){
+  const input = document.getElementById('card-back-input');
+  if (!input) return;
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID){
+      alert('ルームに参加してから実行してください'); return;
+    }
+    try{
+      // Storage: rooms/{room}/seats/{seat}/card-back.jpg
+      const storage = getStorage();
+      const path    = `rooms/${CURRENT_ROOM}/seats/${CURRENT_PLAYER}/card-back.jpg`;
+      const sref    = ref(storage, path);
+      // 圧縮が不要ならそのまま、必要ならここで canvas リサイズしてから uploadBytes
+      await uploadBytes(sref, file);
+      const url = await getDownloadURL(sref);
+      // Firestore: 席ドキュメントへ保存 → 全クライアントへ配信
+      await updateSeatBatched(CURRENT_PLAYER, {
+        backImageUrl: url,
+        updatedAt: serverTimestamp()
+      });
+      // 自分の画面は即時反映
+      refreshCardBacksForSeat(CURRENT_PLAYER);
+    }catch(err){
+      console.error('back image upload/save failed', err);
+      alert('カード背面画像の保存に失敗しました。通信状況をご確認ください。');
+    }
+  });
+})();
 
 
 
