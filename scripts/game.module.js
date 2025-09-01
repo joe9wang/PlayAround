@@ -2204,6 +2204,10 @@ function seatBackUrl(seat){
   const s = currentSeatMap && currentSeatMap[seat];
   return (s && typeof s.backImageUrl === 'string' && s.backImageUrl) ? s.backImageUrl : null;
 }
+
+// 互換：既存コードに getSeatBackUrl 呼び出しが残っていても動くように
+const getSeatBackUrl = (seat) => seatBackUrl(seat);
+
 function applyCardBackStyle(card){
   // 裏面の背景を適用（席の設定がなければ黒）
   const seat = parseInt(card.dataset.ownerSeat || '0', 10);
@@ -2633,7 +2637,7 @@ if (state?.type === 'numcounter') {
         const isToken = card.classList.contains('token');
         
         
-        // プレビュー：他人の手札 or 裏向き → 裏画像、それ以外は表画像
+        // プレビュー：他人の手札 or 裏向き → 席ごとの裏画像（無ければ黒）、それ以外は表画像
         if (isToken) {
           setPreview(); // トークンはプレビューなし
         } else {
@@ -2642,11 +2646,11 @@ if (state?.type === 'numcounter') {
           const thumbEl = card.querySelector('img');
           const frontSrc = full || (thumbEl && thumbEl.src) || '';
           const otherHand = isOtherPlayersHandCard(card); /* 判定関数 */
-          const previewSrc = (!isFaceUp || otherHand)
-            ? getSeatBackUrl(ownerSeat)
-            : frontSrc;
+          const ownerSeat = parseInt(card.dataset.ownerSeat || '0', 10);   // ★ 追加：宣言
+          const seatBack = getSeatBackUrl(ownerSeat) || TRUMP_BACK_URL;    // ★ 席の裏→無ければ黒
+          const previewSrc = (!isFaceUp || otherHand) ? seatBack : frontSrc;
           setPreview(previewSrc);
-        }        
+        }
         
         const ownerPlayerNum = card.dataset.ownerSeat ? `P${card.dataset.ownerSeat}` : "?";
         if (isToken) {
