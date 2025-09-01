@@ -4615,6 +4615,19 @@ function bindPanZoomHandlers(){
 // フィールド初期サイズ/ズームの設定、各種ハンドラ一回登録、モード適用
 //
 
+
+// チャット見出しの折りたたみ
+document.getElementById('toggle-chat')?.addEventListener('click', () => {
+  const panel = document.getElementById('chat-panel');
+  const btn   = document.getElementById('toggle-chat');
+  if (!panel || !btn) return;
+  const hide = panel.style.display !== 'none' ? true : false;
+  panel.style.display = hide ? 'none' : '';
+  btn.textContent = hide ? '▶' : '◀';
+});
+
+
+
 function initializePlayField(){
       setFieldSize('small');
       
