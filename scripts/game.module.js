@@ -2487,7 +2487,9 @@ function renderChatDoc(d){
   const head = document.createElement('div');
   head.style.fontSize = '11px';
   head.style.color = (data.type === 'log') ? '#888' : '#666';
-  head.textContent = (data.type === 'log') ? `[${hh}:${mm}]` : `[${hh}:${mm}] ${data.name || ''}`;
+  // ログでもプレイヤー名を表示（name が無ければ seat から P番号を推定）
+  const who = data.name || (typeof data.seat === 'number' ? `P${data.seat}` : '');
+  head.textContent = `[${hh}:${mm}] ${who}`;
 
   const body = document.createElement('div');
   body.style.whiteSpace = 'pre-wrap';
