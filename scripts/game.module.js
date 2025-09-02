@@ -425,6 +425,8 @@ updateModePickButtons();
       }
       if (n>0) await batch.commit();
       alert(`SLOT ${slot} に ${cards.length} 枚保存しました。`);
+      // ★セーブ完了ログ
+      postLog(`SLOT ${slot} に ${cards.length} 枚保存しました`);      
     }catch(e){
       console.error('SAVE ERROR', e?.code, e?.message, e);
       alert(`セーブに失敗しました（${e?.code||'unknown'}）。コンソールの詳細を確認してください。`);
@@ -476,6 +478,8 @@ updateModePickButtons();
       }
       if (n>0) await batch.commit();
       alert(`SLOT ${slot} から ${snap.size} 枚ロードしました。`);
+      // ★ロード完了ログ
+      postLog(`SLOT ${slot} から ${snap.size} 枚ロードしました`);
     }catch(e){
       console.error(e);
       alert('ロードに失敗しました。通信状況をご確認ください。');
@@ -3214,6 +3218,8 @@ async function cleanupAndCloseRoom(roomId){
 
     async function processQueue(){
       processing = true;
+      // ★ アップロード完了合計
+      let totalUploaded = 0;
       try{
         while (fileQueue.length){
           const chunk = fileQueue.splice(0, BATCH_INSERT);
@@ -3283,6 +3289,8 @@ async function cleanupAndCloseRoom(roomId){
               
               
             }));
+            // ★ このグループで成功した数を合算
+            totalUploaded += results.filter(Boolean).length;
             await nextFrame();
           }
           if (frag.childNodes.length) field.appendChild(frag);
@@ -3290,6 +3298,10 @@ async function cleanupAndCloseRoom(roomId){
         }
       } finally {
         processing = false;
+        // ★追加: 合計が1枚以上ならログ出力（投稿者名は postLog 側で seat/name を付与）
+        if (totalUploaded > 0) {
+          postLog(`画像を${totalUploaded}枚読み込みました`);
+        }
       }
     }
 
@@ -3524,7 +3536,7 @@ window.faceDownAll = async function(){
       }
       if (count>0) await batch.commit();
       setPreview();
-      postLog('自分のカードをすべて裏にしました');
+      //postLog('自分のカードをすべて裏にしました');
     }
 
     window.faceUpAll = async function(){
@@ -3539,7 +3551,7 @@ window.faceDownAll = async function(){
         if (++count >= 450){ await batch.commit(); count=0; }
       }
       if (count>0) await batch.commit();
-      postLog('自分のカードをすべて表にしました');
+      //postLog('自分のカードをすべて表にしました');
     }
 
     window.resetMyCardRotation = async function () {
@@ -4230,6 +4242,8 @@ window.sendSelectedToBack = async function () {
           item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
           item.addEventListener('click', async () => {
             await focusCardById(id);
+            // ★全カード一覧から選択したログ
+            postLog(`全カード一覧からカードを選択しました`);
             closeMyCardsDialog();
           });
           cardListGrid.appendChild(item);
@@ -4316,6 +4330,8 @@ window.sendSelectedToBack = async function () {
         item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
         item.addEventListener('click', async () => {
           await focusCardById(id);   // 最前面 & プレビュー更新（既存）
+          // ★デッキ一覧から選択したログ
+          postLog(`デッキ一覧からカードを選択しました`);
           closeMyCardsDialog();
         });
         cardListGrid.appendChild(item);
@@ -4377,6 +4393,8 @@ window.openMyDiscardCardsDialog = function(){
       item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
       item.addEventListener('click', async () => {
         await focusCardById(id);   // 最前面 & プレビュー更新（既存）
+        // ★捨て札一覧から選択したログ
+        postLog(`捨て札一覧からカードを選択しました`);
         closeMyCardsDialog();
       });
       cardListGrid.appendChild(item);
