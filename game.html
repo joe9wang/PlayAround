@@ -239,10 +239,10 @@
    📥 画像をタップ（またはドラッグ＆ドロップ）で追加
    <input accept="image/*" id="file-input" multiple="" type="file"/>
   </div>
-  <div id="sidebar">
+  <div id="sidebar" style="display:flex; flex-direction:column; overflow:hidden;">
 
   <!-- 操作パネル：ここだけ縦スクロールにする -->
-  <div id="ops-scroll" style="overflow:auto; max-height: calc(100vh - 320px); padding-right:4px;">
+  <div id="ops-scroll" style="flex: 4 1 0%; overflow:auto; min-height:0; padding-right:4px;">
   
    <h2 class="panel-title panel-title--left">
      <span class="panel-title__text" data-i18n="side.panel">操作パネル</span>
@@ -345,29 +345,33 @@
    
    
   <!-- ===== ログ＆チャット（操作パネルとは分離） ===== -->
-  <h2 class="panel-title panel-title--left" style="margin-top:14px;">
-    <span class="panel-title__text">チャット & ログ</span>
-    <button id="toggle-chat" class="inline-toggle"
-            title="チャットの表示/非表示">◀</button>
-  </h2>
-  <section id="chat-panel"
-           style="margin-top:8px; padding:8px; border:1px solid #e5e5e5;
-                  border-radius:10px; background:#fafafa;">
+  <div id="chat-wrap" style="flex:1 0 0%; display:flex; flex-direction:column; min-height:0;">
+    <h2 class="panel-title panel-title--left" style="margin-top:14px;">
+      <span class="panel-title__text">チャット & ログ</span>
+      <button id="toggle-chat" class="inline-toggle" title="チャットの表示/非表示">◀</button>
+    </h2>
+    <section id="chat-panel"
+             style="margin-top:8px; padding:8px; border:1px solid #e5e5e5;
+                    border-radius:10px; background:#fafafa; display:flex; flex-direction:column; min-height:0; flex:1 1 auto;">
+
     <!-- ログ表示 -->
-    <div id="chat-log" aria-live="polite"
-         style="height:200px; overflow:auto; background:#fff; border:1px solid #e5e5e5;
-                border-radius:6px; padding:6px; font-size:13px; line-height:1.4;"></div>
+      <div id="chat-log" aria-live="polite"
+           style="flex:1 1 auto; min-height:0; overflow:auto; background:#fff; border:1px solid #e5e5e5;
+                  border-radius:6px; padding:6px; font-size:13px; line-height:1.4;"></div>
+
     <!-- 入力 -->
-    <div class="row" style="display:flex; gap:6px; margin-top:8px;">
-      <input id="chat-input" type="text" maxlength="200" placeholder="メッセージを入力…"
-             style="flex:1; padding:6px 8px; border:1px solid #ddd; border-radius:8px;" />
-      <button id="chat-send" class="sl-btn" type="button" style="white-space:nowrap;">送信</button>
-    </div>
-    <div style="margin-top:4px; font-size:12px; color:#666;">
-      ・Enterで送信 / Shift+Enterで改行<br>
-      ・操作すると「◯◯さんが〜しました」を自動で表示
-    </div>
-  </section>
+      <div class="row" style="display:flex; gap:6px; margin-top:8px;">
+        <input id="chat-input" type="text" maxlength="200" placeholder="メッセージを入力…"
+               style="flex:1; padding:6px 8px; border:1px solid #ddd; border-radius:8px;" />
+        <button id="chat-send" class="sl-btn" type="button" style="white-space:nowrap;">送信</button>
+      </div>
+      <div style="margin-top:4px; font-size:12px; color:#666;">
+        ・Enterで送信 / Shift+Enterで改行<br>
+        ・操作すると「◯◯さんが〜しました」を自動で表示
+      </div>
+    </section>
+  </div>
+
   <!-- =============================================== -->   
    
    
