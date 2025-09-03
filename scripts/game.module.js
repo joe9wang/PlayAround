@@ -4615,7 +4615,6 @@ function bindPanZoomHandlers(){
       try { if (unsubscribeCards)    { unsubscribeCards();    unsubscribeCards    = null; } } catch(_){}
       try { if (unsubscribeSeats)    { unsubscribeSeats();    unsubscribeSeats    = null; } } catch(_){}
       try { if (unsubscribeRoomDoc)  { unsubscribeRoomDoc();  unsubscribeRoomDoc  = null; } } catch(_){}
-      try { if (CURRENT_ROOM && CURRENT_PLAYER) await releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_){}
       
       // UIを即時クリア（DBは既に消えるがDOMが残らないように）
       clearFieldDOM();      
