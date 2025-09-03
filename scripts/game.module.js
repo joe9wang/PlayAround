@@ -2169,7 +2169,14 @@ async function claimSeat(roomId, seat){
     }
 
     async function releaseSeat(roomId, seat){
-      try{ await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`)); }catch(e){ console.warn('releaseSeat error', e); }
+      try{
+        await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`));
+      }catch(e){
+        // 既に seats が掃除済み / ルームが閉鎖済みのときは黙って無視
+        if (e?.code !== 'permission-denied' && e?.code !== 'not-found') {
+          console.warn('releaseSeat error', e);
+        }
+      }
     }
 
 // ===============================
@@ -4623,9 +4630,6 @@ function bindPanZoomHandlers(){
       await cleanupAndDeleteRoom(CURRENT_ROOM);
       
       
-      // 自分の座席 doc も掃除
-      try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
-
         CURRENT_ROOM = null;
         CURRENT_PLAYER = null;
         sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
