@@ -1351,6 +1351,7 @@ function startHostWatch() {
         if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; }
         if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; }
         if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
+        if (unsubscribeChat)    { unsubscribeChat();    unsubscribeChat    = null; }
         CURRENT_ROOM = null;
         CURRENT_PLAYER = null;
         stopHostWatch();
@@ -1876,6 +1877,7 @@ function applyFieldModeLayout(){
              try { if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; } } catch(_) {}
              try { if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; } } catch(_) {}
              try { if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; } } catch(_) {}
+             try { if (unsubscribeChat)    { unsubscribeChat();    unsubscribeChat    = null; } } catch(_){}
              CURRENT_ROOM = null;
              CURRENT_PLAYER = null;
              stopHostWatch();
@@ -3124,7 +3126,19 @@ async function cleanupAndCloseRoom(roomId){
         if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
       }
       if (count > 0) await batch.commit();
-
+      
+      
+      // chat も全削除（履歴を残さない）
+      const chatCol = collection(db, `rooms/${roomId}/chat`);
+      const chatSnap = await getDocs(chatCol);
+      batch = writeBatch(db); count = 0;
+      for (const docSnap of chatSnap.docs) {
+        batch.delete(doc(db, `rooms/${roomId}/chat/${docSnap.id}`));
+        if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
+      }
+      if (count > 0) await batch.commit();
+      
+      
       // seats
       const seatsCol = collection(db, `rooms/${roomId}/seats`);
       const seatsSnap = await getDocs(seatsCol);
@@ -3186,7 +3200,20 @@ async function cleanupAndCloseRoom(roomId){
           if (++n >= 450){ await batch.commit(); batch = writeBatch(db); n = 0; }
         }
         if (n > 0) await batch.commit();
-
+        
+        
+    // ルームを初期化するときもチャットを空にしておく
+    const chatCol = collection(db, `rooms/${roomId}/chat`);
+    const chatSnap = await getDocs(chatCol);
+    batch = writeBatch(db); n = 0;
+    for (const d of chatSnap.docs){
+      batch.delete(doc(db, `rooms/${roomId}/chat/${d.id}`));
+      if (++n >= 450){ await batch.commit(); batch = writeBatch(db); n = 0; }
+    }
+    if (n > 0) await batch.commit();        
+        
+        
+        
         await setDoc(doc(db, `rooms/${roomId}`), { roomClosed: false, updatedAt: serverTimestamp() }, { merge: true });
       }catch(e){
         console.warn('resetRoomState failed', e);
@@ -4631,6 +4658,7 @@ function bindPanZoomHandlers(){
       try { if (unsubscribeCards)    { unsubscribeCards();    unsubscribeCards    = null; } } catch(_){}
       try { if (unsubscribeSeats)    { unsubscribeSeats();    unsubscribeSeats    = null; } } catch(_){}
       try { if (unsubscribeRoomDoc)  { unsubscribeRoomDoc();  unsubscribeRoomDoc  = null; } } catch(_){}
+      try { if (unsubscribeChat)     { unsubscribeChat();     unsubscribeChat     = null; } } catch(_){}
       
       // UIを即時クリア（DBは既に消えるがDOMが残らないように）
       clearFieldDOM();      
