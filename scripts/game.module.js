@@ -2740,9 +2740,18 @@ if (state?.type === 'dice') {
       card.dataset.ownerSeat = state?.ownerSeat ? String(state.ownerSeat) : '';
       card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
 
-      const img = document.createElement("img");
-      img.src = imageSrc; img.decoding = 'async'; img.loading = 'lazy';
+      const img = document.createElement('img');
+      img.decoding = 'async';
+      img.loading  = 'lazy';
+      if (typeof imageSrc === 'string' && imageSrc.trim().length > 0) {
+        img.src = imageSrc;
+      } else {
+        // 未定義/空なら src を付けない（/undefined リクエスト回避）
+        img.removeAttribute('src');
+        img.style.display = 'none'; // URLが入るまで非表示
+      }
       card.appendChild(img);
+
 
       // token UI
       let tokenInput = null;
