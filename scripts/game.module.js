@@ -2373,6 +2373,11 @@ function startSession(roomId, playerId){
       
       
       initializePlayField();
+      
+      // 再入室時に前のDOMが残らないよう、まず強制クリア
+      clearFieldDOM();
+      initializePlayField();
+      
       subscribeCards();
       subscribeChat();          // ←追加：チャット購読を開始
       bindChatUIOnce();         // ←追加：送信ボタン/Enter送信を有効化
@@ -2572,7 +2577,22 @@ function subscribeCards(){
     const localDeleteMap = new Map(); // id -> timestamp
     function markLocalDelete(id){ localDeleteMap.set(id, Date.now()); setTimeout(()=>localDeleteMap.delete(id), 2000); }
     function isLocallyDeleted(id){ const t = localDeleteMap.get(id); return t && (Date.now() - t < 2000); }
-
+    
+    
+    // ==== 追加: フィールド上の描画カードを強制的に全消去 ====
+    function clearFieldDOM(){
+      try {
+        // .card 要素を全削除
+        document.querySelectorAll('.card').forEach(el => el.remove());
+      } catch(_) {}
+      // 管理用マップや選択状態も掃除
+      try { cardDomMap.clear(); } catch(_) {}
+      try { selectedCard?.classList?.remove?.('selected'); } catch(_) {}
+      try { selectedCard = null; } catch(_) {}
+      try { typeof setPreview === 'function' && setPreview(); } catch(_) {}
+    }
+    
+    
     function upsertCardFromRemote(id, data){
       let el = cardDomMap.get(id) || document.querySelector(`[data-card-id="${id}"]`);
       const exists = !!el;
@@ -4597,6 +4617,8 @@ function bindPanZoomHandlers(){
       try { if (unsubscribeRoomDoc)  { unsubscribeRoomDoc();  unsubscribeRoomDoc  = null; } } catch(_){}
       try { if (CURRENT_ROOM && CURRENT_PLAYER) await releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_){}
       
+      // UIを即時クリア（DBは既に消えるがDOMが残らないように）
+      clearFieldDOM();      
       
       // 2) Firestore 側を完全掃除（cards / seats 全削除 → 親doc削除）
       await cleanupAndDeleteRoom(CURRENT_ROOM);
