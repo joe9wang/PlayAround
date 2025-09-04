@@ -4699,6 +4699,7 @@ function bindPanZoomHandlers(){
       // ホストUI
       if (endRoomBtn)        endRoomBtn.style.display      = isHost ? 'block' : 'none';
       if (hostOtherOpsWrap)  hostOtherOpsWrap.style.display= isHost ? 'block' : 'none';
+    }
 
       
 // ===== leave room button
@@ -4739,7 +4740,7 @@ leaveRoomBtn?.addEventListener('click', async () => {
       // ★ 非ホストUI（参加中のみ表示）
       const showLeave = !!(CURRENT_ROOM && !isHost);
       if (leaveRoomBtn)      leaveRoomBtn.style.display    = showLeave ? 'block' : 'none';
-    }
+
     endRoomBtn?.addEventListener('click', async () => {
       if (!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID && CURRENT_ROOM_META?.hostSeat === CURRENT_PLAYER)) {
         alert('この操作は、ホスト座席に座ったホストのみ実行できます。');
