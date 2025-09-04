@@ -2143,13 +2143,13 @@ async function claimSeat(roomId, seat){
         const success = await runTransaction(db, async (tx) => {
           const snap = await tx.get(seatRef);
           if(!snap.exists()){
-            tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp(), hp: 0 });
+            tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() });
             return true;
           }
           const data = snap.data();
           const stale = isSeatStale(data);
           if(!data.claimedByUid || stale || data.claimedByUid === CURRENT_UID){
-            tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp(), hp: (typeof data?.hp==='number'?data.hp:0) });
+            tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() });
             return true;
           }
           return false;
@@ -2268,11 +2268,11 @@ function refreshCardBacksForSeat(seat){
       // ルーム側 ping は 60s に節約
       if (now - __roomPingAt > ROOM_PING_MS) {
         __roomPingAt = now;
-        const patch = { lastSeatPing: serverTimestamp() };
-        // ホストなら hostHeartbeatAt も同梱して1 write にまとめる
+        // ルーム直下はホストだけが更新（ルール準拠）
         const iAmHost = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
-        if (iAmHost) patch.hostHeartbeatAt = serverTimestamp();
-        await setDoc(doc(db, `rooms/${roomId}`), patch, { merge: true });
+        if (iAmHost) {
+          await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
+        }
       }
      
      }catch(e){ console.warn('HB error', e); }
