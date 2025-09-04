@@ -2275,7 +2275,6 @@ function refreshCardBacksForSeat(seat){
     }
     // 非ホストは rooms 直下には一切書かない
   }
-      }
      
      }catch(e){ console.warn('HB error', e); }
    }, SEAT_HEARTBEAT_MS);
