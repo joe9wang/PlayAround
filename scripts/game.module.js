@@ -202,6 +202,7 @@ onIdTokenChanged(auth, async (user) => {
     const joinRoomInput = document.getElementById('join-room-id');
     const playerNameInput = document.getElementById('player-name');
     const endRoomBtn     = document.getElementById('end-room-btn');
+    const leaveRoomBtn   = document.getElementById('leave-room-btn');
     const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
     const startBtn = document.getElementById('start-btn');
     const sessionIndicator = document.getElementById('session-indicator');
@@ -1922,7 +1923,7 @@ function applyFieldModeLayout(){
              lobby.style.display = 'flex';
              alert('ホストがルームを削除しました。');
            }
-           renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); renderHPPanel();
+           renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); updateLeaveRoomButtonVisibility(); renderHPPanel();
            return;
          }
          // 存在する場合の通常処理
@@ -1937,7 +1938,7 @@ function applyFieldModeLayout(){
          IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
          if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
          startHostWatch(); // 追加: ロビー中も空室監視/自動削除を回す
-         renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); renderHPPanel();
+         renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); updateLeaveRoomButtonVisibility(); renderHPPanel();
        });
 
   // ロビー段階でもHPを表示したい場合に購読（開始ボタン前）
@@ -4694,9 +4695,50 @@ function bindPanZoomHandlers(){
     function updateEndRoomButtonVisibility(){
       const isHostUid = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
       const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
-      const show = !!(CURRENT_ROOM && isHostUid && isHostSeat);
-      if (endRoomBtn) endRoomBtn.style.display = show ? 'block' : 'none';
-      if (hostOtherOpsWrap) hostOtherOpsWrap.style.display = show ? 'block' : 'none';
+      const isHost = !!(CURRENT_ROOM && isHostUid && isHostSeat);
+      // ホストUI
+      if (endRoomBtn)        endRoomBtn.style.display      = isHost ? 'block' : 'none';
+      if (hostOtherOpsWrap)  hostOtherOpsWrap.style.display= isHost ? 'block' : 'none';
+
+      
+// ===== leave room button
+// ===============================
+// 非ホスト専用の「退室する」ボタン制御
+function updateLeaveRoomButtonVisibility(){
+  // 「自分が今、どこかの席に座っている」 かつ 「ホストではない」場合だけ表示
+  const isHostUid  = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+  const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
+  const isHost     = !!(CURRENT_ROOM && isHostUid && isHostSeat);
+  const show = !!(CURRENT_ROOM && CURRENT_PLAYER && !isHost);
+  if (leaveRoomBtn) leaveRoomBtn.style.display = show ? 'block' : 'none';
+}
+
+// クリックで手動退室
+leaveRoomBtn?.addEventListener('click', async () => {
+  if (!(CURRENT_ROOM && CURRENT_PLAYER)) { alert('ルームに参加していません。'); return; }
+  if (!confirm('席を空けて退室します。よろしいですか？')) return;
+  leaveRoomBtn.disabled = true; const old = leaveRoomBtn.textContent; leaveRoomBtn.textContent = '退室中…';
+  try{
+    try { stopHeartbeat(); } catch(_){}
+    try { await releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_){}
+    try { if (unsubscribeCards)    { unsubscribeCards();    unsubscribeCards    = null; } } catch(_){}
+    try { if (unsubscribeSeats)    { unsubscribeSeats();    unsubscribeSeats    = null; } } catch(_){}
+    try { if (unsubscribeRoomDoc)  { unsubscribeRoomDoc();  unsubscribeRoomDoc  = null; } } catch(_){}
+    try { if (unsubscribeChat)     { unsubscribeChat();     unsubscribeChat     = null; } } catch(_){}
+    try { stopHostWatch(); } catch(_){}
+    CURRENT_ROOM = null; CURRENT_PLAYER = null;
+    sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
+    lobby.style.display = 'flex';
+  } finally {
+    leaveRoomBtn.disabled = false; leaveRoomBtn.textContent = old;
+    updateLeaveRoomButtonVisibility(); updateEndRoomButtonVisibility();
+  }
+});
+      
+      
+      // ★ 非ホストUI（参加中のみ表示）
+      const showLeave = !!(CURRENT_ROOM && !isHost);
+      if (leaveRoomBtn)      leaveRoomBtn.style.display    = showLeave ? 'block' : 'none';
     }
     endRoomBtn?.addEventListener('click', async () => {
       if (!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID && CURRENT_ROOM_META?.hostSeat === CURRENT_PLAYER)) {
@@ -4736,8 +4778,9 @@ function bindPanZoomHandlers(){
         alert('ルームの終了に失敗しました。ネットワークをご確認のうえ再試行してください。');
       } finally {
         endRoomBtn.disabled = false;
-        endRoomBtn.textContent = old;   // ← 復帰を追加
+        endRoomBtn.textContent = old;
         updateEndRoomButtonVisibility();
+        updateLeaveRoomButtonVisibility();
       }
     });
 
