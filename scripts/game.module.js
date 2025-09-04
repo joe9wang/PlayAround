@@ -2157,6 +2157,7 @@ async function claimSeat(roomId, seat){
      // ★追加: HP doc を先に作成（存在しないと購読が 0 を流して“戻る”ため）
      if (success) {
        try {
+         await ensureAuthReady(); // ← これを追加（request.auth=nullによるpermission-denied対策）
          await setDoc(
            doc(db, hpDocPath(roomId, seat)),
            { value: 0, updatedAt: serverTimestamp(), updatedBy: CURRENT_UID || null },

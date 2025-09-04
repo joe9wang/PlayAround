@@ -26,7 +26,16 @@ export function subscribeHP(roomId){
   const refs = [1,2,3,4].map(seat => doc(db, hpDocPath(roomId, seat)));
   const unsubs = refs.map((ref, idx) => onSnapshot(ref, snap => {
     const seat = idx + 1;
-    if (!snap.exists()) { hpValues[seat] = 0; renderHPPanel(); return; }
+    // ドキュメントが無い時に即0へ“戻す”のをやめる。
+    // その席が未占有（誰も座っていない）場合のみ 0 にリセットする。
+    if (!snap.exists()) {
+      const { currentSeatMap } = ctx.getState();
+      const owner = currentSeatMap[seat]?.claimedByUid || null;
+      if (!owner) {                     // 無人席のときだけ 0 に揃える
+        if (hpValues[seat] !== 0) { hpValues[seat] = 0; renderHPPanel(); }
+      }
+      return;
+    }
     const d = snap.data() || {};
     const remoteAt = d.updatedAt?.toMillis?.() || 0;
     // 入力直後の“巻き戻り”防止：自分のローカル編集より古いスナップショットは捨てる
