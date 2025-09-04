@@ -47,7 +47,7 @@
   
   
   import { initHP, renderHPPanel, subscribeHP, detachHPListener, hpDocPath, hpValues, localHpEditAt } from './hp.js';
-  
+  import { cleanupAndCloseRoom, cleanupAndDeleteRoom, releaseSeat } from './room.module.js';  
   
 // ===============================
 // Firebase 初期化と App Check
@@ -1356,7 +1356,10 @@ function startHostWatch() {
       const closed   = !!meta?.roomClosed;
       const hostHere = isHostAlive(meta);
       if (!iAmHost && (closed || !hostHere)) {
-        try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
+        try {
+          if (CURRENT_ROOM && CURRENT_PLAYER)
+            releaseSeat(db, CURRENT_ROOM, CURRENT_PLAYER, CURRENT_UID, CURRENT_ROOM_META?.hostUid || null);
+        } catch(_) {}
         if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; }
         if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; }
         if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
@@ -1377,7 +1380,7 @@ function startHostWatch() {
       const lastPingMs = meta?.lastSeatPing?.toMillis?.() ?? 0;
       const idleMs     = lastPingMs ? (Date.now() - lastPingMs) : Number.POSITIVE_INFINITY;
       if (empty && idleMs > ROOM_EMPTY_GRACE_MS) {
-        try { await cleanupAndDeleteRoom(roomId); }
+        try { await cleanupAndDeleteRoom(db, roomId); }
         catch (e) { console.warn('auto delete failed', e?.code||e); }
       }
     }
@@ -1857,7 +1860,10 @@ function applyFieldModeLayout(){
            CURRENT_ROOM_META = null;
            // いま実プレイ中で、この roomId に居るなら強制退室
            if (CURRENT_ROOM === roomId && lobby.style.display === 'none') {
-             try { if (CURRENT_ROOM && CURRENT_PLAYER) releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_) {}
+             try {
+               if (CURRENT_ROOM && CURRENT_PLAYER)
+                 releaseSeat(db, CURRENT_ROOM, CURRENT_PLAYER, CURRENT_UID, CURRENT_ROOM_META?.hostUid || null);
+             } catch(_) {}
              try { if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; } } catch(_) {}
              try { if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; } } catch(_) {}
              try { if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; } } catch(_) {}
@@ -2158,27 +2164,6 @@ async function claimSeat(roomId, seat){
       }catch(e){ console.error('claimSeat error', e); return false; }
     }
 
-    async function releaseSeat(roomId, seat){
-      try{
-        // ホストは従来通り seats/{seat} を削除、非ホストは「解放」更新に切り替え
-        const isHost = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
-        if (isHost){
-          await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`));
-        }else{
-          await setDoc(
-            doc(db, `rooms/${roomId}/seats/${seat}`),
-            { claimedByUid: null, displayName: '', heartbeatAt: null, updatedAt: serverTimestamp() },
-            { merge: true }
-          );
-        }
-      }catch(e){
-        // 既に seats が掃除済み / ルームが閉鎖済みのときは黙って無視
-        if (e?.code !== 'permission-denied' && e?.code !== 'not-found') {
-          console.warn('releaseSeat error', e);
-        }
-      }
-    }
-
 
 // ===============================
 // ハートビート
@@ -2313,7 +2298,7 @@ function refreshCardBacksForSeat(seat){
           // できるだけ早く席を解放（非同期ベストエフォート）
           // Firestore 書き込みはタイミング次第で完了しない可能性もあるが、
           // pagehide の段階なら概ね実行時間が確保される。
-          await releaseSeat(CURRENT_ROOM, CURRENT_PLAYER);
+          await releaseSeat(db, CURRENT_ROOM, CURRENT_PLAYER, CURRENT_UID, CURRENT_ROOM_META?.hostUid || null);
         } catch(e) {
           console.warn('[leaveSafely] failed', e);
         }
@@ -2374,7 +2359,7 @@ function startSession(roomId, playerId){
           sendCloseBeacon(CURRENT_ROOM);
         }
 
-        try { releaseSeat(roomId, playerId); } catch (_) {}
+        try { releaseSeat(db, roomId, playerId, CURRENT_UID, CURRENT_ROOM_META?.hostUid || null); } catch (_) {}
       };
 
       // PCブラウザ向け
@@ -3125,68 +3110,6 @@ if (data.type === 'numcounter') {
 // cards/seats を一括削除し roomClosed を立てる
 // @param {string} roomId - string
 //
-
-async function cleanupAndCloseRoom(roomId){
-      // cards
-      const cardsCol = collection(db, `rooms/${roomId}/cards`);
-      const cardsSnap = await getDocs(cardsCol);
-      let batch = writeBatch(db);
-      let count = 0;
-      for (const docSnap of cardsSnap.docs) {
-        batch.delete(doc(db, `rooms/${roomId}/cards/${docSnap.id}`));
-        if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
-      }
-      if (count > 0) await batch.commit();
-      
-      
-      // chat も全削除（履歴を残さない）
-      const chatCol = collection(db, `rooms/${roomId}/chat`);
-      const chatSnap = await getDocs(chatCol);
-      batch = writeBatch(db); count = 0;
-      for (const docSnap of chatSnap.docs) {
-        batch.delete(doc(db, `rooms/${roomId}/chat/${docSnap.id}`));
-        if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
-      }
-      if (count > 0) await batch.commit();
-      
-      
-      // seats
-      const seatsCol = collection(db, `rooms/${roomId}/seats`);
-      const seatsSnap = await getDocs(seatsCol);
-      batch = writeBatch(db); count = 0;
-      for (const docSnap of seatsSnap.docs) {
-        batch.delete(doc(db, `rooms/${roomId}/seats/${docSnap.id}`));
-        if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
-      }
-      if (count > 0) await batch.commit();
-
-      await setDoc(doc(db, `rooms/${roomId}`), { roomClosed: true, updatedAt: serverTimestamp() }, { merge: true });
-    }
-    
-    
-     // ルーム完全削除（サブコレ削除→roomClosedフラグ→親doc削除）
-     async function cleanupAndDeleteRoom(roomId){
-  // まず既存処理で cards/seats を全削除し、roomClosed を立てて通知
-  await cleanupAndCloseRoom(roomId);
-  // 次に親ルームドキュメント自体を削除（失敗時は墓標＆TTL）
-  try {
-    await deleteDoc(doc(db, `rooms/${roomId}`));
-  } catch (e) {
-    console.warn('delete room doc failed', e);
-    // 権限NGや競合時の保険：入室不可にする tombstone を残す
-    try {
-      await setDoc(doc(db, `rooms/${roomId}`), {
-        roomClosed: true,
-        tombstone: true,
-        deletedAt: serverTimestamp(),
-        // Firestore TTL を rooms コレクションの "ttl" に設定していれば自動削除
-        ttl: new Date(Date.now() + 10 * 60 * 1000) // 10分後
-      }, { merge: true });
-    } catch (e2) {
-      console.warn('tombstone fallback failed', e2);
-    }
-  }
-}
     
     
     
@@ -4674,7 +4597,9 @@ leaveRoomBtn?.addEventListener('click', async () => {
     // ★ 先に自分のカードを全削除（非ホストのみ）
     try { await deleteMyCardsSilently(); } catch(_){}  
     try { stopHeartbeat(); } catch(_){}
-    try { await releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_){}
+    try {
+      await releaseSeat(db, CURRENT_ROOM, CURRENT_PLAYER, CURRENT_UID, CURRENT_ROOM_META?.hostUid || null);
+    } catch(_){}
     try { if (unsubscribeCards)    { unsubscribeCards();    unsubscribeCards    = null; } } catch(_){}
     try { if (unsubscribeSeats)    { unsubscribeSeats();    unsubscribeSeats    = null; } } catch(_){}
     try { if (unsubscribeRoomDoc)  { unsubscribeRoomDoc();  unsubscribeRoomDoc  = null; } } catch(_){}
@@ -4719,7 +4644,7 @@ leaveRoomBtn?.addEventListener('click', async () => {
       clearFieldDOM();      
       
       // 2) Firestore 側を完全掃除（cards / seats 全削除 → 親doc削除）
-      await cleanupAndDeleteRoom(CURRENT_ROOM);
+      await cleanupAndDeleteRoom(db, CURRENT_ROOM);
       
       
         CURRENT_ROOM = null;
