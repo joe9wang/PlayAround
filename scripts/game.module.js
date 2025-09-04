@@ -2230,7 +2230,17 @@ async function claimSeat(roomId, seat){
 
     async function releaseSeat(roomId, seat){
       try{
-        await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`));
+        // ホストは従来通り seats/{seat} を削除、非ホストは「解放」更新に切り替え
+        const isHost = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+        if (isHost){
+          await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`));
+        }else{
+          await setDoc(
+            doc(db, `rooms/${roomId}/seats/${seat}`),
+            { claimedByUid: null, displayName: '', heartbeatAt: null, updatedAt: serverTimestamp() },
+            { merge: true }
+          );
+        }
       }catch(e){
         // 既に seats が掃除済み / ルームが閉鎖済みのときは黙って無視
         if (e?.code !== 'permission-denied' && e?.code !== 'not-found') {
@@ -2238,6 +2248,7 @@ async function claimSeat(roomId, seat){
         }
       }
     }
+
 
 // ===============================
 // ハートビート
@@ -2364,6 +2375,8 @@ function refreshCardBacksForSeat(seat){
       const leaveSafely = async (reason) => {
         try {
           if (!CURRENT_ROOM || !CURRENT_PLAYER) return;
+          // 心拍を止めてから解放（race低減）
+          try { stopHeartbeat(); } catch(_){}          
           // ★ タブ閉じ時も、できる限り自分のカードを先に消す（非ホストのみ）
           try { await deleteMyCardsSilently(); } catch(_){}
           // できるだけ早く席を解放（非同期ベストエフォート）
