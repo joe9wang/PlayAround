@@ -46,7 +46,7 @@
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
   
   
-  
+  import { initHP, renderHPPanel, subscribeHP, detachHPListener, hpDocPath, hpValues, localHpEditAt } from './hp.js';
   
   
 // ===============================
@@ -1657,10 +1657,7 @@ function randomPointInMainPlay(seat){
     const currentSeatMap = {1:null,2:null,3:null,4:null};
     
     // === HP（本人マスター） ===
-    const hpValues = {1:0,2:0,3:0,4:0};      // 表示用の最新HP
-    const localHpEditAt = {1:0,2:0,3:0,4:0}; // ローカル編集中の時刻（古いリモートを弾く）
-    let unsubscribeHP = null;
-    const hpDocPath = (roomId, seat) => `rooms/${roomId}/hp/p${seat}`;    
+    // モジュールへ移管（状態は hp.js で export して参照可能）
     
     
     function isSeatStale(data){
@@ -1701,95 +1698,7 @@ function randomPointInMainPlay(seat){
 
 
 
-function renderHPPanel(){
-  const grid = document.getElementById('hp-grid');
-  if (!grid) return;
-  // 初回：行が無ければ生成
-  if (!grid.querySelector('.hp-row')) {
-    const frag = document.createDocumentFragment();
-    for (const seat of [1,2,3,4]) {
-      const wrap = document.createElement('div');
-      wrap.className = 'hp-row';
-      wrap.dataset.seat = String(seat);
-      wrap.innerHTML = `
-        <div class="hp-seat">P${seat}</div>
-        <div class="hp-name"></div>
-        <div class="hp-value">
-          <input class="hp-input" type="number" step="1" inputmode="numeric" pattern="[0-9]*"/>
-        </div>
-        <div class="hp-ops">
-          <button class="hp-btn hp-minus">-</button>
-          <button class="hp-btn hp-plus">+</button>
-        </div>`;
-      frag.appendChild(wrap);
-    }
-    grid.innerHTML = '';
-    grid.appendChild(frag);
-    // イベントを一度だけバインド（自席のみ有効化）
-    grid.querySelectorAll('.hp-row').forEach(row => {
-      const seat = parseInt(row.dataset.seat, 10);
-      const input = row.querySelector('.hp-input');
-      const minus = row.querySelector('.hp-minus');
-      const plus  = row.querySelector('.hp-plus');
-      const commit = async (nextVal) => {
-        // ★自席以外なら何もしない（UI誤操作やDevToolsからの実行もブロック）
-        if (CURRENT_PLAYER !== seat) return;
-        const n = Number.isFinite(nextVal) ? Math.trunc(nextVal) : 0;
-        // 念のため2重ガード：自席以外は何もしない
-        if (seat !== CURRENT_PLAYER) return;
-        // Auth 完了を待つ
-        await ensureAuthReady();
-        // ルールと同じ本人判定（seats/{seat}.claimedByUid と照合）
-        const myUid  = CURRENT_UID;
-        const owner  = currentSeatMap[seat]?.claimedByUid || null;
-        if (!myUid || myUid !== owner) {
-          // 権限が無い時はリモート書き込みを試さず即座に表示を戻す
-          renderHPPanel();
-          alert('このHPはあなたの席ではないため変更できません。');
-          return;
-        }
-        if (input) input.value = n;
-        // 本人マスター：hp コレクションへ書く（楽観更新 + 失敗時は巻き戻し）
-        localHpEditAt[seat] = Date.now();
-        hpValues[seat] = n;
-        try {
-          await setDoc(doc(db, hpDocPath(CURRENT_ROOM, seat)), {
-            value: n,
-            updatedAt: serverTimestamp(),
-            updatedBy: myUid
-          }, { merge: true });
-        } catch (e) {
-          console.warn('hp write failed', e?.code || e);
-          // 失敗したらリモート最新で描き直し（0に戻って見える問題の見える化）
-          renderHPPanel();
-        }
-      };
-      input?.addEventListener('change', () => commit(parseInt(input.value, 10)));
-      minus?.addEventListener('click', () => commit(parseInt(input?.value, 10) - 1));
-      plus ?.addEventListener('click', () => commit(parseInt(input?.value, 10) + 1));
-    });
-  }
-  // 差分更新：名前/活性/値のみ更新（入力中は値を上書きしない）
-  for (const seat of [1,2,3,4]) {
-    const row   = grid.querySelector(`.hp-row[data-seat="${seat}"]`);
-    const input = row?.querySelector('.hp-input');
-    const name  = row?.querySelector('.hp-name');
-    const isMe  = (CURRENT_PLAYER === seat);
-    const dispName = (currentSeatMap[seat]?.displayName) || '';
-    if (name) name.textContent = dispName;
-    if (input) {
-      input.disabled = !isMe;
-      // 自席を編集中（フォーカス中）の時はリモートで上書きしない
-      if (!(isMe && document.activeElement === input)) {
-        const v = Number.isFinite(hpValues[seat]) ? hpValues[seat] : 0;
-        if (String(input.value) !== String(v)) input.value = v;
-      }
-    }
-    row?.querySelector('.hp-minus')?.toggleAttribute('disabled', !isMe);
-    row?.querySelector('.hp-plus') ?.toggleAttribute('disabled', !isMe);
-  }
-}
-
+// renderHPPanel は hp.js へ移管
 
 
     // ===== area colors (no change in write count; low frequency)
@@ -1917,10 +1826,20 @@ function applyFieldModeLayout(){
     
     
     
-    function detachHPListener(){ if (unsubscribeHP) { try{unsubscribeHP();}catch(_){} unsubscribeHP = null; } }
+// detachHPListener は hp.js へ移管
+
+
+  initHP({
+    db, doc, setDoc, onSnapshot, serverTimestamp, ensureAuthReady,
+    document, alert: (m)=>alert(m),
+    getState: () => ({
+      CURRENT_ROOM, CURRENT_PLAYER, CURRENT_UID, CURRENT_ROOM_META, currentSeatMap
+    })
+  });
+
 
     function loadSeatStatus(){
-      detachHPListener(); // ★ ルーム切替時にHP購読を解除
+      detachHPListener(); // ★ ルーム切替時にHP購読を解除（hp.js）
       if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
       const roomId = (joinRoomInput.value||'').trim();
 
@@ -1969,7 +1888,7 @@ function applyFieldModeLayout(){
        });
 
   // ロビー段階でもHPを表示したい場合に購読（開始ボタン前）
-  subscribeHP(roomId);      
+  subscribeHP(roomId);      // （hp.js）
       
 
 
@@ -2023,7 +1942,7 @@ function applyFieldModeLayout(){
 
         renderAreaColors();
         renderSeatAvailability();
-        renderHPPanel();   //座席更新が入ったらHPパネルも即リフレッシュ
+        renderHPPanel();   //座席更新が入ったらHPパネルも即リフレッシュ（hp.js）
         // 追加: その席のカード裏背景を再適用
         refreshCardBacksForSeat(idx + 1);
         
@@ -2199,24 +2118,8 @@ if (meta?.joinPassHash && !canSkipPassword) {
 
 
 
-// === HP購読：rooms/{roomId}/hp/p{1..4} を購読し、本人マスターの値を画面へ反映
-function subscribeHP(roomId){
-  detachHPListener();
-  const refs = [1,2,3,4].map(seat => doc(db, hpDocPath(roomId, seat)));
-  const unsubs = refs.map((ref, idx) => onSnapshot(ref, snap => {
-    const seat = idx + 1;
-    if (!snap.exists()) { hpValues[seat] = 0; renderHPPanel(); return; }
-    const d = snap.data() || {};
-    const remoteAt = d.updatedAt?.toMillis?.() || 0;
-    // 入力直後の“巻き戻り”防止：自分のローカル編集より古いスナップショットは捨てる
-    if (remoteAt && remoteAt < (localHpEditAt[seat] || 0)) return;
-    const v = Number.isFinite(d.value) ? Math.trunc(d.value) : 0;
-    if (hpValues[seat] !== v) { hpValues[seat] = v; renderHPPanel(); }
-  }, (err) => {
-    console.warn('hp subscribe error', err?.code||err);
-  }));
-  unsubscribeHP = () => unsubs.forEach(fn => fn());
-}
+// subscribeHP は hp.js へ移管
+
 
 
 

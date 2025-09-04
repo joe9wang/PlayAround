@@ -12,7 +12,8 @@ const PAGES = ["./index.html", "./game.html", "./mypage.html"];
 // 置換対象：JS/ESM（必要に応じて追加）
 // 例: game.html から外出しした module スクリプトをここに追加
 const JS_MODULES = [
-  "./scripts/game.module.js",   // ← 新しく外出しした本体
+  "./scripts/game.module.js",   // 本体
+  "./scripts/hp.js",            // プレイヤーHPモジュール
   // "./scripts/他にも置換したい.mjs",
 ];
 
