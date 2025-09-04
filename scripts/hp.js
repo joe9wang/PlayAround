@@ -38,8 +38,12 @@ export function subscribeHP(roomId){
     }
     const d = snap.data() || {};
     const remoteAt = d.updatedAt?.toMillis?.() || 0;
-    // 入力直後の“巻き戻り”防止：自分のローカル編集より古いスナップショットは捨てる
-    if (remoteAt && remoteAt < (localHpEditAt[seat] || 0)) return;
+    // ローカル編集より古いスナップショットは無視
+    if ((localHpEditAt[seat] || 0) > remoteAt) return;
+
+    // ローカル直後に「updatedAt: undefined/null」で届くケースも無視
+    if (!remoteAt && (Date.now() - (localHpEditAt[seat]||0) < 3000)) return;
+
     const v = Number.isFinite(d.value) ? Math.trunc(d.value) : 0;
     if (hpValues[seat] !== v) { hpValues[seat] = v; renderHPPanel(); }
   }, (err) => {
