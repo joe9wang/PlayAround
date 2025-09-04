@@ -537,16 +537,19 @@ async function updateSlotPreviews(){
     const boxes = Array.from(wrap.querySelectorAll('.slot-preview'));
     for (const box of boxes){
       const slot = parseInt(box.dataset.slot, 10);
+      // プレースホルダ
       box.innerHTML = '<span class="empty">読み込み中…</span>';
       try{
         // users/{UID}/saves/slot{n}/cards から最大5件
         const cardsRef = collection(db, `${slDocPath(slot)}/cards`);
         const snap = await getDocs(query(cardsRef, limit(5)));
-        box.innerHTML = '';
         if (snap.empty){
           box.innerHTML = '<span class="empty">空き</span>';
           continue;
         }
+        // まとめて描画してリフローを減らす
+        const frag = document.createDocumentFragment();
+        let added = 0;
         for (const d of snap.docs){
           const s = d.data() || {};
           // 保存されているURLは fullUrl を優先、なければ Storage 経由で解決
@@ -556,11 +559,15 @@ async function updateSlotPreviews(){
           const img = document.createElement('img');
           img.src = url;
           img.alt = '';
-          box.appendChild(img);
+          frag.appendChild(img);
+          added++;
         }
-        if (!box.querySelector('img')) {
-          // 画像系が1枚も生成されなかった場合のフォールバック
+        if (added === 0){
           box.innerHTML = '<span class="empty">画像なし</span>';
+        } else {
+          box.innerHTML = '';
+          // ← 正: frag を box に追加（wrap ではない）
+          box.appendChild(frag);
         }
       }catch(e){
         console.warn('preview fetch failed', e);
@@ -570,7 +577,8 @@ async function updateSlotPreviews(){
   }catch(e){
     console.warn('updateSlotPreviews error', e);
   }
-}    
+}
+
     
     
     let hostWatchTimer = null;
@@ -1707,7 +1715,7 @@ function renderHPPanel(){
         <div class="hp-seat">P${seat}</div>
         <div class="hp-name"></div>
         <div class="hp-value">
-          <input class="hp-input" type="number" step="1"/>
+          <input class="hp-input" type="number" step="1" inputmode="numeric" pattern="[0-9]*"/>
         </div>
         <div class="hp-ops">
           <button class="hp-btn hp-minus">-</button>
@@ -1724,6 +1732,8 @@ function renderHPPanel(){
       const minus = row.querySelector('.hp-minus');
       const plus  = row.querySelector('.hp-plus');
       const commit = (nextVal) => {
+        // ★自席以外なら何もしない（UI誤操作やDevToolsからの実行もブロック）
+        if (CURRENT_PLAYER !== seat) return;
         const n = Number.isFinite(nextVal) ? Math.trunc(nextVal) : 0;
         if (input) input.value = n;
         // 本人マスター：hp コレクションへ書く
@@ -2877,6 +2887,11 @@ if (state?.type === 'numcounter') {
   input.value = Number.isFinite(state?.count) ? state.count : 0;
 
   wrap.appendChild(input);
+  
+  
+  
+  
+  
   card.appendChild(wrap);
 
   // 自分のもののみ編集可
