@@ -2154,19 +2154,6 @@ async function claimSeat(roomId, seat){
           }
           return false;
         });
-     // ★追加: HP doc を先に作成（存在しないと購読が 0 を流して“戻る”ため）
-     if (success) {
-       try {
-         await ensureAuthReady(); // ← これを追加（request.auth=nullによるpermission-denied対策）
-         await setDoc(
-           doc(db, hpDocPath(roomId, seat)),
-           { value: 0, updatedAt: serverTimestamp(), updatedBy: CURRENT_UID || null },
-           { merge: true }
-         );
-       } catch (e) {
-        console.warn('pre-create hp doc failed', e?.code || e);
-      }
-    }
     return success;
       }catch(e){ console.error('claimSeat error', e); return false; }
     }

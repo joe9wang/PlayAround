@@ -38,12 +38,13 @@ export function subscribeHP(roomId){
     }
     const d = snap.data() || {};
     const remoteAt = d.updatedAt?.toMillis?.() || 0;
-    // ローカル編集直後（serverTimestamp 反映待ち）の古い/未定義スナップショットを無視
-    if ((localHpEditAt[seat] || 0) > remoteAt) return;
-    if (!remoteAt && Date.now() - (localHpEditAt[seat] || 0) < 3000) return;
-
-    // ローカル直後に「updatedAt: undefined/null」で届くケースも無視
-    if (!remoteAt && (Date.now() - (localHpEditAt[seat]||0) < 3000)) return;
+    const localAt  = localHpEditAt[seat] || 0;
+    const now      = Date.now();
+    // 巻き戻り防止：
+    //  1) 自分のローカル編集より古いスナップショットは無視
+    //  2) updatedAt 未反映（=0）の通知は、ローカル編集から一定時間は無視
+    if (localAt > remoteAt) return;
+    if (!remoteAt && (now - localAt) < 3000) return;
 
     const v = Number.isFinite(d.value) ? Math.trunc(d.value) : 0;
     if (hpValues[seat] !== v) { hpValues[seat] = v; renderHPPanel(); }
@@ -103,7 +104,7 @@ export function renderHPPanel(){
         hpValues[seat] = n;
         try {
           await setDoc(doc(db, hpDocPath(CURRENT_ROOM, seat)), {
-            seat: seat,                 // ★ 追加：ルール突き合わせ用
+            seat: seat,                // 将来のルール突き合わせ用に明示
             value: n,
             updatedAt: serverTimestamp(),
             updatedBy: myUid
