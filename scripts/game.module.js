@@ -1644,8 +1644,16 @@ function randomPointInMainPlay(seat){
       // batched
       updateSeatBatched(CURRENT_PLAYER, { displayName: newName, updatedAt: serverTimestamp() });
     });
-
+    
     const currentSeatMap = {1:null,2:null,3:null,4:null};
+    
+    // === HP（本人マスター） ===
+    const hpValues = {1:0,2:0,3:0,4:0};      // 表示用の最新HP
+    const localHpEditAt = {1:0,2:0,3:0,4:0}; // ローカル編集中の時刻（古いリモートを弾く）
+    let unsubscribeHP = null;
+    const hpDocPath = (roomId, seat) => `rooms/${roomId}/hp/p${seat}`;    
+    
+    
     function isSeatStale(data){
       if(!data || !data.heartbeatAt) return true;
       const hb = data.heartbeatAt?.toMillis ? data.heartbeatAt.toMillis() : 0;
@@ -1682,50 +1690,79 @@ function randomPointInMainPlay(seat){
    validateLobby();
  }
 
-// ===============================
-// HP パネルのレンダリング/操作
-// ===============================
-// 自席のみ操作可能なシンプルな HP 管理UI。
+
+
 function renderHPPanel(){
-      const grid = document.getElementById('hp-grid');
-      if (!grid) return;
-      const rows = [];
-      for (const seat of [1,2,3,4]) {
-        const seatData = currentSeatMap[seat] || {};
-        const dispName = seatData.displayName || '';
-        const isMe = (CURRENT_PLAYER === seat);
-        const hpVal = (typeof seatData.hp === 'number') ? seatData.hp : 0;
-        rows.push(`
-          <div class="hp-row" data-seat="${seat}">
-            <div class="hp-seat">P${seat}</div>
-            <div class="hp-name">${dispName ? dispName : ''}</div>
-            <div class="hp-value">
-              <input class="hp-input" type="number" step="1" value="${hpVal}" ${isMe ? '' : 'disabled'} />
-            </div>
-            <div class="hp-ops">
-              <button class="hp-btn hp-minus" ${isMe ? '' : 'disabled'}>-</button>
-              <button class="hp-btn hp-plus"  ${isMe ? '' : 'disabled'}>+</button>
-            </div>
-          </div>
-        `);
-      }
-      grid.innerHTML = rows.join('');
-      grid.querySelectorAll('.hp-row').forEach(row => {
-        const seat = parseInt(row.dataset.seat, 10);
-        if (seat !== CURRENT_PLAYER) return;
-        const input = row.querySelector('.hp-input');
-        const minus = row.querySelector('.hp-minus');
-        const plus  = row.querySelector('.hp-plus');
-        const commit = (nextVal) => {
-          const n = Number.isFinite(nextVal) ? Math.trunc(nextVal) : 0;
-          if (input) input.value = n;
-          updateSeatBatched(seat, { hp: n, updatedAt: serverTimestamp() });
-        };
-        input?.addEventListener('change', () => commit(parseInt(input.value, 10)));
-        minus?.addEventListener('click', () => commit(parseInt(input.value, 10) - 1));
-        plus?.addEventListener('click', () => commit(parseInt(input.value, 10) + 1));
-      });
+  const grid = document.getElementById('hp-grid');
+  if (!grid) return;
+  // 初回：行が無ければ生成
+  if (!grid.querySelector('.hp-row')) {
+    const frag = document.createDocumentFragment();
+    for (const seat of [1,2,3,4]) {
+      const wrap = document.createElement('div');
+      wrap.className = 'hp-row';
+      wrap.dataset.seat = String(seat);
+      wrap.innerHTML = `
+        <div class="hp-seat">P${seat}</div>
+        <div class="hp-name"></div>
+        <div class="hp-value">
+          <input class="hp-input" type="number" step="1"/>
+        </div>
+        <div class="hp-ops">
+          <button class="hp-btn hp-minus">-</button>
+          <button class="hp-btn hp-plus">+</button>
+        </div>`;
+      frag.appendChild(wrap);
     }
+    grid.innerHTML = '';
+    grid.appendChild(frag);
+    // イベントを一度だけバインド（自席のみ有効化）
+    grid.querySelectorAll('.hp-row').forEach(row => {
+      const seat = parseInt(row.dataset.seat, 10);
+      const input = row.querySelector('.hp-input');
+      const minus = row.querySelector('.hp-minus');
+      const plus  = row.querySelector('.hp-plus');
+      const commit = (nextVal) => {
+        const n = Number.isFinite(nextVal) ? Math.trunc(nextVal) : 0;
+        if (input) input.value = n;
+        // 本人マスター：hp コレクションへ書く
+        localHpEditAt[seat] = Date.now();
+        hpValues[seat] = n; // 楽観更新で即表示
+        if (CURRENT_ROOM) {
+          setDoc(doc(db, hpDocPath(CURRENT_ROOM, seat)), {
+            value: n,
+            updatedAt: serverTimestamp(),
+            updatedBy: CURRENT_UID || null
+          }, { merge: true }).catch(e => console.warn('hp write failed', e));
+        }
+      };
+      input?.addEventListener('change', () => commit(parseInt(input.value, 10)));
+      minus?.addEventListener('click', () => commit(parseInt(input?.value, 10) - 1));
+      plus ?.addEventListener('click', () => commit(parseInt(input?.value, 10) + 1));
+    });
+  }
+  // 差分更新：名前/活性/値のみ更新（入力中は値を上書きしない）
+  for (const seat of [1,2,3,4]) {
+    const row   = grid.querySelector(`.hp-row[data-seat="${seat}"]`);
+    const input = row?.querySelector('.hp-input');
+    const name  = row?.querySelector('.hp-name');
+    const isMe  = (CURRENT_PLAYER === seat);
+    const dispName = (currentSeatMap[seat]?.displayName) || '';
+    if (name) name.textContent = dispName;
+    if (input) {
+      input.disabled = !isMe;
+      // 自席を編集中（フォーカス中）の時はリモートで上書きしない
+      if (!(isMe && document.activeElement === input)) {
+        const v = Number.isFinite(hpValues[seat]) ? hpValues[seat] : 0;
+        if (String(input.value) !== String(v)) input.value = v;
+      }
+    }
+    row?.querySelector('.hp-minus')?.toggleAttribute('disabled', !isMe);
+    row?.querySelector('.hp-plus') ?.toggleAttribute('disabled', !isMe);
+  }
+}
+
+
 
     // ===== area colors (no change in write count; low frequency)
     // 特殊エリア(special)・捨て札(discard)を追加
@@ -1852,10 +1889,10 @@ function applyFieldModeLayout(){
     
     
     
-    function detachSeatsListener(){ if(unsubscribeSeats){ unsubscribeSeats(); unsubscribeSeats = null; } }
+    function detachHPListener(){ if (unsubscribeHP) { try{unsubscribeHP();}catch(_){} unsubscribeHP = null; } }
 
     function loadSeatStatus(){
-      detachSeatsListener();
+      detachHPListener(); // ★ ルーム切替時にHP購読を解除
       if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
       const roomId = (joinRoomInput.value||'').trim();
 
@@ -1902,7 +1939,9 @@ function applyFieldModeLayout(){
          startHostWatch(); // 追加: ロビー中も空室監視/自動削除を回す
          renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); renderHPPanel();
        });
-      
+
+  // ロビー段階でもHPを表示したい場合に購読（開始ボタン前）
+  subscribeHP(roomId);      
       
 
 
@@ -1925,14 +1964,7 @@ function applyFieldModeLayout(){
               heartbeatAt: d.heartbeatAt || null,
               areaColors: d.areaColors || {},
               // 追加: 背面画像URL（オーナーが選択したもの）
-              backImageUrl: d.backImageUrl || null,              
-              // ← 追加：スナップショットに hp が数値で入っていたときだけ更新。
-              // 無ければ既存の値（保持）を使う。未設定なら 0。
-              hp: (typeof d.hp === 'number')
-                    ? d.hp
-                    : ((currentSeatMap[idx + 1] && typeof currentSeatMap[idx + 1].hp === 'number')
-                        ? currentSeatMap[idx + 1].hp
-                        : 0)
+              backImageUrl: d.backImageUrl || null,
             }
           );
         } else {
@@ -2136,6 +2168,31 @@ if (meta?.joinPassHash && !canSkipPassword) {
         startBtn.textContent = oldText;
       }
     });
+
+
+
+// === HP購読：rooms/{roomId}/hp/p{1..4} を購読し、本人マスターの値を画面へ反映
+function subscribeHP(roomId){
+  detachHPListener();
+  const refs = [1,2,3,4].map(seat => doc(db, hpDocPath(roomId, seat)));
+  const unsubs = refs.map((ref, idx) => onSnapshot(ref, snap => {
+    const seat = idx + 1;
+    if (!snap.exists()) { hpValues[seat] = 0; renderHPPanel(); return; }
+    const d = snap.data() || {};
+    const remoteAt = d.updatedAt?.toMillis?.() || 0;
+    // 入力直後の“巻き戻り”防止：自分のローカル編集より古いスナップショットは捨てる
+    if (remoteAt && remoteAt < (localHpEditAt[seat] || 0)) return;
+    const v = Number.isFinite(d.value) ? Math.trunc(d.value) : 0;
+    if (hpValues[seat] !== v) { hpValues[seat] = v; renderHPPanel(); }
+  }, (err) => {
+    console.warn('hp subscribe error', err?.code||err);
+  }));
+  unsubscribeHP = () => unsubs.forEach(fn => fn());
+}
+
+
+
+
 
 // ===============================
 // 座席の取得/解放
@@ -2390,6 +2447,8 @@ function startSession(roomId, playerId){
       subscribeCards();
       subscribeChat();          // ←追加：チャット購読を開始
       bindChatUIOnce();         // ←追加：送信ボタン/Enter送信を有効化
+      subscribeHP(roomId);      // HPの購読開始
+      
       startHostWatch();
       renderAreaColors();
       renderHPPanel();
