@@ -38,8 +38,9 @@ export function subscribeHP(roomId){
     }
     const d = snap.data() || {};
     const remoteAt = d.updatedAt?.toMillis?.() || 0;
-    // ローカル編集より古いスナップショットは無視
+    // ローカル編集直後（serverTimestamp 反映待ち）の古い/未定義スナップショットを無視
     if ((localHpEditAt[seat] || 0) > remoteAt) return;
+    if (!remoteAt && Date.now() - (localHpEditAt[seat] || 0) < 3000) return;
 
     // ローカル直後に「updatedAt: undefined/null」で届くケースも無視
     if (!remoteAt && (Date.now() - (localHpEditAt[seat]||0) < 3000)) return;
@@ -102,6 +103,7 @@ export function renderHPPanel(){
         hpValues[seat] = n;
         try {
           await setDoc(doc(db, hpDocPath(CURRENT_ROOM, seat)), {
+            seat: seat,                 // ★ 追加：ルール突き合わせ用
             value: n,
             updatedAt: serverTimestamp(),
             updatedBy: myUid
