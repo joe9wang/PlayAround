@@ -2265,14 +2265,16 @@ function refreshCardBacksForSeat(seat){
         lastSeatHBWriteAt = now;
       }
 
-      // ルーム側 ping は 60s に節約
-      if (now - __roomPingAt > ROOM_PING_MS) {
-        __roomPingAt = now;
-        // ルーム直下はホストだけが更新（ルール準拠）
-        const iAmHost = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
-        if (iAmHost) {
-          await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
-        }
+  // ルーム直下の更新はホストのみ（ルール準拠）
+  if (now - __roomPingAt > ROOM_PING_MS) {
+    __roomPingAt = now;
+    const iAmHost = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+    if (iAmHost) {
+      // 部屋のHBはホストだけが更新
+      await setDoc(doc(db, `rooms/${roomId}`), { hostHeartbeatAt: serverTimestamp() }, { merge: true });
+    }
+    // 非ホストは rooms 直下には一切書かない
+  }
       }
      
      }catch(e){ console.warn('HB error', e); }
