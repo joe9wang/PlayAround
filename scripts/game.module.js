@@ -1731,20 +1731,37 @@ function renderHPPanel(){
       const input = row.querySelector('.hp-input');
       const minus = row.querySelector('.hp-minus');
       const plus  = row.querySelector('.hp-plus');
-      const commit = (nextVal) => {
+      const commit = async (nextVal) => {
         // ★自席以外なら何もしない（UI誤操作やDevToolsからの実行もブロック）
         if (CURRENT_PLAYER !== seat) return;
         const n = Number.isFinite(nextVal) ? Math.trunc(nextVal) : 0;
+        // 念のため2重ガード：自席以外は何もしない
+        if (seat !== CURRENT_PLAYER) return;
+        // Auth 完了を待つ
+        await ensureAuthReady();
+        // ルールと同じ本人判定（seats/{seat}.claimedByUid と照合）
+        const myUid  = CURRENT_UID;
+        const owner  = currentSeatMap[seat]?.claimedByUid || null;
+        if (!myUid || myUid !== owner) {
+          // 権限が無い時はリモート書き込みを試さず即座に表示を戻す
+          renderHPPanel();
+          alert('このHPはあなたの席ではないため変更できません。');
+          return;
+        }
         if (input) input.value = n;
-        // 本人マスター：hp コレクションへ書く
+        // 本人マスター：hp コレクションへ書く（楽観更新 + 失敗時は巻き戻し）
         localHpEditAt[seat] = Date.now();
-        hpValues[seat] = n; // 楽観更新で即表示
-        if (CURRENT_ROOM) {
-          setDoc(doc(db, hpDocPath(CURRENT_ROOM, seat)), {
+        hpValues[seat] = n;
+        try {
+          await setDoc(doc(db, hpDocPath(CURRENT_ROOM, seat)), {
             value: n,
             updatedAt: serverTimestamp(),
-            updatedBy: CURRENT_UID || null
-          }, { merge: true }).catch(e => console.warn('hp write failed', e));
+            updatedBy: myUid
+          }, { merge: true });
+        } catch (e) {
+          console.warn('hp write failed', e?.code || e);
+          // 失敗したらリモート最新で描き直し（0に戻って見える問題の見える化）
+          renderHPPanel();
         }
       };
       input?.addEventListener('change', () => commit(parseInt(input.value, 10)));
@@ -2234,7 +2251,19 @@ async function claimSeat(roomId, seat){
           }
           return false;
         });
-        return success;
+     // ★追加: HP doc を先に作成（存在しないと購読が 0 を流して“戻る”ため）
+     if (success) {
+       try {
+         await setDoc(
+           doc(db, hpDocPath(roomId, seat)),
+           { value: 0, updatedAt: serverTimestamp(), updatedBy: CURRENT_UID || null },
+           { merge: true }
+         );
+       } catch (e) {
+        console.warn('pre-create hp doc failed', e?.code || e);
+      }
+    }
+    return success;
       }catch(e){ console.error('claimSeat error', e); return false; }
     }
 
