@@ -2364,6 +2364,8 @@ function refreshCardBacksForSeat(seat){
       const leaveSafely = async (reason) => {
         try {
           if (!CURRENT_ROOM || !CURRENT_PLAYER) return;
+          // ★ タブ閉じ時も、できる限り自分のカードを先に消す（非ホストのみ）
+          try { await deleteMyCardsSilently(); } catch(_){}
           // できるだけ早く席を解放（非同期ベストエフォート）
           // Firestore 書き込みはタイミング次第で完了しない可能性もあるが、
           // pagehide の段階なら概ね実行時間が確保される。
@@ -4720,6 +4722,8 @@ leaveRoomBtn?.addEventListener('click', async () => {
   if (!confirm('席を空けて退室します。よろしいですか？')) return;
   leaveRoomBtn.disabled = true; const old = leaveRoomBtn.textContent; leaveRoomBtn.textContent = '退室中…';
   try{
+    // ★ 先に自分のカードを全削除（非ホストのみ）
+    try { await deleteMyCardsSilently(); } catch(_){}  
     try { stopHeartbeat(); } catch(_){}
     try { await releaseSeat(CURRENT_ROOM, CURRENT_PLAYER); } catch(_){}
     try { if (unsubscribeCards)    { unsubscribeCards();    unsubscribeCards    = null; } } catch(_){}
@@ -4884,6 +4888,45 @@ Object.assign(window, {
   // 背面画像ピッカー起動
   openBackImagePicker,  
 });
+
+
+
+// === 補助: 現在ホストかどうか ===
+function isHostNow(){
+  const isHostUid  = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+  const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
+  return !!(CURRENT_ROOM && isHostUid && isHostSeat);
+}
+
+// === サイレント版：自分の全カードを確認なしで削除（UI通知なし） ===
+async function deleteMyCardsSilently(){
+  try{
+    if (!CURRENT_ROOM || !CURRENT_UID) return;
+    // 非ホストのみ対象
+    if (isHostNow()) return;
+    const cardsCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
+    const snap = await getDocs(query(cardsCol, where('ownerUid','==', CURRENT_UID)));
+    if (snap.empty) return;
+    let batch = writeBatch(db), n = 0;
+   const removed = [];
+    for (const d of snap.docs){
+      batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${d.id}`));
+      removed.push(d.id);
+      if (++n >= 450){ await batch.commit(); batch = writeBatch(db); n = 0; }
+    }
+    if (n>0) await batch.commit();
+    // 画面上の残骸も掃除
+    for (const id of removed){
+      const el = cardDomMap.get(id);
+      if (el) { el.remove(); cardDomMap.delete(id); }
+      try{ fullImageStore.delete(id); }catch(_){}
+    }
+    if (typeof setPreview === 'function') setPreview();
+    // ログだけは残す（部屋が未クローズのうちに）
+    try{ postLog('退室に伴い自分のカードを自動削除しました'); }catch(_){}
+  }catch(_){ /* サイレント運用のため握りつぶす */ }
+}
+
 
 
 // === 背面画像のアップロード／保存 ===
