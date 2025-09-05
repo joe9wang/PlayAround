@@ -4513,7 +4513,12 @@ function openBackImagePicker(){
     }
     try{
       // Storage: rooms/{room}/seats/{seat}/card-back.jpg
-      const storage = getStorage();
+  // Storage の初期化（バケット名を SDK 想定の appspot.com に正規化）
+  let _bucket = firebaseConfig.storageBucket;
+  if (_bucket && _bucket.endsWith('.firebasestorage.app')) {
+    _bucket = _bucket.replace('.firebasestorage.app', '.appspot.com');
+  }
+  const storage = _bucket ? getStorage(app, `gs://${_bucket}`) : getStorage(app);
       const path    = `rooms/${CURRENT_ROOM}/seats/${CURRENT_PLAYER}/card-back.jpg`;
       const sref    = ref(storage, path);
       // 圧縮が不要ならそのまま、必要ならここで canvas リサイズしてから uploadBytes
