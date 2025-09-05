@@ -1145,14 +1145,6 @@ joinRoomPassInput?.addEventListener('input', () => {
     newPlayerNameInput.addEventListener('input', () => { ACTIVE_MODE = 'create'; validateLobby(); });
     createSeatButtons.forEach(btn => btn.addEventListener('click', () => { ACTIVE_MODE = 'create'; validateLobby(); }));
 
-    function isCenterInsideRect(x, y, rect){
-      const cx = x + CARD_W / 2;
-      const cy = y + CARD_H / 2;
-      return cx >= rect.minX && cx <= rect.minX + rect.width && cy >= rect.minY && cy <= rect.minY + rect.height;
-    }
-    
-    
-    
 
  // === レイアウト安定待ち（中央デッキの矩形が正しく測れるまで待つ） ===
  async function waitForBoardDeckRect(maxWaitMs = 1000){
