@@ -48,6 +48,15 @@
   
   import { initHP, renderHPPanel, subscribeHP, detachHPListener, hpDocPath, hpValues, localHpEditAt } from './hp.js';
   import { cleanupAndCloseRoom, cleanupAndDeleteRoom, releaseSeat } from './room.module.js';  
+  import { tinyOffset, shuffleArray, svgDiceDataUrl } from './card-utils.js';
+  import {
+    initCardGeometry, isBoardMode, isCenterInsideRect,
+    getHandBoundsForSeat, getDeckBoundsForSeat, getDiscardBoundsForSeat, getMainPlayBoundsForSeat,
+    centerOfDeck, centerOfMainPlay, randomPointInDeck, randomPointInMainPlay
+  } from './card-geometry.js';
+  import { initCardStorage, storageDownloadURL, fileToThumbAndFull } from './card-storage.js';
+  
+  
   
 // ===============================
 // Firebase 初期化と App Check
@@ -434,7 +443,6 @@ updateModePickButtons();
     }
   }
 
-  function tinyOffset(i){ return (i % 7) * 6; } // 重なり回避の微小ズレ
 
   async function loadFromSlot(slot){
     if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID){
@@ -661,23 +669,7 @@ function pathFor(roomId, sub, id){ return `rooms/${roomId}/${sub}/${id}`; }
     }
     
     
-// Storage の安全なダウンロードURLを取得（SDK 任せ）
-// ===============================
-// ストレージ: 安全なダウンロードURL取得ユーティリティ
-// ===============================/**
-// Storage の安全なダウンロードURLを取得する（失敗時は null）
-// @param {string} path - gs:// or relative path
-// @returns {Promise<string} null>|ダウンロードURL
-//
 
-async function storageDownloadURL(path) {
-  try {
-    return await getDownloadURL(ref(storage, path));
-  } catch (e) {
-    console.warn('[Storage] getDownloadURL failed:', path, e.code || e.message);
-    return null;
-  }
-}
 
 
     
@@ -1161,26 +1153,6 @@ joinRoomPassInput?.addEventListener('input', () => {
     
     
     
-    
-    
-    
-function isBoardMode(){
-  const m = CURRENT_ROOM_META?.fieldMode;
-  // 'board' と 'trump' をボード系モードとして扱う
-  return (m === 'board' || m === 'trump');
-}
-
-function rectFromEl(el){
-  if(!el) return null;
-  const fieldRect = field.getBoundingClientRect();
-  const r = el.getBoundingClientRect();
-  const minX = (r.left - fieldRect.left) / zoom;
-  const minY = (r.top  - fieldRect.top ) / zoom;
-  const width  = r.width  / zoom;
-  const height = r.height / zoom;
-  return { minX, minY, width, height };
-}
-
 
  // === レイアウト安定待ち（中央デッキの矩形が正しく測れるまで待つ） ===
  async function waitForBoardDeckRect(maxWaitMs = 1000){
@@ -1215,55 +1187,6 @@ function canOperateCard(cardEl, kind){
 
 
 
-
-function getHandBoundsForSeat(seat){
-  if (isBoardMode()) {
-    const el = document.getElementById(`board-hand-${seat}`);
-    return rectFromEl(el);
-  } else {
-    const hand = document.querySelector(`.player-${seat} .hand-area`);
-    return rectFromEl(hand);
-  }
-}
-
-function getDeckBoundsForSeat(seat){
-  // board と trump のときは「中央の共有デッキ（#board-center .center-deck）」を使う
-  const mode = CURRENT_ROOM_META?.fieldMode;
-  if (mode === 'board' || mode === 'trump') {
-    const el = document.querySelector('#board-center .center-deck');
-    return rectFromEl(el);
-  }
-  // それ以外（通常のカードモード）は各プレイヤーのデッキエリア
-  const deck = document.querySelector(`.player-${seat} .deck-area`);
-  return rectFromEl(deck);
-}
-
-
-function getDiscardBoundsForSeat(seat){
-  const mode = CURRENT_ROOM_META?.fieldMode;
-  if (mode === 'board' || mode === 'trump') {
-    // 共有レイアウトの中央・捨て札
-    const el = document.querySelector('#board-center .center-discard');
-    return rectFromEl(el);
-  }
-  // 通常レイアウト（各プレイヤーの右列上段の縦スタックの上側）
-  const el = document.querySelector(`.player-${seat} .discard-area`);
-  return rectFromEl(el);
-}
-
-
-function getMainPlayBoundsForSeat(seat){
-  if (isBoardMode()) {
-    // ボードモードでは角ハンド＆中央以外＝共有プレイエリア
-    const el = document.getElementById('board-play');
-    return rectFromEl(el);
-  } else {
-    const main = document.querySelector(`.player-${seat} .main-play-area`);
-    return rectFromEl(main);
-  }
-}
-
-
     
     
 // ===============================
@@ -1294,14 +1217,6 @@ function setPreview(src) {
 // @returns {object} {x:number,y:number}
 //
 
-function centerOfMainPlay(seat, w, h){
-  const b = getMainPlayBoundsForSeat(seat);
-  if(!b) return { x: 0, y: 0 };
-  const x = Math.round(b.minX + (b.width  - w)/2);
-  const y = Math.round(b.minY + (b.height - h)/2);
-  return { x, y };
-}
-
 
 
     function getCardsInsideRect(rect){
@@ -1318,22 +1233,7 @@ function centerOfMainPlay(seat, w, h){
       });
       return cards;
     }
-    function shuffleArray(arr){
-      for(let i=arr.length-1;i>0;i--){
-        const j = (Math.random()* (i+1))|0;
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    }
-    function randomPointInDeck(seat){
-      const b = getDeckBoundsForSeat(seat);
-      if(!b) return { x: Math.random()*500|0, y: Math.random()*500|0 };
-      const maxX = Math.max(b.minX, b.minX + b.width  - CARD_W);
-      const maxY = Math.max(b.minY, b.minY + b.height - CARD_H);
-      const x = b.minX + Math.random() * (maxX - b.minX);
-      const y = b.minY + Math.random() * (maxY - b.minY);
-      return { x: Math.round(x), y: Math.round(y) };
-    }
+    
     
     
 // ===============================
@@ -1388,59 +1288,6 @@ function startHostWatch() {
 }
     
     function stopHostWatch() { if (hostWatchTimer) { clearInterval(hostWatchTimer); hostWatchTimer = null; } }
-    
-    
-    
-
-
-// ダイス画像（72x72）を作る関数（重複定義がないことを確認！）
-// ===============================
-// SVGジェネレータ: ダイス画像/カウンター画像
-// ===============================/**
-// ダイス目 (1..6) のSVG画像 DataURL を生成
-// @param {number} n - 1..6
-// @returns {string} data:image/svg+xml;...
-//
-
-function svgDiceDataUrl(n){
-  const size = 72, r = 8, pipR = 6;
-  const pip = (cx, cy)=>`<circle cx="${cx}" cy="${cy}" r="${pipR}" fill="#111"/>`;
-  const g = [size*0.22, size*0.5, size*0.78];
-  const patterns = {
-    1: [[1,1]],
-    2: [[0,0],[2,2]],
-    3: [[0,0],[1,1],[2,2]],
-    4: [[0,0],[0,2],[2,0],[2,2]],
-    5: [[0,0],[0,2],[1,1],[2,0],[2,2]],
-    6: [[0,0],[1,0],[2,0],[0,2],[1,2],[2,2]],
-  };
-  const pips = (patterns[n]||[]).map(([i,j]) => pip(g[i], g[j])).join('');
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-      <rect x="1" y="1" width="${size-2}" height="${size-2}" rx="${r}" ry="${r}" fill="#fff" stroke="#111" stroke-width="2"/>
-      ${pips}
-    </svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
-
-
-
-
-//
-// プレイエリア内のランダム座標（左上）を返す
-// @param {number} seat - number
-// @returns {object} {x,y}
-//
-
-function randomPointInMainPlay(seat){
-  const b = getMainPlayBoundsForSeat(seat);
-  if(!b) return { x: Math.random()*500|0, y: Math.random()*500|0 };
-  const maxX = Math.max(b.minX, b.minX + b.width  - CARD_W);
-  const maxY = Math.max(b.minY, b.minY + b.height - CARD_H);
-  const x = b.minX + Math.random() * (maxX - b.minX);
-  const y = b.minY + Math.random() * (maxY - b.minY);
-  return { x: Math.round(x), y: Math.round(y) };
-}
     
     
     
@@ -2409,6 +2256,17 @@ function appendSystemLine(text){
 }
 
 
+
+initCardGeometry(() => ({                // 幾何モジュールへ依存注入
+  field,
+  zoom,
+  CARD_W,
+  CARD_H,
+  CURRENT_ROOM_META
+}));
+initCardStorage(() => storage);          // Storage モジュールへ依存注入
+
+
 function myDisplayName(){
   try{
     const seatData = (typeof CURRENT_PLAYER === 'number' && currentSeatMap) ? (currentSeatMap[CURRENT_PLAYER] || {}) : {};
@@ -3192,26 +3050,6 @@ if (data.type === 'numcounter') {
       if (!processing) processQueue();
     }
 
-    async function fileToThumbAndFull(file){
-      const bmp = await createImageBitmap(file);
-      const sw = bmp.width, sh = bmp.height;
-      const scale = Math.min(THUMB_MAX_W / sw, THUMB_MAX_H / sh, 1);
-      const tw = Math.max(1, Math.round(sw * scale));
-      const th = Math.max(1, Math.round(sh * scale));
-
-      const canvas = document.createElement('canvas');
-      canvas.width = tw; canvas.height = th;
-      const ctx = canvas.getContext('2d', {alpha: false});
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'low';
-      ctx.drawImage(bmp, 0, 0, tw, th);
-      const thumbDataUrl = canvas.toDataURL('image/jpeg', 0.6); // ← 0.6 に
-      const fullDataUrl = await new Promise((res, rej)=>{
-        const fr = new FileReader(); fr.onerror = rej; fr.onload = ()=>res(fr.result); fr.readAsDataURL(file);
-      });
-      try { bmp.close?.(); } catch(_){}
-      return { thumbDataUrl, fullDataUrl };
-    }
 
     async function processQueue(){
       processing = true;
@@ -4716,14 +4554,6 @@ function initializePlayField(){
     rollBtn?.addEventListener('click', () => window.rollD6());
     
     
-//▼デッキ中央（w,h考慮）を返す
-function centerOfDeck(seat, w, h){
-  const b = getDeckBoundsForSeat(seat); // board/trumpなら共有デッキ、通常は自席デッキ
-  if (!b) return { x: 0, y: 0 };
-  const x = Math.round(b.minX + (b.width  - (w||0)) / 2);
-  const y = Math.round(b.minY + (b.height - (h||0)) / 2);
-  return { x, y };
-}
     
     
     // render helpers
