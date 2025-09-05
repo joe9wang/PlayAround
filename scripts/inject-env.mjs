@@ -18,6 +18,7 @@ const JS_MODULES = [
   "./scripts/card-geometry.js",   // カード関連処理モジュール  
   "./scripts/card-storage.js",   // カード関連処理モジュール  
   "./scripts/card-utils.js",   // カード関連処理モジュール    
+  "./scripts/save-load.module.js",   // セーブ関連処理モジュール    
   // "./scripts/他にも置換したい.mjs",
 ];
 

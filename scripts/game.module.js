@@ -55,7 +55,7 @@
     centerOfDeck, centerOfMainPlay, randomPointInDeck, randomPointInMainPlay
   } from './card-geometry.js';
   import { initCardStorage, storageDownloadURL, fileToThumbAndFull } from './card-storage.js';
-  
+  import { initSaveLoad } from './save-load.module.js';
   
   
 // ===============================
@@ -369,171 +369,16 @@ updateModePickButtons();
     let CURRENT_UID = null;
     
     
-  // ===============================
-  // セーブ / ロード（ユーザー直下 3スロット）
-  //  保存: users/{UID}/saves/slot{1|2|3}/cards/*
-  //  ロード: 指定スロットから現在ルームへ生成（所有者は現在の自分に付替え）
-  // ===============================
-  function slDocPath(slot){
-    return `users/${CURRENT_UID}/saves/slot${slot}`;
-  }
-
-  async function fetchMyCardsFromFirestore(){
-    // 自分のカードだけをDBから取得（正のソース）
-    const base = collection(db, `rooms/${CURRENT_ROOM}/cards`);
-    const q = query(base, where('ownerSeat', '==', CURRENT_PLAYER));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  }
-
-  function stripSavableFields(src){
-    // 保存対象フィールドを限定
-    const fields = [
-      'type','count','tokenText',
-      'x','y','zIndex','faceUp','rotation',
-      'visibleToAll','imageUrl','fullUrl'
-    ];
-    const out = {};
-    for (const k of fields){
-      if (src[k] !== undefined) out[k] = src[k];
-    }
-    return out;
-  }
-
-  async function saveToSlot(slot){
-    
-    console.log("UID check", CURRENT_UID, getAuth().currentUser?.uid);
-    
-    await ensureAuthReady();
-    if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID){
-      alert('ルームに参加してから実行してください'); return;
-    }
-    try{
-      const cards = await fetchMyCardsFromFirestore();
-      const baseRef = doc(db, slDocPath(slot));
-      // メタ情報を保存（件数・最終ルーム）
-      await setDoc(baseRef, {
-        updatedAt: serverTimestamp(),
-        count: cards.length,
-        lastRoomId: CURRENT_ROOM
-      }, { merge: true });
-
-      // 既存スロットを全削除 → 新規保存（バッチ）
-      const cardsCol = collection(db, `${slDocPath(slot)}/cards`);
-      const oldSnap = await getDocs(cardsCol);
-      let batch = writeBatch(db), n = 0;
-      for (const d of oldSnap.docs){
-        batch.delete(d.ref); if(++n >= 450){ await batch.commit(); batch = writeBatch(db); n=0; }
-      }
-      if (n>0) await batch.commit();
-
-      batch = writeBatch(db); n = 0;
-      for (const c of cards){
-        const refDoc = doc(cardsCol); // 新規ID
-        batch.set(refDoc, stripSavableFields(c));
-        if(++n >= 450){ await batch.commit(); batch = writeBatch(db); n=0; }
-      }
-      if (n>0) await batch.commit();
-      alert(`SLOT ${slot} に ${cards.length} 枚保存しました。`);
-      // ★セーブ完了ログ
-      postLog(`SLOT ${slot} に ${cards.length} 枚保存しました`);      
-    }catch(e){
-      console.error('SAVE ERROR', e?.code, e?.message, e);
-      alert(`セーブに失敗しました（${e?.code||'unknown'}）。コンソールの詳細を確認してください。`);
-    }
-  }
 
 
-  async function loadFromSlot(slot){
-    if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID){
-      alert('ルームに参加してから実行してください'); return;
-    }
-    try{
-      const cardsCol = collection(db, `${slDocPath(slot)}/cards`);
-      const snap = await getDocs(cardsCol);
-      if (snap.empty){ alert(`SLOT ${slot} は空です。`); return; }
 
-      // 現在ルームに生成（追加）。所有者は現在の自分。
-      const baseCards = collection(db, `rooms/${CURRENT_ROOM}/cards`);
-      let batch = writeBatch(db), n = 0, i = 0;
-      const z0 = Date.now() % 10000;
-      
-    //▼この座席のデッキ中央を基準にする（少しずつズラして重なり回避）
-    const basePos = centerOfDeck(CURRENT_PLAYER, CARD_W, CARD_H);
-      
-      for (const d of snap.docs){
-        const s = d.data() || {};
-        const payload = {
-          //▼保存時の x,y は使わず「デッキ中央」にまとめて出す
-          x: basePos.x + tinyOffset(i),
-          y: basePos.y + tinyOffset(i),
-          zIndex: (typeof s.zIndex==='number'? s.zIndex:1) + 1 + i + z0,
-          faceUp: (s.faceUp!==false),
-          rotation: (typeof s.rotation==='number'? s.rotation:0),
-          visibleToAll: (s.visibleToAll!==false),
-          ...(s.type ? { type: s.type } : {}),
-          ...(typeof s.count==='number' ? { count: s.count } : {}),
-          ...(typeof s.tokenText==='string' ? { tokenText: s.tokenText } : {}),
-          imageUrl: s.imageUrl || '',
-          fullUrl:  s.fullUrl  || '',
-          ownerUid:  CURRENT_UID,
-          ownerSeat: CURRENT_PLAYER,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
-        batch.set(doc(baseCards), payload);
-        if(++n >= 450){ await batch.commit(); batch = writeBatch(db); n=0; }
-        i++;
-      }
-      if (n>0) await batch.commit();
-      alert(`SLOT ${slot} から ${snap.size} 枚ロードしました。`);
-      // ★ロード完了ログ
-      postLog(`SLOT ${slot} から ${snap.size} 枚ロードしました`);
-    }catch(e){
-      console.error(e);
-      alert('ロードに失敗しました。通信状況をご確認ください。');
-    }
-  }
 
-  // ==== 3スロット選択モーダル制御 ====
-  let SL_MODE = null; // 'save' | 'load'
-  function openSaveLoadDialog(mode){
-    SL_MODE = mode;
-    const modal = document.getElementById('save-load-modal');
-    const title = document.getElementById('sl-title');
-    if (!modal || !title) return;
-    title.textContent = (mode==='save') ? '保存先スロットを選択' : 'ロード元スロットを選択';
-    
-    //▼ロード時にプレビューを更新（非同期）
-    if (mode === 'load') updateSlotPreviews();
-    
-    modal.style.display = 'flex';
-  }
-  // HTMLのonclickから呼べるように window に公開
-  window.openSaveLoadDialog = openSaveLoadDialog;
 
-  // 起動時にイベントを束ねる
-  (function bindSLModal(){
-    const modal = document.getElementById('save-load-modal');
-    if (!modal) return;
-    // 背景クリックで閉じる
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.style.display = 'none';
-    });
-    // キャンセル
-    document.getElementById('sl-cancel')?.addEventListener('click', ()=>{
-      modal.style.display = 'none';
-    });
-    // スロット選択
-    modal.querySelectorAll('.slot-btn').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
-        const slot = parseInt(btn.dataset.slot,10);
-        modal.style.display = 'none';
-        if (SL_MODE==='save')      await saveToSlot(slot);
-        else if (SL_MODE==='load') await loadFromSlot(slot);
-      });
-    });
-  })();    
+
+
+
+
+
     
 
 // ▼ 追加：スロットのプレビューを描画（各最大5枚）
@@ -1479,6 +1324,18 @@ function startHostWatch() {
         if (picked) picked.textContent = `P${CREATE_SELECTED_SEAT}`;
       });
     });
+    
+    
+  // === セーブ/ロード機能の初期化 ===
+  initSaveLoad({
+    db,
+    getState: () => ({ CURRENT_ROOM, CURRENT_PLAYER, CURRENT_UID }),
+    CARD_W, CARD_H,
+    centerOfDeck, tinyOffset,
+    postLog: (msg) => { try { postLog?.(msg); } catch(_){} }
+  });
+    
+    
 
 // ===============================
 // ロビー/座席管理
