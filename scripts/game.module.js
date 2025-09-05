@@ -188,9 +188,13 @@ onIdTokenChanged(auth, async (user) => {
     
     
     // env から注入された storageBucket をそのまま使う
-    const storageBucket = firebaseConfig.storageBucket;
-    const storage = storageBucket ? getStorage(app, `gs://${storageBucket}`) : getStorage(app);
-    
+  // Firebase Web SDK は gs://<bucket> で *.appspot.com 形式を期待する。
+  // 誤って *.firebasestorage.app が入っていても使えるように補正しておく。
+  let storageBucket = firebaseConfig.storageBucket;
+  if (storageBucket && storageBucket.endsWith('.firebasestorage.app')) {
+    storageBucket = storageBucket.replace('.firebasestorage.app', '.appspot.com');
+  }
+  const storage = storageBucket ? getStorage(app, `gs://${storageBucket}`) : getStorage(app);    
     
 
   // ▼ロビーのログインUI参照
@@ -2900,7 +2904,10 @@ if (data.type === 'numcounter') {
     }
 
 
-    async function processQueue(){
+  // data_url かを簡易検証するユーティリティ
+  const isDataUrl = (s) => typeof s === 'string' && /^data:[^;]+;base64,/.test(s);
+
+  async function processQueue(){
       processing = true;
       // ★ アップロード完了合計
       let totalUploaded = 0;
@@ -2935,6 +2942,10 @@ if (data.type === 'numcounter') {
               const fullRef  = ref(storage, `${objBase}/full.jpg`);
               const thumbRef = ref(storage, `${objBase}/thumb.jpg`);
               // data URL を直接アップロード（クライアント生成）
+              if (!isDataUrl(fullDataUrl) || !isDataUrl(thumbDataUrl)) {
+                console.warn('[upload] invalid data_url', {full: fullDataUrl?.slice?.(0,32), thumb: thumbDataUrl?.slice?.(0,32)});
+                throw new Error('storage/invalid-data-url');
+              }
               await Promise.all([
                 uploadString(fullRef,  fullDataUrl,  'data_url'),
                 uploadString(thumbRef, thumbDataUrl, 'data_url'),
