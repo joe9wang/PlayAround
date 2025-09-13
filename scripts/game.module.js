@@ -47,7 +47,7 @@
   
   
   import { initHP, renderHPPanel, subscribeHP, detachHPListener, 
-           hpDocPath, hpValues, localHpEditAt, hostInitHP } from './hp.js';
+           hpDocPath, hpValues, localHpEditAt } from './hp.js';
   import { cleanupAndCloseRoom, cleanupAndDeleteRoom, releaseSeat } from './room.module.js';  
   
 // ===============================
@@ -1576,10 +1576,6 @@ function randomPointInMainPlay(seat){
  
         await setDoc(roomRef, payload, { merge: true });
         await resetRoomState(id);
-        // ホストだけHP初期化（初回のみ）
-        try {
-           await hostInitHP(id, { db, doc, getDoc, writeBatch, serverTimestamp });
-        } catch(_) {}
         
         IS_ROOM_CREATOR = true;
         startHostHeartbeat(id);
