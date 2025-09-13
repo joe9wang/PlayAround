@@ -46,7 +46,8 @@
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
   
   
-  import { initHP, renderHPPanel, subscribeHP, detachHPListener, hpDocPath, hpValues, localHpEditAt } from './hp.js';
+  import { initHP, renderHPPanel, subscribeHP, detachHPListener, 
+           hpDocPath, hpValues, localHpEditAt, hostInitHP } from './hp.js';
   import { cleanupAndCloseRoom, cleanupAndDeleteRoom, releaseSeat } from './room.module.js';  
   
 // ===============================
@@ -1572,26 +1573,30 @@ function randomPointInMainPlay(seat){
    payload.allowOtherOps = true;
    payload.initTrump = true;
  }
- await setDoc(roomRef, payload, { merge: true });
-
+ 
+        await setDoc(roomRef, payload, { merge: true });
         await resetRoomState(id);
-
+        // ホストだけHP初期化（初回のみ）
+        try {
+           await hostInitHP(id, { db, doc, getDoc, writeBatch, serverTimestamp });
+        } catch(_) {}
+        
         IS_ROOM_CREATOR = true;
         startHostHeartbeat(id);
-
+        
         CURRENT_ROOM_META = { ...(CURRENT_ROOM_META||{}), hostUid: CURRENT_UID, hostDisplayName: creatorName };
         renderFieldLabels();
-
+        
         playerNameInput.value  = creatorName;
         
         joinRoomInput.value = id;
         loadSeatStatus();
-
+        
         const ok = await claimSeat(id, CREATE_SELECTED_SEAT);
         if(!ok){ alert(`P${CREATE_SELECTED_SEAT} は使用中でした。別の座席を選んでください。`); return; }
-
+        
         await setDoc(doc(db, `rooms/${id}`), { hostSeat: CREATE_SELECTED_SEAT, updatedAt: serverTimestamp() }, { merge: true });
-
+        
         currentSeatMap[CREATE_SELECTED_SEAT] = {
           ...(currentSeatMap[CREATE_SELECTED_SEAT] || {}),
           claimedByUid: CURRENT_UID,
@@ -1893,10 +1898,6 @@ function applyFieldModeLayout(){
          renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); updateLeaveRoomButtonVisibility(); renderHPPanel();
        });
 
-  // ロビー段階でもHPを表示したい場合に購読（開始ボタン前）
-  subscribeHP(roomId);      // （hp.js）
-      
-
 
       // ※ ここで updatedAt を書かない（以前は軽く触るだけで1書き込み発生していた）
 
@@ -2113,6 +2114,16 @@ if (meta?.joinPassHash && !canSkipPassword) {
         renderSeatAvailability();
 
         startSession(room, seat);
+        // 座席確定後にHP購読を開始（ロビーでは購読しない）
+        try {
+          CURRENT_ROOM = room; // 念のため反映（既に入っていれば重複代入でも問題なし）
+          subscribeHP(CURRENT_ROOM);
+          renderHPPanel();
+        } catch (e) {
+          console.warn('[HP] subscribe failed', e);
+        }
+        
+        
       } catch (e) {
         console.error(e);
         alert('開始に失敗しました。ネットワーク状態を確認してもう一度お試しください。');

@@ -20,6 +20,31 @@ export function detachHPListener(){
   if (unsubscribeHP) { try{unsubscribeHP();}catch(_){/*noop*/} unsubscribeHP = null; }
 }
 
+
+// === ホスト専用: HPを一度だけ全員0に初期化する ===
+export async function hostInitHP(roomId, {
+  db, doc, getDoc, writeBatch, serverTimestamp
+}) {
+  try {
+    const roomRef = doc(db, `rooms/${roomId}`);
+    const snap = await getDoc(roomRef);
+    const meta = snap.exists() ? (snap.data() || {}) : {};
+    if (meta.hpInitialized) return; // 二重初期化防止
+
+    const batch = writeBatch(db);
+    const now = serverTimestamp();
+    for (const s of [1,2,3,4]) {
+      const hpRef = doc(db, `rooms/${roomId}/hp/${s}`);
+      batch.set(hpRef, { hp: 0, updatedAt: now }, { merge: true });
+    }
+    batch.set(roomRef, { hpInitialized: true, updatedAt: now }, { merge: true });
+    await batch.commit();
+  } catch (e) {
+    console.warn('[hostInitHP] failed', e);
+  }
+}
+
+
 export function subscribeHP(roomId){
   detachHPListener();
   const { db, doc, onSnapshot } = ctx;
