@@ -34,8 +34,14 @@ export async function hostInitHP(roomId, {
     const batch = writeBatch(db);
     const now = serverTimestamp();
     for (const s of [1,2,3,4]) {
-      const hpRef = doc(db, `rooms/${roomId}/hp/${s}`);
-      batch.set(hpRef, { hp: 0, updatedAt: now }, { merge: true });
+      // p付きIDへ、かつスキーマは value / seat / updatedBy / updatedAt に統一
+      const hpRef = doc(db, hpDocPath(roomId, s));
+      batch.set(hpRef, {
+        seat: s,
+        value: 0,
+        updatedBy: (await getDoc(roomRef)).data().hostUid || null, // ← ホストUIDを明示
+        updatedAt: now
+      }, { merge: true });
     }
     batch.set(roomRef, { hpInitialized: true, updatedAt: now }, { merge: true });
     await batch.commit();
