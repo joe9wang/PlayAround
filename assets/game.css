@@ -1,4 +1,4 @@
-   :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; --upload-h: 56px; --footer-h: 44px; --gheader-h: 44px; --special-w: 14%; }
+   :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; --upload-h: 56px; --footer-h: 80px; --gheader-h: 44px; --special-w: 14%; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif; margin:0; background:#eee; overflow:hidden; }
     h1 { background:#444; color:#fff; padding:1em; text-align:center; margin:0; height:var(--header-h); box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:1rem; position:relative; }
     #session-indicator { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#ddd; font-size:12px; opacity:.9; white-space:nowrap; }
@@ -840,12 +840,10 @@
   .site-footer__inner{
     max-width:1200px;
     margin:0 auto;
-    padding:4px 12px;
     display:flex;
+    flex-direction:column;
     align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    flex-wrap:wrap;
+    gap:8px;
   }
   .site-footer__nav{display:flex;gap:14px;flex-wrap:wrap}
   .site-footer__nav a{color:#444;text-decoration:none;font-size:14px}
@@ -861,10 +859,11 @@
    background:#fff;
    border-top:1px solid #e5e7eb;
    min-height: var(--footer-h);
-   display:flex; align-items:center; justify-content:center;
-   padding: 6px 12px; color:#555; z-index: 5;
-   clear: both;        /* ← float している #sidebar / #container / #preview の下に必ず配置 */
-   position: relative; /* ← 念のため重なり対策 */
+   padding: 12px; 
+   color:#555; 
+   z-index: 5;
+   clear: both;        
+   position: relative; 
 }
 
 
