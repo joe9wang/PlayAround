@@ -1470,8 +1470,16 @@ function randomPointInMainPlay(seat){
    });
  }
     // ===== create room (host)
+    //createRoomBtn.addEventListener('click', async () => {
+    //await ensureAuthReady();
+    
     createRoomBtn.addEventListener('click', async () => {
-      await ensureAuthReady();
+      // ★広告を必ず出す
+      try { await showRoomInterstitial({ force:true, cooldownMs:0 }); } catch(_){}
+      await ensureAuthReady();    
+    
+      
+      
       const id = (newRoomIdInput.value||'').trim();
       const creatorName  = (newPlayerNameInput.value || '').trim();
       if(!id){ alert(t('err.roomId')); return; }
@@ -2000,9 +2008,14 @@ function applyFieldModeLayout(){
     });
 
 
- startBtn.addEventListener('click', async (ev) => {
+ //startBtn.addEventListener('click', async (ev) => {
    // UID 未確定で開始に失敗するのを防ぐ
-   await ensureAuthReady();
+   //await ensureAuthReady();
+   
+ startBtn.addEventListener('click', async () => {
+   try { await showRoomInterstitial({ force:true, cooldownMs:0 }); } catch(_){}
+   await ensureAuthReady();   
+   
       ev.preventDefault();
       ACTIVE_MODE = 'join';
       await ensureAuthReady();
