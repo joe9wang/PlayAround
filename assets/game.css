@@ -37,7 +37,7 @@
       width: calc(100% - var(--sidebar-w) - var(--preview-w));
       height: calc(100vh - var(--stack-h));
       overflow:hidden; position:relative; float:left; background:#f7f7f7;
-      z-index: 10; /* 前面に */
+      z-index: 0;
     }
     #field { position:absolute; transform-origin:0 0; background:none; }
     
