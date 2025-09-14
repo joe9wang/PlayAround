@@ -24,7 +24,7 @@
       position: relative; z-index: 10; /* 前面に */
       padding:10px; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
     }
-    #sidebar h2 { font-size:14px; text-align:center; margin:20px 0 10px; }
+    #sidebar h2:not(.panel-title) { font-size:14px; text-align:center; margin:20px 0 10px; }
     #sidebar button { width:100%; margin-bottom:10px; padding:10px; font-size:14px; cursor:pointer; }
     #sidebar button.danger { background:#c62828; color:#fff; }
     #sidebar button.danger:disabled { opacity:.6; cursor:not-allowed; }
@@ -147,7 +147,7 @@
       padding:10px; box-sizing:border-box; display:flex; flex-direction:column;
       position: relative; z-index: 10;   /* 右サイドも前面に固定 */
     }
-    #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; }
+    #preview h2:not(.panel-title){ font-size:14px; margin:0 0 10px; text-align:center; }
     #preview-img{ width:100%; height:auto; border-radius:10px; display:none; }
     #preview-top { flex:2 1 0; overflow:auto; }
     #hp-panel { flex:1 1 0; border-top:1px solid #eee; padding:8px 6px; }
