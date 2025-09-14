@@ -15,6 +15,7 @@ const JS_MODULES = [
   "./scripts/game.module.js",   // 本体
   "./scripts/hp.js",            // プレイヤーHPモジュール
   "./scripts/room.module.js",   // ルーム関連処理モジュール  
+  "./scripts/ads.interstitial.js",   // 広告関連処理モジュール    
   // "./scripts/他にも置換したい.mjs",
 ];
 
