@@ -159,6 +159,7 @@ export function renderHPPanel(){
   }
 
   // 差分更新：名前/活性/値のみ更新（入力中は値を上書きしない）
+  const { CURRENT_PLAYER, currentSeatMap } = ctx.getState();
   for (const seat of [1,2,3,4]) {
     const row   = grid.querySelector(`.hp-row[data-seat="${seat}"]`);
     const input = row?.querySelector('.hp-input');
