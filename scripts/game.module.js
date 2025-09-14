@@ -48,7 +48,8 @@
   
   import { initHP, renderHPPanel, subscribeHP, detachHPListener, 
            hpDocPath, hpValues, localHpEditAt } from './hp.js';
-  import { cleanupAndCloseRoom, cleanupAndDeleteRoom, releaseSeat } from './room.module.js';  
+  import { cleanupAndCloseRoom, cleanupAndDeleteRoom, releaseSeat } from './room.module.js';
+  import { showRoomInterstitial } from './ads.interstitial.js';
   
 // ===============================
 // Firebase 初期化と App Check
@@ -1477,9 +1478,18 @@ function randomPointInMainPlay(seat){
       if(!creatorName){ alert(t('err.playerName')); newPlayerNameInput.focus(); return; }
       if(!CREATE_SELECTED_SEAT){ alert(t('err.seat')); return; }
 
+      //createRoomBtn.disabled = true;
+      //const oldText = createRoomBtn.textContent;
+      //createRoomBtn.textContent = '作成中…';
+      
+      // ★ インタースティシャルを毎回表示（最低5秒ブロック／最大10秒待ち）
+      try { await showRoomInterstitial({ force: true, cooldownMs: 0, maxWaitMs: 10000 }); } catch (_) {}
+
       createRoomBtn.disabled = true;
       const oldText = createRoomBtn.textContent;
-      createRoomBtn.textContent = '作成中…';
+      createRoomBtn.textContent = '作成中…';      
+      
+      
 
       try{
         
@@ -2005,7 +2015,11 @@ function applyFieldModeLayout(){
       if (!room)  { alert(t('err.roomId')); return; }
       if (!nameNow) { alert(t('err.playerName')); return; }
       if (!seat)  { alert(t('err.seat')); return; }
-
+      
+      // ★ インタースティシャルを毎回表示（最低5秒ブロック／最大10秒待ち）
+      try { await showRoomInterstitial({ force: true, cooldownMs: 0, maxWaitMs: 10000 }); } catch (_) {}
+      
+      
       const oldText = startBtn.textContent;
       startBtn.disabled = true;
       startBtn.textContent = '開始中…';
