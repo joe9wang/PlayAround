@@ -595,13 +595,7 @@ async function updateSlotPreviews(){
     const ROOM_PING_MS = 60000;      // 60s
     let __roomPingAt = 0;
     
-
-    // ===== Room idle auto-delete (no one seated for a while)
-    // 全席が空席 or STALE の状態が一定時間続いたらルーム削除
-    const ROOM_IDLE_DELETE_MS = 3 * 60 * 1000; // 3分（必要に応じて調整）
-    const ROOM_IDLE_CHECK_MS  = 15 * 1000;     // 15秒ごとに判定
-    let roomIdleTimer = null;
-    let lastOccupiedAt = Date.now();
+    
     
     const CARD_W = 120;
     const CARD_H = 160;
