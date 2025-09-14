@@ -70,7 +70,7 @@ export function subscribeHP(roomId){
 
 export function renderHPPanel(){
   const { document, ensureAuthReady, db, doc, setDoc, serverTimestamp, alert } = ctx;
-  const { CURRENT_PLAYER, CURRENT_ROOM, CURRENT_UID, currentSeatMap } = ctx.getState();
+  // ここでは CURRENT_* をキャプチャしない（都度 getState で取得する）
   const grid = document.getElementById('hp-grid');
   if (!grid) return;
 
@@ -94,14 +94,15 @@ export function renderHPPanel(){
     grid.innerHTML = '';
     grid.appendChild(frag);
 
-    // イベントは一度だけバインド（自席のみ有効）
+    // イベントは一度だけバインド（※座席判定は都度 getState() で最新を見る）
     grid.querySelectorAll('.hp-row').forEach(row => {
       const seat  = parseInt(row.dataset.seat, 10);
       const input = row.querySelector('.hp-input');
       const minus = row.querySelector('.hp-minus');
       const plus  = row.querySelector('.hp-plus');
       const commit = async (nextVal) => {
-        // ★自席以外なら何もしない（UI誤操作やDevToolsからの実行もブロック）
+        // ★ 毎回、最新状態を取得して判定（キャプチャしない）
+        const { CURRENT_PLAYER, CURRENT_ROOM, CURRENT_UID, currentSeatMap } = ctx.getState();
         hpDbg('commit called', { seat, nextVal, CURRENT_PLAYER, CURRENT_ROOM, CURRENT_UID });
         if (CURRENT_PLAYER !== seat) { hpDbg('commit blocked: not my seat'); return; }
         const n = Number.isFinite(nextVal) ? Math.trunc(nextVal) : 0;
