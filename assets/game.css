@@ -580,28 +580,6 @@
    }
  }
 
- /* ===== 見出し内トグル（正方形ボタン） ===== */
- .inline-toggle {
-   display: inline-flex;
-   align-items: center;
-   justify-content: center;
-   width: 28px !important;   /* サイドバーの「button{width:100%}」系を打ち消す */
-   height: 28px !important;
-   min-width: 28px;
-   padding: 0 !important;
-   margin-left: 6px;
-   border: 1px solid #ccc;
-   border-radius: 6px;
-   background: #fff;
-   cursor: pointer;
-   flex: 0 0 28px;           /* 伸び縮みさせない */
-   line-height: 1;
-   user-select: none;
- }
- #sidebar h2 .inline-toggle { margin-left: 8px; }
- #preview h2 .inline-toggle { margin-left: 0; margin-right: 8px; }
- .inline-toggle:hover { background:#f3f3f3; }
- 
  
   /* ===== Save/Load を横2分割＆省スペースに ===== */
   #sidebar .sl-row{
@@ -688,45 +666,6 @@
  #sidebar .panel-title .inline-toggle { margin-left:8px; }
  #preview .panel-title .inline-toggle  { margin-right:8px; }
 
- /* ===== 見出しの高さズレ修正（ID付きで強制上書き） ===== */
- #sidebar h2.panel-title {
-   margin: 0 !important;         /* 既存: #sidebar h2 { margin:20px 0 10px } を打ち消し */
-   text-align: right;            /* 右寄せ */
-   height: var(--panel-title-h); /* 高さ固定で右と一致 */
-   min-height: var(--panel-title-h);
-   line-height: var(--panel-title-h);
-   padding: 0 8px;               /* 上下位置の微調整 */
-   font-size: 16px;              /* 必要なら右と同値に */
-   display: flex;
-   align-items: center;
-   gap: 8px;
- }
- 
- #preview h2.panel-title {
-   margin: 0 !important;         /* 既存: #preview h2 { margin:0 0 10px } を打ち消し */
-   text-align: left;
-   height: var(--panel-title-h);
-   min-height: var(--panel-title-h);
-   line-height: var(--panel-title-h);
-   padding: 0 8px;
-   font-size: 16px;
-   display: flex;
-   align-items: center;
-   gap: 8px;
- }
-
- /* 右サイド（選択肢のカード）も高さを強制揃え */
- #preview h2.panel-title {
-   margin: 0 !important;
-   padding: 0 8px;
-   height: var(--panel-title-h);
-   min-height: var(--panel-title-h);
-   line-height: var(--panel-title-h);
-   font-size: 16px;
-   display: flex;
-   align-items: center;
-   gap: 8px;
- }
 
 /* 左右のトグルボタンの縦位置を統一 */
 .inline-toggle {
@@ -834,40 +773,27 @@
   
   
   
-  /* ====== Global Header / Footer (軽量) ====== */
+  /* ====== Global Header / Footer ====== */
   .site-header{position:sticky;top:0;z-index:10000;background:#111;color:#fff;border-bottom:1px solid #222}
   .site-header__inner{max-width:1200px;margin:0 auto;padding:10px 12px;display:flex;align-items:center;gap:16px}
   .site-brand{font-weight:800;letter-spacing:.02em;color:#fff;text-decoration:none}
   .site-nav{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap}
   .site-nav a{color:#ddd;text-decoration:none;font-size:14px}
   .site-nav a:hover{color:#fff;text-decoration:underline}
-  .site-footer{margin-top:24px;background:#fafafa;border-top:1px solid #eee;color:#444}
-  .site-footer__inner{
-    max-width:1200px;
-    margin:0 auto;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:8px;
-  }
-  .site-footer__nav{display:flex;gap:14px;flex-wrap:wrap}
-  .site-footer__nav a{color:#444;text-decoration:none;font-size:14px}
-  .site-footer__nav a:hover{text-decoration:underline}
-  @media(max-width:768px){
-    .site-nav{gap:10px}
-    .site-footer__inner{justify-content:flex-start}
-  }
-  
   
 /* ===== footer ===== */
 .site-footer{
    background:#fff;
    border-top:1px solid #e5e7eb;
    min-height: var(--footer-h);
-   display:flex; align-items:center; justify-content:center;
-   padding: 6px 12px; color:#555; z-index: 0;  /* 背面へ */
-   clear: both;       
-   position: relative;
+   display:flex;
+   align-items:center;
+   justify-content:center;
+   padding:12px;
+   color:#555;
+   z-index:0;
+   clear:both;
+   position:relative;
 }
 
 
