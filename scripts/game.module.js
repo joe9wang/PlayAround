@@ -1604,6 +1604,15 @@ function randomPointInMainPlay(seat){
         seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
         startSession(id, CREATE_SELECTED_SEAT);
 
+        // 座席確定後にHP購読を開始（ロビーでは購読しない）
+        CURRENT_ROOM = id;
+        try {
+          subscribeHP(CURRENT_ROOM);
+          renderHPPanel(); // isMe が true になり、自席HP入力が有効化される
+        } catch (e) {
+          console.warn('[HP] subscribe failed', e);
+        }
+
         // ★修正: trump モードでは、まず room.fieldMode='trump' を確実に適用してから共有デッキに生成
         if (CREATE_FIELD_MODE === 'trump') {
           // 1) ルーム doc に fieldMode を即反映（購読更新を待たずローカルにも反映）
@@ -2109,7 +2118,12 @@ if (meta?.joinPassHash && !canSkipPassword) {
         currentSeatMap[seat] = { ...(currentSeatMap[seat] || {}), claimedByUid: CURRENT_UID, displayName: nameNow, color: '#22aaff' };
         renderSeatAvailability();
 
+        // isMe を即時に確定させる（HP UI がこの時点で自席Onlyになる）
+        CURRENT_PLAYER = seat;
+        seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat,10) === CURRENT_PLAYER));
+
         startSession(room, seat);
+
         // 座席確定後にHP購読を開始（ロビーでは購読しない）
         try {
           CURRENT_ROOM = room; // 念のため反映（既に入っていれば重複代入でも問題なし）
