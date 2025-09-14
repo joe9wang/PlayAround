@@ -20,7 +20,7 @@
     #sidebar {
       width: var(--sidebar-w);
       height: calc(100vh - var(--stack-h));
-      float: left; background:#fff; border-right:2px solid #aaa; box-shadow:2px 0 5px rgba(0,0,0,2);
+      float: left; background:#fff; border-right:2px solid #aaa; box-shadow:2px 0 5px rgba(0,0,0,.2);
       position: relative; z-index: 10; /* 前面に */
       padding:10px; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
     }
