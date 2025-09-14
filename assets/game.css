@@ -19,7 +19,8 @@
     #sidebar {
       width: var(--sidebar-w);
       height: calc(100vh - var(--gheader-h) - var(--header-h) - var(--upload-h) - var(--footer-h));
-      float: left; background:#fff; border-right:2px solid #aaa; box-shadow:2px 0 5px rgba(0,0,0,.2);
+      float: left; background:#fff; border-right:2px solid #aaa; box-shadow:2px 0 5px rgba(0,0,0,2);
+      position: relative; z-index: 10; /* 前面に */
       padding:10px; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
     }
     #sidebar h2 { font-size:14px; text-align:center; margin:20px 0 10px; }
@@ -35,6 +36,7 @@
       width: calc(100% - var(--sidebar-w) - var(--preview-w));
       height: calc(100vh - var(--gheader-h) - var(--header-h) - var(--upload-h) - var(--footer-h));
       overflow:hidden; position:relative; float:left; background:#f7f7f7;
+      z-index: 10; /* 前面に */
     }
     #field { position:absolute; transform-origin:0 0; background:none; }
     
@@ -458,6 +460,7 @@
    #sidebar, #container, #preview {
      width: 100% !important;
      height: auto !important;
+     position: relative; z-index: 10; /* 前面に */
      float: none;
      box-shadow: none;
    }
@@ -859,13 +862,11 @@
    background:#fff;
    border-top:1px solid #e5e7eb;
    min-height: var(--footer-h);
-   padding: 12px; 
-   color:#555; 
-   z-index: 5;
-   clear: both;        
-   position: relative; 
+   display:flex; align-items:center; justify-content:center;
+   padding: 6px 12px; color:#555; z-index: 1;     /* ← 下げる */
+   clear: both;       
+   position: relative;
 }
-
 
 
        #save-load-modal .slot-btn { border:1px solid #ddd; border-radius:8px; }
