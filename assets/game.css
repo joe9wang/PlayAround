@@ -1,4 +1,5 @@
-   :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; --upload-h: 56px; --footer-h: 80px; --gheader-h: 44px; --special-w: 14%; }
+    :root { --sidebar-w: 300px; --preview-w: 300px; --header-h: 80px; --upload-h: 56px; --footer-h: 80px; --gheader-h: 44px; --special-w: 14%;
+            --stack-h: calc(var(--gheader-h) + var(--header-h) + var(--upload-h)); }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif; margin:0; background:#eee; overflow:hidden; }
     h1 { background:#444; color:#fff; padding:1em; text-align:center; margin:0; height:var(--header-h); box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:1rem; position:relative; }
     #session-indicator { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#ddd; font-size:12px; opacity:.9; white-space:nowrap; }
@@ -18,7 +19,7 @@
 
     #sidebar {
       width: var(--sidebar-w);
-      height: calc(100vh - var(--gheader-h) - var(--header-h) - var(--upload-h) - var(--footer-h));
+      height: calc(100vh - var(--stack-h));
       float: left; background:#fff; border-right:2px solid #aaa; box-shadow:2px 0 5px rgba(0,0,0,2);
       position: relative; z-index: 10; /* 前面に */
       padding:10px; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
@@ -34,7 +35,7 @@
 
     #container{
       width: calc(100% - var(--sidebar-w) - var(--preview-w));
-      height: calc(100vh - var(--gheader-h) - var(--header-h) - var(--upload-h) - var(--footer-h));
+      height: calc(100vh - var(--stack-h));
       overflow:hidden; position:relative; float:left; background:#f7f7f7;
       z-index: 10; /* 前面に */
     }
@@ -141,11 +142,10 @@
 
     #preview{
       width: var(--preview-w);
-      height: calc(100vh - var(--gheader-h) - var(--header-h) - var(--upload-h) - var(--footer-h));
+      height: calc(100vh - var(--stack-h));
       float:right; background:#fff; border-left:2px solid #aaa; box-shadow:-2px 0 5px rgba(0,0,0,.2);
       padding:10px; box-sizing:border-box; display:flex; flex-direction:column;
-      position: relative;            /* 前面に出すために必要 */
-      z-index: 10;                   /* サイドバー/中央と同じ前面レイヤ */
+      position: relative; z-index: 10;   /* 右サイドも前面に固定 */
     }
     #preview h2{ font-size:14px; margin:0 0 10px; text-align:center; }
     #preview-img{ width:100%; height:auto; border-radius:10px; display:none; }
@@ -865,7 +865,7 @@
    border-top:1px solid #e5e7eb;
    min-height: var(--footer-h);
    display:flex; align-items:center; justify-content:center;
-   padding: 6px 12px; color:#555; z-index: 1;     /* ← 下げる */
+   padding: 6px 12px; color:#555; z-index: 0;  /* 背面へ */
    clear: both;       
    position: relative;
 }
