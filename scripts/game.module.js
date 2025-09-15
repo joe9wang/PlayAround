@@ -2012,11 +2012,10 @@ function applyFieldModeLayout(){
    // UID 未確定で開始に失敗するのを防ぐ
    //await ensureAuthReady();
    
- startBtn.addEventListener('click', async () => {
-   try { await showRoomInterstitial({ force:true, cooldownMs:0 }); } catch(_){}
-   await ensureAuthReady();   
-   
+    startBtn.addEventListener('click', async (ev) => {
       ev.preventDefault();
+      try { await showRoomInterstitial({ force:true, cooldownMs:0 }); } catch(_){}
+      await ensureAuthReady();
       ACTIVE_MODE = 'join';
       await ensureAuthReady();
       if (!CURRENT_UID) { alert('認証の初期化に時間がかかっています。数秒後に再度お試しください。'); return; }
