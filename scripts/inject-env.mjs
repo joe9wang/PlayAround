@@ -13,6 +13,9 @@ const PAGES = ["./index.html", "./game.html", "./mypage.html"];
 // 例: game.html から外出しした module スクリプトをここに追加
 const JS_MODULES = [
   "./scripts/game.module.js",   // 本体
+  "./scripts/firebase.init.js", // Firebase初期化
+  "./scripts/state.js",         // 共有状態
+  "./scripts/i18n.js",          // 多言語対応
   "./scripts/hp.js",            // プレイヤーHPモジュール
   "./scripts/room.module.js",   // ルーム関連処理モジュール  
   "./scripts/ads.interstitial.js",   // 広告関連処理モジュール    
@@ -22,9 +25,9 @@ const JS_MODULES = [
 // 丸ごとコピーするディレクトリ（public 廃止）
 // ※ ここに列挙されたものだけ dist に展開されます
 const DIRS = [
-  { src: "./assets",   dest: "assets"   },
+  { src: "./assets", dest: "assets" },
   { src: "./partials", dest: "partials" },
-  { src: "./scripts",  dest: "scripts"  }, // polyfills.js / 分割JS も配布
+  { src: "./scripts", dest: "scripts" }, // polyfills.js / 分割JS も配布
 ];
 
 
@@ -78,8 +81,8 @@ for (const { src, dest } of DIRS) {
 // ads.txt を dist にコピー
 copyFileSync("./ads.txt", `${OUT_DIR}/ads.txt`);
 // robots / sitemap（あれば）を dist にコピー
-try { copyFileSync("./robots.txt", `${OUT_DIR}/robots.txt`); } catch {}
-try { copyFileSync("./sitemap.xml", `${OUT_DIR}/sitemap.xml`); } catch {}
+try { copyFileSync("./robots.txt", `${OUT_DIR}/robots.txt`); } catch { }
+try { copyFileSync("./sitemap.xml", `${OUT_DIR}/sitemap.xml`); } catch { }
 
 // privacy.html を dist にコピー
 copyFileSync("./privacy.html", `${OUT_DIR}/privacy.html`);
@@ -102,7 +105,7 @@ for (const f of [
   "./favicon-16.png",
   "./apple-touch-icon.png"
 ]) {
-  try { copyFileSync(f, `${OUT_DIR}/${f.replace(/^.\//, "")}`); } catch {}
+  try { copyFileSync(f, `${OUT_DIR}/${f.replace(/^.\//, "")}`); } catch { }
 }
 
 
