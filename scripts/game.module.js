@@ -533,29 +533,21 @@ let hostWatchTimer = null;
 let ACTIVE_MODE = 'join'; // 'join' | 'create'
 let IS_ROOM_CREATOR = false;
 
-// ===== Quota care: intervals
-const HOST_STALE_MS = 180000;  // 3min
-const SEAT_STALE_MS = 600000;  // 10min
-const HOST_HEARTBEAT_MS = 60000; // 10s
-const SEAT_HEARTBEAT_MS = 60000; // 20s
-const ROOM_PING_MS = 60000;      // 60s
+// ===== Quota care: intervals — 定数は state.js から import 済み =====
 let __roomPingAt = 0;
 
 
 
-const CARD_W = 120;
-const CARD_H = 160;
+// CARD_W, CARD_H は state.js から import 済み
 
-// ===== Write queue (batching & coalescing)
-const WRITE_FLUSH_MS = 400;     // まとめ書き周期
-const MAX_BATCH_OPS = 450;      // Firestoreの上限に合わせる
-const pendingPatches = new Map(); // key: path "rooms/{room}/cards/{id}" or seats, value: merged patch
+// WRITE_FLUSH_MS, MAX_BATCH_OPS は state.js から import 済み
+const pendingPatches = new Map();
 let flushTimer = null;
 
 
 // === アクティビティ検知（操作がある時だけ頻繁にHB） ===
-const ACTIVE_WINDOW_MS = 30_000;  // 直近30秒に操作があれば“活動中”
-const IDLE_KEEPALIVE_MS = 300_000; // 完全放置でも5分に1回はHB
+// ACTIVE_WINDOW_MS imported from state.js
+// IDLE_KEEPALIVE_MS imported from state.js
 let lastActivityAt = Date.now();
 let lastSeatHBWriteAt = 0;
 
@@ -661,7 +653,7 @@ function updateSeatBatched(seat, patch) {
 
 // ===== Presence / host alive
 
-const ROOM_EMPTY_GRACE_MS = 15 * 60 * 1000; // 15分: 全席不在が続いたら部屋を自動削除
+// ROOM_EMPTY_GRACE_MS imported from state.js
 
 function isHostAlive(roomMeta) {
   if (!roomMeta?.hostUid) return false;
