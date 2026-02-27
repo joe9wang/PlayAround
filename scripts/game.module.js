@@ -103,7 +103,7 @@ async function sendCloseBeacon(roomId) {
 }
 
 
-const db = getFirestore(app);
+// db は firebase.init.js から import 済み
 
 
 
@@ -127,9 +127,7 @@ const db = getFirestore(app);
 
 
 
-// env から注入された storageBucket をそのまま使う
-const storageBucket = firebaseConfig.storageBucket;
-const storage = storageBucket ? getStorage(app, `gs://${storageBucket}`) : getStorage(app);
+// storage は firebase.init.js から import 済み
 
 
 
