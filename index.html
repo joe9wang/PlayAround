@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
 
-<!-- PropellerAds verification (静的に配置) -->
-<script>(function(s){s.dataset.zone='9874020',s.src='https://groleegni.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+  <!-- PropellerAds verification (静的に配置) -->
+  <script>(function (s) { s.dataset.zone = '9874020', s.src = 'https://groleegni.net/vignette.min.js' })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 
 
-<link rel="stylesheet" href="./assets/site.css">
+  <link rel="stylesheet" href="./assets/site.css">
 
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PlayAround｜画像対応のオンライン・ボード／カードゲーム（最大4人対戦）</title>
-  <meta name="description" content="PlayAroundは画像対応のオンライン・ボード／カードゲーム。最大4人でルーム作成し、カードやボードを自由に配置・反転・整列・シャッフル。スマホ/PC対応で、すぐに友達と遊べます。" />
+  <meta name="description"
+    content="PlayAroundは画像対応のオンライン・ボード／カードゲーム。最大4人でルーム作成し、カードやボードを自由に配置・反転・整列・シャッフル。スマホ/PC対応で、すぐに友達と遊べます。" />
   <link rel="canonical" href="https://www.play-around.app/">
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 
@@ -48,237 +50,377 @@
 
 
   <!-- Favicon -->
-  <link href="/favicon.ico" rel="icon" sizes="any"/>
-  <link href="/favicon-32.png?v=1" rel="icon" sizes="32x32" type="image/png"/>
-  <link href="/favicon-16.png?v=1" rel="icon" sizes="16x16" type="image/png"/>
-  <link href="/apple-touch-icon.png?v=1" rel="apple-touch-icon" sizes="180x180"/>
+  <link href="/favicon.ico" rel="icon" sizes="any" />
+  <link href="/favicon-32.png?v=1" rel="icon" sizes="32x32" type="image/png" />
+  <link href="/favicon-16.png?v=1" rel="icon" sizes="16x16" type="image/png" />
+  <link href="/apple-touch-icon.png?v=1" rel="apple-touch-icon" sizes="180x180" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --gap:16px;
-      --radius:14px;
+    :root {
+      --gap: 16px;
+      --radius: 14px;
       /* PlayAround配色（添付イメージ準拠） */
-      --purple:#b350be;   /* 左の縦帯（少し柔らかい紫） */
-      --green:#3cd08e;    /* 中央の大きい面（やや落ち着いた緑） */
-      --red:#e64a5a;      /* 右上カード（鮮やかさ控えめの赤） */
-      --orange:#f79f27;   /* 右下カード（少し落ち着いたオレンジ） */
-      --blue:#1e82e0;     /* 下部の横帯（やや淡い青） */
-      --ink:#0f172a;
-      --bg:#f6f7fb;
-      --card:#ffffff;
+      --purple: #b350be;
+      /* 左の縦帯（少し柔らかい紫） */
+      --green: #3cd08e;
+      /* 中央の大きい面（やや落ち着いた緑） */
+      --red: #e64a5a;
+      /* 右上カード（鮮やかさ控えめの赤） */
+      --orange: #f79f27;
+      /* 右下カード（少し落ち着いたオレンジ） */
+      --blue: #1e82e0;
+      /* 下部の横帯（やや淡い青） */
+      --ink: #0f172a;
+      --bg: #f6f7fb;
+      --card: #ffffff;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:"Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", "Noto Sans JP", Meiryo, sans-serif;
-      color:var(--ink);
-      background:var(--bg);
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", "Noto Sans JP", Meiryo, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
     }
 
     /* ====== グリッド全体 ====== */
-    .layout{
-      min-height:100dvh;
-      display:grid;
+    .layout {
+      min-height: 100dvh;
+      display: grid;
       grid-template-columns: 260px minmax(0, 1fr) 320px;
       grid-template-rows: 1fr auto;
-      gap:var(--gap);
-      padding:var(--gap);
+      gap: var(--gap);
+      padding: var(--gap);
     }
 
     /* 左：サイドバー（縦帯） */
-    .sidebar{
-      grid-row:1 / span 2;
-      grid-column:1;
-      background:var(--purple);
-      color:#fff;
-      border-radius:var(--radius);
-      padding:20px 18px;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-      box-shadow:0 8px 24px rgba(164,10,179,.25);
+    .sidebar {
+      grid-row: 1 / span 2;
+      grid-column: 1;
+      background: var(--purple);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 8px 24px rgba(164, 10, 179, .25);
     }
-    .brand{
-      display:flex; align-items:center; gap:12px;
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    .brand-mark{
-      width:40px;height:40px;border-radius:10px;background:#fff; color:var(--purple);
-      display:grid;place-items:center;font-weight:800;
-      box-shadow:0 6px 16px rgba(0,0,0,.15);
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: #fff;
+      color: var(--purple);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, .15);
     }
-    .brand h1{
-      margin:0;
-      font-size:1.2rem;
-      letter-spacing:.2px;
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: .2px;
     }
-    .nav{
-      margin-top:18px;
-      display:grid; gap:10px;
+
+    .nav {
+      margin-top: 18px;
+      display: grid;
+      gap: 10px;
     }
-    .nav a{
-      color:#fff; text-decoration:none; padding:10px 12px; border-radius:10px;
-      background:rgba(255,255,255,.08);
-      backdrop-filter:saturate(140%) blur(2px);
+
+    .nav a {
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .08);
+      backdrop-filter: saturate(140%) blur(2px);
     }
-    .nav a:hover{ background:rgba(255,255,255,.16) }
-    .sidebar .credit{
-      font-size:.8rem; opacity:.85;
+
+    .nav a:hover {
+      background: rgba(255, 255, 255, .16)
+    }
+
+    .sidebar .credit {
+      font-size: .8rem;
+      opacity: .85;
     }
 
     /* 中央：ヒーロー（大きい緑の面） */
-    .hero{
-      grid-column:2;
-      grid-row:1;
-      background:var(--green);
-      border-radius:var(--radius);
-      padding:40px 42px;
-      display:flex; flex-direction:column; justify-content:space-between;
-      box-shadow:0 10px 24px rgba(39,217,138,.25);
-      color:#053021;
+    .hero {
+      grid-column: 2;
+      grid-row: 1;
+      background: var(--green);
+      border-radius: var(--radius);
+      padding: 40px 42px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 10px 24px rgba(39, 217, 138, .25);
+      color: #053021;
     }
-    .hero h2{ margin:0 0 10px; font-size:2rem }
-    .hero p{ margin:0 0 24px; font-size:1.05rem }
-    .hero .actions{ display:flex; gap:12px; flex-wrap:wrap }
-    .btn{
-      border:0; border-radius:12px; padding:12px 16px; font-weight:700; cursor:pointer;
-      transition:transform .06s ease, box-shadow .2s ease; letter-spacing:.3px;
+
+    .hero h2 {
+      margin: 0 0 10px;
+      font-size: 2rem
     }
-    .btn:active{ transform:translateY(1px) }
-    .btn-dark{ background:#0b3b2b; color:#fff }
-    .btn-ghost{ background:rgba(255,255,255,.22); color:#093a2a }
-    .room{
-      display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+
+    .hero p {
+      margin: 0 0 24px;
+      font-size: 1.05rem
     }
-    .room input{
-      padding:12px 12px; border-radius:12px; border:0; min-width:200px;
-      background:rgba(255,255,255,.9);
+
+    .hero .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .06s ease, box-shadow .2s ease;
+      letter-spacing: .3px;
+    }
+
+    .btn:active {
+      transform: translateY(1px)
+    }
+
+    .btn-dark {
+      background: #0b3b2b;
+      color: #fff
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, .22);
+      color: #093a2a
+    }
+
+    .room {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .room input {
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 0;
+      min-width: 200px;
+      background: rgba(255, 255, 255, .9);
     }
 
     /* 右：上下カード（赤／橙） */
-    .card{
-      border-radius:var(--radius);
-      padding:22px;
-      color:#fff;
-      box-shadow:0 10px 22px rgba(15,23,42,.12);
+    .card {
+      border-radius: var(--radius);
+      padding: 22px;
+      color: #fff;
+      box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
     }
-    .card h3{ margin:0 0 8px }
-    .right-top{ 
-      grid-column:3; 
-      grid-row:1; 
-      background:var(--red); 
-      align-self:start;   /* 中身の高さに合わせて上寄せ */
+
+    .card h3 {
+      margin: 0 0 8px
     }
-    .right-bottom{ grid-column:3; grid-row:1; align-self:end; background:var(--orange); color:#3d2600 }
+
+    .right-top {
+      grid-column: 3;
+      grid-row: 1;
+      background: var(--red);
+      align-self: start;
+      /* 中身の高さに合わせて上寄せ */
+    }
+
+    .right-bottom {
+      grid-column: 3;
+      grid-row: 1;
+      align-self: end;
+      background: var(--orange);
+      color: #3d2600
+    }
 
     /* 下：横帯（青） */
-    .cta{
-      grid-column:2 / 4;
-      grid-row:2;
-      background:var(--blue);
-      color:#fff;
-      border-radius:var(--radius);
-      padding:22px;
-      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-      box-shadow:0 10px 24px rgba(13,115,232,.25);
+    .cta {
+      grid-column: 2 / 4;
+      grid-row: 2;
+      background: var(--blue);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      box-shadow: 0 10px 24px rgba(13, 115, 232, .25);
     }
-    .cta .cta-actions{ display:flex; gap:10px; flex-wrap:wrap }
-    .btn-white{ background:#fff; color:#0d73e8 }
-    .btn-outline{ background:transparent; color:#fff; outline:2px solid rgba(255,255,255,.8) }
+
+    .cta .cta-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .btn-white {
+      background: #fff;
+      color: #0d73e8
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #fff;
+      outline: 2px solid rgba(255, 255, 255, .8)
+    }
 
     /* リンクの見た目統一 */
-    a.btn{ display:inline-block; text-decoration:none }
+    a.btn {
+      display: inline-block;
+      text-decoration: none
+    }
 
-  
-  
-ChatGPT:
 
-なるほどです！🙆‍♂️
-「デモを開く」ボタンだけは 見た目は紫グラデーション のまま、小さめサイズ（元のCTAボタンくらい）に戻したいんですね。
+    /* 小さめ紫ボタン（CTA用） */
+    .btn-play-small {
+      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      display: inline-flex;
+      align-items: center;
+      gap: .4em;
+      color: #fff;
+      text-decoration: none;
+      background: linear-gradient(135deg, #b350be 0%, #702d85 50%, #b350be 100%);
+      background-size: 220% 220%;
+      box-shadow: 0 6px 16px rgba(112, 45, 133, .35);
+      transition: transform .15s ease, box-shadow .35s ease, background-position .6s ease;
+      position: relative;
+      overflow: hidden;
+    }
 
-既存の .btn-play は「大きくて目立つ」用なので、
-→ 新しく .btn-play-small を用意して小型版にしましょう。
+    .btn-play-small:hover {
+      transform: translateY(-1px);
+      background-position: 100% 0;
+      box-shadow: 0 10px 20px rgba(112, 45, 133, .45);
+    }
 
-差分コード例
- <style>
-@@
-   .btn-play:hover::after{ transform:translateX(60%) rotate(8deg) }
-     @media (prefers-reduced-motion: reduce){
-     .btn-play, .btn-play:hover{ transition:none; transform:none }
-     .btn-play::after{ display:none }
-   }
+    .btn-play-small:active {
+      transform: translateY(0) scale(0.98)
+    }
 
-  /* 小さめ紫ボタン（CTA用） */
-  .btn-play-small{
-    font-size:1rem;
-    padding:10px 20px;
-    border-radius:12px;
-    font-weight:700;
-    letter-spacing:.02em;
-    display:inline-flex; align-items:center; gap:.4em;
-    color:#fff; text-decoration:none;
-    background:linear-gradient(135deg, #b350be 0%, #702d85 50%, #b350be 100%);
-    background-size:220% 220%;
-    box-shadow:0 6px 16px rgba(112,45,133,.35);
-    transition:transform .15s ease, box-shadow .35s ease, background-position .6s ease;
-    position:relative; overflow:hidden;
-  }
-  .btn-play-small:hover{
-    transform:translateY(-1px);
-    background-position:100% 0;
-    box-shadow:0 10px 20px rgba(112,45,133,.45);
-  }
-  .btn-play-small:active{ transform:translateY(0) scale(0.98) }
-  .btn-play-small::after{
-    content:""; position:absolute; inset:-40% -30%;
-    background:linear-gradient(105deg, rgba(255,255,255,.0) 0%, rgba(255,255,255,.25) 50%, rgba(255,255,255,.0) 100%);
-    transform:translateX(-120%) rotate(8deg);
-    transition:transform .8s ease;
-    pointer-events:none;
-  }
-  .btn-play-small:hover::after{ transform:translateX(60%) rotate(8deg) }
+    .btn-play-small::after {
+      content: "";
+      position: absolute;
+      inset: -40% -30%;
+      background: linear-gradient(105deg, rgba(255, 255, 255, .0) 0%, rgba(255, 255, 255, .25) 50%, rgba(255, 255, 255, .0) 100%);
+      transform: translateX(-120%) rotate(8deg);
+      transition: transform .8s ease;
+      pointer-events: none;
+    }
 
-  
-  
+    .btn-play-small:hover::after {
+      transform: translateX(60%) rotate(8deg)
+    }
+
+
+
 
     /* ====== レスポンシブ ====== */
-    @media (max-width: 1000px){
-      .layout{
-        grid-template-columns: minmax(0,1fr);
+    @media (max-width: 1000px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
         grid-template-rows: auto auto auto auto;
       }
-      .sidebar{ grid-row:auto; grid-column:auto; flex-direction:row; align-items:center; gap:14px; }
-      .nav{ grid-auto-flow:column; overflow:auto; white-space:nowrap; gap:8px; margin:0 }
-      .nav a{ padding:8px 10px }
-      .hero{ grid-column:auto; grid-row:auto }
-      .right-top, .right-bottom{ grid-column:auto; grid-row:auto }
-      .cta{ grid-column:auto; grid-row:auto }
-      .sidebar .credit{ display:none } /* モバイルは簡素化 */
+
+      .sidebar {
+        grid-row: auto;
+        grid-column: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .nav {
+        grid-auto-flow: column;
+        overflow: auto;
+        white-space: nowrap;
+        gap: 8px;
+        margin: 0
+      }
+
+      .nav a {
+        padding: 8px 10px
+      }
+
+      .hero {
+        grid-column: auto;
+        grid-row: auto
+      }
+
+      .right-top,
+      .right-bottom {
+        grid-column: auto;
+        grid-row: auto
+      }
+
+      .cta {
+        grid-column: auto;
+        grid-row: auto
+      }
+
+      .sidebar .credit {
+        display: none
+      }
+
+      /* モバイルは簡素化 */
     }
   </style>
 </head>
+
 <body>
   <div class="layout">
 
     <!-- 左：縦帯（サイドバー）を共通化 -->
     <div id="sidebar-mount"></div>
     <script>
-      (async () => {
-        const el = document.getElementById('sidebar-mount');
-        // 相対→絶対の順でフォールバック読み込み（どちらか存在すればOK）
-        async function loadSidebar() {
-          const tries = ["./partials/sidebar.html", "/partials/sidebar.html"];
-          for (const url of tries) {
-            try {
-              const res = await fetch(url, { cache: "no-store" });
-              if (res.ok) { el.innerHTML = await res.text(); return; }
-            } catch (e) {}
+        (async () => {
+          const el = document.getElementById('sidebar-mount');
+          // 相対→絶対の順でフォールバック読み込み（どちらか存在すればOK）
+          async function loadSidebar() {
+            const tries = ["./partials/sidebar.html", "/partials/sidebar.html"];
+            for (const url of tries) {
+              try {
+                const res = await fetch(url, { cache: "no-store" });
+                if (res.ok) { el.innerHTML = await res.text(); return; }
+              } catch (e) { }
+            }
+            console.warn("sidebar.html が見つかりませんでした。");
           }
-          console.warn("sidebar.html が見つかりませんでした。");
-        }
-        loadSidebar();
-      })();
+          loadSidebar();
+        })();
     </script>
 
     <!-- 中央：ヒーロー（大きい緑） -->
@@ -286,12 +428,12 @@ ChatGPT:
       <div>
         <h2>カードやボドゲを “自由に作り, 自由に遊ぶ”</h2>
         <p>画像をアップロードしてカード化。すぐに遊ぶことが可能。<br>
-           ダイス・トークン・カウンター機能搭載。ボドゲ・カードゲームのプレイを最大限にサポート！<br>
-           ドラッグ・回転・表裏反転・デッキシャッフル機能搭載。リアルに近いプレイ体験を！<br>
-           ブラウザだけで、すぐにプレイ可能。基本無料・インストール不要！<br>
-           自分だけのカードゲーム・ボードゲームを“すぐに”友達と！<br>
-           2人～4人までのプレイ人数に対応。<br>
-           すぐに遊べる、オリジナルゲームが搭載。<br>
+          ダイス・トークン・カウンター機能搭載。ボドゲ・カードゲームのプレイを最大限にサポート！<br>
+          ドラッグ・回転・表裏反転・デッキシャッフル機能搭載。リアルに近いプレイ体験を！<br>
+          ブラウザだけで、すぐにプレイ可能。基本無料・インストール不要！<br>
+          自分だけのカードゲーム・ボードゲームを“すぐに”友達と！<br>
+          2人～4人までのプレイ人数に対応。<br>
+          すぐに遊べる、オリジナルゲームが搭載。<br>
         </p>
       </div>
 
@@ -301,15 +443,15 @@ ChatGPT:
           <figcaption style="margin-bottom:8px; font-weight:700; font-size:1.5rem; color:#053021;">
             カードゲーム
           </figcaption>
-          <img src="field-card-pic.png" alt="カードゲーム" 
-               style="width:100%; height:auto; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.25);" />
+          <img src="field-card-pic.png" alt="カードゲーム"
+            style="width:100%; height:auto; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.25);" />
         </figure>
         <figure style="text-align:center; flex:1; max-width:48%;">
           <figcaption style="margin-bottom:8px; font-weight:700; font-size:1.5rem; color:#053021;">
             ボードゲーム
           </figcaption>
-          <img src="field-board-pic.png" alt="ボードゲーム" 
-               style="width:100%; height:auto; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.25);" />
+          <img src="field-board-pic.png" alt="ボードゲーム"
+            style="width:100%; height:auto; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.25);" />
         </figure>
       </div>
 
@@ -358,4 +500,5 @@ ChatGPT:
   </div>
 
 </body>
+
 </html>
