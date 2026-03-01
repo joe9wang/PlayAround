@@ -525,6 +525,8 @@
       border: 1px solid #e3e3e3;
       border-radius: 12px;
       padding: 12px;
+      display: flex;
+      flex-direction: column;
     }
 
     .lobby-label {
