@@ -14,7 +14,8 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 // Required to parse raw body for Stripe signature verification in Vercel
-export const config = {
+// Required to parse raw body for Stripe signature verification in Vercel
+module.exports.config = {
     api: {
         bodyParser: false,
     },
@@ -29,7 +30,7 @@ async function buffer(readable) {
     return Buffer.concat(chunks);
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
