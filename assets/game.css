@@ -1463,8 +1463,13 @@
     @media (max-width: 640px) {
       .site-footer__inner {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
+        justify-content: center;
         gap: 6px;
+      }
+
+      .site-footer small {
+        position: static;
       }
 
       .affiliate-text {
@@ -1543,14 +1548,16 @@
     .site-footer__inner {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       width: 100%;
       max-width: 1200px;
       margin: 0 auto;
+      position: relative;
     }
 
     .site-footer small {
-      margin-left: auto;
+      position: absolute;
+      right: 12px;
     }
 
     /* コンテンツがフッターに隠れないよう余白を確保 */
