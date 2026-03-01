@@ -3,9 +3,6 @@
 
 <head>
 
-  <!-- PropellerAds verification (静的に配置) -->
-  <script>(function (s) { s.dataset.zone = '9874020', s.src = 'https://groleegni.net/vignette.min.js' })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-
 
   <link rel="stylesheet" href="./assets/site.css">
 
@@ -406,21 +403,21 @@
     <!-- 左：縦帯（サイドバー）を共通化 -->
     <div id="sidebar-mount"></div>
     <script>
-        (async () => {
-          const el = document.getElementById('sidebar-mount');
-          // 相対→絶対の順でフォールバック読み込み（どちらか存在すればOK）
-          async function loadSidebar() {
-            const tries = ["./partials/sidebar.html", "/partials/sidebar.html"];
-            for (const url of tries) {
-              try {
-                const res = await fetch(url, { cache: "no-store" });
-                if (res.ok) { el.innerHTML = await res.text(); return; }
-              } catch (e) { }
-            }
-            console.warn("sidebar.html が見つかりませんでした。");
+      (async () => {
+        const el = document.getElementById('sidebar-mount');
+        // 相対→絶対の順でフォールバック読み込み（どちらか存在すればOK）
+        async function loadSidebar() {
+          const tries = ["./partials/sidebar.html", "/partials/sidebar.html"];
+          for (const url of tries) {
+            try {
+              const res = await fetch(url, { cache: "no-store" });
+              if (res.ok) { el.innerHTML = await res.text(); return; }
+            } catch (e) { }
           }
-          loadSidebar();
-        })();
+          console.warn("sidebar.html が見つかりませんでした。");
+        }
+        loadSidebar();
+      })();
     </script>
 
     <!-- 中央：ヒーロー（大きい緑） -->

@@ -1,38 +1,39 @@
 <!DOCTYPE html>
 <html lang="ja">
- <head>
- 
-<!-- PropellerAds verification (静的に配置) -->
-<script>(function(s){s.dataset.zone='9874020',s.src='https://groleegni.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
- 
- 
- 
- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
-     crossorigin="anonymous"></script>
- 
+
+<head>
+
+
+
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
+    crossorigin="anonymous"></script>
+
   <!-- Favicon -->
-  <link href="/favicon.ico" rel="icon" sizes="any"/>
-  <link href="/favicon-32.png?v=1" rel="icon" sizes="32x32" type="image/png"/>
-  <link href="/favicon-16.png?v=1" rel="icon" sizes="16x16" type="image/png"/>
-  <link href="/apple-touch-icon.png?v=1" rel="apple-touch-icon" sizes="180x180"/>
-  <link href="/site.webmanifest" rel="manifest"/>
-  <script async="" crossorigin="anonymous" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665">
-  </script>
-  <meta charset="utf-8"/>
+  <link href="/favicon.ico" rel="icon" sizes="any" />
+  <link href="/favicon-32.png?v=1" rel="icon" sizes="32x32" type="image/png" />
+  <link href="/favicon-16.png?v=1" rel="icon" sizes="16x16" type="image/png" />
+  <link href="/apple-touch-icon.png?v=1" rel="apple-touch-icon" sizes="180x180" />
+  <link href="/site.webmanifest" rel="manifest" />
+  <script async="" crossorigin="anonymous"
+    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665">
+    </script>
+  <meta charset="utf-8" />
   <!-- === Basic SEO / AdSense-friendly metas === -->
   <meta name="description" content="PlayAroundは、画像を使って最大4人で遊べるオンラインのボード＆カードゲーム。ルームを作成して友だちと手軽に遊べます。">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="https://www.play-around.app/">
   <title>
-   PlayAround
+    PlayAround
   </title>
-  <meta content="width=device-width, initial-scale=1" name="viewport"/>
-  
-  <link rel="stylesheet" href="assets/game.css">
-  
+  <meta content="width=device-width, initial-scale=1" name="viewport" />
 
- </head>
- <body>
+  <link rel="stylesheet" href="assets/game.css">
+
+
+</head>
+
+<body>
   <!-- === Global Header / Navigation (サイト共通導線) === -->
   <header class="site-header" role="banner">
     <div class="site-header__inner">
@@ -46,596 +47,607 @@
         <a href="/contact.html">お問い合わせ</a>
       </nav>
     </div>
-  </header> 
- 
- 
+  </header>
+
+
   <h1>
-  
-   <span data-i18n="app.title">
-    画像で遊べるボドゲ・カードゲーム（最大4人）
-   </span>
-   <span aria-label="SOLVENTER" class="brand-badge">
-    SOLVENTER
-   </span>
-   <!-- 言語切替 -->
-   <select aria-label="Language" class="lang-switch" id="lang-switch">
-    <option value="ja">
-     日本語
-    </option>
-    <option value="en">
-     English
-    </option>
-   </select>
-   <span id="session-indicator">
-    ROOM: - / PLAYER: -
-   </span>
-  </h1>
-  <div aria-modal="true" id="lobby" role="dialog">
-   <div class="lobby-card">
-    <!-- ロビー右上：言語切替 -->
-    <div aria-label="Language Selector" class="lobby-lang" role="group">
-     <span class="lobby-lang-label">
-      Language
-     </span>
-     <select aria-label="Language" class="lang-switch-inline" id="lang-switch-lobby">
+
+    <span data-i18n="app.title">
+      画像で遊べるボドゲ・カードゲーム（最大4人）
+    </span>
+    <span aria-label="SOLVENTER" class="brand-badge">
+      SOLVENTER
+    </span>
+    <!-- 言語切替 -->
+    <select aria-label="Language" class="lang-switch" id="lang-switch">
       <option value="ja">
-       日本語
+        日本語
       </option>
       <option value="en">
-       English
+        English
       </option>
-     </select>
-    </div>
-    <div class="lobby-title" data-i18n="lobby.welcome">
-     プレイアラウンドへようこそ！
-    </div>
-    <div class="lobby-links">
-     <a data-i18n="links.privacy" href="/privacy.html" rel="noopener" target="_blank">
-      プライバシーポリシー
-     </a>
-     |
-     <a data-i18n="links.terms" href="/terms.html" rel="noopener" target="_blank">
-      利用規約
-     </a>
-     |
-     <a data-i18n="links.contact" href="/contact.html" rel="noopener" target="_blank">
-      お問い合わせ
-     </a>
-    </div>
-    <!-- ロビー上部のログインUI（リンクの直下） -->
-    <div class="lobby-auth" style="text-align:center; margin:8px 0 12px;">
-       <button class="btn secondary" id="login-google" style="padding:8px 12px;"
-         data-i18n="auth.login">
-         Googleでログイン
-       </button>
-       <button class="btn secondary" id="logout-google" style="padding:8px 12px; display:none;"
-         data-i18n="auth.logout">
-         ログアウト
-       </button>
-       <button class="btn secondary" id="btn-mypage"
-          style="padding:8px 12px; display:none;"
-          data-i18n="app.mypage"
+    </select>
+    <span id="session-indicator">
+      ROOM: - / PLAYER: -
+    </span>
+  </h1>
+  <div aria-modal="true" id="lobby" role="dialog">
+    <div class="lobby-card">
+      <!-- ロビー右上：言語切替 -->
+      <div aria-label="Language Selector" class="lobby-lang" role="group">
+        <span class="lobby-lang-label">
+          Language
+        </span>
+        <select aria-label="Language" class="lang-switch-inline" id="lang-switch-lobby">
+          <option value="ja">
+            日本語
+          </option>
+          <option value="en">
+            English
+          </option>
+        </select>
+      </div>
+      <div class="lobby-title" data-i18n="lobby.welcome">
+        プレイアラウンドへようこそ！
+      </div>
+      <div class="lobby-links">
+        <a data-i18n="links.privacy" href="/privacy.html" rel="noopener" target="_blank">
+          プライバシーポリシー
+        </a>
+        |
+        <a data-i18n="links.terms" href="/terms.html" rel="noopener" target="_blank">
+          利用規約
+        </a>
+        |
+        <a data-i18n="links.contact" href="/contact.html" rel="noopener" target="_blank">
+          お問い合わせ
+        </a>
+      </div>
+      <!-- ロビー上部のログインUI（リンクの直下） -->
+      <div class="lobby-auth" style="text-align:center; margin:8px 0 12px;">
+        <button class="btn secondary" id="login-google" style="padding:8px 12px;" data-i18n="auth.login">
+          Googleでログイン
+        </button>
+        <button class="btn secondary" id="logout-google" style="padding:8px 12px; display:none;"
+          data-i18n="auth.logout">
+          ログアウト
+        </button>
+        <button class="btn secondary" id="btn-mypage" style="padding:8px 12px; display:none;" data-i18n="app.mypage"
           onclick="location.href='./mypage.html'">
           マイページ
-       </button>
-     <span id="whoami" style="margin-left:8px; color:#555; font-size:12px; display:none;">
-     </span>
+        </button>
+        <span id="whoami" style="margin-left:8px; color:#555; font-size:12px; display:none;">
+        </span>
+      </div>
+      <div class="lobby-grid">
+        <!-- Join (left column) -->
+        <section aria-labelledby="join-title" class="lobby-section">
+          <div class="lobby-subtitle" data-i18n="join.section" id="join-title">
+            既存ルームに参加（非ホスト）
+          </div>
+          <label class="lobby-label" data-i18n="join.roomId">
+            参加するルームID
+          </label>
+          <div class="row" style="margin-bottom:8px;">
+            <input class="field" data-i18n-placeholder="join.roomId.ph" id="join-room-id"
+              placeholder="例: room-abc / 1234" type="text" />
+          </div>
+          <label class="lobby-label" data-i18n="join.password">
+            入室パスワード
+          </label>
+          <div class="row" style="margin-bottom:8px;">
+            <input class="field" data-i18n-placeholder="join.password.ph" id="join-room-pass"
+              placeholder="ホストが設定した場合は必須" type="password" />
+          </div>
+          <label class="lobby-label" data-i18n="join.name">
+            プレイヤー名
+          </label>
+          <div class="row" style="margin-bottom:8px;">
+            <input class="field" data-i18n-placeholder="join.name.ph" id="player-name" maxlength="24"
+              placeholder="名前（例: SOLVENTER）" type="text" />
+          </div>
+          <label class="lobby-label" data-i18n="join.chooseSeat">
+            座席を選択
+          </label>
+          <!-- join 用の座席グリッド（IDは付けない：JSが :not(#create-seat-grid) で拾う） -->
+          <div aria-label="Join seats" class="seat-grid" role="group">
+            <button class="seat-btn" data-seat="1" type="button">
+              P1
+              <span class="seat-note">
+              </span>
+            </button>
+            <button class="seat-btn" data-seat="2" type="button">
+              P2
+              <span class="seat-note">
+              </span>
+            </button>
+            <button class="seat-btn" data-seat="3" type="button">
+              P3
+              <span class="seat-note">
+              </span>
+            </button>
+            <button class="seat-btn" data-seat="4" type="button">
+              P4
+              <span class="seat-note">
+              </span>
+            </button>
+          </div>
+          <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
+            <button class="btn" data-i18n="join.start" disabled="" id="start-btn" type="button">
+              開始
+            </button>
+          </div>
+        </section>
+        <!-- Create (right column) -->
+        <section aria-labelledby="create-title" class="lobby-section">
+          <div class="lobby-subtitle" data-i18n="create.section" id="create-title">
+            新しいルームを作成して参加（ホスト）
+          </div>
+          <label class="lobby-label" data-i18n="create.roomId">
+            新しいルームを作成
+          </label>
+          <div class="row" style="margin-bottom:8px;">
+            <input class="field" data-i18n-placeholder="create.roomId.ph" id="new-room-id"
+              placeholder="例: room-abc / 1234" type="text" />
+          </div>
+          <label class="lobby-label" data-i18n="create.password">
+            入室パスワード（任意）
+          </label>
+          <div class="row" style="margin-bottom:12px;">
+            <input class="field" data-i18n-placeholder="create.password.ph" id="new-room-pass" placeholder="設定すると参加時に必須"
+              type="password" />
+          </div>
+          <label class="lobby-label" data-i18n="create.name">
+            プレイヤー名
+          </label>
+          <div class="row" style="margin-bottom:12px;">
+            <input class="field" data-i18n-placeholder="create.name.ph" id="new-player-name" maxlength="24"
+              placeholder="名前（例: SOLVENTER）" type="text" />
+          </div>
+          <label class="lobby-label" data-i18n="create.chooseSeat">
+            座席を選択
+          </label>
+          <!-- create 用の座席グリッド（JSが #create-seat-grid を参照） -->
+          <div aria-label="Create seats" class="seat-grid" id="create-seat-grid" role="group">
+            <button class="seat-btn" data-create-seat="1" type="button">
+              P1
+            </button>
+            <button class="seat-btn" data-create-seat="2" type="button">
+              P2
+            </button>
+            <button class="seat-btn" data-create-seat="3" type="button">
+              P3
+            </button>
+            <button class="seat-btn" data-create-seat="4" type="button">
+              P4
+            </button>
+          </div>
+          <label class="lobby-label" data-i18n="create.chooseMode" style="margin-top:10px;">
+            フィールド構成を選択
+          </label>
+          <div class="row" id="create-mode-row" style="gap:8px;">
+            <button aria-pressed="true" class="btn secondary" data-i18n="create.mode.card" id="pick-mode-card"
+              type="button">
+              🃏 カードゲーム
+            </button>
+            <button aria-pressed="false" class="btn secondary" data-i18n="create.mode.board" id="pick-mode-board"
+              type="button">
+              🎲 ボードゲーム
+            </button>
+            <button id="pick-mode-trump" class="btn secondary" data-i18n="create.mode.trump">トランプ</button>
+          </div>
+          <div class="row" id="create-btn-row" style="margin-top:16px; justify-content:flex-end;">
+            <button class="btn" data-i18n="create.createBtn" id="create-room-btn">
+              作成
+            </button>
+          </div>
+        </section>
+      </div>
+      <div class="lobby-credit">PlayAround — © 2025 SOLVENTER</div>
     </div>
-    <div class="lobby-grid">
-     <!-- Join (left column) -->
-     <section aria-labelledby="join-title" class="lobby-section">
-      <div class="lobby-subtitle" data-i18n="join.section" id="join-title">
-       既存ルームに参加（非ホスト）
-      </div>
-      <label class="lobby-label" data-i18n="join.roomId">
-       参加するルームID
-      </label>
-      <div class="row" style="margin-bottom:8px;">
-       <input class="field" data-i18n-placeholder="join.roomId.ph" id="join-room-id" placeholder="例: room-abc / 1234" type="text"/>
-      </div>
-      <label class="lobby-label" data-i18n="join.password">
-       入室パスワード
-      </label>
-      <div class="row" style="margin-bottom:8px;">
-       <input class="field" data-i18n-placeholder="join.password.ph" id="join-room-pass" placeholder="ホストが設定した場合は必須" type="password"/>
-      </div>
-      <label class="lobby-label" data-i18n="join.name">
-       プレイヤー名
-      </label>
-      <div class="row" style="margin-bottom:8px;">
-       <input class="field" data-i18n-placeholder="join.name.ph" id="player-name" maxlength="24" placeholder="名前（例: SOLVENTER）" type="text"/>
-      </div>
-      <label class="lobby-label" data-i18n="join.chooseSeat">
-       座席を選択
-      </label>
-      <!-- join 用の座席グリッド（IDは付けない：JSが :not(#create-seat-grid) で拾う） -->
-      <div aria-label="Join seats" class="seat-grid" role="group">
-       <button class="seat-btn" data-seat="1" type="button">
-        P1
-        <span class="seat-note">
-        </span>
-       </button>
-       <button class="seat-btn" data-seat="2" type="button">
-        P2
-        <span class="seat-note">
-        </span>
-       </button>
-       <button class="seat-btn" data-seat="3" type="button">
-        P3
-        <span class="seat-note">
-        </span>
-       </button>
-       <button class="seat-btn" data-seat="4" type="button">
-        P4
-        <span class="seat-note">
-        </span>
-       </button>
-      </div>
-      <div class="row" style="margin-top:10px; justify-content:flex-end; gap:8px;">
-       <button class="btn" data-i18n="join.start" disabled="" id="start-btn" type="button">
-        開始
-       </button>
-      </div>
-     </section>
-     <!-- Create (right column) -->
-     <section aria-labelledby="create-title" class="lobby-section">
-      <div class="lobby-subtitle" data-i18n="create.section" id="create-title">
-       新しいルームを作成して参加（ホスト）
-      </div>
-      <label class="lobby-label" data-i18n="create.roomId">
-       新しいルームを作成
-      </label>
-      <div class="row" style="margin-bottom:8px;">
-       <input class="field" data-i18n-placeholder="create.roomId.ph" id="new-room-id" placeholder="例: room-abc / 1234" type="text"/>
-      </div>
-      <label class="lobby-label" data-i18n="create.password">
-       入室パスワード（任意）
-      </label>
-      <div class="row" style="margin-bottom:12px;">
-       <input class="field" data-i18n-placeholder="create.password.ph" id="new-room-pass" placeholder="設定すると参加時に必須" type="password"/>
-      </div>
-      <label class="lobby-label" data-i18n="create.name">
-       プレイヤー名
-      </label>
-      <div class="row" style="margin-bottom:12px;">
-       <input class="field" data-i18n-placeholder="create.name.ph" id="new-player-name" maxlength="24" placeholder="名前（例: SOLVENTER）" type="text"/>
-      </div>
-      <label class="lobby-label" data-i18n="create.chooseSeat">
-       座席を選択
-      </label>
-      <!-- create 用の座席グリッド（JSが #create-seat-grid を参照） -->
-      <div aria-label="Create seats" class="seat-grid" id="create-seat-grid" role="group">
-       <button class="seat-btn" data-create-seat="1" type="button">
-        P1
-       </button>
-       <button class="seat-btn" data-create-seat="2" type="button">
-        P2
-       </button>
-       <button class="seat-btn" data-create-seat="3" type="button">
-        P3
-       </button>
-       <button class="seat-btn" data-create-seat="4" type="button">
-        P4
-       </button>
-      </div>
-      <label class="lobby-label" data-i18n="create.chooseMode" style="margin-top:10px;">
-       フィールド構成を選択
-      </label>
-      <div class="row" id="create-mode-row" style="gap:8px;">
-       <button aria-pressed="true" class="btn secondary" data-i18n="create.mode.card" id="pick-mode-card" type="button">
-        🃏 カードゲーム
-       </button>
-       <button aria-pressed="false" class="btn secondary" data-i18n="create.mode.board" id="pick-mode-board" type="button">
-        🎲 ボードゲーム
-       </button>
-       <button id="pick-mode-trump" class="btn secondary" data-i18n="create.mode.trump">トランプ</button>
-      </div>
-      <div class="row" id="create-btn-row" style="margin-top:16px; justify-content:flex-end;">
-       <button class="btn" data-i18n="create.createBtn" id="create-room-btn">
-        作成
-       </button>
-      </div>
-     </section>
-    </div>
-    <div class="lobby-credit">PlayAround — © 2025 SOLVENTER</div>
-   </div>
   </div>
   <div id="upload-area">
-   📥 画像をタップ（またはドラッグ＆ドロップ）で追加
-   <input accept="image/*" id="file-input" multiple="" type="file"/>
+    📥 画像をタップ（またはドラッグ＆ドロップ）で追加
+    <input accept="image/*" id="file-input" multiple="" type="file" />
   </div>
   <div id="sidebar" style="display:flex; flex-direction:column; overflow:hidden;">
 
-  <!-- 操作パネル：ここだけ縦スクロールにする -->
-  <div id="ops-scroll" style="flex: 1 1 0%; overflow:auto; min-height:0; padding-right:4px;">
-  
-  <h2 class="panel-title panel-title--left">
-    <button id="toggle-left" class="inline-toggle" data-i18n-title="side.panel.toggle">◀</button>
-    <span class="panel-title__text" data-i18n="side.panel">操作パネル</span>
-  </h2>
-   
-   <!-- Save/Load: compact two-up row -->
-   <div class="sl-row" role="group" aria-label="Save/Load">
-     <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
-     <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
-   </div>
-   <div class="section-label">自分のカード<br>
-   <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで裏表)</span>
-   </div>
-   <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 全カード一覧</button>
-   <div class="sl-row" role="group" aria-label="Face up/down">
-     <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
-     <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🔍 捨て札一覧</button>
-   </div>
-   <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
-   <div class="sl-row" role="group" aria-label="Face up/down">
-     <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏に</button>
-     <button class="sl-btn" onclick="faceUpAll()"  data-i18n="side.faceUp">🂡 全て表に</button>
-   </div>
-   <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
-   <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードを集める</button>
-   <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
-   <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
-   <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
-  <div class="section-label">コイン・ダイス<br>
-  <span style="font-size:12px;color:#666;">(左クリックか右クリックで削除)</span>
-  </div>
-  <div class="sl-row" role="group" aria-label="dice-coin-row1">
-    <button class="sl-btn" id="flip-coin-btn" onclick="flipCoin()" data-i18n="side.flipCoin">🪙 コイントス</button>
-    <button class="sl-btn" id="roll-d6-btn"  data-i18n="side.rollD6">🎲 6面ダイス</button>
-  </div>
-  <div class="sl-row" role="group" aria-label="dice-coin-row2">
-    <button class="sl-btn" id="roll-d10-btn" onclick="rollD10()" data-i18n="side.rollD10">🎲 10面ダイス</button>
-    <button class="sl-btn" id="roll-d20-btn" onclick="rollD20()" data-i18n="side.rollD20">🎲 20面ダイス</button>
-  </div>
-   <div class="section-label">カウンター・トークン<br>
-   <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで削除)</span>
-   </div>
-   <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
-   
-   <div class="sl-row" role="group" aria-label="plus1/plus10">
-     <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1</button>
-     <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10</button>
-   </div>
-   <div class="sl-row" role="group" aria-label="plus50/plus100">
-     <button class="sl-btn" onclick="spawnCounter('+50')" data-i18n="side.plus50">➕50</button>
-     <button class="sl-btn" onclick="spawnCounter('+100')" data-i18n="side.plus100">➕100</button>
-   </div>
-   <div class="sl-row" role="group" aria-label="plus1/plus10">
-     <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1</button>
-     <button class="sl-btn" onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10</button>
-   </div>
-   <div class="sl-row" role="group" aria-label="plus50/plus100">
-     <button class="sl-btn" onclick="spawnCounter('-50')" data-i18n="side.minus50">➖50</button>
-     <button class="sl-btn" onclick="spawnCounter('-100')" data-i18n="side.minus100">➖100</button>
-   </div>
-   <button class="sl-btn" onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
-   
-   <button class="sl-btn" onclick="openBackImagePicker()" data-i18n="side.BackImage">🖼 カード背景画像</button>
-   <!-- 非表示のファイル入力（画像選択ダイアログ用） -->
-   <input id="card-back-input" type="file" accept="image/*" style="display:none">
-   
-   <button class="sl-btn" onclick="toggleFieldSizeOptions()" data-i18n="side.fieldSize">🖼 フィールドサイズ変更</button>
-   <div id="field-size-options">
-     <button class="sl-btn" onclick="setFieldSize('small')"  data-i18n="side.sizeS">小</button>
-     <button class="sl-btn" onclick="setFieldSize('medium')" data-i18n="side.sizeM">中</button>
-     <button class="sl-btn" onclick="setFieldSize('large')"  data-i18n="side.sizeL">大</button>
-   </div>
-   
-   <div aria-live="polite" class="host-toggle" id="host-otherops">
-   <div class="section-label">ホスト専用</div>
-    <div class="row" style="justify-content:space-between; align-items:center;">
-     <div style="font-size:12px;color:#555;">
-      他プレイヤーのカード操作
-     </div>
-     <div class="row" style="align-items:center; gap:8px;">
-      <label class="switch" title="ONにすると、他人のカードも移動・表裏切替ができる">
-       <input id="toggle-other-ops" type="checkbox"/>
-       <span class="slider">
-       </span>
-      </label>
-      <span id="toggle-other-ops-text" style="width:36px; text-align:right; font-weight:700;">
-       OFF
-      </span>
-     </div>
-    </div>
-   </div>
-   
-  <!-- ★ 非ホスト専用：退室ボタン（参加中のみ表示） -->
-  <button class="sl-btn" id="leave-room-btn" style="display:none">
-    🚪 退室する（ゲスト）
-  </button>
-   
-   <button class="danger sl-btn" id="end-room-btn" style="display:none">
-    🚪 ルームを終了（ホスト）
-   </button>
+    <!-- 操作パネル：ここだけ縦スクロールにする -->
+    <div id="ops-scroll" style="flex: 1 1 0%; overflow:auto; min-height:0; padding-right:4px;">
 
-  </div><!-- /#ops-scroll -->
-   
-   
-  <!-- ===== ログ＆チャット（操作パネルとは分離） ===== -->
-  <div id="chat-wrap" style="flex:1 0 0%; display:flex; flex-direction:column; min-height:0;">
-    <h2 class="panel-title panel-title--left" style="margin-top:14px;">
-      <span class="panel-title__text">チャット & ログ</span>
-    </h2>
-    <section id="chat-panel"
-             style="margin-top:8px; padding:8px; border:1px solid #e5e5e5;
+      <h2 class="panel-title panel-title--left">
+        <button id="toggle-left" class="inline-toggle" data-i18n-title="side.panel.toggle">◀</button>
+        <span class="panel-title__text" data-i18n="side.panel">操作パネル</span>
+      </h2>
+
+      <!-- Save/Load: compact two-up row -->
+      <div class="sl-row" role="group" aria-label="Save/Load">
+        <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
+        <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
+      </div>
+      <div class="section-label">自分のカード<br>
+        <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで裏表)</span>
+      </div>
+      <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 全カード一覧</button>
+      <div class="sl-row" role="group" aria-label="Face up/down">
+        <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
+        <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🔍 捨て札一覧</button>
+      </div>
+      <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
+      <div class="sl-row" role="group" aria-label="Face up/down">
+        <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏に</button>
+        <button class="sl-btn" onclick="faceUpAll()" data-i18n="side.faceUp">🂡 全て表に</button>
+      </div>
+      <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
+      <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードを集める</button>
+      <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
+      <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
+      <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
+      <div class="section-label">コイン・ダイス<br>
+        <span style="font-size:12px;color:#666;">(左クリックか右クリックで削除)</span>
+      </div>
+      <div class="sl-row" role="group" aria-label="dice-coin-row1">
+        <button class="sl-btn" id="flip-coin-btn" onclick="flipCoin()" data-i18n="side.flipCoin">🪙 コイントス</button>
+        <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイス</button>
+      </div>
+      <div class="sl-row" role="group" aria-label="dice-coin-row2">
+        <button class="sl-btn" id="roll-d10-btn" onclick="rollD10()" data-i18n="side.rollD10">🎲 10面ダイス</button>
+        <button class="sl-btn" id="roll-d20-btn" onclick="rollD20()" data-i18n="side.rollD20">🎲 20面ダイス</button>
+      </div>
+      <div class="section-label">カウンター・トークン<br>
+        <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで削除)</span>
+      </div>
+      <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
+
+      <div class="sl-row" role="group" aria-label="plus1/plus10">
+        <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1</button>
+        <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10</button>
+      </div>
+      <div class="sl-row" role="group" aria-label="plus50/plus100">
+        <button class="sl-btn" onclick="spawnCounter('+50')" data-i18n="side.plus50">➕50</button>
+        <button class="sl-btn" onclick="spawnCounter('+100')" data-i18n="side.plus100">➕100</button>
+      </div>
+      <div class="sl-row" role="group" aria-label="plus1/plus10">
+        <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1</button>
+        <button class="sl-btn" onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10</button>
+      </div>
+      <div class="sl-row" role="group" aria-label="plus50/plus100">
+        <button class="sl-btn" onclick="spawnCounter('-50')" data-i18n="side.minus50">➖50</button>
+        <button class="sl-btn" onclick="spawnCounter('-100')" data-i18n="side.minus100">➖100</button>
+      </div>
+      <button class="sl-btn" onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
+
+      <button class="sl-btn" onclick="openBackImagePicker()" data-i18n="side.BackImage">🖼 カード背景画像</button>
+      <!-- 非表示のファイル入力（画像選択ダイアログ用） -->
+      <input id="card-back-input" type="file" accept="image/*" style="display:none">
+
+      <button class="sl-btn" onclick="toggleFieldSizeOptions()" data-i18n="side.fieldSize">🖼 フィールドサイズ変更</button>
+      <div id="field-size-options">
+        <button class="sl-btn" onclick="setFieldSize('small')" data-i18n="side.sizeS">小</button>
+        <button class="sl-btn" onclick="setFieldSize('medium')" data-i18n="side.sizeM">中</button>
+        <button class="sl-btn" onclick="setFieldSize('large')" data-i18n="side.sizeL">大</button>
+      </div>
+
+      <div aria-live="polite" class="host-toggle" id="host-otherops">
+        <div class="section-label">ホスト専用</div>
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <div style="font-size:12px;color:#555;">
+            他プレイヤーのカード操作
+          </div>
+          <div class="row" style="align-items:center; gap:8px;">
+            <label class="switch" title="ONにすると、他人のカードも移動・表裏切替ができる">
+              <input id="toggle-other-ops" type="checkbox" />
+              <span class="slider">
+              </span>
+            </label>
+            <span id="toggle-other-ops-text" style="width:36px; text-align:right; font-weight:700;">
+              OFF
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ★ 非ホスト専用：退室ボタン（参加中のみ表示） -->
+      <button class="sl-btn" id="leave-room-btn" style="display:none">
+        🚪 退室する（ゲスト）
+      </button>
+
+      <button class="danger sl-btn" id="end-room-btn" style="display:none">
+        🚪 ルームを終了（ホスト）
+      </button>
+
+    </div><!-- /#ops-scroll -->
+
+
+    <!-- ===== ログ＆チャット（操作パネルとは分離） ===== -->
+    <div id="chat-wrap" style="flex:1 0 0%; display:flex; flex-direction:column; min-height:0;">
+      <h2 class="panel-title panel-title--left" style="margin-top:14px;">
+        <span class="panel-title__text">チャット & ログ</span>
+      </h2>
+      <section id="chat-panel"
+        style="margin-top:8px; padding:8px; border:1px solid #e5e5e5;
                     border-radius:10px; background:#fafafa; display:flex; flex-direction:column; min-height:0; flex:1 1 auto;">
 
-    <!-- ログ表示 -->
-      <div id="chat-log" aria-live="polite"
-           style="flex:1 1 auto; min-height:0; overflow:auto; background:#fff; border:1px solid #e5e5e5;
+        <!-- ログ表示 -->
+        <div id="chat-log" aria-live="polite" style="flex:1 1 auto; min-height:0; overflow:auto; background:#fff; border:1px solid #e5e5e5;
                   border-radius:6px; padding:6px; font-size:13px; line-height:1.4;"></div>
 
-    <!-- 入力 -->
-      <div class="row" style="display:flex; gap:6px; margin-top:8px;">
-        <input id="chat-input" type="text" maxlength="200" placeholder="メッセージを入力…"
-               style="flex:1; padding:6px 8px; border:1px solid #ddd; border-radius:8px;" />
-        <button id="chat-send" class="sl-btn" type="button" style="white-space:nowrap;">送信</button>
-      </div>
+        <!-- 入力 -->
+        <div class="row" style="display:flex; gap:6px; margin-top:8px;">
+          <input id="chat-input" type="text" maxlength="200" placeholder="メッセージを入力…"
+            style="flex:1; padding:6px 8px; border:1px solid #ddd; border-radius:8px;" />
+          <button id="chat-send" class="sl-btn" type="button" style="white-space:nowrap;">送信</button>
+        </div>
 
-    </section>
-  </div>
+      </section>
+    </div>
 
-  <!-- =============================================== -->   
-   
-   
-   
+    <!-- =============================================== -->
+
+
+
   </div>
   <div id="container">
-   <div id="field">
-    <div class="player-area player-1">
-     <div class="player-label">
-      <span class="label-seat">
-       P1
-      </span>
-      <span class="label-name">
-      </span>
-     </div>
-     <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
-     <div class="special-area">
-      <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
-     </div>
-     <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
-     <div class="play-area">
-      <div class="main-play-area">
-       <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
+    <div id="field">
+      <div class="player-area player-1">
+        <div class="player-label">
+          <span class="label-seat">
+            P1
+          </span>
+          <span class="label-name">
+          </span>
+        </div>
+        <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
+        <div class="special-area">
+          <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
+        </div>
+        <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
+        <div class="play-area">
+          <div class="main-play-area">
+            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
+          </div>
+          <div class="deck-stack">
+            <div class="discard-area">
+              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+            </div>
+            <div class="deck-area">
+              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
+            </div>
+          </div>
+        </div>
+        <!-- 右下：手札行 -->
+        <div class="hand-area">
+          <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
+        </div>
       </div>
-      <div class="deck-stack">
-       <div class="discard-area">
-        <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-       </div>
-       <div class="deck-area">
-        <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-       </div>
+      <div class="player-area player-2">
+        <div class="player-label">
+          <span class="label-seat">
+            P2
+          </span>
+          <span class="label-name">
+          </span>
+        </div>
+        <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
+        <div class="special-area">
+          <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
+        </div>
+        <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
+        <div class="play-area">
+          <div class="main-play-area">
+            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
+          </div>
+          <div class="deck-stack">
+            <div class="discard-area">
+              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+            </div>
+            <div class="deck-area">
+              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
+            </div>
+          </div>
+        </div>
+        <!-- 右下：手札行 -->
+        <div class="hand-area">
+          <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
+        </div>
       </div>
-     </div>
-     <!-- 右下：手札行 -->
-     <div class="hand-area">
-      <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
-     </div>
+      <div class="player-area player-3">
+        <div class="player-label">
+          <span class="label-seat">
+            P3
+          </span>
+          <span class="label-name">
+          </span>
+        </div>
+        <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
+        <div class="special-area">
+          <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
+        </div>
+        <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
+        <div class="play-area">
+          <div class="main-play-area">
+            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
+          </div>
+          <div class="deck-stack">
+            <div class="discard-area">
+              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+            </div>
+            <div class="deck-area">
+              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
+            </div>
+          </div>
+        </div>
+        <!-- 右下：手札行 -->
+        <div class="hand-area">
+          <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
+        </div>
+      </div>
+      <div class="player-area player-4">
+        <div class="player-label">
+          <span class="label-seat">
+            P4
+          </span>
+          <span class="label-name">
+          </span>
+        </div>
+        <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
+        <div class="special-area">
+          <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
+        </div>
+        <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
+        <div class="play-area">
+          <div class="main-play-area">
+            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
+          </div>
+          <div class="deck-stack">
+            <div class="discard-area">
+              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+            </div>
+            <div class="deck-area">
+              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
+            </div>
+          </div>
+        </div>
+        <!-- 右下：手札行 -->
+        <div class="hand-area">
+          <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
+        </div>
+      </div>
+      <div id="board-layout">
+        <div id="board-play">
+          <div class="zone-label" data-i18n="zone.play.shared">プレイエリア（共有）</div>
+        </div>
+        <div class="board-hand" id="board-hand-1">
+          <div class="zone-label" data-i18n="zone.hand">手札エリア P1</div>
+          <div class="board-name">
+            <span class="label-seat">P1</span>
+            <span class="label-name"></span>
+          </div>
+        </div>
+        <div class="board-hand" id="board-hand-2">
+          <div class="zone-label" data-i18n="zone.hand">手札エリア P2</div>
+          <div class="board-name">
+            <span class="label-seat">P2</span>
+            <span class="label-name"></span>
+          </div>
+        </div>
+        <div class="board-hand" id="board-hand-3">
+          <div class="zone-label" data-i18n="zone.hand">手札エリア P3</div>
+          <div class="board-name">
+            <span class="label-seat">P3</span>
+            <span class="label-name"></span>
+          </div>
+        </div>
+        <div class="board-hand" id="board-hand-4">
+          <div class="zone-label" data-i18n="zone.hand">手札エリア P4</div>
+          <div class="board-name">
+            <span class="label-seat">P4</span>
+            <span class="label-name"></span>
+          </div>
+        </div>
+        <div id="board-center">
+          <div class="center-deck">
+            <div class="zone-label" data-i18n="zone.deck.shared">デッキエリア（共有）</div>
+          </div>
+          <div class="center-discard">
+            <div class="zone-label" data-i18n="zone.discard.shared">捨て札エリア（共有）</div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="player-area player-2">
-     <div class="player-label">
-      <span class="label-seat">
-       P2
-      </span>
-      <span class="label-name">
-      </span>
-     </div>
-     <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
-     <div class="special-area">
-      <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
-     </div>
-     <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
-     <div class="play-area">
-      <div class="main-play-area">
-       <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
-      </div>
-      <div class="deck-stack">
-       <div class="discard-area">
-        <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-       </div>
-       <div class="deck-area">
-        <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-       </div>
-      </div>
-     </div>
-     <!-- 右下：手札行 -->
-     <div class="hand-area">
-      <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
-     </div>
-    </div>
-    <div class="player-area player-3">
-     <div class="player-label">
-      <span class="label-seat">
-       P3
-      </span>
-      <span class="label-name">
-      </span>
-     </div>
-     <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
-     <div class="special-area">
-      <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
-     </div>
-     <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
-     <div class="play-area">
-      <div class="main-play-area">
-       <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
-      </div>
-      <div class="deck-stack">
-       <div class="discard-area">
-        <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-       </div>
-       <div class="deck-area">
-        <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-       </div>
-      </div>
-     </div>
-     <!-- 右下：手札行 -->
-     <div class="hand-area">
-      <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
-     </div>
-    </div>
-    <div class="player-area player-4">
-     <div class="player-label">
-      <span class="label-seat">
-       P4
-      </span>
-      <span class="label-name">
-      </span>
-     </div>
-     <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
-     <div class="special-area">
-      <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
-     </div>
-     <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
-     <div class="play-area">
-      <div class="main-play-area">
-       <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
-      </div>
-      <div class="deck-stack">
-       <div class="discard-area">
-        <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-       </div>
-       <div class="deck-area">
-        <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-       </div>
-      </div>
-     </div>
-     <!-- 右下：手札行 -->
-     <div class="hand-area">
-      <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
-     </div>
-    </div>
-    <div id="board-layout">
-     <div id="board-play">
-      <div class="zone-label" data-i18n="zone.play.shared">プレイエリア（共有）</div>
-     </div>
-     <div class="board-hand" id="board-hand-1">
-      <div class="zone-label" data-i18n="zone.hand">手札エリア P1</div>
-      <div class="board-name">
-        <span class="label-seat">P1</span>
-        <span class="label-name"></span>
-      </div>
-     </div>
-     <div class="board-hand" id="board-hand-2">
-      <div class="zone-label" data-i18n="zone.hand">手札エリア P2</div>
-      <div class="board-name">
-        <span class="label-seat">P2</span>
-        <span class="label-name"></span>
-      </div>
-     </div>
-     <div class="board-hand" id="board-hand-3">
-      <div class="zone-label" data-i18n="zone.hand">手札エリア P3</div>
-      <div class="board-name">
-        <span class="label-seat">P3</span>
-        <span class="label-name"></span>
-      </div>
-     </div>
-     <div class="board-hand" id="board-hand-4">
-      <div class="zone-label" data-i18n="zone.hand">手札エリア P4</div>
-      <div class="board-name">
-        <span class="label-seat">P4</span>
-        <span class="label-name"></span>
-      </div>
-     </div>
-     <div id="board-center">
-      <div class="center-deck">
-       <div class="zone-label" data-i18n="zone.deck.shared">デッキエリア（共有）</div>
-      </div>
-      <div class="center-discard">
-       <div class="zone-label" data-i18n="zone.discard.shared">捨て札エリア（共有）</div>
-      </div>
-     </div>
-    </div>
-   </div>
   </div>
   <div id="preview">
-   <div id="preview-top">
-   
-   <h2 class="panel-title panel-title--right">
-     <button id="toggle-right" class="inline-toggle"
-             title="選択肢のカードの表示/非表示"
-             data-i18n-title="preview.toggle">▶</button>
-     <span class="panel-title__text" data-i18n="preview.title">選択肢のカード</span>
-   </h2>   
-    <img alt="プレビュー画像" id="preview-img"/>
-    <div id="preview-info">
+    <div id="preview-top">
+
+      <h2 class="panel-title panel-title--right">
+        <button id="toggle-right" class="inline-toggle" title="選択肢のカードの表示/非表示"
+          data-i18n-title="preview.toggle">▶</button>
+        <span class="panel-title__text" data-i18n="preview.title">選択肢のカード</span>
+      </h2>
+      <img alt="プレビュー画像" id="preview-img" />
+      <div id="preview-info">
+      </div>
     </div>
-   </div>
-   <div aria-label="HP パネル" id="hp-panel">
-    <div style="font-size:12px;color:#666;margin-bottom:6px;" data-i18n="hp.title">プレイヤーHP</div>
-    <div id="hp-grid">
+    <div aria-label="HP パネル" id="hp-panel">
+      <div style="font-size:12px;color:#666;margin-bottom:6px;" data-i18n="hp.title">プレイヤーHP</div>
+      <div id="hp-grid">
+      </div>
     </div>
-   </div>
   </div>
-  <div aria-labelledby="card-list-title" aria-modal="true" id="card-list-modal" role="dialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:10000;">
-   <div id="card-list-sheet" style="width:min(920px, 92vw); max-height:80vh; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
-    <div id="card-list-header" style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
-     <div id="card-list-title" style="font-weight:700;">
-      自分のカード一覧
-     </div>
-     <button id="card-list-close" style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;" type="button">
-      閉じる
-     </button>
+  <div aria-labelledby="card-list-title" aria-modal="true" id="card-list-modal" role="dialog"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:10000;">
+    <div id="card-list-sheet"
+      style="width:min(920px, 92vw); max-height:80vh; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
+      <div id="card-list-header"
+        style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
+        <div id="card-list-title" style="font-weight:700;">
+          自分のカード一覧
+        </div>
+        <button id="card-list-close"
+          style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;" type="button">
+          閉じる
+        </button>
+      </div>
+      <div id="card-list-body" style="padding:12px; overflow:auto;">
+        <div id="card-list-grid"
+          style="display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px;">
+        </div>
+      </div>
     </div>
-    <div id="card-list-body" style="padding:12px; overflow:auto;">
-     <div id="card-list-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px;">
-     </div>
-    </div>
-   </div>
   </div>
-  
-   <!-- Save/Load 3スロット選択モーダル -->
-   <div id="save-load-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
-     <div style="background:#fff; padding:16px; border-radius:12px; width:280px; max-width:90%; box-shadow:0 6px 24px rgba(0,0,0,.2);">
-       <div id="sl-title" style="font-weight:700; margin-bottom:12px;">スロットを選択</div>
-       <div class="row" style="display:flex; gap:8px; margin-bottom:12px;">
-         <button class="slot-btn" data-slot="1" style="flex:1; padding:10px;">SLOT 1</button>
-         <button class="slot-btn" data-slot="2" style="flex:1; padding:10px;">SLOT 2</button>
-         <button class="slot-btn" data-slot="3" style="flex:1; padding:10px;">SLOT 3</button>
-       </div>
-       
-     <!-- ▼スロットごとのプレビュー（各5枚） -->
-     <div class="sl-preview" aria-live="polite" style="margin-bottom:12px;">
-       <div class="slot-preview" data-slot="1"><span class="empty">空き</span></div>
-       <div class="slot-preview" data-slot="2"><span class="empty">空き</span></div>
-       <div class="slot-preview" data-slot="3"><span class="empty">空き</span></div>
-     </div>
-       
-       <div style="display:flex; justify-content:flex-end; gap:8px;">
-         <button id="sl-cancel">キャンセル</button>
-       </div>
-     </div>
-   </div>  
-  
-  
+
+  <!-- Save/Load 3スロット選択モーダル -->
+  <div id="save-load-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
+    <div
+      style="background:#fff; padding:16px; border-radius:12px; width:280px; max-width:90%; box-shadow:0 6px 24px rgba(0,0,0,.2);">
+      <div id="sl-title" style="font-weight:700; margin-bottom:12px;">スロットを選択</div>
+      <div class="row" style="display:flex; gap:8px; margin-bottom:12px;">
+        <button class="slot-btn" data-slot="1" style="flex:1; padding:10px;">SLOT 1</button>
+        <button class="slot-btn" data-slot="2" style="flex:1; padding:10px;">SLOT 2</button>
+        <button class="slot-btn" data-slot="3" style="flex:1; padding:10px;">SLOT 3</button>
+      </div>
+
+      <!-- ▼スロットごとのプレビュー（各5枚） -->
+      <div class="sl-preview" aria-live="polite" style="margin-bottom:12px;">
+        <div class="slot-preview" data-slot="1"><span class="empty">空き</span></div>
+        <div class="slot-preview" data-slot="2"><span class="empty">空き</span></div>
+        <div class="slot-preview" data-slot="3"><span class="empty">空き</span></div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button id="sl-cancel">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+
   <!-- process スタブ（非module。先に読み込む） -->
   <script src="scripts/polyfills.js"></script>
   <!-- 本体：モジュールとして外部ファイル化 -->
-  <script type="module" src="scripts/game.module.js"></script>  
-  
-  
+  <script type="module" src="scripts/game.module.js"></script>
+
+
   <!-- 折り畳み時だけ表示される外付けハンドル -->
-  <button id="edge-left"  class="edge-handle edge-left"  aria-label="操作パネルを展開">▶</button>
-  <button id="edge-right" class="edge-handle edge-right" aria-label="選択肢のカードを展開">◀</button>  
-  
-  
+  <button id="edge-left" class="edge-handle edge-left" aria-label="操作パネルを展開">▶</button>
+  <button id="edge-right" class="edge-handle edge-right" aria-label="選択肢のカードを展開">◀</button>
+
+
   <!-- === Global Footer (サイト共通導線の再掲) === -->
   <footer class="site-footer" role="contentinfo">
     <div class="site-footer__inner">
       <!-- A8.net アフィリエイト広告 -->
-        
+
       <a href="https://px.a8.net/svt/ejp?a8mat=45DZ26+HV0XE+49YI+5Z6WX" rel="nofollow">
-      <img border="0" width="468" height="60" alt="" src="https://www24.a8.net/svt/bgt?aid=250914750030&wid=001&eno=01&mid=s00000019953001004000&mc=1"></a>
+        <img border="0" width="468" height="60" alt=""
+          src="https://www24.a8.net/svt/bgt?aid=250914750030&wid=001&eno=01&mid=s00000019953001004000&mc=1"></a>
       <img border="0" width="1" height="1" src="https://www14.a8.net/0.gif?a8mat=45DZ26+HV0XE+49YI+5Z6WX" alt="">
-        
+
       <small>© 2025 SOLVENTER / PlayAround</small>
     </div>
-  </footer>  
- </body>
- 
- 
- 
+  </footer>
+</body>
+
+
+
 </html>
