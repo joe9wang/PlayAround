@@ -20,7 +20,7 @@ const I18N = {
         "join.roomId": "参加するルームID",
         "join.roomId.ph": "例: SOLVENTER room-1",
         "join.password": "入室パスワード",
-        "join.password.ph": "",
+        "join.password.ph": " ",
         "join.name": "プレイヤー名",
         "join.name.ph": "例: SOLVENTER",
         "join.chooseSeat": "座席を選択",
