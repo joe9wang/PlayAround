@@ -599,15 +599,58 @@
           premiumInfo.innerHTML = `
             <div class="label">✨ プレミアム会員</div>
             <div class="premium-since">登録日: ${since ? since.toLocaleDateString() : '—'}</div>
+            <button class="btn-premium-register" id="btn-premium-portal" style="margin-top: 8px;">
+              サブスクリプションを管理
+            </button>
           `;
+
+          document.getElementById('btn-premium-portal').addEventListener('click', async () => {
+            try {
+              const idToken = await auth.currentUser.getIdToken();
+              const res = await fetch('/api/create-portal-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken })
+              });
+              const data = await res.json();
+              if (data.url) {
+                window.location.href = data.url;
+              } else {
+                alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+              }
+            } catch (e) {
+              console.error(e);
+              alert('通信エラーが発生しました。');
+            }
+          });
         } else {
           premiumSection.classList.remove('is-premium');
           premiumInfo.innerHTML = `
-            <button class="btn-premium-register" id="btn-premium-register" disabled>
+            <button class="btn-premium-register" id="btn-premium-register">
               プレミアムに登録
             </button>
-            <span class="premium-hint">月額300円で特別な機能が使えます（近日公開）</span>
+            <span class="premium-hint">月額300円で特別な機能が使えます</span>
           `;
+
+          document.getElementById('btn-premium-register').addEventListener('click', async () => {
+            try {
+              const idToken = await auth.currentUser.getIdToken();
+              const res = await fetch('/api/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken })
+              });
+              const data = await res.json();
+              if (data.url) {
+                window.location.href = data.url;
+              } else {
+                alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+              }
+            } catch (e) {
+              console.error(e);
+              alert('通信エラーが発生しました。');
+            }
+          });
         }
       } catch (e) {
         console.warn('[mypage] premium check failed:', e);
