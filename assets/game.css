@@ -461,6 +461,27 @@
       position: relative;
     }
 
+    /* ロビー上部のログイン領域 */
+    .lobby-auth {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      margin: 8px 0 12px;
+    }
+
+    .auth-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .auth-user-info {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+    }
+
     .lobby-grid {
       display: grid;
       grid-template-columns: 1.15fr 1fr;

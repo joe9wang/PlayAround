@@ -108,21 +108,28 @@
         </a>
       </div>
       <!-- ロビー上部のログインUI（リンクの直下） -->
-      <div class="lobby-auth" style="text-align:center; margin:8px 0 12px;">
-        <button class="btn secondary" id="login-google" style="padding:8px 12px;" data-i18n="auth.login">
-          Googleでログイン
-        </button>
-        <button class="btn secondary" id="logout-google" style="padding:8px 12px; display:none;"
-          data-i18n="auth.logout">
-          ログアウト
-        </button>
-        <button class="btn secondary" id="btn-mypage" style="padding:8px 12px; display:none;" data-i18n="app.mypage"
-          onclick="location.href='./mypage.html'">
-          マイページ
-        </button>
-        <span id="whoami" style="margin-left:8px; color:#555; font-size:12px; display:none;">
-        </span>
-        <span id="lobby-premium-badge" style="margin-left:6px; display:none;"></span>
+      <div class="lobby-auth">
+        <!-- 中央ボタン配置用のスペーサーやラッパー -->
+        <div class="auth-spacer"></div>
+
+        <div class="auth-buttons">
+          <button class="btn secondary" id="login-google" style="padding:8px 12px;" data-i18n="auth.login">
+            Googleでログイン
+          </button>
+          <button class="btn secondary" id="logout-google" style="padding:8px 12px; display:none;"
+            data-i18n="auth.logout">
+            ログアウト
+          </button>
+          <button class="btn secondary" id="btn-mypage" style="padding:8px 12px; display:none;" data-i18n="app.mypage"
+            onclick="location.href='./mypage.html'">
+            マイページ
+          </button>
+        </div>
+
+        <div class="auth-user-info">
+          <span id="whoami" style="color:#555; font-size:12px; display:none;"></span>
+          <span id="lobby-premium-badge" style="display:none;"></span>
+        </div>
       </div>
       <div class="lobby-grid">
         <!-- Join (left column) -->
