@@ -97,7 +97,7 @@ copyFileSync("./Geki-Mahjong.html", `${OUT_DIR}/Geki-Mahjong.html`);
 
 // 6) ルート直下の画像・アイコン類を dist へコピー（存在するものだけ）
 for (const f of [
-  "./PlayAround-icon.png",
+  "./BatriTable-icon.png",
   "./field-card-pic.png",
   "./field-board-pic.png",
   "./favicon.ico",

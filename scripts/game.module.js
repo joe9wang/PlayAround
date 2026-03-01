@@ -1,7 +1,7 @@
 
 //test git
 // ====================================================================
-// PlayAround index.js (inlined) — Annotated Edition
+// BatriTable index.js (inlined) — Annotated Edition
 // 
 // 目次（大項目）
 //  1) Firebase 初期化と App Check

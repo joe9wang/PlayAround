@@ -11,7 +11,7 @@ const I18N = {
         "links.terms": "利用規約",
         "links.contact": "お問い合わせ",
 
-        "lobby.welcome": "プレイアラウンドへようこそ！",
+        "lobby.welcome": "バトライテーブルへようこそ！",
         "auth.login": "Googleでログイン",
         "auth.logout": "ログアウト",
         "app.mypage": "マイページ",
@@ -117,7 +117,7 @@ const I18N = {
         "links.terms": "Terms",
         "links.contact": "Contact",
 
-        "lobby.welcome": "Welcome to PlayAround!",
+        "lobby.welcome": "Welcome to BatriTable!",
 
         "auth.login": "Sign in with Google",
         "auth.logout": "Sign out",
