@@ -1386,6 +1386,7 @@
     /* 左（操作パネル）は右寄せ、右（選択肢のカード）は左寄せ */
     .panel-title--left {
       justify-content: flex-end;
+      margin-top: 6px !important;
     }
 
     .panel-title--right {
