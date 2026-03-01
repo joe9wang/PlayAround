@@ -1386,11 +1386,15 @@
     /* 左（操作パネル）は右寄せ、右（選択肢のカード）は左寄せ */
     .panel-title--left {
       justify-content: flex-end;
-      margin-top: 6px !important;
     }
 
     .panel-title--right {
       justify-content: flex-start;
+    }
+
+    /* 見出しテキストを意図的に少し（3px）下げて、ボタンに対して「下側揃え」に見せる */
+    .panel-title__text {
+      transform: translateY(3px);
     }
 
     /* 見出し内の正方形トグルボタン（100%幅を打ち消す） */
@@ -1404,6 +1408,7 @@
       height: 28px !important;
       min-width: 28px;
       padding: 0 !important;
+      margin: 0 !important;
       border: 1px solid #ccc;
       border-radius: 6px;
       background: #fff;
