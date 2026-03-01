@@ -4607,5 +4607,65 @@ function openBackImagePicker() {
   });
 })();
 
+// ==== ロビー入力内容のキャッシュ保存/復元 ====
+const LOBBY_CACHE_KEY = 'pa:lobby-cache';
 
+function saveLobbyCache() {
+  const cache = {
+    joinRoomId: joinRoomInput?.value || '',
+    playerName: playerNameInput?.value || '',
+    joinRoomPass: joinRoomPassInput?.value || '',
+    newRoomId: newRoomIdInput?.value || '',
+    newPlayerName: newPlayerNameInput?.value || '',
+    newRoomPass: newRoomPassInput?.value || '',
+    joinSeat: CURRENT_PLAYER || null,
+    createSeat: CREATE_SELECTED_SEAT || 1,
+    fieldMode: CREATE_FIELD_MODE || 'card'
+  };
+  localStorage.setItem(LOBBY_CACHE_KEY, JSON.stringify(cache));
+}
 
+function loadLobbyCache() {
+  try {
+    const raw = localStorage.getItem(LOBBY_CACHE_KEY);
+    if (!raw) return;
+    const cache = JSON.parse(raw);
+    if (joinRoomInput && cache.joinRoomId) joinRoomInput.value = cache.joinRoomId;
+    if (playerNameInput && cache.playerName) playerNameInput.value = cache.playerName;
+    if (joinRoomPassInput && cache.joinRoomPass) joinRoomPassInput.value = cache.joinRoomPass;
+    if (newRoomIdInput && cache.newRoomId) newRoomIdInput.value = cache.newRoomId;
+    if (newPlayerNameInput && cache.newPlayerName) newPlayerNameInput.value = cache.newPlayerName;
+    if (newRoomPassInput && cache.newRoomPass) newRoomPassInput.value = cache.newRoomPass;
+
+    if (cache.joinSeat) {
+      const btn = seatButtons.find(b => parseInt(b.dataset.seat, 10) === cache.joinSeat);
+      if (btn) btn.click();
+    }
+    if (cache.createSeat) {
+      const btn = createSeatButtons.find(b => parseInt(b.dataset.createSeat, 10) === cache.createSeat);
+      if (btn) btn.click();
+    }
+    if (cache.fieldMode) {
+      if (cache.fieldMode === 'card' && pickModeCardBtn) pickModeCardBtn.click();
+      if (cache.fieldMode === 'board' && pickModeBoardBtn) pickModeBoardBtn.click();
+      if (cache.fieldMode === 'trump' && pickModeTrumpBtn) pickModeTrumpBtn.click();
+    }
+    validateLobby();
+  } catch (e) { console.warn('Lobby cache load failed', e); }
+}
+
+[joinRoomInput, playerNameInput, joinRoomPassInput, newRoomIdInput, newPlayerNameInput, newRoomPassInput].forEach(el => {
+  if (el) {
+    el.addEventListener('change', saveLobbyCache);
+    el.addEventListener('blur', saveLobbyCache);
+  }
+});
+
+seatButtons.forEach(b => b.addEventListener('click', () => setTimeout(saveLobbyCache, 10)));
+createSeatButtons.forEach(b => b.addEventListener('click', () => setTimeout(saveLobbyCache, 10)));
+[pickModeCardBtn, pickModeBoardBtn, pickModeTrumpBtn].forEach(b => {
+  if (b) b.addEventListener('click', () => setTimeout(saveLobbyCache, 10));
+});
+
+// スクリプト読み込み時にロード
+loadLobbyCache();
