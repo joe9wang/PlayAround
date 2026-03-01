@@ -1677,6 +1677,7 @@ function loadSeatStatus() {
 
     renderAreaColors();
     renderSeatAvailability();
+    updateSessionIndicator();
     renderHPPanel();   //座席更新が入ったらHPパネルも即リフレッシュ（hp.js）
     // 追加: その席のカード裏背景を再適用
     refreshCardBacksForSeat(idx + 1);
@@ -2077,6 +2078,17 @@ function bindLifecycleHandlers() {
 // ===============================
 // セッション開始
 // ===============================
+
+function updateSessionIndicator() {
+  if (!CURRENT_ROOM || !CURRENT_PLAYER) {
+    sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
+    return;
+  }
+  const seatData = currentSeatMap[CURRENT_PLAYER];
+  const pName = seatData && seatData.displayName ? seatData.displayName : `P${CURRENT_PLAYER}`;
+  sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: ${pName}`;
+}
+
 // ルーム/座席が決まった後の購読開始やUI初期化。
 // 購読開始/ハートビート開始/UI初期化など、参加開始時の初期化
 // @param {string} roomId - string
@@ -2086,7 +2098,7 @@ function bindLifecycleHandlers() {
 function startSession(roomId, playerId) {
   CURRENT_ROOM = roomId; CURRENT_PLAYER = playerId;
   updateEndRoomButtonVisibility();
-  sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: P${CURRENT_PLAYER}`;
+  updateSessionIndicator();
   lobby.style.display = 'none';
   startHeartbeat(roomId, playerId);
   if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
