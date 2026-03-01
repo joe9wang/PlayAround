@@ -1,12 +1,13 @@
     :root {
       --sidebar-w: 300px;
       --preview-w: 300px;
-      --header-h: 80px;
+      --header-h: 60px;
+      /* site-headerの高さに合わせる */
       --upload-h: 56px;
       --footer-h: 80px;
-      --gheader-h: 44px;
-      --special-w: 14%;
-      --stack-h: calc(var(--gheader-h) + var(--header-h) + var(--upload-h));
+      --gheader-h: 0px;
+      /* h1を削除したため0に */
+      --stack-h: calc(var(--header-h) + var(--upload-h));
     }
 
     body {
@@ -16,38 +17,35 @@
       overflow: hidden;
     }
 
-    h1 {
+    /* === 統合ヘッダー (game.html固有) === */
+    .game-header {
       background: #444;
-      color: #fff;
-      padding: 1em;
-      text-align: center;
-      margin: 0;
-      height: var(--header-h);
-      box-sizing: border-box;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      position: relative;
+      /* 既存のh1の色に合わせるか、site-headerの色を上書きするか */
     }
 
-    #session-indicator {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #ddd;
-      font-size: 12px;
-      opacity: .9;
+    .game-header .site-header__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: var(--header-h);
+      /* navのラップを防ぐため固定長 */
+    }
+
+    .game-header .site-nav {
+      flex: 1;
+      justify-content: center;
+      margin: 0 16px;
+    }
+
+    .header-left,
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       white-space: nowrap;
     }
 
-    /* company name badge */
-    .brand-badge {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
+    .brand-badge-header {
       font-weight: 800;
       letter-spacing: .08em;
       color: #ffeb3b;
@@ -55,6 +53,22 @@
       font-size: 14px;
       opacity: .98;
     }
+
+    .session-indicator-header {
+      color: #ddd;
+      font-size: 12px;
+      opacity: .9;
+    }
+
+    .lang-switch-header {
+      font-size: 12px;
+      padding: 4px;
+      border-radius: 4px;
+      border: 1px solid #777;
+      background: #fff;
+      color: #333;
+    }
+
 
 
     #upload-area {

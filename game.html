@@ -47,9 +47,13 @@
 
 <body>
   <!-- === Global Header / Navigation (サイト共通導線) === -->
-  <header class="site-header" role="banner">
+  <header class="site-header game-header" role="banner">
     <div class="site-header__inner">
-      <a class="site-brand" href="/" aria-label="PlayAround Home">PlayAround</a>
+      <div class="header-left">
+        <a class="site-brand" href="/" aria-label="PlayAround Home">PlayAround</a>
+        <span aria-label="SOLVENTER" class="brand-badge-header">SOLVENTER</span>
+      </div>
+
       <nav class="site-nav" aria-label="Global">
         <a href="/index.html">ホーム</a>
         <a href="/howto.html">遊び方</a>
@@ -58,31 +62,19 @@
         <a href="/terms.html">利用規約</a>
         <a href="/contact.html">お問い合わせ</a>
       </nav>
+
+      <div class="header-right">
+        <!-- 言語切替 -->
+        <select aria-label="Language" class="lang-switch-header" id="lang-switch">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+        <span id="session-indicator" class="session-indicator-header">
+          ROOM: - / PLAYER: -
+        </span>
+      </div>
     </div>
   </header>
-
-
-  <h1>
-
-    <span data-i18n="app.title">
-      画像で遊べるボドゲ・カードゲーム（最大4人）
-    </span>
-    <span aria-label="SOLVENTER" class="brand-badge">
-      SOLVENTER
-    </span>
-    <!-- 言語切替 -->
-    <select aria-label="Language" class="lang-switch" id="lang-switch">
-      <option value="ja">
-        日本語
-      </option>
-      <option value="en">
-        English
-      </option>
-    </select>
-    <span id="session-indicator">
-      ROOM: - / PLAYER: -
-    </span>
-  </h1>
   <div aria-modal="true" id="lobby" role="dialog">
     <div class="lobby-card">
       <!-- ロビー右上：言語切替 -->
