@@ -18,7 +18,7 @@ const I18N = {
 
         "join.section": "既存ルームに参加（非ホスト）",
         "join.roomId": "参加するルームID",
-        "join.roomId.ph": "例: SOLVENTER room-1",
+        "join.roomId.ph": "例: Room-1",
         "join.password": "入室パスワード",
         "join.password.ph": " ",
         "join.name": "プレイヤー名",
@@ -28,9 +28,9 @@ const I18N = {
 
         "create.section": "新しいルームを作成して参加（ホスト）",
         "create.roomId": "新しいルームを作成",
-        "create.roomId.ph": "例: SOLVENTER room-1",
+        "create.roomId.ph": "例: Room-1",
         "create.password": "入室パスワード（任意）",
-        "create.password.ph": "",
+        "create.password.ph": " ",
         "create.name": "プレイヤー名",
         "create.name.ph": "例: SOLVENTER",
         "create.chooseSeat": "座席を選択",
@@ -117,8 +117,8 @@ const I18N = {
 
         "join.section": "Join an existing room (Guest)",
         "join.roomId": "Room ID to join",
-        "join.roomId.ph": "e.g., SOLVENTER room-1",
-        "join.password": "",
+        "join.roomId.ph": "e.g., Room-1",
+        "join.password": " ",
         "join.password.ph": "Required if host set one",
         "join.name": "Player name",
         "join.name.ph": "e.g., SOLVENTER",
@@ -127,9 +127,9 @@ const I18N = {
 
         "create.section": "Create a new room (Host)",
         "create.roomId": "Create a new room",
-        "create.roomId.ph": "e.g., SOLVENTER room-1",
+        "create.roomId.ph": "e.g., Room-1",
         "create.password": "Join password (optional)",
-        "create.password.ph": "",
+        "create.password.ph": " ",
         "create.name": "Player name",
         "create.name.ph": "e.g., SOLVENTER",
         "create.chooseSeat": "Choose your seat",
