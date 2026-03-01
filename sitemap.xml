@@ -57,4 +57,11 @@
     <priority>0.5</priority>
   </url>
 
+  <!-- 運営者情報 -->
+  <url>
+    <loc>https://www.play-around.app/about.html</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
 </urlset>

@@ -1,168 +1,470 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
 
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
-     crossorigin="anonymous"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
+    crossorigin="anonymous"></script>
 
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>激・麻雀 — 遊び方</title>
-<meta name="description" content="激・麻雀の基本ルール、ゲームの流れ、カードの種類・効果、ポン/チー、役作りの基本を図解します。">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./assets/site.css">
-<style>
-  :root{
-    --gap:16px; --radius:14px;
-    /* PlayAround配色（index.html準拠） */
-    --purple:#b350be; --green:#3cd08e; --red:#e64a5a; --orange:#f79f27; --blue:#1e82e0;
-    --ink:#0f172a; --bg:#f6f7fb; --card:#ffffff;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family:"Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
-      "Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic",Meiryo,sans-serif;
-  }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>激・麻雀 — 遊び方</title>
+  <meta name="description" content="激・麻雀の基本ルール、ゲームの流れ、カードの種類・効果、ポン/チー、役作りの基本を図解します。">
+  <link rel="canonical" href="https://www.play-around.app/Geki-Mahjong.html">
+  <meta name="robots" content="index, follow">
 
-  /* ====== レイアウト全体（index構成） ====== */
-  .layout{
-    min-height:100dvh;
-    display:grid;
-    grid-template-columns:260px minmax(0,1fr) 320px;
-    grid-template-rows:1fr auto;
-    gap:var(--gap); padding:var(--gap);
-  }
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="PlayAround">
+  <meta property="og:title" content="激・麻雀 — 遊び方 | PlayAround">
+  <meta property="og:description" content="激・麻雀の基本ルール、ゲームの流れ、カードの種類・効果、ポン/チー、役作りの基本を図解。">
+  <meta property="og:url" content="https://www.play-around.app/Geki-Mahjong.html">
+  <meta property="og:image" content="https://www.play-around.app/assets/ogp.jpg">
 
-  /* サイドバー */
-  .sidebar{
-    grid-row:1 / span 2; grid-column:1;
-    background:var(--purple); color:#fff;
-    border-radius:var(--radius); padding:20px 18px;
-    display:flex; flex-direction:column; justify-content:space-between;
-    box-shadow:0 8px 24px rgba(164,10,179,.25);
-  }
-  .brand{ display:flex; align-items:center; gap:12px }
-  .brand h1{ margin:0; font-size:1.2rem; letter-spacing:.2px }
-  .nav{ margin-top:16px; display:grid; gap:10px }
-  .nav a{
-    color:#fff; text-decoration:none; padding:10px 12px; border-radius:10px;
-    background:rgba(255,255,255,.08); backdrop-filter:saturate(140%) blur(2px);
-  }
-  .nav a:hover{ background:rgba(255,255,255,.16) }
-  .credit{ font-size:.8rem; opacity:.85 }
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="激・麻雀 — 遊び方 | PlayAround">
+  <meta name="twitter:description" content="激・麻雀の基本ルール、ゲームの流れ、カードの種類・効果、ポン/チー、役作りの基本を図解。">
+  <meta name="twitter:image" content="https://www.play-around.app/assets/ogp.jpg">
 
-  /* サイドバー用：緑の「プレイする」ボタン（既存に合わせて中央寄せ・ライトグリーン影） */
-  .btn-play-green{
-    font-size:1.3rem; padding:16px 28px; border-radius:14px; font-weight:700;
-    display:inline-flex; align-items:center; gap:.6em;
-    color:#fff; text-decoration:none;
-    background:linear-gradient(135deg,#3cd08e 0%,#218d6a 60%,#3cd08e 100%);
-    background-size:220% 220%;
-    box-shadow:0 8px 20px rgba(144,238,144,.35);
-    transition:transform .15s ease, box-shadow .35s ease, background-position .6s ease;
-  }
-  .btn-play-green:hover{
-    transform:translateY(-1px) scale(1.03);
-    background-position:60% 0;
-    box-shadow:0 12px 28px rgba(144,238,144,.45);
-  }
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/site.css">
+  <style>
+    :root {
+      --gap: 16px;
+      --radius: 14px;
+      /* PlayAround配色（index.html準拠） */
+      --purple: #b350be;
+      --green: #3cd08e;
+      --red: #e64a5a;
+      --orange: #f79f27;
+      --blue: #1e82e0;
+      --ink: #0f172a;
+      --bg: #f6f7fb;
+      --card: #ffffff;
+    }
 
-  /* メイン（緑の面） */
-  .hero{
-    grid-column:2; grid-row:1;
-    background:var(--green); border-radius:var(--radius);
-    padding:40px 42px; color:#053021;
-    box-shadow:0 10px 24px rgba(39,217,138,.25);
-  }
-  .hero h2{ margin:0 0 6px; font-size:1.9rem }
-  .hero p.lead{ margin:6px 0 18px; font-size:1.05rem }
+    * {
+      box-sizing: border-box
+    }
 
-  /* 中身を載せる白いパネル（ゲーム解説本文をそのまま入れる器） */
-  .panel{
-    background:rgba(255,255,255,.94);
-    border-radius:12px; padding:22px; line-height:1.8;
-    box-shadow:0 8px 18px rgba(0,0,0,.08);
-  }
-  .panel h2{ color:#0b3b2b; margin:18px 0 8px; font-size:1.3rem }
-  .panel h3{ color:#0b3b2b; margin:14px 0 6px; font-size:1.1rem }
+    html,
+    body {
+      height: 100%
+    }
 
-  /* 右：上下カード（indexの.cardと衝突しないように .sidecard を使用） */
-  .sidecard{
-    border-radius:var(--radius); padding:22px; color:#fff;
-    box-shadow:0 10px 22px rgba(15,23,42,.12);
-  }
-  .right-top{ grid-column:3; grid-row:1; background:var(--red) }
-  .right-bottom{ grid-column:3; grid-row:1; align-self:end; background:var(--orange); color:#3d2600 }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
+        "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", Meiryo, sans-serif;
+    }
 
-  /* 下部青帯（CTA） */
-  .cta{
-    grid-column:2 / 4; grid-row:2;
-    background:var(--blue); color:#fff; border-radius:var(--radius);
-    padding:22px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-    box-shadow:0 10px 24px rgba(13,115,232,.25);
-  }
-  .btn-white{
-    display:inline-block; background:#fff; color:#0d73e8; text-decoration:none;
-    border-radius:12px; padding:12px 16px; font-weight:700;
-  }
+    /* ====== レイアウト全体（index構成） ====== */
+    .layout {
+      min-height: 100dvh;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr) 320px;
+      grid-template-rows: 1fr auto;
+      gap: var(--gap);
+      padding: var(--gap);
+    }
 
-  /* ====== ここから下は “激・麻雀” 本文の見た目（元ページのまま、スコープだけ .game に） ====== */
-  .game{ --ink:#0f172a }
-  .game h1{ font-size:clamp(28px,4.2vw,44px); margin:8px 0 6px; color:#053021 }
-  .game h2{ font-size:clamp(22px,3.2vw,32px); margin:22px 0 8px }
-  .game h3{ font-size:clamp(18px,2.4vw,24px); margin:18px 0 6px }
-  .game .lead{ color:#334155; margin:0 0 10px }
+    /* サイドバー */
+    .sidebar {
+      grid-row: 1 / span 2;
+      grid-column: 1;
+      background: var(--purple);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 8px 24px rgba(164, 10, 179, .25);
+    }
 
-  .game .cards{display:flex;gap:12px;flex-wrap:wrap}
-  .game .card{
-    width:66px;height:88px;border-radius:10px;display:grid;place-items:center;
-    color:#fff;font-weight:900;font-size:28px;border:4px solid #111;box-shadow:0 3px 0 rgba(0,0,0,.25) inset;
-  }
-  .game .card.red{background:#ff3b2f}
-  .game .card.blue{background:#4e7fe6}
-  .game .card.green{background:#14e147}
-  .game .card.lite{background:#fef9c3;color:#111} /* 特殊(A/B/Cなど) */
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
 
-  .game .effect-grid{display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:14px}
-  .game .effect{background:#fff;border:4px solid #111;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.08);overflow:hidden}
-  .game .effect .head{
-    height:54px;display:grid;place-items:center;color:#fff;font-weight:900;font-size:28px;border-bottom:4px solid #111
-  }
-  .game .effect.red .head{background:#ff3b2f}
-  .game .effect.blue .head{background:#4e7fe6}
-  .game .effect.green .head{background:#14e147}
-  .game .effect .body{padding:10px;background:#eef2f7;color:#111;font-size:13px;line-height:1.5}
+    .brand h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: .2px
+    }
 
-  .game .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#e2e8f0}
-  .game .tag.red{background:#fee2e2;color:#991b1b}
-  .game .tag.blue{background:#dbeafe;color:#1e3a8a}
-  .game .tag.green{background:#dcfce7;color:#166534}
+    .nav {
+      margin-top: 16px;
+      display: grid;
+      gap: 10px
+    }
 
-  .game .bubble{
-    display:inline-block;background:#fff;border:2px solid #111;border-radius:8px;padding:16px 22px;font-weight:900;font-size:32px;
-    position:relative;box-shadow:0 8px 20px rgba(0,0,0,.08)
-  }
-  .game .bubble::after{content:""; position:absolute; left:18px; top:100%; width:0;height:0;border:12px solid transparent;border-top-color:#111}
-  .game .bubble::before{content:""; position:absolute; left:18px; top:calc(100% - 2px); width:0;height:0;border:10px solid transparent;border-top-color:#fff}
+    .nav a {
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .08);
+      backdrop-filter: saturate(140%) blur(2px);
+    }
 
-  .game .board{position:relative;padding:10px 6px 0;border-top:1px solid #e5e7eb;margin-top:8px}
-  .game .row{display:flex;gap:10px;align-items:center;margin:12px 0}
-  .game .row label{width:140px;color:#111;font-weight:900}
+    .nav a:hover {
+      background: rgba(255, 255, 255, .16)
+    }
 
-  @media (max-width:1000px){
-    .layout{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto auto}
-    .sidebar{grid-row:auto; grid-column:auto; flex-direction:row; align-items:center; gap:14px}
-    .nav{grid-auto-flow:column; overflow:auto; white-space:nowrap; gap:8px; margin:0}
-    .hero,.right-top,.right-bottom,.cta{grid-column:auto; grid-row:auto}
-    .credit{display:none}
-    .game .effect-grid{grid-template-columns:repeat(2,minmax(140px,1fr))}
-    .game .row label{width:110px}
-  }
-</style>
+    .credit {
+      font-size: .8rem;
+      opacity: .85
+    }
+
+    /* サイドバー用：緑の「プレイする」ボタン（既存に合わせて中央寄せ・ライトグリーン影） */
+    .btn-play-green {
+      font-size: 1.3rem;
+      padding: 16px 28px;
+      border-radius: 14px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: .6em;
+      color: #fff;
+      text-decoration: none;
+      background: linear-gradient(135deg, #3cd08e 0%, #218d6a 60%, #3cd08e 100%);
+      background-size: 220% 220%;
+      box-shadow: 0 8px 20px rgba(144, 238, 144, .35);
+      transition: transform .15s ease, box-shadow .35s ease, background-position .6s ease;
+    }
+
+    .btn-play-green:hover {
+      transform: translateY(-1px) scale(1.03);
+      background-position: 60% 0;
+      box-shadow: 0 12px 28px rgba(144, 238, 144, .45);
+    }
+
+    /* メイン（緑の面） */
+    .hero {
+      grid-column: 2;
+      grid-row: 1;
+      background: var(--green);
+      border-radius: var(--radius);
+      padding: 40px 42px;
+      color: #053021;
+      box-shadow: 0 10px 24px rgba(39, 217, 138, .25);
+    }
+
+    .hero h2 {
+      margin: 0 0 6px;
+      font-size: 1.9rem
+    }
+
+    .hero p.lead {
+      margin: 6px 0 18px;
+      font-size: 1.05rem
+    }
+
+    /* 中身を載せる白いパネル（ゲーム解説本文をそのまま入れる器） */
+    .panel {
+      background: rgba(255, 255, 255, .94);
+      border-radius: 12px;
+      padding: 22px;
+      line-height: 1.8;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
+    }
+
+    .panel h2 {
+      color: #0b3b2b;
+      margin: 18px 0 8px;
+      font-size: 1.3rem
+    }
+
+    .panel h3 {
+      color: #0b3b2b;
+      margin: 14px 0 6px;
+      font-size: 1.1rem
+    }
+
+    /* 右：上下カード（indexの.cardと衝突しないように .sidecard を使用） */
+    .sidecard {
+      border-radius: var(--radius);
+      padding: 22px;
+      color: #fff;
+      box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
+    }
+
+    .right-top {
+      grid-column: 3;
+      grid-row: 1;
+      background: var(--red)
+    }
+
+    .right-bottom {
+      grid-column: 3;
+      grid-row: 1;
+      align-self: end;
+      background: var(--orange);
+      color: #3d2600
+    }
+
+    /* 下部青帯（CTA） */
+    .cta {
+      grid-column: 2 / 4;
+      grid-row: 2;
+      background: var(--blue);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      box-shadow: 0 10px 24px rgba(13, 115, 232, .25);
+    }
+
+    .btn-white {
+      display: inline-block;
+      background: #fff;
+      color: #0d73e8;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 700;
+    }
+
+    /* ====== ここから下は “激・麻雀” 本文の見た目（元ページのまま、スコープだけ .game に） ====== */
+    .game {
+      --ink: #0f172a
+    }
+
+    .game h1 {
+      font-size: clamp(28px, 4.2vw, 44px);
+      margin: 8px 0 6px;
+      color: #053021
+    }
+
+    .game h2 {
+      font-size: clamp(22px, 3.2vw, 32px);
+      margin: 22px 0 8px
+    }
+
+    .game h3 {
+      font-size: clamp(18px, 2.4vw, 24px);
+      margin: 18px 0 6px
+    }
+
+    .game .lead {
+      color: #334155;
+      margin: 0 0 10px
+    }
+
+    .game .cards {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap
+    }
+
+    .game .card {
+      width: 66px;
+      height: 88px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      font-size: 28px;
+      border: 4px solid #111;
+      box-shadow: 0 3px 0 rgba(0, 0, 0, .25) inset;
+    }
+
+    .game .card.red {
+      background: #ff3b2f
+    }
+
+    .game .card.blue {
+      background: #4e7fe6
+    }
+
+    .game .card.green {
+      background: #14e147
+    }
+
+    .game .card.lite {
+      background: #fef9c3;
+      color: #111
+    }
+
+    /* 特殊(A/B/Cなど) */
+
+    .game .effect-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(140px, 1fr));
+      gap: 14px
+    }
+
+    .game .effect {
+      background: #fff;
+      border: 4px solid #111;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .08);
+      overflow: hidden
+    }
+
+    .game .effect .head {
+      height: 54px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      font-size: 28px;
+      border-bottom: 4px solid #111
+    }
+
+    .game .effect.red .head {
+      background: #ff3b2f
+    }
+
+    .game .effect.blue .head {
+      background: #4e7fe6
+    }
+
+    .game .effect.green .head {
+      background: #14e147
+    }
+
+    .game .effect .body {
+      padding: 10px;
+      background: #eef2f7;
+      color: #111;
+      font-size: 13px;
+      line-height: 1.5
+    }
+
+    .game .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #e2e8f0
+    }
+
+    .game .tag.red {
+      background: #fee2e2;
+      color: #991b1b
+    }
+
+    .game .tag.blue {
+      background: #dbeafe;
+      color: #1e3a8a
+    }
+
+    .game .tag.green {
+      background: #dcfce7;
+      color: #166534
+    }
+
+    .game .bubble {
+      display: inline-block;
+      background: #fff;
+      border: 2px solid #111;
+      border-radius: 8px;
+      padding: 16px 22px;
+      font-weight: 900;
+      font-size: 32px;
+      position: relative;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .08)
+    }
+
+    .game .bubble::after {
+      content: "";
+      position: absolute;
+      left: 18px;
+      top: 100%;
+      width: 0;
+      height: 0;
+      border: 12px solid transparent;
+      border-top-color: #111
+    }
+
+    .game .bubble::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      top: calc(100% - 2px);
+      width: 0;
+      height: 0;
+      border: 10px solid transparent;
+      border-top-color: #fff
+    }
+
+    .game .board {
+      position: relative;
+      padding: 10px 6px 0;
+      border-top: 1px solid #e5e7eb;
+      margin-top: 8px
+    }
+
+    .game .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin: 12px 0
+    }
+
+    .game .row label {
+      width: 140px;
+      color: #111;
+      font-weight: 900
+    }
+
+    @media (max-width:1000px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto auto
+      }
+
+      .sidebar {
+        grid-row: auto;
+        grid-column: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 14px
+      }
+
+      .nav {
+        grid-auto-flow: column;
+        overflow: auto;
+        white-space: nowrap;
+        gap: 8px;
+        margin: 0
+      }
+
+      .hero,
+      .right-top,
+      .right-bottom,
+      .cta {
+        grid-column: auto;
+        grid-row: auto
+      }
+
+      .credit {
+        display: none
+      }
+
+      .game .effect-grid {
+        grid-template-columns: repeat(2, minmax(140px, 1fr))
+      }
+
+      .game .row label {
+        width: 110px
+      }
+    }
+  </style>
 </head>
+
 <body>
   <div class="layout">
 
@@ -175,7 +477,7 @@
           try {
             const res = await fetch(url, { cache: "no-store" });
             if (res.ok) { el.innerHTML = await res.text(); return; }
-          } catch {}
+          } catch { }
         }
         console.warn("sidebar.html が見つかりませんでした。。");
       })();
@@ -205,11 +507,15 @@
             <ol>
               <li><strong>同じ数字の3枚</strong>（刻子/コーツ）</li>
               <div class="cards" aria-hidden="true">
-                <div class="card green">5</div><div class="card blue">5</div><div class="card green">5</div>
+                <div class="card green">5</div>
+                <div class="card blue">5</div>
+                <div class="card green">5</div>
               </div>
               <li style="margin-top:10px"><strong>同じ色の連番3枚</strong>（順子/シュンツ）</li>
               <div class="cards" aria-hidden="true">
-                <div class="card red">1</div><div class="card red">2</div><div class="card red">3</div>
+                <div class="card red">1</div>
+                <div class="card red">2</div>
+                <div class="card red">3</div>
               </div>
             </ol>
           </section>
@@ -241,10 +547,18 @@
               <strong>合計：90枚</strong>
             </p>
             <div class="cards" aria-hidden="true" style="margin-top:6px">
-              <div class="card red">1</div><div class="card red">2</div><div class="card red">3</div>
-              <div class="card blue">7</div><div class="card blue">8</div><div class="card blue">9</div>
-              <div class="card green">5</div><div class="card green">5</div><div class="card green">5</div>
-              <div class="card lite">A</div><div class="card lite">B</div><div class="card lite">C</div>
+              <div class="card red">1</div>
+              <div class="card red">2</div>
+              <div class="card red">3</div>
+              <div class="card blue">7</div>
+              <div class="card blue">8</div>
+              <div class="card blue">9</div>
+              <div class="card green">5</div>
+              <div class="card green">5</div>
+              <div class="card green">5</div>
+              <div class="card lite">A</div>
+              <div class="card lite">B</div>
+              <div class="card lite">C</div>
             </div>
           </section>
 
@@ -257,18 +571,29 @@
               <div class="row">
                 <label>自分の手札</label>
                 <div class="cards">
-                  <div class="card red">2</div><div class="card red">3</div><div class="card red">5</div>
-                  <div class="card red">6</div><div class="card blue">7</div>
-                  <div class="card green">7</div><div class="card green">9</div><div class="card green">9</div>
+                  <div class="card red">2</div>
+                  <div class="card red">3</div>
+                  <div class="card red">5</div>
+                  <div class="card red">6</div>
+                  <div class="card blue">7</div>
+                  <div class="card green">7</div>
+                  <div class="card green">9</div>
+                  <div class="card green">9</div>
                 </div>
               </div>
               <div class="row">
                 <label>他プレイヤーの捨て札</label>
-                <div class="cards"><div class="card green">7</div></div>
+                <div class="cards">
+                  <div class="card green">7</div>
+                </div>
               </div>
               <div class="row" style="align-items:flex-end">
                 <label>自分の場</label>
-                <div class="cards"><div class="card blue">7</div><div class="card green">7</div><div class="card green">7</div></div>
+                <div class="cards">
+                  <div class="card blue">7</div>
+                  <div class="card green">7</div>
+                  <div class="card green">7</div>
+                </div>
                 <div class="bubble" style="margin-left:24px">ポン！</div>
               </div>
             </div>
@@ -283,18 +608,29 @@
               <div class="row">
                 <label>自分の手札</label>
                 <div class="cards">
-                  <div class="card red">2</div><div class="card red">3</div><div class="card red">5</div>
-                  <div class="card red">6</div><div class="card blue">7</div>
-                  <div class="card green">7</div><div class="card green">9</div><div class="card green">9</div>
+                  <div class="card red">2</div>
+                  <div class="card red">3</div>
+                  <div class="card red">5</div>
+                  <div class="card red">6</div>
+                  <div class="card blue">7</div>
+                  <div class="card green">7</div>
+                  <div class="card green">9</div>
+                  <div class="card green">9</div>
                 </div>
               </div>
               <div class="row">
                 <label>他プレイヤーの捨て札</label>
-                <div class="cards"><div class="card red">7</div></div>
+                <div class="cards">
+                  <div class="card red">7</div>
+                </div>
               </div>
               <div class="row" style="align-items:flex-end">
                 <label>自分の場</label>
-                <div class="cards"><div class="card red">5</div><div class="card red">6</div><div class="card red">7</div></div>
+                <div class="cards">
+                  <div class="card red">5</div>
+                  <div class="card red">6</div>
+                  <div class="card red">7</div>
+                </div>
                 <div class="bubble" style="margin-left:24px">チー！</div>
               </div>
             </div>
@@ -308,31 +644,76 @@
             <!-- 赤 -->
             <h3>赤カード</h3>
             <div class="effect-grid">
-              <div class="effect red"><div class="head">1</div><div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div></div>
-              <div class="effect red"><div class="head">2</div><div class="body">次のプレイヤーの番をスキップする</div></div>
-              <div class="effect red"><div class="head">3</div><div class="body">自分の捨て札からカードを1枚引き、1枚捨てる</div></div>
-              <div class="effect red"><div class="head">4</div><div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div></div>
-              <div class="effect red"><div class="head">9</div><div class="body">プレイ順を逆回りにする</div></div>
+              <div class="effect red">
+                <div class="head">1</div>
+                <div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div>
+              </div>
+              <div class="effect red">
+                <div class="head">2</div>
+                <div class="body">次のプレイヤーの番をスキップする</div>
+              </div>
+              <div class="effect red">
+                <div class="head">3</div>
+                <div class="body">自分の捨て札からカードを1枚引き、1枚捨てる</div>
+              </div>
+              <div class="effect red">
+                <div class="head">4</div>
+                <div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div>
+              </div>
+              <div class="effect red">
+                <div class="head">9</div>
+                <div class="body">プレイ順を逆回りにする</div>
+              </div>
             </div>
 
             <!-- 青 -->
             <h3 style="margin-top:16px">青カード</h3>
             <div class="effect-grid">
-              <div class="effect blue"><div class="head">1</div><div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div></div>
-              <div class="effect blue"><div class="head">2</div><div class="body">次のプレイヤーの番をスキップする</div></div>
-              <div class="effect blue"><div class="head">3</div><div class="body">自分の捨て札からカードを1枚引き、1枚捨てる</div></div>
-              <div class="effect blue"><div class="head">4</div><div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div></div>
-              <div class="effect blue"><div class="head">9</div><div class="body">プレイ順を逆回りにする</div></div>
+              <div class="effect blue">
+                <div class="head">1</div>
+                <div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div>
+              </div>
+              <div class="effect blue">
+                <div class="head">2</div>
+                <div class="body">次のプレイヤーの番をスキップする</div>
+              </div>
+              <div class="effect blue">
+                <div class="head">3</div>
+                <div class="body">自分の捨て札からカードを1枚引き、1枚捨てる</div>
+              </div>
+              <div class="effect blue">
+                <div class="head">4</div>
+                <div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div>
+              </div>
+              <div class="effect blue">
+                <div class="head">9</div>
+                <div class="body">プレイ順を逆回りにする</div>
+              </div>
             </div>
 
             <!-- 緑 -->
             <h3 style="margin-top:16px">緑カード</h3>
             <div class="effect-grid">
-              <div class="effect green"><div class="head">1</div><div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div></div>
-              <div class="effect green"><div class="head">2</div><div class="body">次のプレイヤーの番をスキップする</div></div>
-              <div class="effect green"><div class="head">3</div><div class="body">自分の捨て札からカードを1枚引き、1枚捨てる</div></div>
-              <div class="effect green"><div class="head">4</div><div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div></div>
-              <div class="effect green"><div class="head">9</div><div class="body">プレイ順を逆回りにする</div></div>
+              <div class="effect green">
+                <div class="head">1</div>
+                <div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div>
+              </div>
+              <div class="effect green">
+                <div class="head">2</div>
+                <div class="body">次のプレイヤーの番をスキップする</div>
+              </div>
+              <div class="effect green">
+                <div class="head">3</div>
+                <div class="body">自分の捨て札からカードを1枚引き、1枚捨てる</div>
+              </div>
+              <div class="effect green">
+                <div class="head">4</div>
+                <div class="body">山札から1枚引いて1枚捨てる。<br>※捨てたカードの効果は使えない</div>
+              </div>
+              <div class="effect green">
+                <div class="head">9</div>
+                <div class="body">プレイ順を逆回りにする</div>
+              </div>
             </div>
 
             <!-- 特殊カード案 -->
@@ -351,9 +732,15 @@
             <h2>役の作り方（イメージ）</h2>
             <p class="lead">「同数3枚」か「同色連番3枚」を<strong>3組</strong>そろえると上がりです。</p>
             <div class="cards" aria-hidden="true">
-              <div class="card red">1</div><div class="card red">2</div><div class="card red">3</div>
-              <div class="card blue">6</div><div class="card blue">6</div><div class="card blue">6</div>
-              <div class="card green">5</div><div class="card green">5</div><div class="card green">5</div>
+              <div class="card red">1</div>
+              <div class="card red">2</div>
+              <div class="card red">3</div>
+              <div class="card blue">6</div>
+              <div class="card blue">6</div>
+              <div class="card blue">6</div>
+              <div class="card green">5</div>
+              <div class="card green">5</div>
+              <div class="card green">5</div>
             </div>
           </section>
 
@@ -398,4 +785,5 @@
 
   </div>
 </body>
+
 </html>

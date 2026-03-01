@@ -1,114 +1,276 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
 
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
-     crossorigin="anonymous"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
+    crossorigin="anonymous"></script>
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PlayAround — お知らせ</title>
   <meta name="description" content="PlayAroundのお知らせ・更新履歴。最新機能、改善、修正情報をまとめています。">
+  <link rel="canonical" href="https://www.play-around.app/news.html">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="PlayAround">
+  <meta property="og:title" content="PlayAround — お知らせ">
+  <meta property="og:description" content="PlayAroundのお知らせ・更新履歴。最新機能、改善、修正情報をまとめています。">
+  <meta property="og:url" content="https://www.play-around.app/news.html">
+  <meta property="og:image" content="https://www.play-around.app/assets/ogp.jpg">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PlayAround — お知らせ">
+  <meta name="twitter:description" content="PlayAroundのお知らせ・更新履歴。最新機能、改善、修正情報をまとめています。">
+  <meta name="twitter:image" content="https://www.play-around.app/assets/ogp.jpg">
+
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/site.css">
-  
+
   <style>
-    :root{
-      --gap:16px; --radius:14px;
+    :root {
+      --gap: 16px;
+      --radius: 14px;
       /* index.html と統一のカラーパレット */
-      --purple:#b350be; --green:#3cd08e; --red:#e64a5a;
-      --orange:#f79f27; --blue:#1e82e0;
-      --ink:#0f172a; --bg:#f6f7fb; --card:#ffffff;
+      --purple: #b350be;
+      --green: #3cd08e;
+      --red: #e64a5a;
+      --orange: #f79f27;
+      --blue: #1e82e0;
+      --ink: #0f172a;
+      --bg: #f6f7fb;
+      --card: #ffffff;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; background:var(--bg); color:var(--ink);
-      font-family:"Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
-                   "Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic",Meiryo,sans-serif;
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
+        "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", Meiryo, sans-serif;
     }
 
     /* レイアウト（index準拠） */
-    .layout{
-      min-height:100dvh;
-      display:grid;
-      grid-template-columns:260px minmax(0,1fr) 320px;
-      grid-template-rows:1fr auto;
-      gap:var(--gap);
-      padding:var(--gap);
+    .layout {
+      min-height: 100dvh;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr) 320px;
+      grid-template-rows: 1fr auto;
+      gap: var(--gap);
+      padding: var(--gap);
     }
 
     /* サイドバー */
-    .sidebar{
-      grid-row:1 / span 2; grid-column:1;
-      background:var(--purple); color:#fff;
-      border-radius:var(--radius); padding:20px 18px;
-      display:flex; flex-direction:column; justify-content:space-between;
-      box-shadow:0 8px 24px rgba(164,10,179,.25);
+    .sidebar {
+      grid-row: 1 / span 2;
+      grid-column: 1;
+      background: var(--purple);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 8px 24px rgba(164, 10, 179, .25);
     }
-    .brand{ display:flex; align-items:center; gap:12px }
-    .brand h1{ margin:0; font-size:1.2rem; letter-spacing:.2px }
-    .nav{ margin-top:18px; display:grid; gap:10px }
-    .nav a{
-      color:#fff; text-decoration:none; padding:10px 12px; border-radius:10px;
-      background:rgba(255,255,255,.08); backdrop-filter:saturate(140%) blur(2px);
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px
     }
-    .nav a:hover{ background:rgba(255,255,255,.16) }
-    .credit{ font-size:.8rem; opacity:.85 }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: .2px
+    }
+
+    .nav {
+      margin-top: 18px;
+      display: grid;
+      gap: 10px
+    }
+
+    .nav a {
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .08);
+      backdrop-filter: saturate(140%) blur(2px);
+    }
+
+    .nav a:hover {
+      background: rgba(255, 255, 255, .16)
+    }
+
+    .credit {
+      font-size: .8rem;
+      opacity: .85
+    }
 
     /* メイン（緑の面） */
-    .hero{
-      grid-column:2; grid-row:1;
-      background:var(--green); border-radius:var(--radius);
-      padding:40px 42px; color:#053021;
-      box-shadow:0 10px 24px rgba(39,217,138,.25);
+    .hero {
+      grid-column: 2;
+      grid-row: 1;
+      background: var(--green);
+      border-radius: var(--radius);
+      padding: 40px 42px;
+      color: #053021;
+      box-shadow: 0 10px 24px rgba(39, 217, 138, .25);
     }
-    .hero h2{ margin:0 0 6px; font-size:1.9rem }
-    .hero p.lead{ margin:6px 0 22px; font-size:1.05rem }
 
-    .changelog{
-      background:rgba(255,255,255,.92);
-      border-radius:12px; padding:22px; line-height:1.82;
-      box-shadow:0 8px 18px rgba(0,0,0,.08);
+    .hero h2 {
+      margin: 0 0 6px;
+      font-size: 1.9rem
     }
-    .entry{ margin:0 0 18px; padding:0 0 18px; border-bottom:1px solid #e7eef6 }
-    .entry:last-child{ border-bottom:none; margin-bottom:0; padding-bottom:0 }
-    .entry h3{ margin:0 0 6px; font-size:1.1rem; color:#0b3b2b }
-    .meta{ font-size:.9rem; color:#215f4d; opacity:.9; margin-bottom:8px }
-    .entry ul{ margin:0 0 0 1.2em }
+
+    .hero p.lead {
+      margin: 6px 0 22px;
+      font-size: 1.05rem
+    }
+
+    .changelog {
+      background: rgba(255, 255, 255, .92);
+      border-radius: 12px;
+      padding: 22px;
+      line-height: 1.82;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
+    }
+
+    .entry {
+      margin: 0 0 18px;
+      padding: 0 0 18px;
+      border-bottom: 1px solid #e7eef6
+    }
+
+    .entry:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0
+    }
+
+    .entry h3 {
+      margin: 0 0 6px;
+      font-size: 1.1rem;
+      color: #0b3b2b
+    }
+
+    .meta {
+      font-size: .9rem;
+      color: #215f4d;
+      opacity: .9;
+      margin-bottom: 8px
+    }
+
+    .entry ul {
+      margin: 0 0 0 1.2em
+    }
 
     /* 右上（赤）／右下（橙）カード */
-    .card{
-      border-radius:var(--radius); padding:22px; color:#fff;
-      box-shadow:0 10px 22px rgba(15,23,42,.12);
+    .card {
+      border-radius: var(--radius);
+      padding: 22px;
+      color: #fff;
+      box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
     }
-    .card h3{ margin:0 0 10px }
-    .right-top{ grid-column:3; grid-row:1; background:var(--red) }
-    .right-bottom{ grid-column:3; grid-row:1; align-self:end; background:var(--orange); color:#3d2600 }
+
+    .card h3 {
+      margin: 0 0 10px
+    }
+
+    .right-top {
+      grid-column: 3;
+      grid-row: 1;
+      background: var(--red)
+    }
+
+    .right-bottom {
+      grid-column: 3;
+      grid-row: 1;
+      align-self: end;
+      background: var(--orange);
+      color: #3d2600
+    }
 
     /* 下部青帯（CTA） */
-    .cta{
-      grid-column:2 / 4; grid-row:2;
-      background:var(--blue); color:#fff; border-radius:var(--radius);
-      padding:22px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-      box-shadow:0 10px 24px rgba(13,115,232,.25);
+    .cta {
+      grid-column: 2 / 4;
+      grid-row: 2;
+      background: var(--blue);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      box-shadow: 0 10px 24px rgba(13, 115, 232, .25);
     }
-    .btn-white{
-      display:inline-block; background:#fff; color:#0d73e8; text-decoration:none;
-      border-radius:12px; padding:12px 16px; font-weight:700;
+
+    .btn-white {
+      display: inline-block;
+      background: #fff;
+      color: #0d73e8;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 700;
     }
 
     /* レスポンシブ */
-    @media (max-width: 1000px){
-      .layout{ grid-template-columns: minmax(0,1fr); grid-template-rows:auto auto auto auto }
-      .sidebar{ grid-row:auto; grid-column:auto; flex-direction:row; align-items:center; gap:14px }
-      .nav{ grid-auto-flow:column; overflow:auto; white-space:nowrap; gap:8px; margin:0 }
-      .hero, .right-top, .right-bottom, .cta{ grid-column:auto; grid-row:auto }
-      .credit{ display:none }
+    @media (max-width: 1000px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto auto
+      }
+
+      .sidebar {
+        grid-row: auto;
+        grid-column: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 14px
+      }
+
+      .nav {
+        grid-auto-flow: column;
+        overflow: auto;
+        white-space: nowrap;
+        gap: 8px;
+        margin: 0
+      }
+
+      .hero,
+      .right-top,
+      .right-bottom,
+      .cta {
+        grid-column: auto;
+        grid-row: auto
+      }
+
+      .credit {
+        display: none
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="layout">
 
@@ -121,7 +283,7 @@
           try {
             const res = await fetch(url, { cache: "no-store" });
             if (res.ok) { el.innerHTML = await res.text(); return; }
-          } catch {}
+          } catch { }
         }
         console.warn("sidebar.html が見つかりませんでした。");
       })();
@@ -140,7 +302,8 @@
           <h3>v0.10 — ドキュメント拡充とナビ整理</h3>
           <div class="meta">2025-08-30</div>
           <ul>
-            <li><strong>専用ページ追加：</strong>利用規約（terms.html）／プライバシーポリシー（privacy.html）／遊び方（howto.html）／お問い合わせ（contact.html）。</li>
+            <li><strong>専用ページ追加：</strong>利用規約（terms.html）／プライバシーポリシー（privacy.html）／遊び方（howto.html）／お問い合わせ（contact.html）。
+            </li>
             <li><strong>トップと世界観統一：</strong>紫サイドバー・緑メイン・赤／橙カード・青CTAのレイアウトに統一。</li>
             <li><strong>サイドバー改善：</strong>「利用規約」「プライバシーポリシー」「お問い合わせ」の外部リンク化と順序最適化。</li>
           </ul>
@@ -270,4 +433,5 @@
 
   </div>
 </body>
+
 </html>
