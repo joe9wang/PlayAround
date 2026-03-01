@@ -1528,6 +1528,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      /* 中央寄せから変更しても内側のinner次第 */
       padding: 12px;
       color: #555;
       position: fixed;
@@ -1537,6 +1538,19 @@
       bottom: 0;
       z-index: 1;
       /* ← サイドバーやプレビュー(10)より低く */
+    }
+
+    .site-footer__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .site-footer small {
+      margin-left: auto;
     }
 
     /* コンテンツがフッターに隠れないよう余白を確保 */
