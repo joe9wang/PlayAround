@@ -7,7 +7,7 @@
       --footer-h: 80px;
       --gheader-h: 0px;
       /* h1を削除したため0に */
-      --special-w: 5%;
+      --special-w: 16.6%;
       --stack-h: calc(var(--header-h) + var(--upload-h));
     }
 
