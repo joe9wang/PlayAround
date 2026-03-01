@@ -16,10 +16,10 @@ const I18N = {
         "auth.logout": "ログアウト",
         "app.mypage": "マイページ",
 
-        "join.section": "既存ルームに参加（非ホスト）",
+        "join.section": "既存ルームに参加（ゲスト）",
         "join.roomId": "参加するルームID",
-        "join.roomId.ph": "例: Room-1",
-        "join.password": "入室パスワード",
+        "join.roomId.ph": "例: room-1",
+        "join.password": "入室パスワード（任意）",
         "join.password.ph": " ",
         "join.name": "プレイヤー名",
         "join.name.ph": "例: SOLVENTER",
@@ -28,16 +28,16 @@ const I18N = {
 
         "create.section": "新しいルームを作成して参加（ホスト）",
         "create.roomId": "新しいルームを作成",
-        "create.roomId.ph": "例: Room-1",
+        "create.roomId.ph": "例: room-1",
         "create.password": "入室パスワード（任意）",
         "create.password.ph": " ",
         "create.name": "プレイヤー名",
         "create.name.ph": "例: SOLVENTER",
         "create.chooseSeat": "座席を選択",
         "create.chooseMode": "フィールド構成を選択",
-        "create.mode.card": "🃏 カードゲーム",
-        "create.mode.board": "🎲 ボードゲーム",
-        "create.mode.trump": "🂠 トランプ",
+        "create.mode.card": "カードゲーム",
+        "create.mode.board": "ボードゲーム",
+        "create.mode.trump": "トランプ",
         "create.createBtn": "作成",
 
         // --- Side / Panel / Buttons ---
@@ -100,7 +100,15 @@ const I18N = {
 
         "auth.loggedIn": "ログインしました。",
         "auth.loggedOut": "ログアウトしました。",
-        "auth.logoutFail": "ログアウトに失敗しました。"
+        "auth.logoutFail": "ログアウトに失敗しました。",
+
+        // --- Premium ---
+        "premium.badge": "✨ Premium",
+        "premium.register": "プレミアムに登録",
+        "premium.registered": "プレミアム会員",
+        "premium.since": "登録日",
+        "premium.hint": "月額300円で特別な機能が使えます（近日公開）",
+        "premium.status": "プレミアムステータス"
     },
     en: {
         "app.title": "Play board/card games with images (up to 4)",
@@ -117,7 +125,7 @@ const I18N = {
 
         "join.section": "Join an existing room (Guest)",
         "join.roomId": "Room ID to join",
-        "join.roomId.ph": "e.g., Room-1",
+        "join.roomId.ph": "e.g., room-1",
         "join.password": " ",
         "join.password.ph": "Required if host set one",
         "join.name": "Player name",
@@ -127,16 +135,16 @@ const I18N = {
 
         "create.section": "Create a new room (Host)",
         "create.roomId": "Create a new room",
-        "create.roomId.ph": "e.g., Room-1",
+        "create.roomId.ph": "e.g., room-1",
         "create.password": "Join password (optional)",
         "create.password.ph": " ",
         "create.name": "Player name",
         "create.name.ph": "e.g., SOLVENTER",
         "create.chooseSeat": "Choose your seat",
         "create.chooseMode": "Choose field layout",
-        "create.mode.card": "🃏 Card game",
-        "create.mode.board": "🎲 Board game",
-        "create.mode.trump": "🂠 Playing cards",
+        "create.mode.card": "Card game",
+        "create.mode.board": "Board game",
+        "create.mode.trump": "Playing cards",
         "create.createBtn": "Create",
 
         // --- Side / Panel / Buttons ---
@@ -199,7 +207,15 @@ const I18N = {
 
         "auth.loggedIn": "Signed in.",
         "auth.loggedOut": "Signed out.",
-        "auth.logoutFail": "Failed to sign out."
+        "auth.logoutFail": "Failed to sign out.",
+
+        // --- Premium ---
+        "premium.badge": "✨ Premium",
+        "premium.register": "Go Premium",
+        "premium.registered": "Premium Member",
+        "premium.since": "Member since",
+        "premium.hint": "Unlock special features for ¥300/mo (coming soon)",
+        "premium.status": "Premium Status"
     }
 };
 

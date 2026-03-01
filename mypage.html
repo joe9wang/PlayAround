@@ -221,6 +221,78 @@
       margin-left: 6px;
     }
 
+    /* ▼ プレミアム */
+    .premium-section {
+      background: linear-gradient(135deg, #fdf6e3, #fff9ec);
+      border: 1px solid #f0d68a;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .premium-section.is-premium {
+      background: linear-gradient(135deg, #eef0ff, #f5f0ff);
+      border-color: #c4b5fd;
+    }
+
+    .premium-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .premium-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .premium-info .label {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .premium-since {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .premium-hint {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .btn-premium-register {
+      border: 1px solid #7c3aed;
+      background: #fff;
+      color: #7c3aed;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background .2s, color .2s;
+    }
+
+    .btn-premium-register:hover:not(:disabled) {
+      background: #7c3aed;
+      color: #fff;
+    }
+
+    .btn-premium-register:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
     .slot-list {
       margin-top: 10px;
       display: none;
@@ -279,7 +351,17 @@
       <div class="kv">
         <div class="avatar" id="avatar">P</div>
         <div>
-          <div><strong id="displayName">Player</strong></div>
+          <div><strong id="displayName">Player</strong> <span id="premium-badge-inline"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- プレミアムステータス -->
+    <section aria-labelledby="sec-premium">
+      <h2 id="sec-premium" data-i18n="premium.status">プレミアムステータス</h2>
+      <div class="premium-section" id="premium-section">
+        <div class="premium-info" id="premium-info">
+          <span class="muted">読み込み中…</span>
         </div>
       </div>
     </section>
@@ -382,6 +464,9 @@
 
     const nameEl = document.getElementById('displayName');
     const avEl = document.getElementById('avatar');
+    const premiumSection = document.getElementById('premium-section');
+    const premiumInfo = document.getElementById('premium-info');
+    const premiumBadgeInline = document.getElementById('premium-badge-inline');
 
     // ===== セーブデータ表示（サムネ&一覧） =====
     let CURRENT_UID = null;
@@ -493,6 +578,43 @@
       avEl.textContent = (u.displayName || disp || 'P').slice(0, 1).toUpperCase();
     }
 
+    // ===== プレミアムステータス表示 =====
+    async function renderPremiumUI(uid) {
+      try {
+        const snap = await getDoc(doc(db, `users/${uid}`));
+        const data = snap.exists() ? (snap.data() || {}) : {};
+        const isPremium = !!data.premium;
+        const since = data.premiumSince?.toDate?.() || null;
+
+        // インラインバッジ（名前の横）
+        if (premiumBadgeInline) {
+          premiumBadgeInline.innerHTML = isPremium
+            ? '<span class="premium-badge">✨ Premium</span>'
+            : '';
+        }
+
+        // プレミアムセクション
+        if (isPremium) {
+          premiumSection.classList.add('is-premium');
+          premiumInfo.innerHTML = `
+            <div class="label">✨ プレミアム会員</div>
+            <div class="premium-since">登録日: ${since ? since.toLocaleDateString() : '—'}</div>
+          `;
+        } else {
+          premiumSection.classList.remove('is-premium');
+          premiumInfo.innerHTML = `
+            <button class="btn-premium-register" id="btn-premium-register" disabled>
+              プレミアムに登録
+            </button>
+            <span class="premium-hint">月額300円で特別な機能が使えます（近日公開）</span>
+          `;
+        }
+      } catch (e) {
+        console.warn('[mypage] premium check failed:', e);
+        premiumInfo.innerHTML = '<span class="muted">取得できませんでした</span>';
+      }
+    }
+
     onAuthStateChanged(auth, (user) => {
       // 未ログイン or 匿名ログインなら index に戻す
       if (!user || user.isAnonymous) {
@@ -504,6 +626,8 @@
       applyUser(user);
       // ログイン済みになったらスロット情報を描画
       refreshSaveSlots().catch(console.error);
+      // プレミアムステータスを取得・表示
+      renderPremiumUI(user.uid).catch(console.error);
     });
 
 

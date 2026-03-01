@@ -56,6 +56,7 @@ import {
 } from './hp.js';
 import { cleanupAndCloseRoom, cleanupAndDeleteRoom, releaseSeat } from './room.module.js';
 import { showRoomInterstitial } from './ads.interstitial.js';
+import { fetchPremiumStatus, premiumBadgeHTML } from './premium.js';
 
 // ===============================
 // Firebase 初期化 → firebase.init.js に移動済み
@@ -136,6 +137,7 @@ const loginBtn = document.getElementById('login-google');
 const logoutBtn = document.getElementById('logout-google');
 const mypageBtn = document.getElementById('btn-mypage');
 const whoamiSpan = document.getElementById('whoami');
+const lobbyPremiumBadge = document.getElementById('lobby-premium-badge');
 
 // まだ匿名で遊べるままにする（既存のまま）
 
@@ -696,6 +698,7 @@ onAuthStateChanged(auth, (user) => {
     logoutBtn && (logoutBtn.style.display = 'none');
     mypageBtn && (mypageBtn.style.display = 'none');   // 匿名時は隠す
     if (whoamiSpan) { whoamiSpan.style.display = 'none'; whoamiSpan.textContent = ''; }
+    if (lobbyPremiumBadge) { lobbyPremiumBadge.style.display = 'none'; lobbyPremiumBadge.innerHTML = ''; }
 
     // マイページ表示用の情報はクリア
     localStorage.removeItem('pa:googleUid');
@@ -709,6 +712,17 @@ onAuthStateChanged(auth, (user) => {
     if (whoamiSpan) {
       whoamiSpan.style.display = '';
       whoamiSpan.textContent = `ログイン中：${user.email || user.displayName || 'No Name'}`;
+    }
+
+    if (lobbyPremiumBadge) {
+      lobbyPremiumBadge.style.display = 'none';
+      lobbyPremiumBadge.innerHTML = '';
+      fetchPremiumStatus(user.uid).then(status => {
+        if (status.premium) {
+          lobbyPremiumBadge.innerHTML = premiumBadgeHTML(status.premium);
+          lobbyPremiumBadge.style.display = '';
+        }
+      }).catch(console.error);
     }
 
     // ▼GoogleのIDなどを保存（マイページで使う）
