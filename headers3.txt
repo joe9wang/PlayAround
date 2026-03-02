@@ -1,0 +1,12 @@
+HTTP/1.1 308 Permanent Redirect
+Cache-Control: public, max-age=0, must-revalidate
+Content-Type: text/plain
+Date: Mon, 02 Mar 2026 02:19:48 GMT
+Location: /api/stripe-webhook
+Refresh: 0;url=/api/stripe-webhook
+Server: Vercel
+Strict-Transport-Security: max-age=63072000
+X-Vercel-Id: cle1::h5cdq-1772417988721-576956f2a61c
+Transfer-Encoding: chunked
+
+Redirecting...

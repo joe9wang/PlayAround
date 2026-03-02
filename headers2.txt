@@ -1,0 +1,11 @@
+HTTP/1.1 307 Temporary Redirect
+Cache-Control: public, max-age=0, must-revalidate
+Content-Type: text/plain
+Date: Mon, 02 Mar 2026 02:19:12 GMT
+Location: https://batritable.com/api/stripe-webhook/
+Server: Vercel
+Strict-Transport-Security: max-age=63072000
+X-Vercel-Id: cle1::j8hr4-1772417952808-9b1e4ec7e7be
+Transfer-Encoding: chunked
+
+Redirecting...
