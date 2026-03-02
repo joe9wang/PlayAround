@@ -1,4 +1,11 @@
 {
   "buildCommand": "node scripts/inject-env.mjs",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
 }
