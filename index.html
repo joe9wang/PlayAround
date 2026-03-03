@@ -231,11 +231,23 @@
     }
 
     /* 右：上下カード（赤／橙） */
+    .right-sidebar {
+      grid-column: 3;
+      grid-row: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+    }
+
     .card {
       border-radius: var(--radius);
       padding: 22px;
       color: #fff;
       box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
+      flex: 1;
+      /* 等分にする */
+      display: flex;
+      flex-direction: column;
     }
 
     .card h3 {
@@ -243,19 +255,14 @@
     }
 
     .right-top {
-      grid-column: 3;
-      grid-row: 1;
       background: var(--red);
-      align-self: start;
-      /* 中身の高さに合わせて上寄せ */
     }
 
     .right-bottom {
-      grid-column: 3;
-      grid-row: 1;
-      align-self: end;
       background: var(--orange);
-      color: #3d2600
+      color: #3d2600;
+      justify-content: flex-end;
+      /* コンテンツを下寄せにする */
     }
 
     /* 下：横帯（青） */
@@ -461,25 +468,30 @@
 
     </main>
 
-    <!-- 右上：赤カード（更新情報など） -->
-    <section class="card right-top" id="news" aria-labelledby="news-title">
-      <h3 id="news-title">お知らせ</h3>
-      <ul style="margin:0; padding-left:1.1em">
-        <li>v0.9：手札の裏表示固定、デッキ整列／シャッフル改善</li>
-        <li>v0.8：共有プレイエリア追加、ズーム＆パン個別視点</li>
-        <li>v0.7：画像複数アップロード対応、右クリックで表裏反転</li>
-      </ul>
-    </section>
+    <!-- 右側サイドバー（赤・橙カード） -->
+    <div class="right-sidebar">
+      <!-- 右上：赤カード（更新情報など） -->
+      <section class="card right-top" id="news" aria-labelledby="news-title">
+        <h3 id="news-title">お知らせ</h3>
+        <ul style="margin:0; padding-left:1.1em">
+          <li>v0.9：手札の裏表示固定、デッキ整列／シャッフル改善</li>
+          <li>v0.8：共有プレイエリア追加、ズーム＆パン個別視点</li>
+          <li>v0.7：画像複数アップロード対応、右クリックで表裏反転</li>
+        </ul>
+      </section>
 
-    <!-- 右下：橙カード（使い方） -->
-    <section class="card right-bottom" id="howto" aria-labelledby="howto-title">
-      <h3 id="howto-title" style="color:#3d2600">かんたん3ステップ</h3>
-      <ol style="margin:0; padding-left:1.2em">
-        <li>ルーム番号を決めて共有</li>
-        <li>各自プレイヤー番号を選んで入室</li>
-        <li>画像をアップロードしてカードを並べるだけ！</li>
-      </ol>
-    </section>
+      <!-- 右下：橙カード（使い方） -->
+      <section class="card right-bottom" id="howto" aria-labelledby="howto-title">
+        <div style="margin-top: auto;">
+          <h3 id="howto-title" style="color:#3d2600">かんたん3ステップ</h3>
+          <ol style="margin:0; padding-left:1.2em">
+            <li>ルーム番号を決めて共有</li>
+            <li>各自プレイヤー番号を選んで入室</li>
+            <li>画像をアップロードしてカードを並べるだけ！</li>
+          </ol>
+        </div>
+      </section>
+    </div>
 
     <!-- 下部：青い横帯（CTA） -->
     <section class="cta" role="region" aria-label="今すぐはじめる">
