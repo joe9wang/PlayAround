@@ -588,34 +588,60 @@
       border: 1px solid #ccc;
     }
 
-    .seat-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-top: 8px;
-    }
+/* ========== 座席ボタン ========== */
+.seat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+}
 
-    .seat-btn {
-      padding: 12px 0;
-      border-radius: 10px;
-      border: 1px solid #bbb;
-      background: #fafafa;
-      cursor: pointer;
-      font-weight: 600;
-      position: relative;
-    }
+.seat-grid button {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f8f8f8;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all .2s ease;
+    text-align: center;
+}
 
-    .seat-btn.active {
-      outline: 3px solid #0a7;
-      background: #e9fff7;
-    }
+.seat-grid button.spectator-btn {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #4f46e5;
+}
 
-    .seat-btn[disabled] {
-      background: #eee;
-      color: #888;
-      border-color: #ddd;
-      cursor: not-allowed;
-    }
+.seat-grid button:hover:not(:disabled) {
+    background: #fff;
+    border-color: var(--primary);
+}
+
+.seat-grid button.spectator-btn:hover:not(:disabled) {
+    background: #e0e7ff;
+    border-color: #a5b4fc;
+}
+
+.seat-grid button.selected {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.seat-grid button.spectator-btn.selected {
+    background: #4f46e5;
+    color: #fff;
+    border-color: #4f46e5;
+}
+
+.seat-grid button:disabled {
+    background: #eaeaea;
+    color: #999;
+    cursor: not-allowed;
+    border-color: #ddd;
+}
 
     .seat-note {
       position: absolute;
