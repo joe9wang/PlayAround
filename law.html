@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
+        crossorigin="anonymous"></script>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BatriTable — 特定商取引法に基づく表記</title>
+    <meta name="description" content="BatriTableの特定商取引法に基づく表記です。">
+    <link rel="canonical" href="https://www.batritable.com/law.html">
+    <meta name="robots" content="index, follow">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/site.css">
+
+    <style>
+        :root {
+            --gap: 16px;
+            --radius: 14px;
+            --purple: #b350be;
+            --green: #3cd08e;
+            --red: #e64a5a;
+            --orange: #f79f27;
+            --blue: #1e82e0;
+            --ink: #0f172a;
+            --bg: #f6f7fb;
+            --card: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
+                "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", Meiryo, sans-serif;
+        }
+
+        .layout {
+            min-height: 100dvh;
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr) 320px;
+            grid-template-rows: 1fr auto;
+            gap: var(--gap);
+            padding: var(--gap);
+        }
+
+        .sidebar {
+            grid-row: 1 / span 2;
+            grid-column: 1;
+            background: var(--purple);
+            color: #fff;
+            border-radius: var(--radius);
+            padding: 20px 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 8px 24px rgba(164, 10, 179, .25);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            letter-spacing: .2px
+        }
+
+        .nav {
+            margin-top: 18px;
+            display: grid;
+            gap: 10px
+        }
+
+        .nav a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, .08);
+            backdrop-filter: saturate(140%) blur(2px);
+        }
+
+        .nav a:hover {
+            background: rgba(255, 255, 255, .16)
+        }
+
+        .credit {
+            font-size: .8rem;
+            opacity: .85
+        }
+
+        .hero {
+            grid-column: 2;
+            grid-row: 1;
+            background: var(--green);
+            border-radius: var(--radius);
+            padding: 40px 42px;
+            color: #053021;
+            box-shadow: 0 10px 24px rgba(39, 217, 138, .25);
+        }
+
+        .hero h2 {
+            margin: 0 0 6px;
+            font-size: 1.9rem
+        }
+
+        .hero p.lead {
+            margin: 6px 0 22px;
+            font-size: 1.05rem
+        }
+
+        .terms {
+            background: rgba(255, 255, 255, .92);
+            border-radius: 12px;
+            padding: 22px;
+            line-height: 1.82;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
+        }
+
+        .terms h3 {
+            margin: 18px 0 8px;
+            font-size: 1.15rem;
+            color: #0b3b2b
+        }
+
+        .terms p {
+            margin: 0 0 12px
+        }
+
+        .card {
+            border-radius: var(--radius);
+            padding: 22px;
+            color: #fff;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
+        }
+
+        .card h3 {
+            margin: 0 0 10px
+        }
+
+        .right-top {
+            grid-column: 3;
+            grid-row: 1;
+            background: var(--red)
+        }
+
+        .right-bottom {
+            grid-column: 3;
+            grid-row: 1;
+            align-self: end;
+            background: var(--orange);
+            color: #3d2600
+        }
+
+        .cta {
+            grid-column: 2 / 4;
+            grid-row: 2;
+            background: var(--blue);
+            color: #fff;
+            border-radius: var(--radius);
+            padding: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            box-shadow: 0 10px 24px rgba(13, 115, 232, .25);
+        }
+
+        .btn-white {
+            display: inline-block;
+            background: #fff;
+            color: #0d73e8;
+            text-decoration: none;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 1000px) {
+            .layout {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-rows: auto auto auto auto
+            }
+
+            .sidebar {
+                grid-row: auto;
+                grid-column: auto;
+                flex-direction: row;
+                align-items: center;
+                gap: 14px
+            }
+
+            .nav {
+                grid-auto-flow: column;
+                overflow: auto;
+                white-space: nowrap;
+                gap: 8px;
+                margin: 0
+            }
+
+            .hero,
+            .right-top,
+            .right-bottom,
+            .cta {
+                grid-column: auto;
+                grid-row: auto
+            }
+
+            .credit {
+                display: none
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layout">
+
+        <div id="sidebar-mount"></div>
+        <script>
+            (async () => {
+                const el = document.getElementById('sidebar-mount');
+                for (const url of ["./partials/sidebar.html", "/partials/sidebar.html"]) {
+                    try {
+                        const res = await fetch(url, { cache: "no-store" });
+                        if (res.ok) { el.innerHTML = await res.text(); return; }
+                    } catch { }
+                }
+            })();
+        </script>
+
+        <main class="hero" role="main">
+            <header>
+                <h2>特定商取引法に基づく表記</h2>
+            </header>
+
+            <section class="terms">
+                <h3>販売事業者名</h3>
+                <p>SOLVENTER</p>
+
+                <h3>運営統括責任者</h3>
+                <p>永井　丈介</p>
+
+                <h3>所在地</h3>
+                <p>東京都練馬区石神井町2-9-2</p>
+
+                <h3>お問い合わせ先</h3>
+                <p>
+                    メールアドレス：solventer.com@gmail.com<br>
+                    電話番号：050-3697-3603
+                </p>
+
+                <h3>販売価格</h3>
+                <p>各購入ページおよびマイページ等に表示される価格となります。</p>
+
+                <h3>商品代金以外の必要料金</h3>
+                <p>インターネット接続料金、通信料金等はお客様の負担となります。</p>
+
+                <h3>お支払方法</h3>
+                <p>クレジットカード決済（Stripe）</p>
+
+                <h3>代金の支払時期</h3>
+                <p>ご利用のクレジットカード会社の規定に基づきます（サブスクリプションの場合は定期的に自動引き落としとなります）。</p>
+
+                <h3>サービスの提供時期</h3>
+                <p>決済手続きが完了次第、すぐにご利用いただけます。</p>
+
+                <h3>返品・キャンセルについて</h3>
+                <p>
+                    デジタルコンテンツという商品の特性上、購入後の返品・返金には応じられません。<br>
+                    サブスクリプション（定期課金）の解約は、マイページからいつでも手続き可能です。解約手続き後、次回の更新日をもってサービス提供および請求が停止します。
+                </p>
+            </section>
+        </main>
+
+        <aside class="card right-top">
+            <h3>要点</h3>
+            <ul style="margin:0; padding-left:1.1em">
+                <li>デジタル商品の性質上、返金は不可です</li>
+                <li>解約はマイページからいつでも可能です</li>
+            </ul>
+        </aside>
+
+        <aside class="card right-bottom">
+            <h3 style="color:#3d2600">関連リンク</h3>
+            <ol style="margin:0; padding-left:1.2em; color:#3d2600">
+                <li><a href="https://www.batritable.com/terms.html" style="color:#3d2600">利用規約</a></li>
+                <li><a href="https://www.batritable.com/privacy.html" style="color:#3d2600">プライバシーポリシー</a></li>
+                <li><a href="https://www.batritable.com/contact.html" style="color:#3d2600">お問い合わせ</a></li>
+            </ol>
+        </aside>
+
+        <section class="cta" role="region">
+            <div>
+                <strong style="font-size:1.05rem">いますぐ BatriTable をはじめよう</strong><br>
+                ブラウザだけでOK。インストール不要・無料で遊べます。
+            </div>
+            <div class="cta-actions">
+                <a href="game.html" class="btn-white">▶ プレイする</a>
+            </div>
+        </section>
+
+    </div>
+</body>
+
+</html>
