@@ -24,6 +24,7 @@ const I18N = {
         "join.name": "プレイヤー名",
         "join.name.ph": "例: SOLVENTER",
         "join.chooseSeat": "座席を選択",
+        "join.seat.spectator": "観戦",
         "join.start": "開始",
 
         "create.section": "新しいルームを作成して参加（ホスト）",
@@ -34,6 +35,7 @@ const I18N = {
         "create.name": "プレイヤー名",
         "create.name.ph": "例: SOLVENTER",
         "create.chooseSeat": "座席を選択",
+        "create.seat.spectator": "観戦",
         "create.chooseMode": "フィールド構成を選択",
         "create.mode.card": "カードゲーム",
         "create.mode.board": "ボードゲーム",
@@ -131,6 +133,7 @@ const I18N = {
         "join.name": "Player name",
         "join.name.ph": "e.g., SOLVENTER",
         "join.chooseSeat": "Choose your seat",
+        "join.seat.spectator": "Spectator",
         "join.start": "Start",
 
         "create.section": "Create a new room (Host)",
@@ -141,6 +144,7 @@ const I18N = {
         "create.name": "Player name",
         "create.name.ph": "e.g., SOLVENTER",
         "create.chooseSeat": "Choose your seat",
+        "create.seat.spectator": "Spectator",
         "create.chooseMode": "Choose field layout",
         "create.mode.card": "Card game",
         "create.mode.board": "Board game",
