@@ -90,6 +90,7 @@ copyFileSync("./privacy.html", `${OUT_DIR}/privacy.html`);
 copyFileSync("./contact.html", `${OUT_DIR}/contact.html`);
 // terms.html を dist にコピー
 copyFileSync("./terms.html", `${OUT_DIR}/terms.html`);
+copyFileSync("./law.html", `${OUT_DIR}/law.html`);
 copyFileSync("./about.html", `${OUT_DIR}/about.html`);
 copyFileSync("./howto.html", `${OUT_DIR}/howto.html`);
 copyFileSync("./news.html", `${OUT_DIR}/news.html`);
