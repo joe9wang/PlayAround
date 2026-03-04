@@ -1789,10 +1789,17 @@ startBtn.addEventListener('click', async (ev) => {
 
 
     // まず最新のメタ情報を1回読み込む（以降のロジックで使用）
-    const roomSnap = await new Promise(resolve => {
-      const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); });
+    const roomSnap = await new Promise((resolve, reject) => {
+      const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); }, err => { unsub(); reject(err); });
     });
     const meta = roomSnap.exists() ? roomSnap.data() : null;
+
+    if (seat === 'spectator' && (!meta || meta.roomClosed || !isHostAlive(meta))) {
+      alert('観戦可能なアクティブなルームが見つかりません。');
+      startBtn.disabled = false;
+      startBtn.textContent = oldText;
+      return;
+    }
 
     // ★追加：自分がホストかどうか（UID一致）を定義しておく
     const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
