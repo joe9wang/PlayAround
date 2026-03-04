@@ -721,7 +721,7 @@
       z-index: 5;
     }
 
-    #create-seat-grid .seat-btn.active {
+    .seat-grid .seat-btn.active {
       outline: 3px solid #0a7;
       background: #e9fff7;
       box-shadow: 0 0 0 3px rgba(0, 170, 119, .15) inset;

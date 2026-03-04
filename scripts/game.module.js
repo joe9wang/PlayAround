@@ -1763,32 +1763,7 @@ startBtn.addEventListener('click', async (ev) => {
   startBtn.disabled = true;
   startBtn.textContent = '開始中…';
 
-  // 追加: 無人ルームの自動復旧 & ホスト引き継ぎ
   try {
-    const hostHereNow = isHostAlive(CURRENT_ROOM_META);
-    if (seat !== 'spectator' && !hostHereNow && isRoomEmpty()) {
-      // サブコレクションを掃除し、roomClosedを開け、ホストを自分に
-      await resetRoomState(room);
-      await setDoc(doc(db, `rooms/${room}`), {
-        roomClosed: false,
-        hostUid: CURRENT_UID,
-        hostDisplayName: nameNow,
-        hostSeat: seat,
-        hostHeartbeatAt: serverTimestamp()
-      }, { merge: true });
-      IS_ROOM_CREATOR = true;
-      startHostHeartbeat(room);
-    }
-  } catch (e) {
-    console.warn('[revive-room] failed', e);
-    // 失敗しても通常のJoinは続行（権限で弾かれた場合など）
-  }
-
-
-  try {
-
-
-
     // まず最新のメタ情報を1回読み込む（以降のロジックで使用）
     const roomSnap = await new Promise((resolve, reject) => {
       const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); }, err => { unsub(); reject(err); });
@@ -1805,15 +1780,11 @@ startBtn.addEventListener('click', async (ev) => {
     // ★追加：自分がホストかどうか（UID一致）を定義しておく
     const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
 
-
-    // === NEW: ルームが「終了扱い」またはホスト不在なら、ここで完全掃除してから再開する ===
-    // これにより、終了時の削除に失敗してカード/座席が残っていても、再入室時に必ず消える
-    if (seat !== 'spectator' && (meta?.roomClosed || !isHostAlive(meta))) {
+    // 自分がホストでルームが終了扱いなら再開する
+    if (iAmHost && meta?.roomClosed) {
       try {
-        await resetRoomState(room); // サブコレクション（cards / seats）を全削除
-        await setDoc(doc(db, `rooms/${room}`), { // ルームを再開
+        await setDoc(doc(db, `rooms/${room}`), {
           roomClosed: false,
-          hostUid: CURRENT_UID,
           hostSeat: seat,
           hostDisplayName: nameNow,
           hostHeartbeatAt: serverTimestamp(),
@@ -1822,7 +1793,7 @@ startBtn.addEventListener('click', async (ev) => {
         IS_ROOM_CREATOR = true;
         startHostHeartbeat(room);
       } catch (e) {
-        console.warn('[auto-cleanup] failed', e);
+        console.warn('host reopen failed', e);
       }
     }
 
