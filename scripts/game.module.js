@@ -1200,6 +1200,7 @@ createRoomBtn.addEventListener('click', async () => {
   if (!id) { alert(t('err.roomId')); return; }
   if (!creatorName) { alert(t('err.playerName')); newPlayerNameInput.focus(); return; }
   if (!CREATE_SELECTED_SEAT) { alert(t('err.seat')); return; }
+  if (CREATE_SELECTED_SEAT === 'spectator') { alert('観戦モードで新しいルームを作成することはできません。'); return; }
 
   //createRoomBtn.disabled = true;
   //const oldText = createRoomBtn.textContent;
@@ -1764,7 +1765,7 @@ startBtn.addEventListener('click', async (ev) => {
   // 追加: 無人ルームの自動復旧 & ホスト引き継ぎ
   try {
     const hostHereNow = isHostAlive(CURRENT_ROOM_META);
-    if (!hostHereNow && isRoomEmpty()) {
+    if (seat !== 'spectator' && !hostHereNow && isRoomEmpty()) {
       // サブコレクションを掃除し、roomClosedを開け、ホストを自分に
       await resetRoomState(room);
       await setDoc(doc(db, `rooms/${room}`), {
@@ -1799,7 +1800,7 @@ startBtn.addEventListener('click', async (ev) => {
 
     // === NEW: ルームが「終了扱い」またはホスト不在なら、ここで完全掃除してから再開する ===
     // これにより、終了時の削除に失敗してカード/座席が残っていても、再入室時に必ず消える
-    if (meta?.roomClosed || !isHostAlive(meta)) {
+    if (seat !== 'spectator' && (meta?.roomClosed || !isHostAlive(meta))) {
       try {
         await resetRoomState(room); // サブコレクション（cards / seats）を全削除
         await setDoc(doc(db, `rooms/${room}`), { // ルームを再開
