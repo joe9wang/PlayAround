@@ -588,60 +588,60 @@
       border: 1px solid #ccc;
     }
 
-/* ========== 座席ボタン ========== */
-.seat-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    margin-bottom: 24px;
-}
+    /* ========== 座席ボタン ========== */
+    .seat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 24px;
+    }
 
-.seat-grid button {
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background: #f8f8f8;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 700;
-    transition: all .2s ease;
-    text-align: center;
-}
+    .seat-grid button {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #f8f8f8;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      transition: all .2s ease;
+      text-align: center;
+    }
 
-.seat-grid button.spectator-btn {
-    background: #eef2ff;
-    border-color: #c7d2fe;
-    color: #4f46e5;
-}
+    .seat-grid button.spectator-btn {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+      color: #4f46e5;
+    }
 
-.seat-grid button:hover:not(:disabled) {
-    background: #fff;
-    border-color: var(--primary);
-}
+    .seat-grid button:hover:not(:disabled) {
+      background: #fff;
+      border-color: var(--primary);
+    }
 
-.seat-grid button.spectator-btn:hover:not(:disabled) {
-    background: #e0e7ff;
-    border-color: #a5b4fc;
-}
+    .seat-grid button.spectator-btn:hover:not(:disabled) {
+      background: #e0e7ff;
+      border-color: #a5b4fc;
+    }
 
-.seat-grid button.selected {
-    background: var(--primary);
-    color: #fff;
-    border-color: var(--primary);
-}
+    .seat-grid button.selected {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
 
-.seat-grid button.spectator-btn.selected {
-    background: #4f46e5;
-    color: #fff;
-    border-color: #4f46e5;
-}
+    .seat-grid button.spectator-btn.selected {
+      background: #4f46e5;
+      color: #fff;
+      border-color: #4f46e5;
+    }
 
-.seat-grid button:disabled {
-    background: #eaeaea;
-    color: #999;
-    cursor: not-allowed;
-    border-color: #ddd;
-}
+    .seat-grid button:disabled {
+      background: #eaeaea;
+      color: #999;
+      cursor: not-allowed;
+      border-color: #ddd;
+    }
 
     .seat-note {
       position: absolute;
@@ -953,9 +953,9 @@
     }
 
 
-    // モード切替: mode-card ⇄ mode-board
-    //   ※カードゲーム（既存DOM）はデフォルト表示のまま触らない！
-    //   → mode-card では一切上書きしない。board のときだけ切り替える。
+    /* モード切替: mode-card ⇄ mode-board
+       ※カードゲーム（既存DOM）はデフォルト表示のまま触らない！
+       → mode-card では一切上書きしない。board のときだけ切り替える。 */
     /* ボード/トランプ時はカード用 player-area を非表示 */
     #field.mode-board .player-area {
       display: none;
@@ -1649,4 +1649,13 @@
     #save-load-modal .slot-preview .empty {
       color: #999;
       font-size: 12px;
+    }
+
+    /* === 観戦モード用 UI制御 === */
+    body.is-spectator #ops-scroll .sl-btn:not(#leave-room-btn):not(#end-room-btn),
+    body.is-spectator #ops-scroll .sl-row,
+    body.is-spectator #ops-scroll .section-label,
+    body.is-spectator #ops-scroll #field-size-options,
+    body.is-spectator #ops-scroll .host-toggle {
+      display: none !important;
     }

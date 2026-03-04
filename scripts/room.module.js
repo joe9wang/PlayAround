@@ -14,19 +14,20 @@ import {
  * @param {string|null} currentUid
  * @param {string|null} hostUid
  */
-export async function releaseSeat(db, roomId, seat, currentUid, hostUid){
-  try{
+export async function releaseSeat(db, roomId, seat, currentUid, hostUid) {
+  if (seat === 'spectator') return;
+  try {
     const isHost = !!(hostUid && currentUid && hostUid === currentUid);
-    if (isHost){
+    if (isHost) {
       await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`));
-    }else{
+    } else {
       await setDoc(
         doc(db, `rooms/${roomId}/seats/${seat}`),
         { claimedByUid: null, displayName: '', heartbeatAt: null, updatedAt: serverTimestamp() },
         { merge: true }
       );
     }
-  }catch(e){
+  } catch (e) {
     if (e?.code !== 'permission-denied' && e?.code !== 'not-found') {
       console.warn('releaseSeat error', e);
     }
@@ -38,10 +39,10 @@ export async function releaseSeat(db, roomId, seat, currentUid, hostUid){
  * @param {import('firebase/firestore').Firestore} db
  * @param {string} roomId
  */
-export async function cleanupAndCloseRoom(db, roomId){
+export async function cleanupAndCloseRoom(db, roomId) {
   // cards
   {
-    const cardsCol  = collection(db, `rooms/${roomId}/cards`);
+    const cardsCol = collection(db, `rooms/${roomId}/cards`);
     const cardsSnap = await getDocs(cardsCol);
     let batch = writeBatch(db);
     let count = 0;
@@ -54,7 +55,7 @@ export async function cleanupAndCloseRoom(db, roomId){
 
   // chat
   {
-    const chatCol  = collection(db, `rooms/${roomId}/chat`);
+    const chatCol = collection(db, `rooms/${roomId}/chat`);
     const chatSnap = await getDocs(chatCol);
     let batch = writeBatch(db);
     let count = 0;
@@ -67,7 +68,7 @@ export async function cleanupAndCloseRoom(db, roomId){
 
   // seats
   {
-    const seatsCol  = collection(db, `rooms/${roomId}/seats`);
+    const seatsCol = collection(db, `rooms/${roomId}/seats`);
     const seatsSnap = await getDocs(seatsCol);
     let batch = writeBatch(db);
     let count = 0;
@@ -87,11 +88,11 @@ export async function cleanupAndCloseRoom(db, roomId){
  * @param {import('firebase/firestore').Firestore} db
  * @param {string} roomId
  */
-export async function cleanupAndDeleteRoom(db, roomId){
+export async function cleanupAndDeleteRoom(db, roomId) {
   await cleanupAndCloseRoom(db, roomId);
-  try{
+  try {
     await deleteDoc(doc(db, `rooms/${roomId}`));
-  }catch(e){
+  } catch (e) {
     console.warn('delete room doc failed', e);
     // tombstone 互換（TTL等は親側設定に依存）
     await setDoc(doc(db, `rooms/${roomId}`), {

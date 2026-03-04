@@ -298,7 +298,10 @@ applyCollapseState();
 // MAX_BATCH_OPS: 1バッチで行う最大オペレーション数
 // pendingPatches: パス→patch を一時保持するMap
 let CREATE_SELECTED_SEAT = 1;
-createSeatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.createSeat, 10) === 1));
+createSeatButtons.forEach(b => {
+  const s = b.dataset.createSeat === 'spectator' ? 'spectator' : parseInt(b.dataset.createSeat, 10);
+  b.classList.toggle('active', s === 1);
+});
 const picked = document.getElementById('create-seat-picked');
 if (picked) picked.textContent = `P${CREATE_SELECTED_SEAT}`;
 
@@ -910,6 +913,7 @@ function isMyCard(cardEl) { return cardEl?.dataset?.ownerSeat === String(CURRENT
 function allowOperateOthers() { return !!(CURRENT_ROOM_META?.allowOtherOps); }
 // kind: 'move' | 'flip' | 'delete' | 'rotate'
 function canOperateCard(cardEl, kind) {
+  if (CURRENT_PLAYER === 'spectator') return false;
   if (isMyCard(cardEl)) return true;
   if (allowOperateOthers()) {
     // 共有ONでも破壊的操作は不可のまま（必要なら広げられます）
@@ -1324,7 +1328,10 @@ createRoomBtn.addEventListener('click', async () => {
     renderFieldLabels();
 
     CURRENT_PLAYER = CREATE_SELECTED_SEAT;
-    seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat, 10) === CURRENT_PLAYER));
+    seatButtons.forEach(b => {
+      const s = b.dataset.seat === 'spectator' ? 'spectator' : parseInt(b.dataset.seat, 10);
+      b.classList.toggle('active', s === CURRENT_PLAYER);
+    });
     startSession(id, CREATE_SELECTED_SEAT);
 
     // 座席確定後にHP購読を開始（ロビーでは購読しない）
@@ -1367,10 +1374,11 @@ createRoomBtn.addEventListener('click', async () => {
 const createSeatButtonsEls = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
 createSeatButtonsEls.forEach(btn => {
   btn.addEventListener('click', () => {
-    CREATE_SELECTED_SEAT = parseInt(btn.dataset.createSeat, 10);
+    const val = btn.dataset.createSeat;
+    CREATE_SELECTED_SEAT = val === 'spectator' ? 'spectator' : parseInt(val, 10);
     createSeatButtonsEls.forEach(b => b.classList.toggle('active', b === btn));
     const picked = document.getElementById('create-seat-picked');
-    if (picked) picked.textContent = `P${CREATE_SELECTED_SEAT}`;
+    if (picked) picked.textContent = `P${CREATE_SELECTED_SEAT === 'spectator' ? '観戦' : CREATE_SELECTED_SEAT}`;
   });
 });
 
@@ -1414,7 +1422,8 @@ function renderSeatAvailability() {
   const hostHere = isHostAlive(CURRENT_ROOM_META);
   const roomEmpty = isRoomEmpty();
   seatButtons.forEach(btn => {
-    const seat = parseInt(btn.dataset.seat, 10);
+    const val = btn.dataset.seat;
+    const seat = val === 'spectator' ? 'spectator' : parseInt(val, 10);
     const note = btn.querySelector('.seat-note');
     const data = currentSeatMap[seat];
     const alive = data && !isSeatStale(data) && !!data.claimedByUid;
@@ -1710,9 +1719,13 @@ seatButtons.forEach(btn => {
       }
     }
     if (!nameNow) { alert('先に「プレイヤー名」を入力してください。'); playerNameInput.focus(); return; }
-    const seat = parseInt(btn.dataset.seat, 10);
+    const val = btn.dataset.seat;
+    const seat = val === 'spectator' ? 'spectator' : parseInt(val, 10);
     CURRENT_PLAYER = seat;
-    seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat, 10) === CURRENT_PLAYER));
+    seatButtons.forEach(b => {
+      const s = b.dataset.seat === 'spectator' ? 'spectator' : parseInt(b.dataset.seat, 10);
+      b.classList.toggle('active', s === CURRENT_PLAYER);
+    });
     validateLobby();
     updateEndRoomButtonVisibility();
     renderHPPanel();
@@ -1852,7 +1865,10 @@ startBtn.addEventListener('click', async (ev) => {
 
     // isMe を即時に確定させる（HP UI がこの時点で自席Onlyになる）
     CURRENT_PLAYER = seat;
-    seatButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.seat, 10) === CURRENT_PLAYER));
+    seatButtons.forEach(b => {
+      const s = b.dataset.seat === 'spectator' ? 'spectator' : parseInt(b.dataset.seat, 10);
+      b.classList.toggle('active', s === CURRENT_PLAYER);
+    });
 
     startSession(room, seat);
 
@@ -1895,6 +1911,7 @@ startBtn.addEventListener('click', async (ev) => {
 //
 
 async function claimSeat(roomId, seat) {
+  if (seat === 'spectator') return true;
   const seatRef = doc(db, `rooms/${roomId}/seats/${seat}`);
   const displayName = (playerNameInput.value || '').trim();
   const color = '#22aaff';
@@ -1990,6 +2007,7 @@ function refreshCardBacksForSeat(seat) {
 
 async function startHeartbeat(roomId, seat) {
   stopHeartbeat();
+  if (seat === 'spectator') return;
   heartbeatTimer = setInterval(async () => {
     try {
 
@@ -2085,7 +2103,8 @@ function updateSessionIndicator() {
     return;
   }
   const seatData = currentSeatMap[CURRENT_PLAYER];
-  const pName = seatData && seatData.displayName ? seatData.displayName : `P${CURRENT_PLAYER}`;
+  const defaultName = CURRENT_PLAYER === 'spectator' ? '観戦' : `P${CURRENT_PLAYER}`;
+  const pName = seatData && seatData.displayName ? seatData.displayName : defaultName;
   sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: ${pName}`;
 }
 
@@ -2097,6 +2116,7 @@ function updateSessionIndicator() {
 
 function startSession(roomId, playerId) {
   CURRENT_ROOM = roomId; CURRENT_PLAYER = playerId;
+  document.body.classList.toggle('is-spectator', CURRENT_PLAYER === 'spectator');
   updateEndRoomButtonVisibility();
   updateSessionIndicator();
   lobby.style.display = 'none';
@@ -2951,6 +2971,10 @@ function bindUploadHandlers() {
 }
 
 function handleFiles(files) {
+  if (CURRENT_PLAYER === 'spectator') {
+    alert('観戦モードではカードを追加できません。');
+    return;
+  }
   const imgs = [...files].filter(f => f.type.startsWith('image/'));
   for (const f of imgs) fileQueue.push(f);
   if (!processing) processQueue();
@@ -4638,11 +4662,17 @@ function loadLobbyCache() {
     if (newRoomPassInput && cache.newRoomPass) newRoomPassInput.value = cache.newRoomPass;
 
     if (cache.joinSeat) {
-      const btn = seatButtons.find(b => parseInt(b.dataset.seat, 10) === cache.joinSeat);
+      const btn = seatButtons.find(b => {
+        const s = b.dataset.seat === 'spectator' ? 'spectator' : parseInt(b.dataset.seat, 10);
+        return s === cache.joinSeat;
+      });
       if (btn) btn.click();
     }
     if (cache.createSeat) {
-      const btn = createSeatButtons.find(b => parseInt(b.dataset.createSeat, 10) === cache.createSeat);
+      const btn = createSeatButtons.find(b => {
+        const s = b.dataset.createSeat === 'spectator' ? 'spectator' : parseInt(b.dataset.createSeat, 10);
+        return s === cache.createSeat;
+      });
       if (btn) btn.click();
     }
     if (cache.fieldMode) {
