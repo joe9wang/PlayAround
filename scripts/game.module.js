@@ -1425,11 +1425,12 @@ function renderSeatAvailability() {
   seatButtons.forEach(btn => {
     const val = btn.dataset.seat;
     const seat = val === 'spectator' ? 'spectator' : parseInt(val, 10);
+    if (seat === 'spectator') return; // 観戦ボタンは状態表示(seat-note)がないためスキップ
     const note = btn.querySelector('.seat-note');
     const data = currentSeatMap[seat];
     const alive = data && !isSeatStale(data) && !!data.claimedByUid;
     if (alive) {
-      note.textContent = data.displayName || `P${seat}`;
+      if (note) note.textContent = data.displayName || `P${seat}`;
       btn.disabled = true;
       btn.classList.remove('free');
     } else {
