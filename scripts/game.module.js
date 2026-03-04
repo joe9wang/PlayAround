@@ -4661,6 +4661,11 @@ function loadLobbyCache() {
       if (cache.fieldMode === 'trump' && pickModeTrumpBtn) pickModeTrumpBtn.click();
     }
     validateLobby();
+
+    // Auto-fetch seat status if there's a cached room ID
+    if (joinRoomInput && joinRoomInput.value.trim()) {
+      loadSeatStatus();
+    }
   } catch (e) { console.warn('Lobby cache load failed', e); }
 }
 
