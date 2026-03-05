@@ -1606,19 +1606,16 @@ function applyFieldModeLayout() {
   fieldRoot.classList.toggle('mode-board', mode === 'board');
 
   const pc = getPlayerSeatsCount();
-  // Apply dynamic width for card mode based on player count
-  if (mode === 'card') {
-    const cols = Math.ceil(pc / 2);
-    const factor = cols / 2; // For 4 players = 1, 6 players = 1.5, 8 players = 2
-    fieldRoot.style.width = (factor * 100) + '%';
-  } else {
-    fieldRoot.style.width = '100%';
-  }
 
   // Hide or show `.player-area` nodes dynamically
   for (let i = 1; i <= 8; i++) {
     const el = document.querySelector(`.player-${i}`);
     if (el) el.style.display = (mode === 'card' && i <= pc) ? '' : 'none';
+  }
+
+  // Recalculate field size using the dynamically set width/height
+  if (typeof window.setFieldSize === 'function') {
+    window.setFieldSize(window.currentFieldSize || 'small');
   }
 }
 
@@ -4226,7 +4223,21 @@ window.openMyDiscardCardsDialog = function () {
 
 
 window.toggleFieldSizeOptions = function () { fieldSizeOptions.style.display = fieldSizeOptions.style.display === "none" ? "block" : "none"; }
-window.setFieldSize = function (size) { const sizes = { small: [3000, 1500], medium: [5000, 2500], large: [10000, 5000] }; const [w, h] = sizes[size] || sizes.small; field.style.width = `${w}px`; field.style.height = `${h}px`; field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`; }
+window.setFieldSize = function (size) {
+  window.currentFieldSize = size;
+  const pc = typeof getPlayerSeatsCount === 'function' ? getPlayerSeatsCount() : 4;
+  const mm = typeof CURRENT_ROOM_META !== 'undefined' ? CURRENT_ROOM_META?.fieldMode : null;
+  const mode = (mm === 'board' || mm === 'trump') ? 'board' : 'card';
+  const cols = mode === 'card' ? Math.max(1, Math.ceil(pc / 2)) : 2;
+  const colWidths = { small: 1500, medium: 2500, large: 5000 };
+  const heights = { small: 1500, medium: 2500, large: 5000 };
+  const colW = colWidths[size] || colWidths.small;
+  const h = heights[size] || heights.small;
+  const w = colW * cols;
+  field.style.width = `${w}px`;
+  field.style.height = `${h}px`;
+  field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
+}
 window.shuffleDecks = async function () {
   if (!CURRENT_ROOM || !CURRENT_PLAYER) return;
   const srcBounds = getDeckBoundsForSeat(CURRENT_PLAYER);
