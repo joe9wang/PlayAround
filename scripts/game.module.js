@@ -620,6 +620,18 @@ async function storageDownloadURL(path) {
 
 
 
+// --- Helper functions for dynamic player count ---
+function getPlayerSeatsCount() {
+  if (CURRENT_ROOM_META?.playerCount) return CURRENT_ROOM_META.playerCount;
+  const newPlayerCountSelect = document.getElementById('new-player-count');
+  if (newPlayerCountSelect && newPlayerCountSelect.value) return parseInt(newPlayerCountSelect.value, 10) || 4;
+  return 4;
+}
+function getPlayerSeatsArray() {
+  const c = getPlayerSeatsCount();
+  return Array.from({ length: c }, (_, i) => i + 1);
+}
+
 // === Helper: 他人の手札内かどうか（プレビュー用マスク判定） ===
 function isOtherPlayersHandCard(el) {
   try {
@@ -627,7 +639,7 @@ function isOtherPlayersHandCard(el) {
     const viewerSeat = CURRENT_PLAYER;
     const left = parseFloat(el.style.left) || 0;
     const top = parseFloat(el.style.top) || 0;
-    for (const s of [1, 2, 3, 4]) {
+    for (const s of getPlayerSeatsArray()) {
       const hb = getHandBoundsForSeat(s);
       if (hb && isCenterInsideRect(left, top, hb)) {
         return String(s) !== String(viewerSeat);
@@ -672,7 +684,9 @@ function isHostAlive(roomMeta) {
     const hb = d?.heartbeatAt?.toMillis?.();
     if (hb && (now - hb) < SEAT_STALE_MS) return true;
   }
-  for (const s of [1, 2, 3, 4]) {
+  const pc = roomMeta?.playerCount || 8;
+  const seats = Array.from({ length: pc }, (_, i) => i + 1);
+  for (const s of seats) {
     const d = currentSeatMap[s];
     const hb = d?.heartbeatAt?.toMillis?.();
     if (d?.claimedByUid === roomMeta.hostUid && hb && (now - hb) < SEAT_STALE_MS) return true;
@@ -1248,8 +1262,8 @@ createRoomBtn.addEventListener('click', async () => {
     const roomRef = doc(db, `rooms/${id}`);
     const existsSnap = await getDoc(roomRef);
     if (existsSnap.exists() && existsSnap.data()?.hostUid && existsSnap.data().hostUid !== uid) {
-      // 座席4つを並列取得して“生存者がいるか”を判定
-      const seatDocs = await Promise.all([1, 2, 3, 4].map(n => getDoc(doc(db, `rooms/${id}/seats/${n}`))));
+      // 座席8つ（旧互換含む）を並列取得して“生存者がいるか”を判定
+      const seatDocs = await Promise.all([1, 2, 3, 4, 5, 6, 7, 8].map(n => getDoc(doc(db, `rooms/${id}/seats/${n}`))));
       const someoneAlive = seatDocs.some(s => {
         if (!s.exists()) return false;
         const d = s.data() || {};
@@ -1294,7 +1308,8 @@ createRoomBtn.addEventListener('click', async () => {
       roomClosed: false,
       fieldMode: isTrump ? 'board' : CREATE_FIELD_MODE,
       joinPassHash: joinPassHash,
-      hasPassword: !!joinPassHash
+      hasPassword: !!joinPassHash,
+      playerCount: parseInt(document.getElementById('new-player-count')?.value || '4', 10)
     };
     // trump のときだけ追加（undefined を書かない）
     if (isTrump) {
@@ -1544,7 +1559,7 @@ function bindAreaColorHandlers() {
 }
 
 function renderFieldLabels() {
-  for (const s of [1, 2, 3, 4]) {
+  for (const s of getPlayerSeatsArray()) {
     // --- カード用: 既存の .player-label を更新 ---
     {
       const area = document.querySelector(`.player-${s}`);
@@ -1589,6 +1604,22 @@ function applyFieldModeLayout() {
   if (!fieldRoot) return;
   fieldRoot.classList.toggle('mode-card', mode === 'card');
   fieldRoot.classList.toggle('mode-board', mode === 'board');
+
+  const pc = getPlayerSeatsCount();
+  // Apply dynamic width for card mode based on player count
+  if (mode === 'card') {
+    const cols = Math.ceil(pc / 2);
+    const factor = cols / 2; // For 4 players = 1, 6 players = 1.5, 8 players = 2
+    fieldRoot.style.width = (factor * 100) + '%';
+  } else {
+    fieldRoot.style.width = '100%';
+  }
+
+  // Hide or show `.player-area` nodes dynamically
+  for (let i = 1; i <= 8; i++) {
+    const el = document.querySelector(`.player-${i}`);
+    if (el) el.style.display = (mode === 'card' && i <= pc) ? '' : 'none';
+  }
 }
 
 

@@ -162,40 +162,19 @@
       position: absolute;
       transform-origin: 0 0;
       background: none;
-    }
-
-
-    .player-1 {
-      top: 0;
-      left: 0;
-    }
-
-    .player-2 {
-      top: 0;
-      left: 50%;
-    }
-
-    .player-3 {
-      top: 50%;
-      left: 0;
-    }
-
-    .player-4 {
-      top: 50%;
-      left: 50%;
-    }
-
-    .special-area {
-      grid-column: 1 / 2;
-      grid-row: 1 / 3;
-      background: #9c27b0;
-      position: relative;
+      /* Dynamic Grid for Player Areas */
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      grid-auto-columns: 1fr;
+      grid-auto-flow: column;
+      width: 100%;
+      height: 100%;
     }
 
     .player-area {
-      position: absolute;
-      width: 50%;
-      height: 50%;
+      position: relative;
+      width: 100%;
+      height: 100%;
       border: 5px dashed #666;
       box-sizing: border-box;
       display: grid;
