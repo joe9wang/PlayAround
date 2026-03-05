@@ -1449,7 +1449,7 @@ function isSeatStale(data) {
 
 // 追加: 全席が空(=生きていない)かを判定
 function isRoomEmpty() {
-  return [1, 2, 3, 4].every(s => {
+  return [1, 2, 3, 4, 5, 6, 7, 8].every(s => {
     const d = currentSeatMap[s];
     return !d || isSeatStale(d) || !d.claimedByUid;
   });
@@ -1500,7 +1500,9 @@ function getSeatAreaColor(seat, zone) {
   return ac[zone] || DEFAULT_AREA_COLORS[zone];
 }
 function renderAreaColors() {
-  for (const seat of [1, 2, 3, 4]) {
+  const currentSeats = Object.keys(currentSeatMap).map(Number);
+  const seatsToCheck = currentSeats.length > 0 ? currentSeats : [1, 2, 3, 4, 5, 6, 7, 8];
+  for (const seat of seatsToCheck) {
     const root = document.querySelector(`.player-${seat}`);
     if (!root) continue;
 
@@ -1519,7 +1521,9 @@ function renderAreaColors() {
   }
 }
 function bindAreaColorHandlers() {
-  for (const seat of [1, 2, 3, 4]) {
+  const currentSeats = Object.keys(currentSeatMap).map(Number);
+  const seatsToCheck = currentSeats.length > 0 ? currentSeats : [1, 2, 3, 4, 5, 6, 7, 8];
+  for (const seat of seatsToCheck) {
     const root = document.querySelector(`.player-${seat}`);
     if (!root) continue;
 
@@ -1690,7 +1694,7 @@ function loadSeatStatus() {
   // ※ ここで updatedAt を書かない（以前は軽く触るだけで1書き込み発生していた）
 
   // seat docs listen
-  const seatDocs = [1, 2, 3, 4].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
+  const seatDocs = [1, 2, 3, 4, 5, 6, 7, 8].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
   const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
 
     // 既存の currentSeatMap 更新はそのまま残してください
@@ -1726,7 +1730,7 @@ function loadSeatStatus() {
         return !!d.claimedByUid && (now - hb) < SEAT_STALE_MS;
       };
       // 現在の全席の状態から、誰かが“生存”しているかを判定
-      const someoneFresh = [1, 2, 3, 4].some(n => isFresh(currentSeatMap[n]));
+      const someoneFresh = [1, 2, 3, 4, 5, 6, 7, 8].some(n => isFresh(currentSeatMap[n]));
       if (someoneFresh) {
         // 最後に“だれか座っていた”時刻を更新（この変数名はあなたの実装に合わせて）
         if (typeof lastNonEmptyAt !== 'undefined') lastNonEmptyAt = now;
@@ -2897,7 +2901,7 @@ function applyCardState(card, data) {
     const x = parseFloat(card.style.left) || 0;
     const y = parseFloat(card.style.top) || 0;
     let insideSeat = null;
-    for (const s of [1, 2, 3, 4]) {
+    for (const s of [1, 2, 3, 4, 5, 6, 7, 8]) {
       const hb = getHandBoundsForSeat(s);
       if (hb && isCenterInsideRect(x, y, hb)) { insideSeat = s; break; }
     }
