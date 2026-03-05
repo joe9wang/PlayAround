@@ -220,23 +220,34 @@
             <input class="field" data-i18n-placeholder="create.name.ph" id="new-player-name" maxlength="24"
               placeholder="例: SOLVENTER" type="text" />
           </div>
+          <label class="lobby-label" data-i18n="create.playerCount">
+            プレイ人数
+          </label>
+          <div class="row" style="margin-bottom:12px;">
+            <select class="field" id="new-player-count">
+              <option value="1">1人</option>
+              <option value="2">2人</option>
+              <option value="3">3人</option>
+              <option value="4" selected>4人</option>
+              <option value="5">5人</option>
+              <option value="6">6人</option>
+              <option value="7">7人</option>
+              <option value="8">8人</option>
+            </select>
+          </div>
           <label class="lobby-label" data-i18n="create.chooseSeat">
             座席を選択
           </label>
           <!-- create 用の座席グリッド（JSが #create-seat-grid を参照） -->
           <div aria-label="Create seats" class="seat-grid" id="create-seat-grid" role="group">
-            <button class="seat-btn" data-create-seat="1" type="button">
-              P1
-            </button>
-            <button class="seat-btn" data-create-seat="2" type="button">
-              P2
-            </button>
-            <button class="seat-btn" data-create-seat="3" type="button">
-              P3
-            </button>
-            <button class="seat-btn" data-create-seat="4" type="button">
-              P4
-            </button>
+            <button class="seat-btn" data-create-seat="1" type="button">P1</button>
+            <button class="seat-btn" data-create-seat="2" type="button">P2</button>
+            <button class="seat-btn" data-create-seat="3" type="button">P3</button>
+            <button class="seat-btn" data-create-seat="4" type="button">P4</button>
+            <button class="seat-btn" data-create-seat="5" type="button" style="display:none;">P5</button>
+            <button class="seat-btn" data-create-seat="6" type="button" style="display:none;">P6</button>
+            <button class="seat-btn" data-create-seat="7" type="button" style="display:none;">P7</button>
+            <button class="seat-btn" data-create-seat="8" type="button" style="display:none;">P8</button>
             <button class="seat-btn spectator-btn" data-create-seat="spectator" type="button"
               data-i18n="create.seat.spectator" style="grid-column: 1 / -1;">
               観戦

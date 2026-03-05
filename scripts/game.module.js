@@ -1383,6 +1383,27 @@ createSeatButtonsEls.forEach(btn => {
   });
 });
 
+const newPlayerCountSelect = document.getElementById('new-player-count');
+if (newPlayerCountSelect) {
+  newPlayerCountSelect.addEventListener('change', () => {
+    const count = parseInt(newPlayerCountSelect.value, 10) || 4;
+    createSeatButtonsEls.forEach(btn => {
+      const val = btn.dataset.createSeat;
+      if (val === 'spectator') return;
+      const seatNum = parseInt(val, 10);
+      if (seatNum > count) {
+        btn.style.display = 'none';
+        if (CREATE_SELECTED_SEAT === seatNum) {
+          const btn1 = createSeatButtonsEls.find(b => b.dataset.createSeat === '1');
+          if (btn1) btn1.click();
+        }
+      } else {
+        btn.style.display = '';
+      }
+    });
+  });
+}
+
 // ===============================
 // ロビー/座席管理
 // ===============================
