@@ -41,6 +41,7 @@ const I18N = {
         "create.mode.board": "ボードゲーム",
         "create.mode.trump": "トランプ",
         "create.createBtn": "作成",
+        "create.playerCount": "人数",
 
         // --- Side / Panel / Buttons ---
         "side.panel": "操作パネル",
@@ -150,6 +151,7 @@ const I18N = {
         "create.mode.board": "Board game",
         "create.mode.trump": "Playing cards",
         "create.createBtn": "Create",
+        "create.playerCount": "Number of players",
 
         // --- Side / Panel / Buttons ---
         "side.panel": "Control Panel",
