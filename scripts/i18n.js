@@ -46,6 +46,7 @@ const I18N = {
         // --- Side / Panel / Buttons ---
         "side.panel": "操作パネル",
         "side.panel.toggle": "操作パネルの表示/非表示",
+        "side.saveRoom": "💾 ルームを保存",
         "side.save": "💾 セーブ",
         "side.load": "📂 ロード",
         "side.resetFacing": "↻ 全カード向きリセット",
@@ -156,6 +157,7 @@ const I18N = {
         // --- Side / Panel / Buttons ---
         "side.panel": "Control Panel",
         "side.panel.toggle": "Show/Hide control panel",
+        "side.saveRoom": "💾 Save room",
         "side.save": "💾 Save",
         "side.load": "📂 Load",
         "side.resetFacing": "↻ Reset card orientation",
