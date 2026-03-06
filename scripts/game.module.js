@@ -4952,6 +4952,7 @@ async function checkRestoreRoomSlot() {
       updatedAt: serverTimestamp(),
       hostUid: CURRENT_UID,
       hostDisplayName: hostName,
+      lastSeatPing: serverTimestamp(), // ★ ホストが自動退出されないように現在時刻をセット
       roomClosed: false,
       fieldMode: roomData.fieldMode || 'card',
       fieldSize: roomData.fieldSize || 'medium',
@@ -4964,7 +4965,7 @@ async function checkRestoreRoomSlot() {
     await setDoc(doc(db, `rooms/${newRoomId}`), payload);
 
     // 2. コレクションデータのコピー
-    const copyCollection = async (colName, transformDoc = (d) => d) => {
+    const copyCollection = async (colName, transformDoc = (d, id) => d) => {
       const srcCol = collection(db, `${slotPath}/${colName}`);
       const destCol = collection(db, `rooms/${newRoomId}/${colName}`);
       const srcSnap = await getDocs(srcCol);
@@ -4974,7 +4975,7 @@ async function checkRestoreRoomSlot() {
       let batch = writeBatch(db);
       let n = 0;
       for (const d of srcSnap.docs) {
-        batch.set(doc(destCol, d.id), transformDoc(d.data()));
+        batch.set(doc(destCol, d.id), transformDoc(d.data(), d.id));
         if (++n >= 450) {
           await batch.commit();
           batch = writeBatch(db);
@@ -4993,9 +4994,16 @@ async function checkRestoreRoomSlot() {
 
     // 座席(HP等)の復元。ホストは自分に付け替え、他は空席扱いにするかそのまま残すか
     // (ここではHP情報などを残しつつ、アクセス管理上全員ログアウト状態にリセット)
-    await copyCollection('seats', (d) => {
-      // 自分はそのまま
-      if (d.claimedByUid === CURRENT_UID) return d;
+    await copyCollection('seats', (d, id) => {
+      // 復元したホストをP1(CURRENT_PLAYER)に強制アサイン
+      if (id === '1') {
+        return {
+          ...d,
+          claimedByUid: CURRENT_UID,
+          displayName: hostName,
+          heartbeatAt: serverTimestamp()
+        };
+      }
       // 他人の席は空席化
       return {
         ...d,
