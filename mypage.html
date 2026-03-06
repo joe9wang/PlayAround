@@ -366,6 +366,43 @@
       </div>
     </section>
 
+    <!-- 保存したルーム -->
+    <section aria-labelledby="sec-room-saves">
+      <h2 id="sec-room-saves">保存したルーム</h2>
+      <ul class="plain" id="roomSaveList">
+        <li class="item" id="room-slot-1">
+          <div>
+            <div><strong>スロット1</strong></div>
+            <div class="muted room-slot-updated">最終更新: -</div>
+            <div class="muted room-slot-info">データなし</div>
+          </div>
+          <div class="right">
+            <a class="small-btn room-enter-btn" href="#" data-slot="1" style="display:none;">ルームに入る</a>
+          </div>
+        </li>
+        <li class="item" id="room-slot-2">
+          <div>
+            <div><strong>スロット2</strong></div>
+            <div class="muted room-slot-updated">最終更新: -</div>
+            <div class="muted room-slot-info">データなし</div>
+          </div>
+          <div class="right">
+            <a class="small-btn room-enter-btn" href="#" data-slot="2" style="display:none;">ルームに入る</a>
+          </div>
+        </li>
+        <li class="item" id="room-slot-3">
+          <div>
+            <div><strong>スロット3</strong></div>
+            <div class="muted room-slot-updated">最終更新: -</div>
+            <div class="muted room-slot-info">データなし</div>
+          </div>
+          <div class="right">
+            <a class="small-btn room-enter-btn" href="#" data-slot="3" style="display:none;">ルームに入る</a>
+          </div>
+        </li>
+      </ul>
+    </section>
+
     <!-- セーブデータ一覧（後でFirestore連携する想定） -->
     <section aria-labelledby="sec-saves">
       <h2 id="sec-saves" data-i18n="mypage.saves">セーブデータ</h2>
@@ -471,6 +508,60 @@
     // ===== セーブデータ表示（サムネ&一覧） =====
     let CURRENT_UID = null;
     const slPath = (slot) => `users/${CURRENT_UID}/saves/slot${slot}`;
+
+    // ルーム保存機能情報取得
+    const roomSlPath = (slot) => `users/${CURRENT_UID}/savedRooms/slot${slot}`;
+
+    async function fetchRoomSlotMeta(slot) {
+      const snap = await getDoc(doc(db, roomSlPath(slot)));
+      const d = snap.exists() ? (snap.data() || {}) : {};
+      return {
+        exists: snap.exists(),
+        roomName: d.roomName || '保存したルーム',
+        cardsCount: d.cardsCount || 0,
+        chatCount: d.chatCount || 0,
+        updatedAt: d.updatedAt?.toDate?.() || null
+      };
+    }
+
+    async function refreshRoomSaveSlots() {
+      for (const slot of [1, 2, 3]) {
+        const meta = await fetchRoomSlotMeta(slot);
+        const itemEl = document.getElementById(`room-slot-${slot}`);
+        if (!itemEl) continue;
+
+        const uEl = itemEl.querySelector('.room-slot-updated');
+        const iEl = itemEl.querySelector('.room-slot-info');
+        const btn = itemEl.querySelector('.room-enter-btn');
+
+        if (meta.exists) {
+          if (uEl) uEl.textContent = `最終更新: ${meta.updatedAt ? meta.updatedAt.toLocaleString() : '-'}`;
+          if (iEl) {
+            iEl.innerHTML = `<span style="color:#222">${meta.roomName}</span><br/>📝 ${meta.cardsCount}枚 / 💬 ${meta.chatCount}件`;
+            iEl.classList.remove('muted');
+          }
+          if (btn) btn.style.display = 'inline-block';
+        } else {
+          if (uEl) uEl.textContent = '最終更新: -';
+          if (iEl) {
+            iEl.textContent = 'データなし';
+            iEl.classList.add('muted');
+          }
+          if (btn) btn.style.display = 'none';
+        }
+      }
+    }
+
+    // ルームに入るボタンの制御
+    document.getElementById('roomSaveList')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.room-enter-btn');
+      if (!btn) return;
+      e.preventDefault();
+      const slot = parseInt(btn.dataset.slot, 10);
+      if (slot) {
+        window.location.href = `./game.html?restore_room_slot=${slot}`;
+      }
+    });
 
     async function fetchSlotMeta(slot) {
       const snap = await getDoc(doc(db, slPath(slot)));
@@ -669,6 +760,7 @@
       applyUser(user);
       // ログイン済みになったらスロット情報を描画
       refreshSaveSlots().catch(console.error);
+      refreshRoomSaveSlots().catch(console.error);
       // プレミアムステータスを取得・表示
       renderPremiumUI(user.uid).catch(console.error);
     });

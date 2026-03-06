@@ -479,6 +479,39 @@ window.openSaveLoadDialog = openSaveLoadDialog;
   });
 })();
 
+// ==== ルーム保存モーダル制御 ====
+function openRoomSaveDialog() {
+  const modal = document.getElementById('room-save-modal');
+  if (!modal) return;
+
+  // プレビューを更新
+  updateRoomSlotPreviews();
+
+  modal.style.display = 'flex';
+}
+window.openRoomSaveDialog = openRoomSaveDialog;
+
+(function bindRoomSLModal() {
+  const modal = document.getElementById('room-save-modal');
+  if (!modal) return;
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.style.display = 'none';
+  });
+
+  document.getElementById('room-sl-cancel')?.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  modal.querySelectorAll('.room-slot-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const slot = parseInt(btn.dataset.slot, 10);
+      modal.style.display = 'none';
+      await saveRoomToSlot(slot);
+    });
+  });
+})();
+
 
 // ▼ 追加：スロットのプレビューを描画（各最大5枚）
 async function updateSlotPreviews() {
@@ -528,6 +561,137 @@ async function updateSlotPreviews() {
     }
   } catch (e) {
     console.warn('updateSlotPreviews error', e);
+  }
+}
+
+// ==== ルーム保存ロジック ====
+function roomSlDocPath(slot) {
+  return `users/${CURRENT_UID}/savedRooms/slot${slot}`;
+}
+
+async function updateRoomSlotPreviews() {
+  try {
+    await ensureAuthReady();
+    const wrap = document.querySelector('#room-save-modal .room-sl-preview');
+    if (!wrap) return;
+    const boxes = Array.from(wrap.querySelectorAll('.room-slot-preview'));
+    for (const box of boxes) {
+      const slot = parseInt(box.dataset.slot, 10);
+      box.innerHTML = '<span class="empty">読み込み中…</span>';
+      try {
+        const snap = await getDoc(doc(db, roomSlDocPath(slot)));
+        if (!snap.exists()) {
+          box.innerHTML = '<span class="empty">空き</span>';
+          continue;
+        }
+        const data = snap.data();
+        const dateStr = data.updatedAt?.toDate?.().toLocaleString() || '-';
+        box.innerHTML = `
+          <div style="font-size:12px; margin-bottom:4px;">${data.roomName || '保存したルーム'}</div>
+          <div style="font-size:10px; color:#666;">📝 ${data.cardsCount || 0}枚 / 💬 ${data.chatCount || 0}件</div>
+          <div style="font-size:10px; color:#999;">${dateStr}</div>
+        `;
+      } catch (e) {
+        console.warn('room preview fetch failed', e);
+        box.innerHTML = '<span class="empty">取得失敗</span>';
+      }
+    }
+  } catch (e) {
+    console.warn('updateRoomSlotPreviews error', e);
+  }
+}
+
+async function saveRoomToSlot(slot) {
+  await ensureAuthReady();
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください'); return;
+  }
+  // ホストチェック
+  if (CURRENT_ROOM_META?.hostUid !== CURRENT_UID) {
+    alert('ルームの保存はホストのみ実行可能です'); return;
+  }
+
+  try {
+    const confirmSave = confirm(`現在のルーム状態（カード、HP、チャット）を SLOT ${slot} に保存しますか？\n（以前のデータは上書きされます）`);
+    if (!confirmSave) return;
+
+    // 1. データ取得
+    const roomRef = doc(db, `rooms/${CURRENT_ROOM}`);
+    const [roomSnap, cardsSnap, seatsSnap, logSnap] = await Promise.all([
+      getDoc(roomRef),
+      getDocs(collection(db, `rooms/${CURRENT_ROOM}/cards`)),
+      getDocs(collection(db, `rooms/${CURRENT_ROOM}/seats`)),
+      getDocs(collection(db, `rooms/${CURRENT_ROOM}/log`))
+    ]);
+
+    if (!roomSnap.exists()) throw new Error('Room not found');
+    const roomData = roomSnap.data();
+
+    // 2. スロットの既存データをクリア
+    const baseRef = doc(db, roomSlDocPath(slot));
+
+    // サブコレクションのクリア処理
+    const collectionsToClear = ['cards', 'seats', 'log'];
+    for (const colName of collectionsToClear) {
+      const q = query(collection(db, `${roomSlDocPath(slot)}/${colName}`), limit(500));
+      let currentSnap = await getDocs(q);
+      while (!currentSnap.empty) {
+        let b = writeBatch(db);
+        currentSnap.docs.forEach(d => b.delete(d.ref));
+        await b.commit();
+        currentSnap = await getDocs(q);
+      }
+    }
+
+    // 3. メタデータの保存
+    await setDoc(baseRef, {
+      updatedAt: serverTimestamp(),
+      cardsCount: cardsSnap.size,
+      chatCount: logSnap.size,
+      originalRoomId: CURRENT_ROOM,
+      roomName: `ルーム: ${CURRENT_ROOM}`,
+      roomData: {
+        playerCount: roomData.playerCount || 4,
+        allowOtherOps: roomData.allowOtherOps || false,
+        fieldMode: roomData.fieldMode || 'card',
+        fieldSize: roomData.fieldSize || 'medium',
+        createdAt: roomData.createdAt || null
+      }
+    });
+
+    // 4. サブコレクションの保存 (バッチ処理)
+    const writeCollection = async (snap, colName, transformDoc = (d) => d.data()) => {
+      if (snap.empty) return;
+      const targetCol = collection(db, `${roomSlDocPath(slot)}/${colName}`);
+      let batch = writeBatch(db);
+      let n = 0;
+      for (const d of snap.docs) {
+        batch.set(doc(targetCol, d.id), transformDoc(d));
+        if (++n >= 450) {
+          await batch.commit();
+          batch = writeBatch(db);
+          n = 0;
+        }
+      }
+      if (n > 0) await batch.commit();
+    };
+
+    // カードの保存
+    await writeCollection(cardsSnap, 'cards');
+
+    // HP等座席情報の保存
+    await writeCollection(seatsSnap, 'seats');
+
+    // チャットの保存
+    await writeCollection(logSnap, 'log');
+
+    alert(`SLOT ${slot} にルームを保存しました。`);
+    postLog(`ホストがルームの状態を保存しました`);
+    updateRoomSlotPreviews(); // プレビュー更新
+
+  } catch (e) {
+    console.error('ROOM SAVE ERROR', e);
+    alert(`ルームの保存に失敗しました（${e?.code || 'unknown'}）。`);
   }
 }
 
@@ -4749,5 +4913,152 @@ createSeatButtons.forEach(b => b.addEventListener('click', () => setTimeout(save
   if (b) b.addEventListener('click', () => setTimeout(saveLobbyCache, 10));
 });
 
-// スクリプト読み込み時にロード
-loadLobbyCache();
+// ==== 保存ルームの復元（URLパラメータ） ====
+async function checkRestoreRoomSlot() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const restoreSlot = urlParams.get('restore_room_slot');
+  if (!restoreSlot) return false;
+
+  const slotNum = parseInt(restoreSlot, 10);
+  if (!slotNum || slotNum < 1 || slotNum > 3) return false;
+
+  await ensureAuthReady();
+  if (!CURRENT_UID) {
+    alert('保存したルームを読み込むにはログインが必要です。');
+    return false;
+  }
+
+  lobby.style.display = 'none'; // 先に隠す
+
+  try {
+    const slotPath = `users/${CURRENT_UID}/savedRooms/slot${slotNum}`;
+    const snap = await getDoc(doc(db, slotPath));
+    if (!snap.exists()) {
+      alert(`SLOT ${slotNum} に保存されたルームはありません。`);
+      lobby.style.display = 'flex';
+      return false;
+    }
+
+    const slotData = snap.data();
+    const originalRoomId = slotData.originalRoomId || 'unknown';
+    // 新しいルームIDを生成 (元のID + timestamp)
+    const newRoomId = `${originalRoomId}-${Date.now().toString().slice(-6)}`;
+    const roomData = slotData.roomData || { playerCount: 4 };
+
+    // 1. 新しいルームを作成
+    const hostName = localStorage.getItem('pa:displayName') || 'Host';
+    const payload = {
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      hostUid: CURRENT_UID,
+      hostDisplayName: hostName,
+      roomClosed: false,
+      fieldMode: roomData.fieldMode || 'card',
+      fieldSize: roomData.fieldSize || 'medium',
+      playerCount: roomData.playerCount || 4,
+      allowOtherOps: roomData.allowOtherOps || false,
+      isRestored: true,
+      restoredFromSlot: slotNum
+    };
+
+    await setDoc(doc(db, `rooms/${newRoomId}`), payload);
+
+    // 2. コレクションデータのコピー
+    const copyCollection = async (colName, transformDoc = (d) => d) => {
+      const srcCol = collection(db, `${slotPath}/${colName}`);
+      const destCol = collection(db, `rooms/${newRoomId}/${colName}`);
+      const srcSnap = await getDocs(srcCol);
+
+      if (srcSnap.empty) return;
+
+      let batch = writeBatch(db);
+      let n = 0;
+      for (const d of srcSnap.docs) {
+        batch.set(doc(destCol, d.id), transformDoc(d.data()));
+        if (++n >= 450) {
+          await batch.commit();
+          batch = writeBatch(db);
+          n = 0;
+        }
+      }
+      if (n > 0) await batch.commit();
+    };
+
+    // カードの復元
+    await copyCollection('cards', (d) => {
+      // 復元されたカードのUI表示などをリセット
+      d.updatedAt = serverTimestamp();
+      return d;
+    });
+
+    // 座席(HP等)の復元。ホストは自分に付け替え、他は空席扱いにするかそのまま残すか
+    // (ここではHP情報などを残しつつ、アクセス管理上全員ログアウト状態にリセット)
+    await copyCollection('seats', (d) => {
+      // 自分はそのまま
+      if (d.claimedByUid === CURRENT_UID) return d;
+      // 他人の席は空席化
+      return {
+        ...d,
+        claimedByUid: null,
+        displayName: '',
+        heartbeatAt: serverTimestamp()
+      };
+    });
+
+    // チャットのログを追加
+    await copyCollection('log');
+    await addDoc(collection(db, `rooms/${newRoomId}/chat`), {
+      type: 'log',
+      text: `SLOT ${slotNum} の保存データからルームを復元しました`,
+      seat: 1, // 仮
+      name: 'System',
+      createdAt: serverTimestamp()
+    });
+
+    // 3. ルームに入る
+    // パラメータを取り除いたURLに履歴書き換え
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    IS_ROOM_CREATOR = true;
+    startHostHeartbeat(newRoomId);
+
+    CURRENT_ROOM_META = { hostUid: CURRENT_UID, hostDisplayName: hostName, fieldMode: roomData.fieldMode };
+    CURRENT_ROOM = newRoomId;
+    CURRENT_PLAYER = 1; // 復元ホストは基本P1
+
+    await setDoc(doc(db, `rooms/${newRoomId}`), { hostSeat: CURRENT_PLAYER, updatedAt: serverTimestamp() }, { merge: true });
+
+    currentSeatMap[CURRENT_PLAYER] = { claimedByUid: CURRENT_UID, displayName: hostName };
+    renderFieldLabels();
+
+    startSession(newRoomId, CURRENT_PLAYER);
+
+    try {
+      subscribeHP(CURRENT_ROOM);
+      renderHPPanel();
+    } catch (e) { console.warn('[HP] subscribe failed', e); }
+
+    // トランプモード初期化等が必要なら
+    if (roomData.fieldMode === 'trump') applyFieldModeLayout();
+
+    alert('保存したルームを復元しました。');
+    return true;
+
+  } catch (e) {
+    console.error('Room restore failed', e);
+    alert('保存ルームの復元に失敗しました。');
+    lobby.style.display = 'flex';
+    // URL戻す
+    window.history.replaceState({}, document.title, window.location.pathname);
+    return false;
+  }
+}
+
+// 起動時にロード処理
+(async function initApp() {
+  loadLobbyCache();
+
+  // URL復元チェック
+  const isRestoring = await checkRestoreRoomSlot();
+  if (isRestoring) return; // 復元成功ならロビーは不要
+})();
