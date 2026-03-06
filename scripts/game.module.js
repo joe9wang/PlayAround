@@ -621,7 +621,7 @@ async function saveRoomToSlot(slot) {
       getDoc(roomRef),
       getDocs(collection(db, `rooms/${CURRENT_ROOM}/cards`)),
       getDocs(collection(db, `rooms/${CURRENT_ROOM}/seats`)),
-      getDocs(collection(db, `rooms/${CURRENT_ROOM}/log`))
+      getDocs(collection(db, `rooms/${CURRENT_ROOM}/chat`))
     ]);
 
     if (!roomSnap.exists()) throw new Error('Room not found');
@@ -631,7 +631,7 @@ async function saveRoomToSlot(slot) {
     const baseRef = doc(db, roomSlDocPath(slot));
 
     // サブコレクションのクリア処理
-    const collectionsToClear = ['cards', 'seats', 'log'];
+    const collectionsToClear = ['cards', 'seats', 'chat'];
     for (const colName of collectionsToClear) {
       const q = query(collection(db, `${roomSlDocPath(slot)}/${colName}`), limit(500));
       let currentSnap = await getDocs(q);
@@ -683,7 +683,7 @@ async function saveRoomToSlot(slot) {
     await writeCollection(seatsSnap, 'seats');
 
     // チャットの保存
-    await writeCollection(logSnap, 'log');
+    await writeCollection(logSnap, 'chat');
 
     alert(`SLOT ${slot} にルームを保存しました。`);
     postLog(`ホストがルームの状態を保存しました`);
