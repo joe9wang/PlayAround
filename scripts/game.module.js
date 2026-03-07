@@ -5114,12 +5114,21 @@ function bindAreaContextMenuOnce() {
 
   if (!ctxMenu || !btnChangeBg || !fileInput) return;
 
-  const targetAreaSelectors = ['.play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
+  const targetAreaSelectors = ['.play-area', '.main-play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
 
   // 右クリックイベントを各エリアにアタッチ
   document.addEventListener('contextmenu', (e) => {
-    const area = e.target.closest(targetAreaSelectors.join(', '));
+    console.log('[contextmenu] Clicked on:', e.target);
+    // まずターゲットが対象エリアのいずれかに属しているか判定
+    let area = e.target.closest(targetAreaSelectors.join(', '));
+    console.log('[contextmenu] Matched area:', area);
     if (!area) return;
+
+    // `.main-play-area` の場合は親の `.play-area` を対象とする（設定をまとめるため）
+    if (area.classList.contains('main-play-area')) {
+      area = area.closest('.play-area');
+      console.log('[contextmenu] Adjusted area to parent .play-area:', area);
+    }
 
     // カードの上で右クリックした場合はカードのcontextmenuを優先するため判定
     if (e.target.closest('.card')) return;
@@ -5131,7 +5140,10 @@ function bindAreaContextMenuOnce() {
     // クラス名から識別子を生成 (例: player-1-play-area)
     const pMatch = playerArea.className.match(/(player-\d)/);
     const pClass = pMatch ? pMatch[1] : '';
-    const aClass = [...area.classList].find(c => targetAreaSelectors.some(sel => sel.slice(1) === c));
+    // 実際に保存するキーは対象のメインエリア名 (.play-area など)
+    const mainSelectors = ['.play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
+    const aClass = [...area.classList].find(c => mainSelectors.some(sel => sel.slice(1) === c));
+
     if (!pClass || !aClass) return;
 
     currentTargetAreaId = `${pClass}-${aClass}`;
