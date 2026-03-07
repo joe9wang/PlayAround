@@ -5125,12 +5125,6 @@ function bindAreaContextMenuOnce() {
     console.log('[contextmenu] Matched area:', area);
     if (!area) return;
 
-    // `.main-play-area` の場合は親の `.play-area` を対象とする（設定をまとめるため）
-    if (area.classList.contains('main-play-area')) {
-      area = area.closest('.play-area');
-      console.log('[contextmenu] Adjusted area to parent .play-area:', area);
-    }
-
     // カードの上で右クリックした場合はカードのcontextmenuを優先するため判定
     if (e.target.closest('.card')) return;
 
