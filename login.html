@@ -222,6 +222,113 @@
             background: #16213e;
             color: #ccc;
         }
+
+        /* ===== Registration Modal ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            width: min(480px, 92vw);
+            max-height: 90vh;
+            overflow-y: auto;
+            background: #1e1e2f;
+            border-radius: 16px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, .6);
+            padding: 32px 28px;
+            text-align: center;
+            transform: translateY(20px);
+            transition: transform .25s ease;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: translateY(0);
+        }
+
+        .modal-avatar {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-avatar svg {
+            width: 40px;
+            height: 40px;
+            fill: #888;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .modal-desc {
+            font-size: 12px;
+            color: #888;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .modal-links {
+            margin-bottom: 20px;
+        }
+
+        .modal-links a {
+            font-size: 12px;
+            color: #5cb8ff;
+            text-decoration: none;
+            display: block;
+            margin: 2px 0;
+        }
+
+        .modal-links a:hover {
+            text-decoration: underline;
+        }
+
+        .modal-hint {
+            font-size: 11px;
+            color: #666;
+            text-align: left;
+            margin-top: -6px;
+            margin-bottom: 8px;
+        }
+
+        .modal-footer {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #333;
+        }
+
+        .modal-sns-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .modal-sns-row .login-btn {
+            flex: 1;
+        }
     </style>
 </head>
 
@@ -293,6 +400,62 @@
         <a href="./game.html" class="back-link" id="back-link">← ゲームに戻る</a>
     </div>
 
+    <!-- ===== 新規アカウント作成モーダル ===== -->
+    <div class="modal-overlay" id="register-modal">
+        <div class="modal-card">
+            <!-- アバターアイコン -->
+            <div class="modal-avatar">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                </svg>
+            </div>
+
+            <div class="modal-title" id="modal-title">アカウント作成</div>
+            <div class="modal-desc" id="modal-desc">
+                連携されたアカウントはログインのためだけに利用されます。<br>
+                ユーザーの同意なくアカウント上のコンテンツの閲覧・作成・変更を行うことはありません。
+            </div>
+            <div class="modal-links">
+                <a href="./terms.html" target="_blank" id="modal-link-terms">利用規約</a>
+                <a href="./privacy.html" target="_blank" id="modal-link-privacy">プライバシーポリシー</a>
+            </div>
+
+            <!-- メールで作成 -->
+            <div class="section-label" id="modal-lbl-email">メールアドレスでアカウントを作成する</div>
+            <input class="login-field" id="reg-email" type="email" placeholder="メールアドレス" />
+            <input class="login-field" id="reg-password" type="password" placeholder="パスワード" />
+            <div class="modal-hint" id="modal-hint">6文字以上</div>
+            <button class="login-btn login-btn--primary" id="reg-submit-btn" type="button">アカウントを作成</button>
+
+            <!-- SNSで作成 -->
+            <div class="section-label" id="modal-lbl-sns">SNS認証でアカウントを新規作成する</div>
+            <div class="modal-sns-row">
+                <button class="login-btn login-btn--google" id="reg-google-btn" type="button">
+                    <svg viewBox="0 0 24 24" width="18" height="18" style="margin-right:8px;">
+                        <path fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" />
+                        <path fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.97 10.97 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" />
+                        <path fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    <span id="modal-lbl-google">Googleで新規作成</span>
+                </button>
+            </div>
+
+            <!-- 戻る -->
+            <div class="modal-footer">
+                <div class="section-label" id="modal-lbl-has-account">既にアカウントをお持ちの方</div>
+                <button class="login-btn login-btn--register" id="modal-back-btn" type="button">
+                    <span id="modal-lbl-back">ログイン</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="scripts/polyfills.js"></script>
     <script type="module">
         import {
@@ -318,6 +481,14 @@
         const logoutBtn = document.getElementById('logout-btn');
         const loggedinUser = document.getElementById('loggedin-user');
 
+        // Modal refs
+        const registerModal = document.getElementById('register-modal');
+        const regEmailInput = document.getElementById('reg-email');
+        const regPasswordInput = document.getElementById('reg-password');
+        const regSubmitBtn = document.getElementById('reg-submit-btn');
+        const regGoogleBtn = document.getElementById('reg-google-btn');
+        const modalBackBtn = document.getElementById('modal-back-btn');
+
         // ===== i18n (simple) =====
         const I18N = {
             ja: {
@@ -329,7 +500,15 @@
                 snsSection: 'SNS認証でログインする', google: 'Googleでログイン',
                 noAccount: 'アカウントをお持ちでない方', register: '新規アカウント作成',
                 loggedIn: 'ログイン済みです', backGame: 'ゲームに戻る', logout: 'ログアウト',
-                backLink: '← ゲームに戻る'
+                backLink: '← ゲームに戻る',
+                // modal
+                modalTitle: 'アカウント作成',
+                modalDesc: '連携されたアカウントはログインのためだけに利用されます。<br>ユーザーの同意なくアカウント上のコンテンツの閲覧・作成・変更を行うことはありません。',
+                modalEmailSection: 'メールアドレスでアカウントを作成する',
+                modalHint: '6文字以上', modalSubmit: 'アカウントを作成',
+                modalSnsSection: 'SNS認証でアカウントを新規作成する', modalGoogle: 'Googleで新規作成',
+                modalHasAccount: '既にアカウントをお持ちの方', modalBack: 'ログイン',
+                modalTerms: '利用規約', modalPrivacy: 'プライバシーポリシー'
             },
             en: {
                 title: 'Sign In',
@@ -340,7 +519,15 @@
                 snsSection: 'Sign in with SNS', google: 'Sign in with Google',
                 noAccount: "Don't have an account?", register: 'Create new account',
                 loggedIn: 'You are signed in', backGame: 'Back to game', logout: 'Sign out',
-                backLink: '← Back to game'
+                backLink: '← Back to game',
+                // modal
+                modalTitle: 'Create Account',
+                modalDesc: 'Your linked account is used only for sign-in.<br>We will never view, create, or modify your account content without consent.',
+                modalEmailSection: 'Create with email',
+                modalHint: 'At least 6 characters', modalSubmit: 'Create account',
+                modalSnsSection: 'Create with SNS', modalGoogle: 'Create with Google',
+                modalHasAccount: 'Already have an account?', modalBack: 'Sign in',
+                modalTerms: 'Terms', modalPrivacy: 'Privacy Policy'
             }
         };
         let lang = (localStorage.getItem('lang') || 'ja').toLowerCase();
@@ -364,6 +551,20 @@
             document.getElementById('btn-back-game').textContent = d.backGame;
             logoutBtn.textContent = d.logout;
             document.getElementById('back-link').textContent = d.backLink;
+            // modal i18n
+            document.getElementById('modal-title').textContent = d.modalTitle;
+            document.getElementById('modal-desc').innerHTML = d.modalDesc;
+            document.getElementById('modal-lbl-email').textContent = d.modalEmailSection;
+            regEmailInput.placeholder = d.emailPh;
+            regPasswordInput.placeholder = d.passPh;
+            document.getElementById('modal-hint').textContent = d.modalHint;
+            regSubmitBtn.textContent = d.modalSubmit;
+            document.getElementById('modal-lbl-sns').textContent = d.modalSnsSection;
+            document.getElementById('modal-lbl-google').textContent = d.modalGoogle;
+            document.getElementById('modal-lbl-has-account').textContent = d.modalHasAccount;
+            document.getElementById('modal-lbl-back').textContent = d.modalBack;
+            document.getElementById('modal-link-terms').textContent = d.modalTerms;
+            document.getElementById('modal-link-privacy').textContent = d.modalPrivacy;
         }
         applyLang();
         langSel.addEventListener('change', () => { lang = langSel.value; localStorage.setItem('lang', lang); applyLang(); });
@@ -421,14 +622,19 @@
             } finally { loginEmailBtn.disabled = false; }
         });
 
-        // ===== Register =====
-        registerBtn.addEventListener('click', async () => {
-            const email = loginEmailInput.value.trim();
-            const password = loginPasswordInput.value.trim();
+        // ===== Open / Close modal =====
+        registerBtn.addEventListener('click', () => { registerModal.classList.add('active'); });
+        modalBackBtn.addEventListener('click', () => { registerModal.classList.remove('active'); });
+        registerModal.addEventListener('click', (e) => { if (e.target === registerModal) registerModal.classList.remove('active'); });
+
+        // ===== Register (modal email) =====
+        regSubmitBtn.addEventListener('click', async () => {
+            const email = regEmailInput.value.trim();
+            const password = regPasswordInput.value.trim();
             if (!email || !password) { alert(lang === 'ja' ? 'メールアドレスとパスワードを入力してください。' : 'Please enter email and password.'); return; }
             if (password.length < 6) { alert(lang === 'ja' ? 'パスワードは6文字以上で入力してください。' : 'Password must be at least 6 characters.'); return; }
             try {
-                registerBtn.disabled = true;
+                regSubmitBtn.disabled = true;
                 const u = auth.currentUser;
                 if (u && u.isAnonymous) {
                     try {
@@ -449,7 +655,31 @@
                 else if (code === 'auth/weak-password') alert(lang === 'ja' ? 'パスワードが弱すぎます。' : 'Password too weak.');
                 else if (code === 'auth/invalid-email') alert(lang === 'ja' ? 'メールアドレスの形式が正しくありません。' : 'Invalid email.');
                 else alert(`${lang === 'ja' ? 'アカウント作成に失敗しました' : 'Registration failed'} (${code})`);
-            } finally { registerBtn.disabled = false; }
+            } finally { regSubmitBtn.disabled = false; }
+        });
+
+        // ===== Register (modal Google) =====
+        regGoogleBtn.addEventListener('click', async () => {
+            try {
+                regGoogleBtn.disabled = true;
+                const u = auth.currentUser;
+                if (u && u.isAnonymous) {
+                    try { await linkWithPopup(u, google); } catch (e) {
+                        if (e?.code === 'auth/credential-already-in-use') {
+                            const cred = GoogleAuthProvider.credentialFromError(e);
+                            if (cred) await signInWithCredential(auth, cred);
+                        } else if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
+                            await linkWithRedirect(u, google); return;
+                        } else throw e;
+                    }
+                } else {
+                    await signInWithPopup(auth, google);
+                }
+                location.href = './game.html';
+            } catch (e) {
+                console.warn('[GoogleRegister]', e);
+                alert(`${lang === 'ja' ? 'アカウント作成に失敗しました' : 'Registration failed'} (${e?.code || 'unknown'})`);
+            } finally { regGoogleBtn.disabled = false; }
         });
 
         // ===== Forgot password =====
