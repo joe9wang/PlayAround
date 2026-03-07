@@ -135,19 +135,12 @@ async function sendCloseBeacon(roomId) {
 
 
 // ▼ロビーのログインUI参照
-const loginBtn = document.getElementById('login-google');
 const logoutBtn = document.getElementById('logout-google');
 const mypageBtn = document.getElementById('btn-mypage');
 const whoamiSpan = document.getElementById('whoami');
 const lobbyPremiumBadge = document.getElementById('lobby-premium-badge');
-// ▼新規追加：メール認証UI参照
 const authFormArea = document.getElementById('auth-form-area');
 const authLoggedinArea = document.getElementById('auth-loggedin-area');
-const loginEmailInput = document.getElementById('login-email');
-const loginPasswordInput = document.getElementById('login-password');
-const loginEmailBtn = document.getElementById('login-email-btn');
-const forgotPasswordLink = document.getElementById('forgot-password-link');
-const registerBtn = document.getElementById('register-btn');
 
 // まだ匿名で遊べるままにする（既存のまま）
 
@@ -936,182 +929,7 @@ initI18n();
 // Googleプロバイダ
 const google = new GoogleAuthProvider();
 
-// ===== メール/パスワードでログイン =====
-loginEmailBtn?.addEventListener('click', async () => {
-  const email = (loginEmailInput?.value || '').trim();
-  const password = (loginPasswordInput?.value || '').trim();
-  if (!email || !password) {
-    alert('メールアドレスとパスワードを入力してください。');
-    return;
-  }
-  try {
-    loginEmailBtn.disabled = true;
-    const u = auth.currentUser;
-    // 匿名ユーザーならメール/パスワードを紐付け
-    if (u && u.isAnonymous) {
-      try {
-        const cred = EmailAuthProvider.credential(email, password);
-        await linkWithCredential(u, cred);
-        alert('ログインしました。');
-        return;
-      } catch (linkErr) {
-        // 既にアカウントが存在する場合は通常ログインにフォールバック
-        if (linkErr?.code === 'auth/email-already-in-use' || linkErr?.code === 'auth/credential-already-in-use') {
-          await signInWithEmailAndPassword(auth, email, password);
-          alert('既存アカウントでログインしました。');
-          return;
-        }
-        throw linkErr;
-      }
-    }
-    // 非匿名 → 通常ログイン
-    await signInWithEmailAndPassword(auth, email, password);
-    alert('ログインしました。');
-  } catch (e) {
-    console.warn('[EmailSignIn] failed', e);
-    const code = e?.code || '';
-    if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
-      alert('アカウントが見つからないか、パスワードが違います。');
-    } else if (code === 'auth/wrong-password') {
-      alert('パスワードが違います。');
-    } else if (code === 'auth/invalid-email') {
-      alert('メールアドレスの形式が正しくありません。');
-    } else if (code === 'auth/too-many-requests') {
-      alert('ログイン試行回数が多すぎます。しばらくしてからお試しください。');
-    } else {
-      alert(`ログインに失敗しました（${code || 'unknown'}）。`);
-    }
-  } finally {
-    if (loginEmailBtn) loginEmailBtn.disabled = false;
-  }
-});
-
-// ===== 新規アカウント作成 =====
-registerBtn?.addEventListener('click', async () => {
-  const email = (loginEmailInput?.value || '').trim();
-  const password = (loginPasswordInput?.value || '').trim();
-  if (!email || !password) {
-    alert('メールアドレスとパスワードを入力してください。');
-    return;
-  }
-  if (password.length < 6) {
-    alert('パスワードは6文字以上で入力してください。');
-    return;
-  }
-  try {
-    registerBtn.disabled = true;
-    const u = auth.currentUser;
-    // 匿名ユーザーならメール/パスワードを紐付けて昇格
-    if (u && u.isAnonymous) {
-      try {
-        const cred = EmailAuthProvider.credential(email, password);
-        await linkWithCredential(u, cred);
-        alert('アカウントを作成しました。');
-        return;
-      } catch (linkErr) {
-        if (linkErr?.code === 'auth/email-already-in-use') {
-          alert('このメールアドレスは既に登録されています。ログインしてください。');
-          return;
-        }
-        throw linkErr;
-      }
-    }
-    await createUserWithEmailAndPassword(auth, email, password);
-    alert('アカウントを作成しました。');
-  } catch (e) {
-    console.warn('[Register] failed', e);
-    const code = e?.code || '';
-    if (code === 'auth/email-already-in-use') {
-      alert('このメールアドレスは既に登録されています。ログインしてください。');
-    } else if (code === 'auth/weak-password') {
-      alert('パスワードが弱すぎます。6文字以上にしてください。');
-    } else if (code === 'auth/invalid-email') {
-      alert('メールアドレスの形式が正しくありません。');
-    } else {
-      alert(`アカウント作成に失敗しました（${code || 'unknown'}）。`);
-    }
-  } finally {
-    if (registerBtn) registerBtn.disabled = false;
-  }
-});
-
-// ===== パスワードリセット =====
-forgotPasswordLink?.addEventListener('click', async (e) => {
-  e.preventDefault();
-  const email = (loginEmailInput?.value || '').trim();
-  if (!email) {
-    alert('メールアドレスを入力してから「パスワードを忘れた場合」を押してください。');
-    return;
-  }
-  try {
-    await sendPasswordResetEmail(auth, email);
-    alert('パスワードリセットメールを送信しました。メールを確認してください。');
-  } catch (e2) {
-    console.warn('[PasswordReset] failed', e2);
-    const code = e2?.code || '';
-    if (code === 'auth/user-not-found' || code === 'auth/invalid-email') {
-      alert('該当するアカウントが見つかりません。メールアドレスを確認してください。');
-    } else {
-      alert(`パスワードリセットに失敗しました（${code || 'unknown'}）。`);
-    }
-  }
-});
-
-// ===== Google SNS認証でログイン =====
-// 匿名→Googleへ"昇格" or 通常ログイン
-// まず Popup を試し、代表的な失敗は Redirect にフォールバック
-loginBtn?.addEventListener('click', async () => {
-  const tryRedirect = async () => {
-    const u = auth.currentUser;
-    if (u && u.isAnonymous) {
-      await linkWithRedirect(u, google);
-    } else {
-      await signInWithRedirect(auth, google);
-    }
-  };
-  try {
-    loginBtn.disabled = true;
-    const u = auth.currentUser;
-    if (u && u.isAnonymous) {
-      await linkWithPopup(u, google);
-    } else {
-      await signInWithPopup(auth, google);
-    }
-    // displayName 未設定ならフォームの名前を反映（任意）
-    const cu = auth.currentUser;
-    const name = (newPlayerNameInput?.value || playerNameInput?.value || '').trim();
-    if (cu && !cu.displayName && name) await updateProfile(cu, { displayName: name });
-    alert('ログインしました。');
-  } catch (e) {
-
-    console.warn('[PopupSignIn] failed', e);
-    const code = e?.code || '';
-
-    // すでに別ユーザーにリンク済み → その既存ユーザーでサインインに切り替え
-    if (code === 'auth/credential-already-in-use') {
-      const cred = GoogleAuthProvider.credentialFromError(e);
-      if (cred) {
-        await signInWithCredential(auth, cred);  // 既存Googleアカウントでログイン
-        alert('既存のGoogleアカウントでログインしました。');
-        return;
-      }
-    }
-
-    const popupErrors = [
-      'auth/popup-blocked',
-      'auth/popup-closed-by-user',
-      'auth/cancelled-popup-request',
-      'auth/operation-not-allowed',   // まれにポリシーで弾かれる
-    ];
-    if (popupErrors.includes(code)) {
-      try { await tryRedirect(); return; } catch (e2) { console.warn('[Redirect fallback] failed', e2); }
-    }
-    alert(`ログインに失敗しました（${e?.code || 'unknown'}）。別ブラウザ/ポップアップ許可をお試しください。`);
-  } finally {
-    loginBtn.disabled = false;
-  }
-});
-
+// ログインは login.html で行うため、ここではログアウトのみ
 
 // ログアウト → すぐ匿名に戻してプレイ継続可
 logoutBtn?.addEventListener('click', async () => {

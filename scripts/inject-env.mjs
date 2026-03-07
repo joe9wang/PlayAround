@@ -8,7 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // 1) 入力/出力ファイル
 const OUT_DIR = "./dist";
 // 置換対象：HTML（従来どおり）
-const PAGES = ["./index.html", "./game.html", "./mypage.html"];
+const PAGES = ["./index.html", "./game.html", "./mypage.html", "./login.html"];
 // 置換対象：JS/ESM（必要に応じて追加）
 // 例: game.html から外出しした module スクリプトをここに追加
 const JS_MODULES = [
