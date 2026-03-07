@@ -2361,6 +2361,8 @@ function startSession(roomId, playerId) {
   subscribeChat();          // ←追加：チャット購読を開始
   bindChatUIOnce();         // ←追加：送信ボタン/Enter送信を有効化
   subscribeHP(roomId);      // HPの購読開始
+  subscribeAreas();         // エリア背景画像の同期
+  bindAreaContextMenuOnce(); // エリア右クリックメニューの初期化
 
   startHostWatch();
   renderAreaColors();
@@ -5060,6 +5062,153 @@ async function checkRestoreRoomSlot() {
     window.history.replaceState({}, document.title, window.location.pathname);
     return false;
   }
+}
+// ===============================
+// エリア背景画像
+// ===============================
+let unsubscribeAreas = null;
+let areaContextMenuBound = false;
+let currentTargetAreaId = null;
+
+function subscribeAreas() {
+  if (unsubscribeAreas) { unsubscribeAreas(); unsubscribeAreas = null; }
+  if (!CURRENT_ROOM) return;
+
+  const qAreas = collection(db, `rooms/${CURRENT_ROOM}/areas`);
+  unsubscribeAreas = onSnapshot(qAreas, snap => {
+    snap.docChanges().forEach(change => {
+      const id = change.doc.id;
+      const data = change.doc.data();
+      // ID例: "player-1-play-area" -> selector: .player-area.player-1 .play-area
+      const parts = id.match(/^(player-\d)-(.*)$/);
+      if (!parts) return;
+      const playerClass = parts[1];
+      const areaClass = parts[2];
+
+      const el = document.querySelector(`.player-area.${playerClass} .${areaClass}`);
+      if (!el) return;
+
+      if (change.type === 'removed' || !data.imageUrl) {
+        el.style.backgroundImage = '';
+        el.style.backgroundSize = '';
+        el.style.backgroundPosition = '';
+        el.style.backgroundRepeat = '';
+      } else {
+        el.style.backgroundImage = `url(${data.imageUrl})`;
+        el.style.backgroundSize = 'contain';
+        el.style.backgroundPosition = 'center';
+        el.style.backgroundRepeat = 'no-repeat';
+      }
+    });
+  });
+}
+
+function bindAreaContextMenuOnce() {
+  if (areaContextMenuBound) return;
+  areaContextMenuBound = true;
+
+  const ctxMenu = document.getElementById('area-context-menu');
+  const btnChangeBg = document.getElementById('area-ctx-change-bg');
+  const btnRemoveBg = document.getElementById('area-ctx-remove-bg');
+  const fileInput = document.getElementById('area-bg-file');
+
+  if (!ctxMenu || !btnChangeBg || !fileInput) return;
+
+  const targetAreaSelectors = ['.play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
+
+  // 右クリックイベントを各エリアにアタッチ
+  document.addEventListener('contextmenu', (e) => {
+    const area = e.target.closest(targetAreaSelectors.join(', '));
+    if (!area) return;
+
+    // カードの上で右クリックした場合はカードのcontextmenuを優先するため判定
+    if (e.target.closest('.card')) return;
+
+    // .player-area を遡って取得
+    const playerArea = area.closest('.player-area');
+    if (!playerArea) return;
+
+    // クラス名から識別子を生成 (例: player-1-play-area)
+    const pMatch = playerArea.className.match(/(player-\d)/);
+    const pClass = pMatch ? pMatch[1] : '';
+    const aClass = [...area.classList].find(c => targetAreaSelectors.some(sel => sel.slice(1) === c));
+    if (!pClass || !aClass) return;
+
+    currentTargetAreaId = `${pClass}-${aClass}`;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // メニュー表示
+    ctxMenu.style.display = 'block';
+
+    // 画面外にはみ出ないように位置調整
+    const menuWidth = ctxMenu.offsetWidth;
+    const menuHeight = ctxMenu.offsetHeight;
+    let x = e.clientX;
+    let y = e.clientY;
+
+    if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth;
+    if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight;
+
+    ctxMenu.style.left = `${x}px`;
+    ctxMenu.style.top = `${y}px`;
+  });
+
+  // 他の場所をクリックしたらメニューを閉じる
+  document.addEventListener('click', () => {
+    ctxMenu.style.display = 'none';
+  });
+
+  // メニュー: 画像変更をクリック
+  btnChangeBg.addEventListener('click', (e) => {
+    e.stopPropagation();
+    ctxMenu.style.display = 'none';
+    fileInput.click();
+  });
+
+  // メニュー: 画像削除をクリック
+  btnRemoveBg.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    ctxMenu.style.display = 'none';
+    if (!CURRENT_ROOM || !currentTargetAreaId) return;
+
+    try {
+      await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`));
+    } catch (err) {
+      console.warn('Failed to delete area bg:', err);
+    }
+  });
+
+  // ファイル選択時: アップロードしてFirestoreに書き込み
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file || !CURRENT_ROOM || !currentTargetAreaId) return;
+
+    // 同じファイルを選べるようにリセット
+    fileInput.value = '';
+
+    try {
+      const extMatch = file.name.match(/\.[0-9a-z]+$/i);
+      const ext = extMatch ? extMatch[0].toLowerCase() : '.jpg';
+      const storagePath = `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}_${Date.now()}${ext}`;
+
+      const sref = ref(storage, storagePath);
+      await uploadBytes(sref, file);
+      const url = await getDownloadURL(sref);
+
+      await setDoc(doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`), {
+        imageUrl: url,
+        updatedAt: serverTimestamp()
+      });
+
+      // ログ出力
+      appendSystemLine(`エリア画像を更新しました (${currentTargetAreaId})`);
+    } catch (err) {
+      console.error('Area BG upload failed:', err);
+      appendSystemLine('画像のアップロードに失敗しました。');
+    }
+  });
 }
 
 // 起動時にロード処理
