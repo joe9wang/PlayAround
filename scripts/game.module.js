@@ -31,7 +31,9 @@ import {
   // Auth
   signInAnonymously, onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithPopup, linkWithPopup, signInWithCredential,
+  EmailAuthProvider, createUserWithEmailAndPassword,
+  signInWithEmailAndPassword, sendPasswordResetEmail,
+  signInWithPopup, linkWithPopup, signInWithCredential, linkWithCredential,
   signInWithRedirect, linkWithRedirect, getRedirectResult,
   signOut, updateProfile, onIdTokenChanged, getIdToken,
   // Firestore
@@ -138,6 +140,14 @@ const logoutBtn = document.getElementById('logout-google');
 const mypageBtn = document.getElementById('btn-mypage');
 const whoamiSpan = document.getElementById('whoami');
 const lobbyPremiumBadge = document.getElementById('lobby-premium-badge');
+// ▼新規追加：メール認証UI参照
+const authFormArea = document.getElementById('auth-form-area');
+const authLoggedinArea = document.getElementById('auth-loggedin-area');
+const loginEmailInput = document.getElementById('login-email');
+const loginPasswordInput = document.getElementById('login-password');
+const loginEmailBtn = document.getElementById('login-email-btn');
+const forgotPasswordLink = document.getElementById('forgot-password-link');
+const registerBtn = document.getElementById('register-btn');
 
 // まだ匿名で遊べるままにする（既存のまま）
 
@@ -875,10 +885,10 @@ onAuthStateChanged(auth, (user) => {
 
   // ロビーのボタン表示を更新（元のロジックを踏襲）
   if (user.isAnonymous) {
-    loginBtn && (loginBtn.style.display = '');
-    logoutBtn && (logoutBtn.style.display = 'none');
-    mypageBtn && (mypageBtn.style.display = 'none');   // 匿名時は隠す
-    if (whoamiSpan) { whoamiSpan.style.display = 'none'; whoamiSpan.textContent = ''; }
+    // 未ログイン（匿名）→ フォームを表示、ログインUI非表示
+    if (authFormArea) authFormArea.style.display = '';
+    if (authLoggedinArea) authLoggedinArea.style.display = 'none';
+
     if (lobbyPremiumBadge) { lobbyPremiumBadge.style.display = 'none'; lobbyPremiumBadge.innerHTML = ''; }
 
     // マイページ表示用の情報はクリア
@@ -887,9 +897,10 @@ onAuthStateChanged(auth, (user) => {
     localStorage.removeItem('pa:photoURL');
 
   } else {
-    loginBtn && (loginBtn.style.display = 'none');
-    logoutBtn && (logoutBtn.style.display = '');       // 既定表示に戻す
-    mypageBtn && (mypageBtn.style.display = '');       // ログイン後に表示
+    // ログイン済み → フォーム非表示、ユーザー情報表示
+    if (authFormArea) authFormArea.style.display = 'none';
+    if (authLoggedinArea) authLoggedinArea.style.display = '';
+
     if (whoamiSpan) {
       whoamiSpan.style.display = '';
       whoamiSpan.textContent = `ログイン中：${user.email || user.displayName || 'No Name'}`;
@@ -906,8 +917,7 @@ onAuthStateChanged(auth, (user) => {
       }).catch(console.error);
     }
 
-    // ▼GoogleのIDなどを保存（マイページで使う）
-    const provider = (user.providerData || []).find(p => p.providerId === 'google.com');
+    // ▼プロバイダ情報を保存（マイページで使う）
     localStorage.setItem('pa:email', user.email || '');
     localStorage.setItem('pa:displayName', user.displayName || '');
     localStorage.setItem('pa:photoURL', user.photoURL || '');
@@ -926,7 +936,129 @@ initI18n();
 // Googleプロバイダ
 const google = new GoogleAuthProvider();
 
-// 匿名→Googleへ“昇格” or 通常ログイン
+// ===== メール/パスワードでログイン =====
+loginEmailBtn?.addEventListener('click', async () => {
+  const email = (loginEmailInput?.value || '').trim();
+  const password = (loginPasswordInput?.value || '').trim();
+  if (!email || !password) {
+    alert('メールアドレスとパスワードを入力してください。');
+    return;
+  }
+  try {
+    loginEmailBtn.disabled = true;
+    const u = auth.currentUser;
+    // 匿名ユーザーならメール/パスワードを紐付け
+    if (u && u.isAnonymous) {
+      try {
+        const cred = EmailAuthProvider.credential(email, password);
+        await linkWithCredential(u, cred);
+        alert('ログインしました。');
+        return;
+      } catch (linkErr) {
+        // 既にアカウントが存在する場合は通常ログインにフォールバック
+        if (linkErr?.code === 'auth/email-already-in-use' || linkErr?.code === 'auth/credential-already-in-use') {
+          await signInWithEmailAndPassword(auth, email, password);
+          alert('既存アカウントでログインしました。');
+          return;
+        }
+        throw linkErr;
+      }
+    }
+    // 非匿名 → 通常ログイン
+    await signInWithEmailAndPassword(auth, email, password);
+    alert('ログインしました。');
+  } catch (e) {
+    console.warn('[EmailSignIn] failed', e);
+    const code = e?.code || '';
+    if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
+      alert('アカウントが見つからないか、パスワードが違います。');
+    } else if (code === 'auth/wrong-password') {
+      alert('パスワードが違います。');
+    } else if (code === 'auth/invalid-email') {
+      alert('メールアドレスの形式が正しくありません。');
+    } else if (code === 'auth/too-many-requests') {
+      alert('ログイン試行回数が多すぎます。しばらくしてからお試しください。');
+    } else {
+      alert(`ログインに失敗しました（${code || 'unknown'}）。`);
+    }
+  } finally {
+    if (loginEmailBtn) loginEmailBtn.disabled = false;
+  }
+});
+
+// ===== 新規アカウント作成 =====
+registerBtn?.addEventListener('click', async () => {
+  const email = (loginEmailInput?.value || '').trim();
+  const password = (loginPasswordInput?.value || '').trim();
+  if (!email || !password) {
+    alert('メールアドレスとパスワードを入力してください。');
+    return;
+  }
+  if (password.length < 6) {
+    alert('パスワードは6文字以上で入力してください。');
+    return;
+  }
+  try {
+    registerBtn.disabled = true;
+    const u = auth.currentUser;
+    // 匿名ユーザーならメール/パスワードを紐付けて昇格
+    if (u && u.isAnonymous) {
+      try {
+        const cred = EmailAuthProvider.credential(email, password);
+        await linkWithCredential(u, cred);
+        alert('アカウントを作成しました。');
+        return;
+      } catch (linkErr) {
+        if (linkErr?.code === 'auth/email-already-in-use') {
+          alert('このメールアドレスは既に登録されています。ログインしてください。');
+          return;
+        }
+        throw linkErr;
+      }
+    }
+    await createUserWithEmailAndPassword(auth, email, password);
+    alert('アカウントを作成しました。');
+  } catch (e) {
+    console.warn('[Register] failed', e);
+    const code = e?.code || '';
+    if (code === 'auth/email-already-in-use') {
+      alert('このメールアドレスは既に登録されています。ログインしてください。');
+    } else if (code === 'auth/weak-password') {
+      alert('パスワードが弱すぎます。6文字以上にしてください。');
+    } else if (code === 'auth/invalid-email') {
+      alert('メールアドレスの形式が正しくありません。');
+    } else {
+      alert(`アカウント作成に失敗しました（${code || 'unknown'}）。`);
+    }
+  } finally {
+    if (registerBtn) registerBtn.disabled = false;
+  }
+});
+
+// ===== パスワードリセット =====
+forgotPasswordLink?.addEventListener('click', async (e) => {
+  e.preventDefault();
+  const email = (loginEmailInput?.value || '').trim();
+  if (!email) {
+    alert('メールアドレスを入力してから「パスワードを忘れた場合」を押してください。');
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    alert('パスワードリセットメールを送信しました。メールを確認してください。');
+  } catch (e2) {
+    console.warn('[PasswordReset] failed', e2);
+    const code = e2?.code || '';
+    if (code === 'auth/user-not-found' || code === 'auth/invalid-email') {
+      alert('該当するアカウントが見つかりません。メールアドレスを確認してください。');
+    } else {
+      alert(`パスワードリセットに失敗しました（${code || 'unknown'}）。`);
+    }
+  }
+});
+
+// ===== Google SNS認証でログイン =====
+// 匿名→Googleへ"昇格" or 通常ログイン
 // まず Popup を試し、代表的な失敗は Redirect にフォールバック
 loginBtn?.addEventListener('click', async () => {
   const tryRedirect = async () => {

@@ -106,6 +106,17 @@ const I18N = {
         "auth.loggedOut": "ログアウトしました。",
         "auth.logoutFail": "ログアウトに失敗しました。",
 
+        // --- Auth Form ---
+        "auth.emailSection": "メールアドレスでログインする",
+        "auth.emailPlaceholder": "メールアドレス",
+        "auth.passwordPlaceholder": "パスワード",
+        "auth.emailLoginBtn": "ログイン",
+        "auth.forgotPassword": "パスワードを忘れた場合",
+        "auth.snsSection": "SNS認証でログインする",
+        "auth.loginGoogle": "Googleでログイン",
+        "auth.noAccount": "アカウントをお持ちでない方",
+        "auth.registerBtn": "新規アカウント作成",
+
         // --- Premium ---
         "premium.badge": "✨ Premium",
         "premium.register": "プレミアムに登録",
@@ -216,6 +227,17 @@ const I18N = {
         "auth.loggedIn": "Signed in.",
         "auth.loggedOut": "Signed out.",
         "auth.logoutFail": "Failed to sign out.",
+
+        // --- Auth Form ---
+        "auth.emailSection": "Sign in with email",
+        "auth.emailPlaceholder": "Email address",
+        "auth.passwordPlaceholder": "Password",
+        "auth.emailLoginBtn": "Sign in",
+        "auth.forgotPassword": "Forgot your password?",
+        "auth.snsSection": "Sign in with SNS",
+        "auth.loginGoogle": "Sign in with Google",
+        "auth.noAccount": "Don't have an account?",
+        "auth.registerBtn": "Create new account",
 
         // --- Premium ---
         "premium.badge": "✨ Premium",

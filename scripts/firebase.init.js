@@ -9,7 +9,9 @@ import { initializeAppCheck, ReCaptchaV3Provider, getToken } from "https://www.g
 import {
     getAuth, signInAnonymously, onAuthStateChanged,
     GoogleAuthProvider,
-    signInWithPopup, linkWithPopup, signInWithCredential,
+    EmailAuthProvider, createUserWithEmailAndPassword,
+    signInWithEmailAndPassword, sendPasswordResetEmail,
+    signInWithPopup, linkWithPopup, signInWithCredential, linkWithCredential,
     signInWithRedirect, linkWithRedirect, getRedirectResult,
     signOut, updateProfile, onIdTokenChanged, getIdToken
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
@@ -77,7 +79,9 @@ export {
     // Auth
     signInAnonymously, onAuthStateChanged,
     GoogleAuthProvider,
-    signInWithPopup, linkWithPopup, signInWithCredential,
+    EmailAuthProvider, createUserWithEmailAndPassword,
+    signInWithEmailAndPassword, sendPasswordResetEmail,
+    signInWithPopup, linkWithPopup, signInWithCredential, linkWithCredential,
     signInWithRedirect, linkWithRedirect, getRedirectResult,
     signOut, updateProfile, onIdTokenChanged, getIdToken,
     // Firestore

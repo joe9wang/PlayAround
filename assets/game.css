@@ -442,23 +442,143 @@
 
     /* ロビー上部のログイン領域 */
     .lobby-auth {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
       margin: 8px 0 12px;
     }
 
-    .auth-buttons {
+    /* --- Auth Form --- */
+    .auth-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #333;
+      margin: 12px 0 6px;
+      text-align: center;
+    }
+
+    .auth-field-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      max-width: 380px;
+      margin: 0 auto;
+    }
+
+    .auth-field {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 15px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    .auth-field:focus {
+      outline: none;
+      border-color: #0a7;
+      box-shadow: 0 0 0 2px rgba(0, 170, 119, .15);
+    }
+
+    .auth-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+
+    .auth-btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .auth-btn--primary {
+      width: 100%;
+      background: #555;
+      color: #fff;
+      border-color: #555;
+    }
+
+    .auth-btn--primary:hover:not(:disabled) {
+      background: #333;
+      border-color: #333;
+    }
+
+    .auth-btn--google {
+      flex: 1;
+      background: #fff;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+
+    .auth-btn--google:hover:not(:disabled) {
+      background: #f5f5f5;
+      border-color: #bbb;
+    }
+
+    .auth-btn--register {
+      width: 100%;
+      max-width: 380px;
+      background: #fff;
+      color: #333;
+      border: 1px solid #ccc;
+    }
+
+    .auth-btn--register:hover:not(:disabled) {
+      background: #f0f0f0;
+    }
+
+    .auth-forgot-link {
+      font-size: 12px;
+      color: #1a73e8;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .auth-forgot-link:hover {
+      text-decoration: underline;
+    }
+
+    .auth-sns-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      max-width: 380px;
+      margin: 6px auto;
+    }
+
+    .auth-register-area {
+      border-top: 1px solid #e0e0e0;
+      margin-top: 12px;
+      padding-top: 4px;
+      text-align: center;
+    }
+
+    .auth-register-area .auth-btn--register {
+      margin: 0 auto;
+    }
+
+    /* --- ログイン済み表示 --- */
+    #auth-loggedin-area {
+      text-align: center;
+    }
+
+    #auth-loggedin-area .auth-user-info {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    #auth-loggedin-area .auth-buttons {
       display: flex;
       justify-content: center;
       gap: 12px;
-    }
-
-    .auth-user-info {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 8px;
     }
 
     .lobby-grid {
