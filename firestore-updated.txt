@@ -1,0 +1,149 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    match /rooms/{roomId} {
+      allow read: if true;
+
+      // ルーム作成: 作成者＝hostUid を強制
+      allow create: if request.auth != null
+        && request.resource.data.hostUid == request.auth.uid;
+
+      // ルーム更新: 既存hostが本人 & hostUid不変、かつ「閉鎖後は更新不可」（削除は可）
+      allow update: if request.auth != null
+        && resource.data.hostUid == request.auth.uid
+        && request.resource.data.hostUid == resource.data.hostUid
+        && resource.data.roomClosed != true;
+
+      // ルーム削除: 既存hostが本人（delete では request.resource は使えない）
+      allow delete: if request.auth != null
+        && resource.data.hostUid == request.auth.uid;
+
+      // === HP（座席ごとの本人マスター） ===========================
+      // ドキュメントIDは 'p1'〜'p4' を想定。席の所有者だけが自分のHPを書ける。
+      match /hp/{hpId} {
+        // 誰でも読める
+        allow read: if true;
+
+        // 最小制約：ログイン済み & ルーム未クローズなら誰でも作成/更新OK
+        function roomOpen() {
+          return get(/databases/$(db)/documents/rooms/$(roomId)).data.roomClosed != true;
+        }
+        allow create, update: if request.auth != null && roomOpen();
+
+        // 削除：ホストのみ（掃除用途）。必要なら create/update と同条件に緩めてもOK
+        allow delete: if request.auth != null
+          && request.auth.uid == get(/databases/$(db)/documents/rooms/$(roomId)).data.hostUid;
+      }
+
+      // === エリア背景（同期用） ===========================
+      match /areas/{areaId} {
+        allow read: if true;
+        
+        // 作成/更新: ログイン済み & ルーム未クローズなら誰でも背景画像を変更可能
+        allow create, update: if request.auth != null
+          && get(/databases/$(db)/documents/rooms/$(roomId)).data.roomClosed != true;
+          
+        // 削除: ログイン済み & ルーム未クローズなら誰でも画像を削除可能（クリア用途）
+        //       ホストなら閉鎖後でも削除可能
+        allow delete: if request.auth != null && (
+          get(/databases/$(db)/documents/rooms/$(roomId)).data.roomClosed != true
+          || request.auth.uid == get(/databases/$(db)/documents/rooms/$(roomId)).data.hostUid
+        );
+      }
+
+      // ホスト判定（共通利用）
+      function isHost(roomId) {
+        return request.auth != null
+          && request.auth.uid == get(/databases/$(db)/documents/rooms/$(roomId)).data.hostUid;
+      }
+
+      // ============================================================
+
+      match /seats/{seatId} {
+        allow read: if true;
+        // 作成/更新は閉鎖中NG
+        allow create, update: if request.auth != null
+          && get(/databases/$(db)/documents/rooms/$(roomId)).data.roomClosed != true;
+        // 削除はホストなら閉鎖中でもOK（掃除できるようにする）
+        allow delete: if request.auth != null
+          && request.auth.uid == get(/databases/$(db)/documents/rooms/$(roomId)).data.hostUid;
+      }
+
+      match /cards/{cardId} {
+        allow read: if true;
+        // 作成：自分のカード もしくは ホストが生成するカード（閉鎖中は不可）
+        // これにより、トランプ初期配備のような「共有/中立カード(ownerUidがホスト以外や未設定)」もホストが作成可能
+        allow create: if request.auth != null
+          && get(/databases/$(db)/documents/rooms/$(roomId)).data.roomClosed != true
+          && (
+            request.resource.data.ownerUid == request.auth.uid ||
+            request.auth.uid == get(/databases/$(db)/documents/rooms/$(roomId)).data.hostUid
+          );
+
+        // 更新：オーナー or ホスト（閉鎖中は不可）
+        allow update: if request.auth != null
+          && get(/databases/$(db)/documents/rooms/$(roomId)).data.roomClosed != true
+          && (
+            resource.data.ownerUid == request.auth.uid ||
+            request.auth.uid == get(/databases/$(db)/documents/rooms/$(roomId)).data.hostUid
+          );
+
+        // 削除：オーナー（閉鎖中は不可）or ホスト（閉鎖中でもOK）
+        allow delete: if request.auth != null && (
+          (resource.data.ownerUid == request.auth.uid
+            && get(/databases/$(db)/documents/rooms/$(roomId)).data.roomClosed != true)
+          ||
+          request.auth.uid == get(/databases/$(db)/documents/rooms/$(roomId)).data.hostUid
+        );
+      }
+       
+      // ▼▼ ここから：チャット＆操作ログ（サブコレクション） ▼▼
+      match /chat/{msgId} {
+        // 読み取りは公開（既存の rooms/cards と同じ方針。既存処理に影響を出さない）
+        allow read: if true;
+
+        // 送信（作成）は「ログイン済み」かつ「ルームが未クローズ」
+        allow create: if request.auth != null
+          && get(/databases/$(db)/documents/rooms/$(roomId)).data.roomClosed != true
+          // 最低限のバリデーション（既存実装に合わせてゆるめ）
+          && ("type" in request.resource.data)
+          && (request.resource.data.type in ["chat","log"])
+          && ("text" in request.resource.data)
+          && (request.resource.data.text is string)
+          && (request.resource.data.text.size() <= 500);
+
+        // 既存の整合性のため、メッセージは「編集不可」
+        allow update: if false;
+
+        // モデレーション用：ホストのみ削除可（部屋が閉じた後の掃除も可能）
+        allow delete: if request.auth != null
+          && request.auth.uid == get(/databases/$(db)/documents/rooms/$(roomId)).data.hostUid;
+      }
+      // ▲▲ ここまで：チャット＆操作ログ ▲▲        
+    }
+
+    // ユーザー基本情報（自身のプレミアムステータス等）
+    match /users/{uid} {
+      allow read: if request.auth != null && uid == request.auth.uid;
+    }
+    // ユーザー直下セーブデータ（本人のみ／スロット限定）
+    match /users/{uid}/saves/{slot} {
+      allow read, write: if request.auth != null
+        && uid == request.auth.uid
+        && (slot in ['slot1','slot2','slot3']);
+    }
+    match /users/{uid}/saves/{slot}/cards/{cardId} {
+      allow read, write: if request.auth != null && uid == request.auth.uid;
+    }
+    // ▼▼ ここから追加：ルーム保存機能用 ▼▼
+    match /users/{uid}/savedRooms/{slot} {
+      allow read, write: if request.auth != null && uid == request.auth.uid;
+      
+      match /{document=**} {
+        allow read, write: if request.auth != null && uid == request.auth.uid;
+      }
+    }
+    // ▲▲ ここまで追加 ▲▲
+  }
+}

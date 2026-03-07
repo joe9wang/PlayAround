@@ -1676,11 +1676,11 @@ function renderAreaColors() {
     const special = root.querySelector('.special-area');
     const discard = root.querySelector('.discard-area');
 
-    if (deck) deck.style.background = getSeatAreaColor(seat, 'deck');
-    if (main) main.style.background = getSeatAreaColor(seat, 'main');
-    if (hand) hand.style.background = getSeatAreaColor(seat, 'hand');
-    if (special) special.style.background = getSeatAreaColor(seat, 'special');
-    if (discard) discard.style.background = getSeatAreaColor(seat, 'discard');
+    if (deck) deck.style.backgroundColor = getSeatAreaColor(seat, 'deck');
+    if (main) main.style.backgroundColor = getSeatAreaColor(seat, 'main');
+    if (hand) hand.style.backgroundColor = getSeatAreaColor(seat, 'hand');
+    if (special) special.style.backgroundColor = getSeatAreaColor(seat, 'special');
+    if (discard) discard.style.backgroundColor = getSeatAreaColor(seat, 'discard');
 
   }
 }
@@ -5098,6 +5098,7 @@ function subscribeAreas() {
         el.style.backgroundSize = 'contain';
         el.style.backgroundPosition = 'center';
         el.style.backgroundRepeat = 'no-repeat';
+        // Make sure the background color doesn't hide the image (if it was set via inline style)
       }
     });
   });
