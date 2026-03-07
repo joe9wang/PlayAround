@@ -5116,9 +5116,9 @@ function bindAreaContextMenuOnce() {
 
   const targetAreaSelectors = ['.play-area', '.main-play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
 
-  // 右クリックイベントを各エリアにアタッチ
+  // 右クリックイベントを各エリアにアタッチ (キャプチャフェーズで処理)
   document.addEventListener('contextmenu', (e) => {
-    console.log('[contextmenu] Clicked on:', e.target);
+    console.log('[contextmenu-capture] Clicked on:', e.target);
     // まずターゲットが対象エリアのいずれかに属しているか判定
     let area = e.target.closest(targetAreaSelectors.join(', '));
     console.log('[contextmenu] Matched area:', area);
@@ -5165,7 +5165,8 @@ function bindAreaContextMenuOnce() {
 
     ctxMenu.style.left = `${x}px`;
     ctxMenu.style.top = `${y}px`;
-  });
+    console.log('[contextmenu-capture] Menu positioned at', x, y);
+  }, true); // true: capture phase
 
   // 他の場所をクリックしたらメニューを閉じる
   document.addEventListener('click', () => {
