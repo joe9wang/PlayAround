@@ -5136,7 +5136,7 @@ function bindAreaContextMenuOnce() {
     const pMatch = playerArea.className.match(/(player-\d)/);
     const pClass = pMatch ? pMatch[1] : '';
     // 実際に保存するキーは対象のメインエリア名 (.play-area など)
-    const mainSelectors = ['.play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
+    const mainSelectors = ['.play-area', '.main-play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
     const aClass = [...area.classList].find(c => mainSelectors.some(sel => sel.slice(1) === c));
 
     if (!pClass || !aClass) return;
