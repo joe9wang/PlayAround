@@ -13,6 +13,7 @@ const I18N = {
 
         "lobby.welcome": "バトライテーブルへようこそ！",
         "auth.login": "Googleでログイン",
+        "auth.loginBtn": "ログインする",
         "auth.logout": "ログアウト",
         "app.mypage": "マイページ",
 
@@ -135,6 +136,7 @@ const I18N = {
         "lobby.welcome": "Welcome to BatriTable!",
 
         "auth.login": "Sign in with Google",
+        "auth.loginBtn": "Sign in",
         "auth.logout": "Sign out",
         "app.mypage": "My Page",
 
