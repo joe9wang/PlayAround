@@ -352,9 +352,11 @@ function stripSavableFields(src) {
 async function saveToSlot(slot) {
 
   console.log("UID check", CURRENT_UID, getAuth().currentUser?.uid);
+  console.log('[DEBUG saveToSlot] IS_PREMIUM =', IS_PREMIUM, ', slot =', slot);
 
   // ===== カードリスト保存: プレミアム限定 =====
   if (!IS_PREMIUM) {
+    console.warn('[DEBUG saveToSlot] BLOCKED by premium gate. IS_PREMIUM =', IS_PREMIUM);
     alert('カードリスト保存はプレミアム会員限定の機能です。');
     return;
   }
@@ -917,6 +919,7 @@ onAuthStateChanged(auth, (user) => {
     // ===== プレミアム状態を常に取得（UIバッジは任意） =====
     fetchPremiumStatus(user.uid).then(status => {
       IS_PREMIUM = !!status.premium;
+      console.log('[DEBUG onAuth] fetchPremiumStatus resolved: premium =', status.premium, ', IS_PREMIUM =', IS_PREMIUM, ', uid =', user.uid);
       if (lobbyPremiumBadge) {
         lobbyPremiumBadge.style.display = 'none';
         lobbyPremiumBadge.innerHTML = '';
