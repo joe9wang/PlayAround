@@ -351,7 +351,7 @@ function stripSavableFields(src) {
 
 async function saveToSlot(slot) {
 
-  console.log("UID check", CURRENT_UID, getAuth().currentUser?.uid);
+  console.log("UID check", CURRENT_UID, auth.currentUser?.uid);
   console.log('[DEBUG saveToSlot] IS_PREMIUM =', IS_PREMIUM, ', slot =', slot);
 
   // ===== カードリスト保存: プレミアム限定 =====
