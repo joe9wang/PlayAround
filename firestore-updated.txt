@@ -131,7 +131,7 @@ service cloud.firestore {
     match /users/{uid}/saves/{slot} {
       allow read, write: if request.auth != null
         && uid == request.auth.uid
-        && (slot in ['slot1','slot2','slot3']);
+        && (slot in ['slot1','slot2','slot3','slot4','slot5','slot6','slot7','slot8','slot9','slot10']);
     }
     match /users/{uid}/saves/{slot}/cards/{cardId} {
       allow read, write: if request.auth != null && uid == request.auth.uid;

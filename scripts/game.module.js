@@ -896,6 +896,7 @@ onAuthStateChanged(auth, (user) => {
   // ロビーのボタン表示を更新（元のロジックを踏襲）
   if (user.isAnonymous) {
     // 未ログイン（匿名）→ フォームを表示、ログインUI非表示
+    IS_PREMIUM = false; // 匿名ユーザーはプレミアム不可
     if (authFormArea) authFormArea.style.display = '';
     if (authLoggedinArea) authLoggedinArea.style.display = 'none';
 
