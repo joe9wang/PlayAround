@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <title>プラン - BatriTable</title>
+    <meta name="description" content="BatriTableのプラン比較。無料プランとプレミアムプランの機能を比較できます。">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="/favicon.ico" rel="icon" sizes="any" />
+    <link href="/favicon-32.png?v=1" rel="icon" sizes="32x32" type="image/png" />
+    <link href="/favicon-16.png?v=1" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/apple-touch-icon.png?v=1" rel="apple-touch-icon" sizes="180x180" />
+    <link href="/site.webmanifest" rel="manifest" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="./assets/site.css">
+    <style>
+        :root {
+            --bg: #0d0d14;
+            --surface: #18182a;
+            --surface-hi: #222240;
+            --accent: #7c3aed;
+            --accent-glow: rgba(124, 58, 237, .35);
+            --gold: #f5c542;
+            --green: #22c55e;
+            --muted: #888;
+            --text: #eee;
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Noto Sans JP", system-ui, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ── ヘッダー ── */
+        header {
+            background: var(--surface);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, .06);
+        }
+
+        header img {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+        }
+
+        header .brand-name {
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        header .spacer {
+            flex: 1;
+        }
+
+        header a.back {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .9rem;
+            padding: 6px 14px;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 8px;
+            transition: background .2s;
+        }
+
+        header a.back:hover {
+            background: rgba(255, 255, 255, .06);
+        }
+
+        /* ── メイン ── */
+        main {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 48px 20px 80px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 900;
+            margin: 0 0 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            margin: 0 0 40px;
+            font-size: .95rem;
+        }
+
+        /* ── プランカード ── */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 56px;
+        }
+
+        @media (max-width: 640px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .plan-card {
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: border-color .3s, box-shadow .3s;
+        }
+
+        .plan-card:hover {
+            border-color: rgba(255, 255, 255, .14);
+        }
+
+        .plan-card.premium {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px var(--accent-glow);
+            position: relative;
+        }
+
+        .plan-card.premium::before {
+            content: "おすすめ";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: #fff;
+            font-size: .75rem;
+            font-weight: 700;
+            padding: 3px 14px;
+            border-radius: 20px;
+            letter-spacing: .05em;
+        }
+
+        .plan-name {
+            font-weight: 800;
+            font-size: 1.15rem;
+            margin-bottom: 6px;
+        }
+
+        .plan-desc {
+            font-size: .85rem;
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        .plan-price {
+            font-size: 2.6rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .plan-price .unit {
+            font-size: .95rem;
+            font-weight: 400;
+            color: var(--muted);
+        }
+
+        .plan-price-note {
+            font-size: .8rem;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        .btn-plan {
+            display: inline-block;
+            padding: 12px 32px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: .95rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: transform .15s, box-shadow .2s;
+        }
+
+        .btn-plan:active {
+            transform: translateY(1px);
+        }
+
+        .btn-plan.current {
+            background: var(--surface-hi);
+            color: var(--muted);
+            cursor: default;
+        }
+
+        .btn-plan.accent {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: #fff;
+            box-shadow: 0 6px 20px var(--accent-glow);
+        }
+
+        .btn-plan.accent:hover {
+            box-shadow: 0 8px 28px rgba(124, 58, 237, .5);
+            transform: translateY(-1px);
+        }
+
+        /* ── 比較テーブル ── */
+        .compare-title {
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 24px;
+        }
+
+        .compare-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
+        }
+
+        .compare-table th,
+        .compare-table td {
+            padding: 14px 18px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, .06);
+            font-size: .9rem;
+        }
+
+        .compare-table thead th {
+            background: var(--surface-hi);
+            font-weight: 700;
+            font-size: .95rem;
+            letter-spacing: .02em;
+        }
+
+        .compare-table thead th:first-child {
+            text-align: left;
+        }
+
+        .compare-table tbody td:first-child {
+            text-align: left;
+            font-weight: 600;
+            color: #ccc;
+        }
+
+        .compare-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .compare-table .check {
+            color: var(--green);
+            font-size: 1.2rem;
+        }
+
+        .compare-table .cross {
+            color: #555;
+            font-size: 1.1rem;
+        }
+
+        .compare-table .val {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .compare-table .premium-col {
+            background: rgba(124, 58, 237, .06);
+        }
+
+        /* ── FAQ ── */
+        .faq {
+            margin-top: 56px;
+        }
+
+        .faq h2 {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .faq-item {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 18px 22px;
+            margin-bottom: 12px;
+        }
+
+        .faq-q {
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #ddd;
+        }
+
+        .faq-a {
+            font-size: .9rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        /* ── フッター ── */
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--muted);
+            font-size: .8rem;
+            border-top: 1px solid rgba(255, 255, 255, .06);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <img src="/BatriTable-icon.png" alt="BatriTable">
+        <span class="brand-name">BatriTable</span>
+        <div class="spacer"></div>
+        <a class="back" href="/index.html">← ホームへ戻る</a>
+    </header>
+
+    <main>
+        <h1>提供プラン</h1>
+        <p class="subtitle">あなたに合ったプランを選びましょう</p>
+
+        <!-- プランカード -->
+        <div class="cards">
+            <!-- 無料 -->
+            <div class="plan-card">
+                <div class="plan-name">BatriTable BASIC</div>
+                <div class="plan-desc">基本機能を無料でお楽しみいただけます</div>
+                <div class="plan-price">無料</div>
+                <div class="plan-price-note">&nbsp;</div>
+                <span class="btn-plan current">現在のプラン</span>
+            </div>
+
+            <!-- プレミアム -->
+            <div class="plan-card premium">
+                <div class="plan-name">BatriTable ✨ PREMIUM</div>
+                <div class="plan-desc">すべての機能を制限なくお使いいただけます</div>
+                <div class="plan-price">月々 <strong>300</strong> <span class="unit">円（税込）</span></div>
+                <div class="plan-price-note">いつでもキャンセル可能</div>
+                <a class="btn-plan accent" href="/game.html" id="btn-subscribe">このプランにする</a>
+            </div>
+        </div>
+
+        <!-- 比較テーブル -->
+        <h2 class="compare-title">プランの比較</h2>
+        <table class="compare-table">
+            <thead>
+                <tr>
+                    <th>機能</th>
+                    <th>BASIC<br><span style="font-weight:400;font-size:.8rem;color:var(--muted)">無料</span></th>
+                    <th class="premium-col">PREMIUM<br><span
+                            style="font-weight:400;font-size:.8rem;color:var(--accent)">月額300円</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>基本機能（ルーム作成・カード操作）</td>
+                    <td><span class="check">✔</span></td>
+                    <td class="premium-col"><span class="check">✔</span></td>
+                </tr>
+                <tr>
+                    <td>ルーム作成回数</td>
+                    <td><span class="val">1日5回まで</span></td>
+                    <td class="premium-col"><span class="val">無制限</span></td>
+                </tr>
+                <tr>
+                    <td>カード生成枚数（1ルームあたり）</td>
+                    <td><span class="val">100枚</span></td>
+                    <td class="premium-col"><span class="val">500枚</span></td>
+                </tr>
+                <tr>
+                    <td>画像アップロードサイズ</td>
+                    <td><span class="val">1MB / 枚</span></td>
+                    <td class="premium-col"><span class="val">10MB / 枚</span></td>
+                </tr>
+                <tr>
+                    <td>カードリスト保存</td>
+                    <td><span class="cross">✕</span></td>
+                    <td class="premium-col"><span class="val">10スロット</span></td>
+                </tr>
+                <tr>
+                    <td>ルーム保存</td>
+                    <td><span class="cross">✕</span></td>
+                    <td class="premium-col"><span class="val">10スロット</span></td>
+                </tr>
+                <tr>
+                    <td>カード裏面デザイン変更</td>
+                    <td><span class="cross">✕</span></td>
+                    <td class="premium-col"><span class="check">✔</span></td>
+                </tr>
+                <tr>
+                    <td>フィールドデザイン変更</td>
+                    <td><span class="cross">✕</span></td>
+                    <td class="premium-col"><span class="check">✔</span></td>
+                </tr>
+                <tr>
+                    <td>広告</td>
+                    <td><span class="val">表示あり</span></td>
+                    <td class="premium-col"><span class="val">非表示</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- FAQ -->
+        <div class="faq">
+            <h2>よくある質問</h2>
+
+            <div class="faq-item">
+                <div class="faq-q">Q. 無料プランでも遊べますか？</div>
+                <div class="faq-a">はい、基本的なゲーム機能はすべて無料でご利用いただけます。ルーム作成、カードのアップロード・操作、チャットなど、ゲームプレイに必要な機能は無料プランに含まれています。
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Q. プレミアムプランはいつでも解約できますか？</div>
+                <div class="faq-a">はい、いつでもマイページからキャンセルすることができます。キャンセル後も、現在の請求期間が終了するまでプレミアム機能をご利用いただけます。</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Q. 支払い方法は何がありますか？</div>
+                <div class="faq-a">クレジットカード（Visa / Mastercard / American Express /
+                    JCB）でのお支払いに対応しています。決済はStripeを通じて安全に処理されます。</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Q. プレミアムに登録するにはどうすればいいですか？</div>
+                <div class="faq-a">ゲーム画面にログインした後、マイページの「プレミアムに登録」ボタンから登録できます。Google アカウントまたはメール/パスワードでのログインが必要です。</div>
+            </div>
+        </div>
+    </main>
+
+    <footer>BatriTable — © 2025 SOLVENTER</footer>
+</body>
+
+</html>
