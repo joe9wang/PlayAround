@@ -94,6 +94,7 @@ copyFileSync("./law.html", `${OUT_DIR}/law.html`);
 copyFileSync("./about.html", `${OUT_DIR}/about.html`);
 copyFileSync("./howto.html", `${OUT_DIR}/howto.html`);
 copyFileSync("./news.html", `${OUT_DIR}/news.html`);
+copyFileSync("./plans.html", `${OUT_DIR}/plans.html`);
 copyFileSync("./Geki-Mahjong.html", `${OUT_DIR}/Geki-Mahjong.html`);
 
 // 6) ルート直下の画像・アイコン類を dist へコピー（存在するものだけ）
