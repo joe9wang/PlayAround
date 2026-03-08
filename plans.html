@@ -446,6 +446,87 @@
     </main>
 
     <footer>BatriTable — © 2025 SOLVENTER</footer>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+        import {
+            getAuth, onAuthStateChanged,
+            setPersistence, browserLocalPersistence
+        } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "__NEXT_PUBLIC_FIREBASE_API_KEY__",
+            authDomain: "__NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN__",
+            projectId: "__NEXT_PUBLIC_FIREBASE_PROJECT_ID__",
+            storageBucket: "__NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET__",
+            messagingSenderId: "__NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID__",
+            appId: "__NEXT_PUBLIC_FIREBASE_APP_ID__"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        await setPersistence(auth, browserLocalPersistence);
+
+        let currentUser = null;
+        let isPremium = false;
+
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            if (user && !user.isAnonymous) {
+                try {
+                    const docRef = doc(db, 'users', user.uid);
+                    const snap = await getDoc(docRef);
+                    if (snap.exists() && snap.data().premium === true) {
+                        isPremium = true;
+                    }
+                } catch (e) {
+                    console.error('Premium check failed:', e);
+                }
+            } else {
+                isPremium = false;
+            }
+        });
+
+        document.getElementById('btn-subscribe').addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            if (!currentUser || currentUser.isAnonymous) {
+                alert('ログインが必要です。ゲーム画面またはマイページからログインしてください。');
+                return;
+            }
+
+            const btn = e.target;
+            const originalText = btn.textContent;
+            btn.textContent = '処理中...';
+            btn.style.pointerEvents = 'none';
+
+            try {
+                const idToken = await auth.currentUser.getIdToken();
+                // 既にプレミアムならポータルへ、未登録なら決済画面へ
+                const endpoint = isPremium ? '/api/create-portal-session' : '/api/create-checkout-session';
+
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken })
+                });
+                const data = await res.json();
+
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    alert('決済エラーが発生しました: ' + (data.error || '不明なエラー'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('通信エラーが発生しました。');
+            } finally {
+                btn.textContent = originalText;
+                btn.style.pointerEvents = 'auto';
+            }
+        });
+    </script>
 </body>
 
 </html>
