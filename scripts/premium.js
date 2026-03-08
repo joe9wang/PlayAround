@@ -6,6 +6,29 @@
 
 import { db, doc, getDoc, onSnapshot } from './firebase.init.js';
 
+// ===== プレミアム / 非課金 制限定数 =====
+export const LIMITS = {
+    FREE: {
+        roomsPerDay: 5,
+        cardsPerRoom: 100,
+        maxImageMB: 1,
+        saveSlots: 0,
+        roomSaveSlots: 0,
+    },
+    PREMIUM: {
+        roomsPerDay: Infinity,
+        cardsPerRoom: 500,
+        maxImageMB: 10,
+        saveSlots: 10,
+        roomSaveSlots: 10,
+    }
+};
+
+/** 現在のユーザー種別に応じた制限値を返す */
+export function getLimits(isPremium) {
+    return isPremium ? LIMITS.PREMIUM : LIMITS.FREE;
+}
+
 /**
  * プレミアム会員かどうかを1回だけ取得
  * @param {string} uid

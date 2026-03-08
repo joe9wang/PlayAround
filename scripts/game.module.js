@@ -58,7 +58,10 @@ import {
 } from './hp.js';
 import { cleanupAndCloseRoom, cleanupAndDeleteRoom, releaseSeat } from './room.module.js';
 import { showRoomInterstitial } from './ads.interstitial.js';
-import { fetchPremiumStatus, premiumBadgeHTML } from './premium.js';
+import { fetchPremiumStatus, premiumBadgeHTML, getLimits } from './premium.js';
+
+// ===== プレミアム状態グローバル =====
+let IS_PREMIUM = false;
 
 // ===============================
 // Firebase 初期化 → firebase.init.js に移動済み
@@ -350,6 +353,12 @@ async function saveToSlot(slot) {
 
   console.log("UID check", CURRENT_UID, getAuth().currentUser?.uid);
 
+  // ===== カードリスト保存: プレミアム限定 =====
+  if (!IS_PREMIUM) {
+    alert('カードリスト保存はプレミアム会員限定の機能です。');
+    return;
+  }
+
   await ensureAuthReady();
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
     alert('ルームに参加してから実行してください'); return;
@@ -605,6 +614,12 @@ async function updateRoomSlotPreviews() {
 }
 
 async function saveRoomToSlot(slot) {
+  // ===== ルーム保存: プレミアム限定 =====
+  if (!IS_PREMIUM) {
+    alert('ルーム保存はプレミアム会員限定の機能です。');
+    return;
+  }
+
   await ensureAuthReady();
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
     alert('ルームに参加してから実行してください'); return;
@@ -903,6 +918,7 @@ onAuthStateChanged(auth, (user) => {
       lobbyPremiumBadge.style.display = 'none';
       lobbyPremiumBadge.innerHTML = '';
       fetchPremiumStatus(user.uid).then(status => {
+        IS_PREMIUM = !!status.premium;
         if (status.premium) {
           lobbyPremiumBadge.innerHTML = premiumBadgeHTML(status.premium);
           lobbyPremiumBadge.style.display = '';
@@ -1317,11 +1333,11 @@ async function ensureAuthReady(timeoutMs = 8000) {
 //await ensureAuthReady();
 
 createRoomBtn.addEventListener('click', async () => {
-  // ★広告を必ず出す
-  try { await showRoomInterstitial({ force: true, cooldownMs: 0 }); } catch (_) { }
+  // ★広告を必ず出す（プレミアムは広告スキップ）
+  if (!IS_PREMIUM) {
+    try { await showRoomInterstitial({ force: true, cooldownMs: 0 }); } catch (_) { }
+  }
   await ensureAuthReady();
-
-
 
   const id = (newRoomIdInput.value || '').trim();
   const creatorName = (newPlayerNameInput.value || '').trim();
@@ -1329,6 +1345,19 @@ createRoomBtn.addEventListener('click', async () => {
   if (!creatorName) { alert(t('err.playerName')); newPlayerNameInput.focus(); return; }
   if (!CREATE_SELECTED_SEAT) { alert(t('err.seat')); return; }
   if (CREATE_SELECTED_SEAT === 'spectator') { alert('観戦モードで新しいルームを作成することはできません。'); return; }
+
+  // ===== ルーム作成回数制限（非課金: 1日5回） =====
+  if (!IS_PREMIUM) {
+    const today = new Date().toISOString().slice(0, 10);
+    const lsKey = `pa:rooms-created-${today}`;
+    const count = parseInt(localStorage.getItem(lsKey) || '0', 10);
+    const limit = getLimits(false).roomsPerDay;
+    if (count >= limit) {
+      alert(`本日のルーム作成上限（${limit}回）に達しました。\nプレミアム会員は無制限に作成できます。`);
+      return;
+    }
+    localStorage.setItem(lsKey, String(count + 1));
+  }
 
   //createRoomBtn.disabled = true;
   //const oldText = createRoomBtn.textContent;
@@ -3124,9 +3153,32 @@ function handleFiles(files) {
     alert('観戦モードではカードを追加できません。');
     return;
   }
+
+  const limits = getLimits(IS_PREMIUM);
+  const maxBytes = limits.maxImageMB * 1024 * 1024;
+
   const imgs = [...files].filter(f => f.type.startsWith('image/'));
-  for (const f of imgs) fileQueue.push(f);
-  if (!processing) processQueue();
+
+  // ===== 画像サイズ制限 =====
+  const oversized = imgs.filter(f => f.size > maxBytes);
+  const valid = imgs.filter(f => f.size <= maxBytes);
+  if (oversized.length > 0) {
+    alert(`${oversized.length}枚の画像が${limits.maxImageMB}MBの上限を超えています。\n超過した画像はスキップされます。${IS_PREMIUM ? '' : '\nプレミアム会員は10MBまでアップロード可能です。'}`);
+  }
+
+  // ===== 枚数制限（現在の枚数 + キュー + 新規） =====
+  const currentCount = document.querySelectorAll(`#game-field .card[data-owner="${CURRENT_PLAYER}"]`).length;
+  const afterCount = currentCount + fileQueue.length + valid.length;
+  if (afterCount > limits.cardsPerRoom) {
+    const remaining = Math.max(0, limits.cardsPerRoom - currentCount - fileQueue.length);
+    alert(`カード枚数の上限（${limits.cardsPerRoom}枚）を超えます。\n追加可能: ${remaining}枚${IS_PREMIUM ? '' : '\nプレミアム会員は500枚まで利用可能です。'}`);
+    // 上限まで追加可能な分だけ入れる
+    for (const f of valid.slice(0, remaining)) fileQueue.push(f);
+  } else {
+    for (const f of valid) fileQueue.push(f);
+  }
+
+  if (!processing && fileQueue.length > 0) processQueue();
 }
 
 async function fileToThumbAndFull(file) {
@@ -4756,6 +4808,11 @@ async function deleteMyCardsSilently() {
 
 // === 背面画像のアップロード／保存 ===
 function openBackImagePicker() {
+  // ===== カード裏面デザイン: プレミアム限定 =====
+  if (!IS_PREMIUM) {
+    alert('カード裏面デザインの変更はプレミアム会員限定の機能です。');
+    return;
+  }
   const input = document.getElementById('card-back-input');
   if (!input) return;
   input.value = '';
@@ -5122,6 +5179,11 @@ function bindAreaContextMenuOnce() {
   btnChangeBg.addEventListener('click', (e) => {
     e.stopPropagation();
     ctxMenu.style.display = 'none';
+    // ===== フィールドデザイン: プレミアム限定 =====
+    if (!IS_PREMIUM) {
+      alert('フィールドデザインの変更はプレミアム会員限定の機能です。');
+      return;
+    }
     fileInput.click();
   });
 
