@@ -669,6 +669,8 @@ async function saveRoomToSlot(slot) {
       cardsCount: cardsSnap.size,
       chatCount: logSnap.size,
       originalRoomId: CURRENT_ROOM,
+      roomId: CURRENT_ROOM,
+      password: roomData.password || '',
       roomName: `ルーム: ${CURRENT_ROOM}`,
       roomData: {
         playerCount: roomData.playerCount || 4,

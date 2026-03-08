@@ -653,7 +653,7 @@
       setPersistence, browserLocalPersistence
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
     import {
-      getFirestore, doc, getDoc, collection, getDocs, query, limit
+      getFirestore, doc, getDoc, collection, getDocs, query, limit, updateDoc, writeBatch
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
     import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
 
@@ -700,6 +700,8 @@
       return {
         exists: snap.exists(),
         roomName: d.roomName || '保存したルーム',
+        roomId: d.roomId || d.originalRoomId || '不明',
+        password: d.password || 'なし',
         cardsCount: d.cardsCount || 0,
         chatCount: d.chatCount || 0,
         updatedAt: d.updatedAt?.toDate?.() || null
@@ -716,14 +718,43 @@
         const uEl = itemEl.querySelector('.room-slot-updated');
         const iEl = itemEl.querySelector('.room-slot-info');
         const btn = itemEl.querySelector('.room-enter-btn');
+        const rightDiv = itemEl.querySelector('.right');
 
         if (meta.exists) {
           if (uEl) uEl.textContent = `最終更新: ${meta.updatedAt ? meta.updatedAt.toLocaleString() : '-'}`;
           if (iEl) {
-            iEl.innerHTML = `<span style="color:#222">${meta.roomName}</span><br/>📝 ${meta.cardsCount}枚 / 💬 ${meta.chatCount}件`;
+            iEl.innerHTML = `
+              <div style="margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                <span style="font-size:13px; color:#555; white-space: nowrap;">ルーム名:</span>
+                <input type="text" class="room-name-input" data-slot="${slot}" value="${meta.roomName}" style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 4px; width: 160px; font-size: 14px;">
+              </div>
+              <div style="font-size: 13px; color: #555;">ルームID: ${meta.roomId}</div>
+              <div style="font-size: 13px; color: #555;">パスワード: ${meta.password}</div>
+              <div style="font-size: 13px; margin-top: 4px;">📝 ${meta.cardsCount}枚 / 💬 ${meta.chatCount}件</div>
+            `;
             iEl.classList.remove('muted');
           }
-          if (btn) btn.style.display = 'inline-block';
+          if (btn) btn.style.display = 'inline-flex';
+
+          if (rightDiv) {
+            rightDiv.style.display = 'flex';
+            rightDiv.style.flexDirection = 'column';
+            rightDiv.style.alignItems = 'stretch';
+
+            let delBtn = rightDiv.querySelector('.room-delete-btn');
+            if (!delBtn) {
+              delBtn = document.createElement('button');
+              delBtn.className = 'small-btn room-delete-btn';
+              delBtn.dataset.slot = slot;
+              delBtn.textContent = 'ルームを削除する';
+              delBtn.style.marginTop = '8px';
+              delBtn.style.borderColor = '#e53e3e';
+              delBtn.style.color = '#e53e3e';
+              delBtn.style.background = '#fff4f4';
+              delBtn.style.cursor = 'pointer';
+              rightDiv.appendChild(delBtn);
+            }
+          }
         } else {
           if (uEl) uEl.textContent = '最終更新: -';
           if (iEl) {
@@ -731,18 +762,82 @@
             iEl.classList.add('muted');
           }
           if (btn) btn.style.display = 'none';
+
+          if (rightDiv) {
+            const delBtn = rightDiv.querySelector('.room-delete-btn');
+            if (delBtn) delBtn.remove();
+          }
         }
       }
     }
 
-    // ルームに入るボタンの制御
-    document.getElementById('roomSaveList')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.room-enter-btn');
-      if (!btn) return;
-      e.preventDefault();
-      const slot = parseInt(btn.dataset.slot, 10);
-      if (slot) {
-        window.location.href = `./game.html?restore_room_slot=${slot}`;
+    // ルームに入る/削除/名前編集の制御
+    document.getElementById('roomSaveList')?.addEventListener('click', async (e) => {
+      // ルームに入る
+      const enterBtn = e.target.closest('.room-enter-btn');
+      if (enterBtn) {
+        e.preventDefault();
+        const slot = parseInt(enterBtn.dataset.slot, 10);
+        if (slot) {
+          window.location.href = `./game.html?restore_room_slot=${slot}`;
+        }
+        return;
+      }
+
+      // ルームを削除する
+      const delBtn = e.target.closest('.room-delete-btn');
+      if (delBtn) {
+        e.preventDefault();
+        const slot = parseInt(delBtn.dataset.slot, 10);
+        if (!slot) return;
+        if (!confirm(`スロット${slot}の保存済みルームを削除しますか？`)) return;
+
+        delBtn.disabled = true;
+        delBtn.textContent = '削除中...';
+        try {
+          const baseRef = doc(db, roomSlPath(slot));
+          const collectionsToClear = ['cards', 'seats', 'chat'];
+          for (const colName of collectionsToClear) {
+            const q = query(collection(db, `${roomSlPath(slot)}/${colName}`), limit(500));
+            let currentSnap = await getDocs(q);
+            while (!currentSnap.empty) {
+              let b = writeBatch(db);
+              currentSnap.docs.forEach(d => b.delete(d.ref));
+              await b.commit();
+              currentSnap = await getDocs(q);
+            }
+          }
+          // Firebase V9 doesn't export deleteDoc above in my original replacement so I better use writeBatch for the last one
+          // Wait I added updateDoc, writeBatch but forgot deleteDoc. Let me just use updateDoc or batch
+          const finalBatch = writeBatch(db);
+          finalBatch.delete(baseRef);
+          await finalBatch.commit();
+
+          alert(`スロット${slot}のデータ削除が完了しました。`);
+          await refreshRoomSaveSlots();
+        } catch (err) {
+          console.error('Delete error', err);
+          alert('削除に失敗しました。');
+          delBtn.disabled = false;
+          delBtn.textContent = 'ルームを削除する';
+        }
+      }
+    });
+
+    // ルーム名の入力（変更時自動保存）
+    document.getElementById('roomSaveList')?.addEventListener('change', async (e) => {
+      if (e.target.classList.contains('room-name-input')) {
+        const slot = parseInt(e.target.dataset.slot, 10);
+        if (!slot) return;
+        const newName = e.target.value.trim();
+        e.target.style.opacity = '0.5';
+        try {
+          await updateDoc(doc(db, roomSlPath(slot)), { roomName: newName });
+        } catch (err) {
+          console.error('Fail to update room name:', err);
+        } finally {
+          e.target.style.opacity = '1';
+        }
       }
     });
 
