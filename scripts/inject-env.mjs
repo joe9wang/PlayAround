@@ -8,7 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // 1) 入力/出力ファイル
 const OUT_DIR = "./dist";
 // 置換対象：HTML（従来どおり）
-const PAGES = ["./index.html", "./game.html", "./mypage.html", "./login.html"];
+const PAGES = ["./index.html", "./game.html", "./mypage.html", "./login.html", "./plans.html"];
 // 置換対象：JS/ESM（必要に応じて追加）
 // 例: game.html から外出しした module スクリプトをここに追加
 const JS_MODULES = [
@@ -94,7 +94,6 @@ copyFileSync("./law.html", `${OUT_DIR}/law.html`);
 copyFileSync("./about.html", `${OUT_DIR}/about.html`);
 copyFileSync("./howto.html", `${OUT_DIR}/howto.html`);
 copyFileSync("./news.html", `${OUT_DIR}/news.html`);
-copyFileSync("./plans.html", `${OUT_DIR}/plans.html`);
 copyFileSync("./Geki-Mahjong.html", `${OUT_DIR}/Geki-Mahjong.html`);
 
 // 6) ルート直下の画像・アイコン類を dist へコピー（存在するものだけ）
