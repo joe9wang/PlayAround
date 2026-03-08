@@ -914,17 +914,18 @@ onAuthStateChanged(auth, (user) => {
       whoamiSpan.textContent = `ログイン中：${user.email || user.displayName || 'No Name'}`;
     }
 
-    if (lobbyPremiumBadge) {
-      lobbyPremiumBadge.style.display = 'none';
-      lobbyPremiumBadge.innerHTML = '';
-      fetchPremiumStatus(user.uid).then(status => {
-        IS_PREMIUM = !!status.premium;
+    // ===== プレミアム状態を常に取得（UIバッジは任意） =====
+    fetchPremiumStatus(user.uid).then(status => {
+      IS_PREMIUM = !!status.premium;
+      if (lobbyPremiumBadge) {
+        lobbyPremiumBadge.style.display = 'none';
+        lobbyPremiumBadge.innerHTML = '';
         if (status.premium) {
           lobbyPremiumBadge.innerHTML = premiumBadgeHTML(status.premium);
           lobbyPremiumBadge.style.display = '';
         }
-      }).catch(console.error);
-    }
+      }
+    }).catch(console.error);
 
     // ▼プロバイダ情報を保存（マイページで使う）
     localStorage.setItem('pa:email', user.email || '');
