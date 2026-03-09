@@ -104,6 +104,8 @@ for (const f of [
   "./favicon.ico",
   "./favicon-32.png",
   "./favicon-16.png",
+  "./favicon-192.png",
+  "./favicon-512.png",
   "./apple-touch-icon.png"
 ]) {
   try { copyFileSync(f, `${OUT_DIR}/${f.replace(/^.\//, "")}`); } catch { }
