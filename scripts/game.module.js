@@ -899,6 +899,7 @@ onAuthStateChanged(auth, (user) => {
   if (user.isAnonymous) {
     // 未ログイン（匿名）→ フォームを表示、ログインUI非表示
     IS_PREMIUM = false; // 匿名ユーザーはプレミアム不可
+    document.body.classList.remove('premium-user');
     if (authFormArea) authFormArea.style.display = '';
     if (authLoggedinArea) authLoggedinArea.style.display = 'none';
 
@@ -922,6 +923,11 @@ onAuthStateChanged(auth, (user) => {
     // ===== プレミアム状態を常に取得（UIバッジは任意） =====
     fetchPremiumStatus(user.uid).then(status => {
       IS_PREMIUM = !!status.premium;
+      if (IS_PREMIUM) {
+        document.body.classList.add('premium-user');
+      } else {
+        document.body.classList.remove('premium-user');
+      }
       console.log('[DEBUG onAuth] fetchPremiumStatus resolved: premium =', status.premium, ', IS_PREMIUM =', IS_PREMIUM, ', uid =', user.uid);
       if (lobbyPremiumBadge) {
         lobbyPremiumBadge.style.display = 'none';

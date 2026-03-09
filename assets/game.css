@@ -1595,6 +1595,17 @@
       border-radius: 6px;
     }
 
+    .board-name .label-name {
+      color: #fff;
+      font-size: 14px;
+    }
+
+    /* ===== Premium User: Hide Ads ===== */
+    body.premium-user #footer-ad-container,
+    body.premium-user .adsbygoogle {
+      display: none !important;
+    }
+
     .affiliate-text {
       color: #111;
       font-size: 14px;
