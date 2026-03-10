@@ -1,0 +1,15 @@
+        // 相対→絶対の順でフォールバック読み込み（どちらか存在すればOK）
+        async function loadSidebar() {
+          const tries = ["./partials/sidebar.html", "/partials/sidebar.html"];
+          for (const url of tries) {
+            try {
+              const res = await fetch(url, { cache: "no-store" });
+              if (res.ok) { el.innerHTML = await res.text(); return; }
+            } catch (e) { }
+          }
+          console.warn("sidebar.html が見つかりませんでした。");
+        }
+        loadSidebar();
+      })();
+    </script>
+
