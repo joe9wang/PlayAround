@@ -57,7 +57,6 @@ import {
   hpDocPath, hpValues, localHpEditAt
 } from './hp.js';
 import { cleanupAndCloseRoom, cleanupAndDeleteRoom, releaseSeat } from './room.module.js';
-import { showRoomInterstitial } from './ads.interstitial.js';
 import { fetchPremiumStatus, premiumBadgeHTML, getLimits } from './premium.js';
 
 // ===== プレミアム状態グローバル =====
@@ -1346,10 +1345,6 @@ async function ensureAuthReady(timeoutMs = 8000) {
 //await ensureAuthReady();
 
 createRoomBtn.addEventListener('click', async () => {
-  // ★広告を必ず出す（プレミアムは広告スキップ）
-  if (!IS_PREMIUM) {
-    try { await showRoomInterstitial({ force: true, cooldownMs: 0 }); } catch (_) { }
-  }
   await ensureAuthReady();
 
   const id = (newRoomIdInput.value || '').trim();
@@ -1375,9 +1370,6 @@ createRoomBtn.addEventListener('click', async () => {
   //createRoomBtn.disabled = true;
   //const oldText = createRoomBtn.textContent;
   //createRoomBtn.textContent = '作成中…';
-
-  // ★ インタースティシャルを毎回表示（最低5秒ブロック／最大10秒待ち）
-  try { await showRoomInterstitial({ force: true, cooldownMs: 0, maxWaitMs: 10000 }); } catch (_) { }
 
   createRoomBtn.disabled = true;
   const oldText = createRoomBtn.textContent;
