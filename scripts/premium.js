@@ -18,7 +18,7 @@ export const LIMITS = {
     PREMIUM: {
         roomsPerDay: Infinity,
         cardsPerRoom: 500,
-        maxImageMB: 10,
+        maxImageMB: 20,
         saveSlots: 10,
         roomSaveSlots: 10,
     }

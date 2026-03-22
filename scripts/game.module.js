@@ -3179,7 +3179,7 @@ function handleFiles(files, kind = 'card') {
   const oversized = imgs.filter(f => f.size > maxBytes);
   const valid = imgs.filter(f => f.size <= maxBytes);
   if (oversized.length > 0) {
-    alert(`${oversized.length}枚の画像が${limits.maxImageMB}MBの上限を超えています。\n超過した画像はスキップされます。${IS_PREMIUM ? '' : '\nプレミアム会員は10MBまでアップロード可能です。'}`);
+    alert(`${oversized.length}枚の画像が${limits.maxImageMB}MBの上限を超えています。\n超過した画像はスキップされます。${IS_PREMIUM ? '' : '\nプレミアム会員は20MBまでアップロード可能です。'}`);
   }
 
   // ===== 枚数制限（現在の枚数 + キュー + 新規） =====
