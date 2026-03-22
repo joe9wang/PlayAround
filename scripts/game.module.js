@@ -3059,7 +3059,13 @@ function applyCardState(card, data) {
   if (img) {
     if (data.faceUp) { img.style.display = 'block'; card.style.backgroundColor = '#fff'; }
     else { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
-    if (data.imageUrl && img.src !== data.imageUrl) { img.src = data.imageUrl; }
+    
+    // 拡大時(scaleLevel >= 1)は高画質版(fullUrl)を使用する
+    const isHighResNeeded = (scaleLevel >= 1) && data.fullUrl;
+    const targetSrc = isHighResNeeded ? data.fullUrl : data.imageUrl;
+    if (targetSrc && img.src !== targetSrc) { 
+      img.src = targetSrc; 
+    }
   }
 
 
