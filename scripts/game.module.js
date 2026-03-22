@@ -337,7 +337,7 @@ async function fetchMyCardsFromFirestore() {
 function stripSavableFields(src) {
   // 保存対象フィールドを限定
   const fields = [
-    'type', 'count', 'tokenText',
+    'type', 'count', 'tokenText', 'scaleLevel',
     'x', 'y', 'zIndex', 'faceUp', 'rotation',
     'visibleToAll', 'imageUrl', 'fullUrl'
   ];
@@ -431,6 +431,7 @@ async function loadFromSlot(slot) {
         ...(s.type ? { type: s.type } : {}),
         ...(typeof s.count === 'number' ? { count: s.count } : {}),
         ...(typeof s.tokenText === 'string' ? { tokenText: s.tokenText } : {}),
+        ...(typeof s.scaleLevel === 'number' ? { scaleLevel: s.scaleLevel } : {}),
         imageUrl: s.imageUrl || '',
         fullUrl: s.fullUrl || '',
         ownerUid: CURRENT_UID,
@@ -2416,6 +2417,7 @@ function startSession(roomId, playerId) {
   subscribeHP(roomId);      // HPの購読開始
   subscribeAreas();         // エリア背景画像の同期
   bindAreaContextMenuOnce(); // エリア右クリックメニューの初期化
+  bindTokenContextMenuOnce(); // トークン用右クリックメニューの初期化
 
   startHostWatch();
   renderAreaColors();
@@ -2907,11 +2909,22 @@ function createCardDom(cardId, imageSrc, state) {
     e.preventDefault();
 
 
-    // まず種類を判定（トークン/カウンター/数値カウンターの削除はオーナーのみ＝従来通り）
+    // まず種類を判定
     const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
-    const isToken = (state?.type === 'token') || card.classList.contains('token');
+    const isTextToken = (state?.type === 'token') || card.classList.contains('token');
+    const isImageToken = (state?.type === 'image-token') || card.classList.contains('image-token');
+    const isToken = isTextToken || isImageToken;
     const isNumCtr = (state?.type === 'numcounter') || card.classList.contains('numcounter');
-    if (isCounter || isToken || isNumCtr) {
+    
+    if (isToken) {
+      if (!canOperateCard(card, 'delete')) return; // 共有ONでも削除・操作は不可（オーナーのみ）
+      if (typeof globalThis.showTokenContextMenu === 'function') {
+        globalThis.showTokenContextMenu(e, card.dataset.cardId);
+      }
+      return;
+    }
+    
+    if (isCounter || isNumCtr) {
       if (!canOperateCard(card, 'delete')) return; // 共有ONでも削除は不可（オーナーのみ）
       try {
         const id = card.dataset.cardId;
@@ -2980,7 +2993,9 @@ function createCardDom(cardId, imageSrc, state) {
     const match = currentStyle.match(/rotate\((-?\d+(?:\.\d+)?)deg\)/);
     const current = match ? parseFloat(match[1]) : (typeof state?.rotation === 'number' ? state.rotation : 0);
     const next = ((current + 270) % 360 + 360) % 360;
-    card.style.transform = `rotate(${next}deg)`;
+    const matchScale = currentStyle.match(/scale\(([^)]+)\)/);
+    const currentScale = matchScale ? matchScale[1] : 1;
+    card.style.transform = `rotate(${next}deg) scale(${currentScale})`;
     updateCardBatched(cardId, { rotation: next });
   });
 
@@ -3032,7 +3047,9 @@ function applyCardState(card, data) {
   if (data.zIndex) card.style.zIndex = data.zIndex;
 
   const rot = (typeof data.rotation === 'number') ? data.rotation : 0;
-  card.style.transform = `rotate(${rot}deg)`;
+  const scaleLevel = (typeof data.scaleLevel === 'number') ? data.scaleLevel : 0;
+  const scaleOffset = Math.pow(1.2, scaleLevel);
+  card.style.transform = `rotate(${rot}deg) scale(${scaleOffset})`;
 
   card.dataset.faceUp = data.faceUp ? 'true' : 'false';
   const img = card.querySelector('img');
@@ -5197,6 +5214,93 @@ function subscribeAreas() {
     });
   });
 }
+
+let tokenContextMenuBound = false;
+let currentTokenId = null;
+
+function bindTokenContextMenuOnce() {
+  if (tokenContextMenuBound) return;
+  tokenContextMenuBound = true;
+
+  const ctxMenu = document.getElementById('token-context-menu');
+  const btnEnlarge = document.getElementById('token-ctx-enlarge');
+  const btnShrink = document.getElementById('token-ctx-shrink');
+  const btnDelete = document.getElementById('token-ctx-delete');
+
+  if (!ctxMenu || !btnEnlarge || !btnShrink || !btnDelete) return;
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#token-context-menu')) return;
+    ctxMenu.style.display = 'none';
+  });
+
+  document.addEventListener('contextmenu', () => {
+    ctxMenu.style.display = 'none';
+  });
+
+  btnEnlarge.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    ctxMenu.style.display = 'none';
+    if (!CURRENT_ROOM || !currentTokenId) return;
+    try {
+      const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        const currentLevel = typeof d.scaleLevel === 'number' ? d.scaleLevel : 0;
+        await updateDoc(docRef, { scaleLevel: currentLevel + 1, updatedAt: serverTimestamp() });
+      }
+    } catch (err) { console.warn(err); }
+  });
+
+  btnShrink.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    ctxMenu.style.display = 'none';
+    if (!CURRENT_ROOM || !currentTokenId) return;
+    try {
+      const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        const currentLevel = typeof d.scaleLevel === 'number' ? d.scaleLevel : 0;
+        await updateDoc(docRef, { scaleLevel: currentLevel - 1, updatedAt: serverTimestamp() });
+      }
+    } catch (err) { console.warn(err); }
+  });
+
+  btnDelete.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    ctxMenu.style.display = 'none';
+    if (!CURRENT_ROOM || !currentTokenId) return;
+    try {
+      await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`));
+      if (typeof markLocal === 'function') markLocal(currentTokenId);
+      if (typeof markLocalDelete === 'function') markLocalDelete(currentTokenId);
+    } catch (err) { console.warn(err); }
+  });
+}
+
+globalThis.showTokenContextMenu = function(e, cardId) {
+  const ctxMenu = document.getElementById('token-context-menu');
+  if (!ctxMenu) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  const areaMenu = document.getElementById('area-context-menu');
+  if (areaMenu) areaMenu.style.display = 'none';
+  
+  currentTokenId = cardId;
+  ctxMenu.style.display = 'block';
+
+  let x = e.clientX;
+  let y = e.clientY;
+  const menuWidth = ctxMenu.offsetWidth || 150;
+  const menuHeight = ctxMenu.offsetHeight || 100;
+  if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth;
+  if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight;
+  ctxMenu.style.left = `${x}px`;
+  ctxMenu.style.top = `${y}px`;
+};
 
 function bindAreaContextMenuOnce() {
   if (areaContextMenuBound) return;
