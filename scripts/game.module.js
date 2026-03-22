@@ -3516,7 +3516,7 @@ function makeDraggable(card) {
 }
 
 function getMaxZIndex() { let max = 0; document.querySelectorAll(".card").forEach(c => { const z = parseInt(c.style.zIndex) || 0; if (z > max) max = z; }); return max; }
-
+function getMinZIndex() { let min = 1000000; let found = false; document.querySelectorAll(".card").forEach(c => { const z = parseInt(c.style.zIndex); if (!isNaN(z)) { if (z < min) min = z; found = true; } }); return found ? min : 0; }
 
 // ★ added: 重なり判定 & バッジ更新 =========================
 function rectOfCard(el) {
@@ -5226,8 +5226,10 @@ function bindTokenContextMenuOnce() {
   const btnEnlarge = document.getElementById('token-ctx-enlarge');
   const btnShrink = document.getElementById('token-ctx-shrink');
   const btnDelete = document.getElementById('token-ctx-delete');
+  const btnToFront = document.getElementById('token-ctx-to-front');
+  const btnToBack = document.getElementById('token-ctx-to-back');
 
-  if (!ctxMenu || !btnEnlarge || !btnShrink || !btnDelete) return;
+  if (!ctxMenu || !btnEnlarge || !btnShrink || !btnDelete || !btnToFront || !btnToBack) return;
 
   document.addEventListener('click', (e) => {
     if (e.target.closest('#token-context-menu')) return;
@@ -5265,6 +5267,28 @@ function bindTokenContextMenuOnce() {
         const currentLevel = typeof d.scaleLevel === 'number' ? d.scaleLevel : 0;
         await updateDoc(docRef, { scaleLevel: currentLevel - 1, updatedAt: serverTimestamp() });
       }
+    } catch (err) { console.warn(err); }
+  });
+
+  btnToFront.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    ctxMenu.style.display = 'none';
+    if (!CURRENT_ROOM || !currentTokenId) return;
+    try {
+      const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
+      const zIndex = getMaxZIndex() + 1;
+      await updateDoc(docRef, { zIndex, updatedAt: serverTimestamp() });
+    } catch (err) { console.warn(err); }
+  });
+
+  btnToBack.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    ctxMenu.style.display = 'none';
+    if (!CURRENT_ROOM || !currentTokenId) return;
+    try {
+      const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
+      const zIndex = getMinZIndex() - 1;
+      await updateDoc(docRef, { zIndex, updatedAt: serverTimestamp() });
     } catch (err) { console.warn(err); }
   });
 
