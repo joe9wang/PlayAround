@@ -2224,8 +2224,10 @@ const field = document.getElementById("field");
 const container = document.getElementById("container");
 const previewImg = document.getElementById("preview-img");
 const previewInfo = document.getElementById("preview-info");
-const uploadArea = document.getElementById("upload-area");
-const fileInput = document.getElementById("file-input");
+const uploadCard = document.getElementById("upload-card");
+const fileInputCard = document.getElementById("file-input-card");
+const uploadToken = document.getElementById("upload-token");
+const fileInputToken = document.getElementById("file-input-token");
 const fieldSizeOptions = document.getElementById("field-size-options");
 
 const fullImageStore = new Map(); // key: cardId, value: dataURL(full)
@@ -2592,6 +2594,10 @@ function createCardDom(cardId, imageSrc, state) {
   if (state?.type === 'counter') card.classList.add('counter');
 
 
+
+  if (state?.type === 'image-token') {
+    card.classList.add('image-token');
+  }
 
   if (state?.type === 'dice') {
     card.classList.add('dice');     // 小さめ正方形の見た目はCSSで
@@ -3146,14 +3152,19 @@ const fileQueue = [];
 let processing = false;
 
 function bindUploadHandlers() {
-  uploadArea.addEventListener("click", () => fileInput.click());
-  uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.style.backgroundColor = "#eef"; });
-  uploadArea.addEventListener("dragleave", () => { uploadArea.style.backgroundColor = "#fff"; });
-  uploadArea.addEventListener("drop", e => { e.preventDefault(); uploadArea.style.backgroundColor = "#fff"; handleFiles(e.dataTransfer.files); });
-  fileInput.addEventListener("change", e => handleFiles(e.target.files));
+  const bindBox = (boxEl, inputEl, kind) => {
+    if (!boxEl || !inputEl) return;
+    boxEl.addEventListener("click", () => inputEl.click());
+    boxEl.addEventListener("dragover", e => { e.preventDefault(); boxEl.style.backgroundColor = "#eef"; });
+    boxEl.addEventListener("dragleave", () => { boxEl.style.backgroundColor = "#fff"; });
+    boxEl.addEventListener("drop", e => { e.preventDefault(); boxEl.style.backgroundColor = "#fff"; handleFiles(e.dataTransfer.files, kind); });
+    inputEl.addEventListener("change", e => handleFiles(e.target.files, kind));
+  };
+  bindBox(uploadCard, fileInputCard, 'card');
+  bindBox(uploadToken, fileInputToken, 'image-token');
 }
 
-function handleFiles(files) {
+function handleFiles(files, kind = 'card') {
   if (CURRENT_PLAYER === 'spectator') {
     alert('観戦モードではカードを追加できません。');
     return;
@@ -3178,9 +3189,9 @@ function handleFiles(files) {
     const remaining = Math.max(0, limits.cardsPerRoom - currentCount - fileQueue.length);
     alert(`カード枚数の上限（${limits.cardsPerRoom}枚）を超えます。\n追加可能: ${remaining}枚${IS_PREMIUM ? '' : '\nプレミアム会員は500枚まで利用可能です。'}`);
     // 上限まで追加可能な分だけ入れる
-    for (const f of valid.slice(0, remaining)) fileQueue.push(f);
+    for (const f of valid.slice(0, remaining)) fileQueue.push({ file: f, kind });
   } else {
-    for (const f of valid) fileQueue.push(f);
+    for (const f of valid) fileQueue.push({ file: f, kind });
   }
 
   if (!processing && fileQueue.length > 0) processQueue();
@@ -3220,16 +3231,18 @@ async function processQueue() {
       const frag = document.createDocumentFragment();
 
       for (const group of groups) {
-        const results = await Promise.all(group.map(async (file) => {
+        const results = await Promise.all(group.map(async ({ file, kind }) => {
           const { thumbDataUrl, fullDataUrl } = await fileToThumbAndFull(file);
           if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return null;
 
           const { x, y } = randomPointInDeck(CURRENT_PLAYER);
 
+          const typeData = kind === 'image-token' ? { type: 'image-token' } : {};
 
           // 1) まず Firestore にメタだけ作る（URLはあとで埋める）
           const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
           const refDoc = await addDoc(baseCol, {
+            ...typeData,
             x, y, zIndex: 1, faceUp: true,
             ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0,
             visibleToAll: true,
@@ -3263,12 +3276,14 @@ async function processQueue() {
           let el = cardDomMap.get(cardId);
           if (!el) {
             el = createCardDom(cardId, thumbUrl, {
+              ...typeData,
               x, y, zIndex: 1, faceUp: true,
               ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0
             });
             el.dataset.fullUrl = fullUrl;
             cardDomMap.set(cardId, el);
             applyCardState(el, {
+              ...typeData,
               x, y, zIndex: 1, faceUp: true,
               imageUrl: thumbUrl, fullUrl,
               ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0
