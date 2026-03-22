@@ -349,11 +349,18 @@
       height: auto;
       border-radius: 10px;
       display: none;
+      pointer-events: none;
     }
 
     #preview-top {
       flex: 2 1 0;
-      overflow: auto;
+      overflow: hidden;
+      touch-action: none;
+      cursor: grab;
+      position: relative;
+    }
+    #preview-top:active {
+      cursor: grabbing;
     }
 
     #hp-panel {

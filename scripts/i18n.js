@@ -92,8 +92,8 @@ const I18N = {
         "zone.discard.shared": "捨て札エリア（共有）",
 
         // --- Preview / Misc ---
-        "preview.title": "選択肢のカード",
-        "preview.toggle": "選択肢のカードの表示/非表示",
+        "preview.title": "選択中のカード",
+        "preview.toggle": "選択中のカードの表示/非表示",
         "hp.title": "プレイヤーHP",
 
         // alerts
@@ -215,8 +215,8 @@ const I18N = {
         "zone.discard.shared": "Shared discard area",
 
         // --- Preview / Misc ---
-        "preview.title": "Candidate cards",
-        "preview.toggle": "Show/Hide candidate cards",
+        "preview.title": "Selected card",
+        "preview.toggle": "Show/Hide selected card",
         "hp.title": "Players' HP",
 
         // alerts

@@ -1143,11 +1143,20 @@ function getMainPlayBoundsForSeat(seat) {
 
 function setPreview(src) {
   if (typeof src === 'string' && src.trim().length > 0) {
+    if (typeof previewZoom !== 'undefined') {
+      previewZoom = 1;
+      previewPanX = 0;
+      previewPanY = 0;
+      applyPreviewTransform();
+    }
     previewImg.src = src;
     previewImg.style.display = 'block';
   } else {
     previewImg.removeAttribute('src');   // ← これで “undefined:1” リクエストが出ない
     previewImg.style.display = 'none';
+    if (typeof previewZoom !== 'undefined') {
+      previewImg.style.transform = '';
+    }
   }
 }
 
@@ -2224,6 +2233,64 @@ const field = document.getElementById("field");
 const container = document.getElementById("container");
 const previewImg = document.getElementById("preview-img");
 const previewInfo = document.getElementById("preview-info");
+const previewTop = document.getElementById("preview-top");
+
+let previewZoom = 1;
+let previewPanX = 0;
+let previewPanY = 0;
+let isPreviewDragging = false;
+let previewDragStartX = 0;
+let previewDragStartY = 0;
+
+window.applyPreviewTransform = function() {
+  if (previewImg) {
+    previewImg.style.transform = `translate(${previewPanX}px, ${previewPanY}px) scale(${previewZoom})`;
+    previewImg.style.transformOrigin = 'center';
+  }
+};
+
+if (previewTop) {
+  previewTop.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+    previewZoom = Math.max(0.5, Math.min(5, previewZoom + zoomDelta));
+    applyPreviewTransform();
+  }, { passive: false });
+
+  previewTop.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    isPreviewDragging = true;
+    previewDragStartX = e.clientX - previewPanX;
+    previewDragStartY = e.clientY - previewPanY;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isPreviewDragging) return;
+    previewPanX = e.clientX - previewDragStartX;
+    previewPanY = e.clientY - previewDragStartY;
+    applyPreviewTransform();
+  });
+
+  window.addEventListener('mouseup', () => {
+    isPreviewDragging = false;
+  });
+
+  previewTop.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    isPreviewDragging = true;
+    previewDragStartX = e.touches[0].clientX - previewPanX;
+    previewDragStartY = e.touches[0].clientY - previewPanY;
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (!isPreviewDragging || e.touches.length !== 1) return;
+    previewPanX = e.touches[0].clientX - previewDragStartX;
+    previewPanY = e.touches[0].clientY - previewDragStartY;
+    applyPreviewTransform();
+  }, { passive: true });
+  window.addEventListener('touchend', () => {
+    isPreviewDragging = false;
+  });
+}
 const uploadCard = document.getElementById("upload-card");
 const fileInputCard = document.getElementById("file-input-card");
 const uploadToken = document.getElementById("upload-token");
