@@ -5211,6 +5211,10 @@ function subscribeAreas() {
         el = document.querySelector(`.player-area.${parts[1]} .${parts[2]}`);
       } else {
         el = document.querySelector(`[data-area-id="${id}"]`);
+        // ボードモードのエリアは data-area-id ではなく id 属性で存在する場合がある
+        if (!el) el = document.getElementById(id);
+        // クラス名でも探す (center-deck, center-discardなど)
+        if (!el) el = document.querySelector(`.${id}`);
         if (!el && data.isAbsolute && change.type !== 'removed') {
            el = document.createElement('div');
            el.className = data.type + (id.startsWith('dynamic-') ? ' dynamic-area' : '');
