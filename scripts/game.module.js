@@ -5638,6 +5638,9 @@ function getCurrentTargetAreaElement() {
   if (!el) {
     el = document.querySelector(`[data-area-id="${currentTargetAreaId}"]`);
   }
+  // ボードモードのエリアは id 属性 or クラス名で存在する
+  if (!el) el = document.getElementById(currentTargetAreaId);
+  if (!el) el = document.querySelector(`.${currentTargetAreaId}`);
   return el;
 }
 
@@ -5673,7 +5676,9 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     const ch = areaEl.offsetHeight;
     areaEl.style.width = cw + 'px';
     areaEl.style.height = ch + 'px';
-    if (areaEl.parentElement && areaEl.parentElement.id !== 'field') {
+    // ボードモードのエリア（#board-layout の子）は field に移さない
+    const parentIsBoardLayout = areaEl.parentElement && areaEl.parentElement.id === 'board-layout';
+    if (!parentIsBoardLayout && areaEl.parentElement && areaEl.parentElement.id !== 'field') {
        field.appendChild(areaEl);
     }
   } else {
