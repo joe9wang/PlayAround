@@ -5255,6 +5255,7 @@ function subscribeAreas() {
         if (el.parentElement !== field) {
           el.style.width = el.offsetWidth + 'px';
           el.style.height = el.offsetHeight + 'px';
+          el.dataset.areaId = id; // ★ 動かした要素にIDを記憶させる
           field.appendChild(el);
         }
         el.style.position = 'absolute';
@@ -5412,20 +5413,32 @@ function bindAreaContextMenuOnce() {
     // カードの上で右クリックした場合はカードのcontextmenuを優先するため判定
     if (e.target.closest('.card')) return;
 
-    // .player-area を遡って取得
+    // .player-area を遡って取得するか、ダイナミックエリアか判定
     const playerArea = area.closest('.player-area');
-    if (!playerArea) return;
+    const isDynamicOrMoved = !playerArea && area.parentElement?.id === 'field';
 
-    // クラス名から識別子を生成 (例: player-1-play-area)
-    const pMatch = playerArea.className.match(/(player-\d)/);
-    const pClass = pMatch ? pMatch[1] : '';
+    let pClass = '';
+    let aClass = '';
+    
     // 実際に保存するキーは対象のメインエリア名 (.play-area など)
     const mainSelectors = ['.play-area', '.main-play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
-    const aClass = [...area.classList].find(c => mainSelectors.some(sel => sel.slice(1) === c));
+    const foundSel = mainSelectors.find(sel => area.classList.contains(sel.slice(1)));
+    aClass = foundSel ? foundSel.slice(1) : '';
 
-    if (!pClass || !aClass) return;
-
-    currentTargetAreaId = `${pClass}-${aClass}`;
+    if (playerArea) {
+      const pMatch = playerArea.className.match(/(player-\d)/);
+      pClass = pMatch ? pMatch[1] : '';
+      if (!pClass || !aClass) return;
+      currentTargetAreaId = `${pClass}-${aClass}`;
+    } else if (isDynamicOrMoved) {
+      if (!aClass) return;
+      // dataset.areaId に元のID (player-1-hand-area) 等が保存されていればそれを使う
+      // 何もなければ動的に生成されたID
+      currentTargetAreaId = area.dataset.areaId || area.id;
+      if (!currentTargetAreaId) return; // IDが特定できなければ中止
+    } else {
+      return;
+    }
 
     e.preventDefault();
     e.stopPropagation();
