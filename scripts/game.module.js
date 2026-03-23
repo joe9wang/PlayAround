@@ -3248,7 +3248,12 @@ function bindUploadHandlers() {
     boxEl.addEventListener("dragover", e => { e.preventDefault(); boxEl.style.backgroundColor = "#eef"; });
     boxEl.addEventListener("dragleave", () => { boxEl.style.backgroundColor = "#fff"; });
     boxEl.addEventListener("drop", e => { e.preventDefault(); boxEl.style.backgroundColor = "#fff"; handleFiles(e.dataTransfer.files, kind); });
-    inputEl.addEventListener("change", e => handleFiles(e.target.files, kind));
+    inputEl.addEventListener("change", e => {
+      if (e.target.files.length > 0) {
+        handleFiles(e.target.files, kind);
+        e.target.value = ''; // 同じファイルを連続で選択できるようにリセット
+      }
+    });
   };
   bindBox(uploadCard, fileInputCard, 'card');
   bindBox(uploadToken, fileInputToken, 'image-token');
@@ -3564,9 +3569,11 @@ window.updateOverlapBadges = function () {
   // まず全ての既存バッジを消す（必要なものだけ後で付ける）
   all.forEach(clearBadge);
 
-  // 「通常カード」判定（※トークン/各種カウンターはバッジ対象外・カウント対象外）
+  // 「通常カード」判定（※各種トークン/ダイス/各種カウンターはバッジ対象外・カウント対象外）
   const isReal = (el) => !(
     el.classList.contains('token') ||
+    el.classList.contains('image-token') ||
+    el.classList.contains('dice') ||
     el.classList.contains('counter') ||
     el.classList.contains('numcounter')
   );
