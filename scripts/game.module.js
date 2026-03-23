@@ -5203,16 +5203,42 @@ function subscribeAreas() {
     snap.docChanges().forEach(change => {
       const id = change.doc.id;
       const data = change.doc.data();
+      
+      let el = null;
       // ID例: "player-1-play-area" -> selector: .player-area.player-1 .play-area
-      const parts = id.match(/^(player-\d)-(.*)$/);
-      if (!parts) return;
-      const playerClass = parts[1];
-      const areaClass = parts[2];
+      const parts = id.match(/^(player-\d)-(.+)$/);
+      if (parts) {
+        el = document.querySelector(`.player-area.${parts[1]} .${parts[2]}`);
+      } else {
+        el = document.querySelector(`[data-area-id="${id}"]`);
+        if (!el && data.isAbsolute && change.type !== 'removed') {
+           el = document.createElement('div');
+           el.className = data.type + (id.startsWith('dynamic-') ? ' dynamic-area' : '');
+           el.dataset.areaId = id;
+           let label = 'エリア';
+           if(data.type==='deck-area') label = 'デッキエリア';
+           else if(data.type==='hand-area') label = '手札エリア';
+           else if(data.type==='discard-area') label = '捨て札エリア';
+           el.innerHTML = `<div class="zone-label" data-i18n="zone.deck">${label}</div>`;
+           field.appendChild(el);
+        }
+      }
 
-      const el = document.querySelector(`.player-area.${playerClass} .${areaClass}`);
       if (!el) return;
 
-      if (change.type === 'removed' || !data.imageUrl) {
+      if (change.type === 'removed') {
+        if (!parts) el.remove(); // Remove dynamic areas
+        else {
+          el.style.backgroundImage = '';
+          el.style.backgroundSize = '';
+          el.style.backgroundPosition = '';
+          el.style.backgroundRepeat = '';
+        }
+        return;
+      }
+
+      // Background image sync
+      if (!data.imageUrl) {
         el.style.backgroundImage = '';
         el.style.backgroundSize = '';
         el.style.backgroundPosition = '';
@@ -5222,8 +5248,26 @@ function subscribeAreas() {
         el.style.backgroundSize = 'contain';
         el.style.backgroundPosition = 'center';
         el.style.backgroundRepeat = 'no-repeat';
-        // Make sure the background color doesn't hide the image (if it was set via inline style)
       }
+
+      // Position & Scale sync
+      if (data.isAbsolute) {
+        if (el.parentElement !== field) {
+          el.style.width = el.offsetWidth + 'px';
+          el.style.height = el.offsetHeight + 'px';
+          field.appendChild(el);
+        }
+        el.style.position = 'absolute';
+        if (data.x !== undefined) el.style.left = data.x + 'px';
+        if (data.y !== undefined) el.style.top = data.y + 'px';
+        if (data.width !== undefined) el.style.width = data.width + 'px';
+        if (data.height !== undefined) el.style.height = data.height + 'px';
+      }
+      
+      const scaleLevel = data.scaleLevel || 0;
+      const scale = Math.pow(1.2, scaleLevel);
+      el.style.transform = `scale(${scale})`;
+      el.style.transformOrigin = '50% 50%';
     });
   });
 }
@@ -5347,6 +5391,11 @@ function bindAreaContextMenuOnce() {
   const btnChangeBg = document.getElementById('area-ctx-change-bg');
   const btnRemoveBg = document.getElementById('area-ctx-remove-bg');
   const fileInput = document.getElementById('area-bg-file');
+  const btnEnlarge = document.getElementById('area-ctx-enlarge');
+  const btnShrink = document.getElementById('area-ctx-shrink');
+  const btnMove = document.getElementById('area-ctx-move');
+  const btnAddArea = document.getElementById('area-ctx-add');
+  const btnAddDeck = document.getElementById('area-ctx-add-deck');
 
   if (!ctxMenu || !btnChangeBg || !fileInput) return;
 
@@ -5383,6 +5432,23 @@ function bindAreaContextMenuOnce() {
 
     // メニュー表示
     ctxMenu.style.display = 'block';
+
+    const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
+    document.querySelectorAll('#area-context-menu .host-only').forEach(el => {
+      el.style.display = isHost ? 'flex' : 'none';
+      if(el.tagName === 'HR') el.style.display = isHost ? 'block' : 'none'; // HR fallback
+    });
+    
+    // Hide 'Move' or 'Add' depending on area
+    if (isHost && btnMove && btnAddArea) {
+      if (aClass === 'play-area' || aClass === 'main-play-area') {
+        btnMove.style.display = 'none';
+        btnAddArea.style.display = 'flex';
+      } else {
+        btnMove.style.display = 'flex';
+        btnAddArea.style.display = 'none';
+      }
+    }
 
     // 画面外にはみ出ないように位置調整
     const menuWidth = ctxMenu.offsetWidth;
@@ -5457,6 +5523,197 @@ function bindAreaContextMenuOnce() {
       appendSystemLine('画像のアップロードに失敗しました。');
     }
   });
+
+  if (btnEnlarge) {
+    btnEnlarge.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      ctxMenu.style.display = 'none';
+      if (!CURRENT_ROOM || !currentTargetAreaId) return;
+      try {
+        const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`);
+        const snap = await getDoc(docRef);
+        const currentLevel = snap.exists() && typeof snap.data().scaleLevel === 'number' ? snap.data().scaleLevel : 0;
+        await setDoc(docRef, { scaleLevel: currentLevel + 1, updatedAt: serverTimestamp() }, { merge: true });
+      } catch (err) { console.warn(err); }
+    });
+  }
+
+  if (btnShrink) {
+    btnShrink.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      ctxMenu.style.display = 'none';
+      if (!CURRENT_ROOM || !currentTargetAreaId) return;
+      try {
+        const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`);
+        const snap = await getDoc(docRef);
+        const currentLevel = snap.exists() && typeof snap.data().scaleLevel === 'number' ? snap.data().scaleLevel : 0;
+        await setDoc(docRef, { scaleLevel: currentLevel - 1, updatedAt: serverTimestamp() }, { merge: true });
+      } catch (err) { console.warn(err); }
+    });
+  }
+
+  if (btnMove) {
+    btnMove.addEventListener('click', (e) => {
+      e.stopPropagation();
+      ctxMenu.style.display = 'none';
+      if (!CURRENT_ROOM || !currentTargetAreaId) return;
+      const targetArea = getCurrentTargetAreaElement();
+      if (targetArea) startAreaPlacement(targetArea, false, currentTargetAreaId);
+    });
+  }
+
+  if (btnAddDeck) {
+    btnAddDeck.addEventListener('click', (e) => {
+      e.stopPropagation();
+      ctxMenu.style.display = 'none';
+      if (!CURRENT_ROOM) return;
+      const newAreaId = `dynamic-deck-${Date.now()}`;
+      const newArea = document.createElement('div');
+      newArea.className = 'deck-area dynamic-area';
+      newArea.dataset.areaId = newAreaId;
+      newArea.innerHTML = `<div class="zone-label" data-i18n="zone.deck">デッキエリア</div>`;
+      startAreaPlacement(newArea, true, newAreaId, 'deck-area');
+    });
+  }
+}
+
+function getCurrentTargetAreaElement() {
+  if (!currentTargetAreaId) return null;
+  const match = currentTargetAreaId.match(/^(player-\d)-(.+)$/);
+  let el = null;
+  if (match) {
+    el = document.querySelector(`.player-area.${match[1]} .${match[2]}`);
+  }
+  if (!el) {
+    el = document.querySelector(`[data-area-id="${currentTargetAreaId}"]`);
+  }
+  return el;
+}
+
+let placingArea = null;
+
+function stopAreaPlacement() {
+  if (placingArea) {
+    placingArea.el.style.opacity = placingArea.origOpacity;
+    placingArea.el.style.pointerEvents = 'auto';
+    placingArea.el.style.filter = '';
+    if (placingArea.isNew && placingArea.el.parentElement) {
+      placingArea.el.remove();
+    }
+    document.removeEventListener('mousemove', placingArea.mouseMoveHandler);
+    document.removeEventListener('click', placingArea.clickHandler);
+    document.removeEventListener('contextmenu', placingArea.cancelHandler);
+    placingArea = null;
+  }
+}
+
+function startAreaPlacement(areaEl, isNew, areaId, forceType) {
+  stopAreaPlacement();
+
+  const origOpacity = areaEl.style.opacity || '1';
+  areaEl.style.opacity = '0.6';
+  areaEl.style.pointerEvents = 'none'; 
+  areaEl.style.zIndex = '10000';
+
+  if (!isNew) {
+    const cw = areaEl.offsetWidth;
+    const ch = areaEl.offsetHeight;
+    areaEl.style.width = cw + 'px';
+    areaEl.style.height = ch + 'px';
+    if (areaEl.parentElement && areaEl.parentElement.id !== 'field') {
+       field.appendChild(areaEl);
+    }
+  } else {
+    areaEl.style.width = '140px';
+    areaEl.style.height = '160px';
+    field.appendChild(areaEl);
+  }
+  
+  areaEl.style.position = 'absolute';
+  const typeClasses = ['hand-area', 'deck-area', 'discard-area'];
+  const type = forceType || [...areaEl.classList].find(c => typeClasses.includes(c)) || 'deck-area';
+
+  const mouseMoveHandler = (e) => {
+    if (!placingArea) return;
+    const fieldRect = field.getBoundingClientRect();
+    const mx = e.clientX;
+    const my = e.clientY;
+    
+    // Zoom in use:
+    let z = typeof zoom !== 'undefined' ? zoom : 1;
+    
+    const w = areaEl.offsetWidth * z;
+    const h = areaEl.offsetHeight * z;
+    
+    const x = ((mx - fieldRect.left) / z) - (w / z / 2);
+    const y = ((my - fieldRect.top) / z) - (h / z / 2);
+    
+    areaEl.style.left = x + 'px';
+    areaEl.style.top = y + 'px';
+
+    const checkRect = { l: mx - w/2, t: my - h/2, r: mx + w/2, b: my + h/2 };
+    let overlap = false;
+    document.querySelectorAll('.hand-area, .deck-area, .discard-area').forEach(other => {
+      if (other === areaEl) return;
+      const obr = other.getBoundingClientRect();
+      const otherRect = { l: obr.left, t: obr.top, r: obr.right, b: obr.bottom };
+      if (intersects(checkRect, otherRect)) overlap = true;
+    });
+
+    if (overlap) {
+      areaEl.style.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
+      placingArea.overlap = true;
+    } else {
+      areaEl.style.filter = '';
+      placingArea.overlap = false;
+    }
+  };
+
+  const clickHandler = async (e) => {
+    if (!placingArea) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (placingArea.overlap) return;
+
+    const x = parseFloat(areaEl.style.left);
+    const y = parseFloat(areaEl.style.top);
+    const width = parseFloat(areaEl.style.width);
+    const height = parseFloat(areaEl.style.height);
+
+    areaEl.style.opacity = origOpacity;
+    areaEl.style.pointerEvents = 'auto';
+    areaEl.style.filter = '';
+    
+    const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${areaId}`);
+    try {
+      await setDoc(docRef, {
+        isAbsolute: true,
+        type: type,
+        x, y,
+        width, height,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch(err) { console.warn(err); }
+
+    document.removeEventListener('mousemove', placingArea.mouseMoveHandler);
+    document.removeEventListener('click', placingArea.clickHandler);
+    document.removeEventListener('contextmenu', placingArea.cancelHandler);
+    placingArea = null;
+  };
+
+  const cancelHandler = (e) => {
+    e.preventDefault();
+    stopAreaPlacement();
+  };
+
+  setTimeout(() => {
+    document.addEventListener('mousemove', mouseMoveHandler);
+    document.addEventListener('click', clickHandler);
+    document.addEventListener('contextmenu', cancelHandler);
+  }, 100);
+
+  placingArea = { el: areaEl, origOpacity, isNew, type, mouseMoveHandler, clickHandler, cancelHandler, overlap: false };
 }
 
 // 起動時にロード処理

@@ -1817,3 +1817,27 @@
     .area-context-menu li:hover {
       background: #444;
     }
+
+    .area-context-menu .menu-has-sub {
+      position: relative;
+    }
+
+    .area-context-menu .sub-menu {
+      display: none;
+      position: absolute;
+      top: -1px;
+      left: 100%;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      min-width: 140px;
+    }
+
+    .area-context-menu .menu-has-sub:hover .sub-menu {
+      display: block;
+    }
+
+    .area-context-menu .host-only {
+      display: none;
+    }
