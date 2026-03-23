@@ -5252,10 +5252,10 @@ function subscribeAreas() {
 
       // Position & Scale sync
       if (data.isAbsolute) {
+        el.dataset.areaId = id; // ★ 常時IDを付与する（同期的に移動された場合でも拾えるように）
         if (el.parentElement !== field) {
           el.style.width = el.offsetWidth + 'px';
           el.style.height = el.offsetHeight + 'px';
-          el.dataset.areaId = id; // ★ 動かした要素にIDを記憶させる
           field.appendChild(el);
         }
         el.style.position = 'absolute';
@@ -5404,16 +5404,16 @@ function bindAreaContextMenuOnce() {
 
   // 右クリックイベントを各エリアにアタッチ (キャプチャフェーズで処理)
   document.addEventListener('contextmenu', (e) => {
-    console.log('[contextmenu-capture] Clicked on:', e.target);
-    // まずターゲットが対象エリアのいずれかに属しているか判定
     let area = e.target.closest(targetAreaSelectors.join(', '));
-    console.log('[contextmenu] Matched area:', area);
     if (!area) return;
 
-    // カードの上で右クリックした場合はカードのcontextmenuを優先するため判定
+    // カードの上で右クリックした場合はカード側で処理させるor標準メニューを出すので抜ける
     if (e.target.closest('.card')) return;
 
-    // .player-area を遡って取得するか、ダイナミックエリアか判定
+    // ここまで来たということは確実にエリアへの右クリックなので、ブラウザの標準メニューを止める
+    e.preventDefault();
+    e.stopPropagation();
+
     const playerArea = area.closest('.player-area');
     const isDynamicOrMoved = !playerArea && area.parentElement?.id === 'field';
 
@@ -5428,19 +5428,16 @@ function bindAreaContextMenuOnce() {
     if (playerArea) {
       const pMatch = playerArea.className.match(/(player-\d)/);
       pClass = pMatch ? pMatch[1] : '';
-      if (!pClass || !aClass) return;
+      if (!pClass || !aClass) return; // IDがない場合はメニューを閉じる（表示しない）
       currentTargetAreaId = `${pClass}-${aClass}`;
     } else if (isDynamicOrMoved) {
       if (!aClass) return;
-      // dataset.areaId に元のID (player-1-hand-area) 等が保存されていればそれを使う
-      // 何もなければ動的に生成されたID
       currentTargetAreaId = area.dataset.areaId || area.id;
       if (!currentTargetAreaId) return; // IDが特定できなければ中止
     } else {
       return;
     }
 
-    e.preventDefault();
     e.stopPropagation();
 
     // メニュー表示
@@ -5622,6 +5619,8 @@ function stopAreaPlacement() {
 
 function startAreaPlacement(areaEl, isNew, areaId, forceType) {
   stopAreaPlacement();
+
+  areaEl.dataset.areaId = areaId;
 
   const origOpacity = areaEl.style.opacity || '1';
   areaEl.style.opacity = '0.6';
