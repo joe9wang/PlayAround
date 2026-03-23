@@ -5400,7 +5400,12 @@ function bindAreaContextMenuOnce() {
 
   if (!ctxMenu || !btnChangeBg || !fileInput) return;
 
-  const targetAreaSelectors = ['.play-area', '.main-play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
+  const targetAreaSelectors = [
+    // カードゲームモード
+    '.play-area', '.main-play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area',
+    // ボードゲームモード
+    '#board-play', '.board-hand', '.center-deck', '.center-discard'
+  ];
 
   // 右クリックイベントを各エリアにアタッチ (キャプチャフェーズで処理)
   document.addEventListener('contextmenu', (e) => {
@@ -5458,7 +5463,16 @@ function bindAreaContextMenuOnce() {
       currentTargetAreaId = area.dataset.areaId || area.id;
       if (!currentTargetAreaId) return; // IDが特定できなければ中止
     } else {
-      return;
+      // ボードゲームモードのエリア (#board-play, .board-hand, .center-deck, .center-discard)
+      const boardId = area.id || area.dataset.areaId;
+      if (!boardId) {
+        // IDがなければクラスから生成
+        const boardClass = [...area.classList].find(c => ['board-hand', 'center-deck', 'center-discard'].includes(c));
+        if (!boardClass) return;
+        currentTargetAreaId = boardClass;
+      } else {
+        currentTargetAreaId = boardId;
+      }
     }
 
     e.stopPropagation();
