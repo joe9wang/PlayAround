@@ -5257,7 +5257,9 @@ function subscribeAreas() {
       // Position & Scale sync
       if (data.isAbsolute) {
         el.dataset.areaId = id; // ★ 常時IDを付与する（同期的に移動された場合でも拾えるように）
-        if (el.parentElement !== field) {
+        // ボードモードのエリア（元からHTML上にidで定義されているもの）は field に移さない
+        const isBoardModeEl = el.id && el.id === id;
+        if (!isBoardModeEl && el.parentElement !== field) {
           el.style.width = el.offsetWidth + 'px';
           el.style.height = el.offsetHeight + 'px';
           field.appendChild(el);
@@ -5463,9 +5465,11 @@ function bindAreaContextMenuOnce() {
       if (!pClass || !aClass) return; // IDがない場合はメニューを閉じる（表示しない）
       currentTargetAreaId = `${pClass}-${aClass}`;
     } else if (isDynamicOrMoved) {
-      if (!aClass) return;
+      // aClass が空でも dataset.areaId/id で特定できればOK（ボードモードエリアが field に移動した場合など）
       currentTargetAreaId = area.dataset.areaId || area.id;
-      if (!currentTargetAreaId) return; // IDが特定できなければ中止
+      if (!currentTargetAreaId && !aClass) return;
+      if (!currentTargetAreaId) currentTargetAreaId = aClass; // fallback to class
+      if (!currentTargetAreaId) return;
     } else {
       // ボードゲームモードのエリア (#board-play, .board-hand, .center-deck, .center-discard)
       const boardId = area.id || area.dataset.areaId;
