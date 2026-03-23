@@ -5257,9 +5257,7 @@ function subscribeAreas() {
       // Position & Scale sync
       if (data.isAbsolute) {
         el.dataset.areaId = id; // ★ 常時IDを付与する（同期的に移動された場合でも拾えるように）
-        // ボードモードのエリア（元からHTML上にidで定義されているもの）は field に移さない
-        const isBoardModeEl = el.id && el.id === id;
-        if (!isBoardModeEl && el.parentElement !== field) {
+        if (el.parentElement !== field) {
           el.style.width = el.offsetWidth + 'px';
           el.style.height = el.offsetHeight + 'px';
           field.appendChild(el);
@@ -5680,9 +5678,7 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     const ch = areaEl.offsetHeight;
     areaEl.style.width = cw + 'px';
     areaEl.style.height = ch + 'px';
-    // ボードモードのエリア（#board-layout の子）は field に移さない
-    const parentIsBoardLayout = areaEl.parentElement && areaEl.parentElement.id === 'board-layout';
-    if (!parentIsBoardLayout && areaEl.parentElement && areaEl.parentElement.id !== 'field') {
+    if (areaEl.parentElement && areaEl.parentElement.id !== 'field') {
        field.appendChild(areaEl);
     }
   } else {
