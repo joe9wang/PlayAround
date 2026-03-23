@@ -5679,14 +5679,21 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     areaEl.style.width = cw + 'px';
     areaEl.style.height = ch + 'px';
     if (areaEl.parentElement && areaEl.parentElement.id !== 'field') {
-       field.appendChild(areaEl);
+      // reparent 前に画面座標を取得し、移動後も同じ位置に見えるよう left/top を設定
+      const rect = areaEl.getBoundingClientRect();
+      field.appendChild(areaEl);
+      areaEl.style.position = 'absolute'; // 先に設定してから座標計算
+      const fieldRect = field.getBoundingClientRect();
+      const z = typeof zoom !== 'undefined' ? zoom : 1;
+      areaEl.style.left = ((rect.left - fieldRect.left) / z) + 'px';
+      areaEl.style.top  = ((rect.top  - fieldRect.top)  / z) + 'px';
     }
   } else {
     areaEl.style.width = '140px';
     areaEl.style.height = '160px';
     field.appendChild(areaEl);
   }
-  
+
   areaEl.style.position = 'absolute';
   const typeClasses = ['hand-area', 'deck-area', 'discard-area'];
   const type = forceType || [...areaEl.classList].find(c => typeClasses.includes(c)) || 'deck-area';
