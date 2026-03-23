@@ -5404,11 +5404,34 @@ function bindAreaContextMenuOnce() {
 
   // 右クリックイベントを各エリアにアタッチ (キャプチャフェーズで処理)
   document.addEventListener('contextmenu', (e) => {
+    // ===== DEBUG: 右クリック調査ログ =====
+    const debugTarget = e.target;
+    const debugArea = e.target.closest(targetAreaSelectors.join(', '));
+    const debugCard = e.target.closest('.card');
+    console.group('[DEBUG] contextmenu fired');
+    console.log('  e.target:', debugTarget);
+    console.log('  e.target tagName:', debugTarget.tagName);
+    console.log('  e.target className:', debugTarget.className);
+    console.log('  e.target id:', debugTarget.id);
+    console.log('  closest area?', debugArea);
+    console.log('  closest .card?', debugCard);
+    // e.targetからdocumentに向かってDOMツリーを出力
+    const path = e.composedPath ? e.composedPath() : [];
+    console.log('  event path (先頭5件):', path.slice(0, 5));
+    console.groupEnd();
+    // ===== DEBUG ここまで =====
+
     let area = e.target.closest(targetAreaSelectors.join(', '));
-    if (!area) return;
+    if (!area) {
+      console.warn('[DEBUG] area not found → contextmenu listener 早期リターン');
+      return;
+    }
 
     // カードの上で右クリックした場合はカード側で処理させるor標準メニューを出すので抜ける
-    if (e.target.closest('.card')) return;
+    if (e.target.closest('.card')) {
+      console.warn('[DEBUG] .card に引っかかって早期リターン');
+      return;
+    }
 
     // ここまで来たということは確実にエリアへの右クリックなので、ブラウザの標準メニューを止める
     e.preventDefault();
