@@ -5666,6 +5666,7 @@ let placingArea = null;
 
 function stopAreaPlacement() {
   if (placingArea) {
+    console.warn('[stopAreaPlacement] 配置モード終了', new Error().stack.split('\n')[1]?.trim());
     placingArea.el.style.opacity = placingArea.origOpacity;
     placingArea.el.style.pointerEvents = 'auto';
     placingArea.el.style.filter = '';
@@ -5699,6 +5700,9 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
   areaEl.style.opacity = '0.6';
   areaEl.style.pointerEvents = 'none'; 
   areaEl.style.zIndex = '10000';
+
+  // ★ placingArea を早期設定: Firestore onSnapshot が早い段階で来てもスキップできるように
+  placingArea = { el: areaEl, origOpacity, isNew, type: null, mouseMoveHandler: null, clickHandler: null, cancelHandler: null, overlap: false };
 
   if (!isNew) {
     const cw = areaEl.offsetWidth;
@@ -5788,6 +5792,12 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     const width = parseFloat(areaEl.style.width);
     const height = parseFloat(areaEl.style.height);
 
+    // ★ await前にリスナー削除・placingArea=null → awaitの中断中にsnapshotが来ても正しく処理される
+    document.removeEventListener('mousemove', placingArea.mouseMoveHandler);
+    document.removeEventListener('click', placingArea.clickHandler);
+    document.removeEventListener('contextmenu', placingArea.cancelHandler);
+    placingArea = null;
+
     areaEl.style.opacity = origOpacity;
     areaEl.style.pointerEvents = 'auto';
     areaEl.style.filter = '';
@@ -5802,11 +5812,6 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
         updatedAt: serverTimestamp()
       }, { merge: true });
     } catch(err) { console.warn(err); }
-
-    document.removeEventListener('mousemove', placingArea.mouseMoveHandler);
-    document.removeEventListener('click', placingArea.clickHandler);
-    document.removeEventListener('contextmenu', placingArea.cancelHandler);
-    placingArea = null;
   };
 
   const cancelHandler = (e) => {
@@ -5820,7 +5825,12 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     document.addEventListener('contextmenu', cancelHandler);
   }, 100);
 
-  placingArea = { el: areaEl, origOpacity, isNew, type, mouseMoveHandler, clickHandler, cancelHandler, overlap: false };
+  // ★ 早期設定した placingArea にハンドラーと type を追記（この時点では既に設定済み）
+  placingArea.type = type;
+  placingArea.mouseMoveHandler = mouseMoveHandler;
+  placingArea.clickHandler = clickHandler;
+  placingArea.cancelHandler = cancelHandler;
+  console.log('[startAreaPlacement] placingArea 完全設定完了 areaId=', areaId);
 }
 
 // 起動時にロード処理
