@@ -5205,19 +5205,24 @@ function subscribeAreas() {
       const data = change.doc.data();
 
       // 移動配置モード中は、配置中エリアへの Firestore 更新をスキップ（位置が上書きされて固まるのを防ぐ）
-      if (placingArea && placingArea.el && placingArea.el.dataset.areaId === id) return;
+      if (placingArea && placingArea.el && placingArea.el.dataset.areaId === id) {
+        console.warn('[subscribeAreas] 配置モード中のため Firestore 更新をスキップ id=', id);
+        return;
+      }
+
+      console.log('[subscribeAreas] onSnapshot change.type=', change.type, 'id=', id, 'isAbsolute=', data.isAbsolute, 'x=', data.x, 'y=', data.y);
       
       let el = null;
       // ID例: "player-1-play-area" -> selector: .player-area.player-1 .play-area
       const parts = id.match(/^(player-\d)-(.+)$/);
       if (parts) {
         el = document.querySelector(`.player-area.${parts[1]} .${parts[2]}`);
+        console.log('[subscribeAreas] parts match, selector=', `.player-area.${parts[1]} .${parts[2]}`, '→ el=', el);
       } else {
         el = document.querySelector(`[data-area-id="${id}"]`);
-        // ボードモードのエリアは data-area-id ではなく id 属性で存在する場合がある
         if (!el) el = document.getElementById(id);
-        // クラス名でも探す (center-deck, center-discardなど)
         if (!el) el = document.querySelector(`.${id}`);
+        console.log('[subscribeAreas] non-parts, el=', el);
         if (!el && data.isAbsolute && change.type !== 'removed') {
            el = document.createElement('div');
            el.className = data.type + (id.startsWith('dynamic-') ? ' dynamic-area' : '');
@@ -5228,14 +5233,20 @@ function subscribeAreas() {
            else if(data.type==='discard-area') label = '捨て札エリア';
            el.innerHTML = `<div class="zone-label" data-i18n="zone.deck">${label}</div>`;
            field.appendChild(el);
+           console.log('[subscribeAreas] 新エレメント作成:', el);
         }
       }
 
-      if (!el) return;
+      if (!el) {
+        console.warn('[subscribeAreas] el not found, skip. id=', id);
+        return;
+      }
 
       if (change.type === 'removed') {
-        if (!parts) el.remove(); // Remove dynamic areas
-        else {
+        if (!parts) {
+          console.warn('[subscribeAreas] removed → el.remove() id=', id);
+          el.remove();
+        } else {
           el.style.backgroundImage = '';
           el.style.backgroundSize = '';
           el.style.backgroundPosition = '';
@@ -5259,11 +5270,13 @@ function subscribeAreas() {
 
       // Position & Scale sync
       if (data.isAbsolute) {
+        console.log('[subscribeAreas] isAbsolute: 位置を上書き x=', data.x, 'y=', data.y, 'el=', el);
         el.dataset.areaId = id; // ★ 常時IDを付与する（同期的に移動された場合でも拾えるように）
         if (el.parentElement !== field) {
           el.style.width = el.offsetWidth + 'px';
           el.style.height = el.offsetHeight + 'px';
           field.appendChild(el);
+          console.log('[subscribeAreas] el を field に reparent');
         }
         el.style.position = 'absolute';
         if (data.x !== undefined) el.style.left = data.x + 'px';
@@ -5669,6 +5682,17 @@ function stopAreaPlacement() {
 function startAreaPlacement(areaEl, isNew, areaId, forceType) {
   stopAreaPlacement();
 
+  console.group('[startAreaPlacement] 開始');
+  console.log('  areaId:', areaId, '  isNew:', isNew);
+  console.log('  areaEl:', areaEl);
+  console.log('  areaEl.className:', areaEl.className);
+  console.log('  areaEl.parentElement:', areaEl.parentElement);
+  console.log('  areaEl.offsetWidth:', areaEl.offsetWidth, '  offsetHeight:', areaEl.offsetHeight);
+  const cs0 = getComputedStyle(areaEl);
+  console.log('  computedStyle: display=', cs0.display, 'visibility=', cs0.visibility, 'position=', cs0.position,'z-index=', cs0.zIndex, 'opacity=', cs0.opacity);
+  console.log('  getBoundingClientRect():', JSON.stringify(areaEl.getBoundingClientRect()));
+  console.groupEnd();
+
   areaEl.dataset.areaId = areaId;
 
   const origOpacity = areaEl.style.opacity || '1';
@@ -5679,17 +5703,25 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
   if (!isNew) {
     const cw = areaEl.offsetWidth;
     const ch = areaEl.offsetHeight;
+    console.log('[startAreaPlacement] サイズ固定前 offsetWidth=', cw, 'offsetHeight=', ch);
     areaEl.style.width = cw + 'px';
     areaEl.style.height = ch + 'px';
     if (areaEl.parentElement && areaEl.parentElement.id !== 'field') {
       // reparent 前に画面座標を取得し、移動後も同じ位置に見えるよう left/top を設定
       const rect = areaEl.getBoundingClientRect();
+      console.log('[startAreaPlacement] reparent前 rect:', JSON.stringify(rect));
       field.appendChild(areaEl);
       areaEl.style.position = 'absolute'; // 先に設定してから座標計算
       const fieldRect = field.getBoundingClientRect();
       const z = typeof zoom !== 'undefined' ? zoom : 1;
-      areaEl.style.left = ((rect.left - fieldRect.left) / z) + 'px';
-      areaEl.style.top  = ((rect.top  - fieldRect.top)  / z) + 'px';
+      const newLeft = ((rect.left - fieldRect.left) / z);
+      const newTop  = ((rect.top  - fieldRect.top)  / z);
+      areaEl.style.left = newLeft + 'px';
+      areaEl.style.top  = newTop + 'px';
+      console.log('[startAreaPlacement] reparent後 left=', newLeft, 'top=', newTop, 'zoom=', z);
+      console.log('[startAreaPlacement] reparent後 getBoundingClientRect():', JSON.stringify(areaEl.getBoundingClientRect()));
+    } else {
+      console.log('[startAreaPlacement] reparent不要（既にfieldの子、またはparentなし）. parentElement:', areaEl.parentElement?.id, areaEl.parentElement?.className);
     }
   } else {
     areaEl.style.width = '140px';
@@ -5698,8 +5730,15 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
   }
 
   areaEl.style.position = 'absolute';
+  const cs1 = getComputedStyle(areaEl);
+  console.log('[startAreaPlacement] 配置直後 computedStyle: display=', cs1.display, 'visibility=', cs1.visibility, 'z-index=', cs1.zIndex, 'opacity=', cs1.opacity, 'width=', cs1.width, 'height=', cs1.height, 'left=', cs1.left, 'top=', cs1.top);
+  console.log('[startAreaPlacement] 配置直後 getBoundingClientRect():', JSON.stringify(areaEl.getBoundingClientRect()));
+  console.log('[startAreaPlacement] field.contains(areaEl):', field.contains(areaEl));
+
   const typeClasses = ['hand-area', 'deck-area', 'discard-area'];
   const type = forceType || [...areaEl.classList].find(c => typeClasses.includes(c)) || 'deck-area';
+  console.log('[startAreaPlacement] type:', type);
+
 
   const mouseMoveHandler = (e) => {
     if (!placingArea) return;
