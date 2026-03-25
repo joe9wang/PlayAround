@@ -5204,26 +5204,22 @@ function subscribeAreas() {
       const id = change.doc.id;
       const data = change.doc.data();
 
-      // 移動配置モード中は、配置中エリアへの Firestore 更新をスキップ（位置が上書きされて固まるのを防ぐ）
-      if (placingArea && placingArea.el && placingArea.el.dataset.areaId === id) {
-        console.warn('[subscribeAreas] 配置モード中のため Firestore 更新をスキップ id=', id);
-        return;
-      }
-
-      console.log('[subscribeAreas] onSnapshot change.type=', change.type, 'id=', id, 'isAbsolute=', data.isAbsolute, 'x=', data.x, 'y=', data.y);
-      
       let el = null;
       // ID例: "player-1-play-area" -> selector: .player-area.player-1 .play-area
       const parts = id.match(/^(player-\d)-(.+)$/);
       if (parts) {
         el = document.querySelector(`.player-area.${parts[1]} .${parts[2]}`);
-        console.log('[subscribeAreas] parts match, selector=', `.player-area.${parts[1]} .${parts[2]}`, '→ el=', el);
       } else {
         el = document.querySelector(`[data-area-id="${id}"]`);
         if (!el) el = document.getElementById(id);
         if (!el) el = document.querySelector(`.${id}`);
-        console.log('[subscribeAreas] non-parts, el=', el);
-        if (!el && data.isAbsolute && change.type !== 'removed') {
+      }
+
+      // ★ 配置モード中のガード（el 解決後に行う）
+      if (el && el.dataset.moving === 'true') return;
+      if (placingArea && placingArea.el && placingArea.el.dataset.areaId === id) return;
+
+      if (!el && data.isAbsolute && change.type !== 'removed') {
            el = document.createElement('div');
            el.className = data.type + (id.startsWith('dynamic-') ? ' dynamic-area' : '');
            el.dataset.areaId = id;
@@ -5233,9 +5229,9 @@ function subscribeAreas() {
            else if(data.type==='discard-area') label = '捨て札エリア';
            el.innerHTML = `<div class="zone-label" data-i18n="zone.deck">${label}</div>`;
            field.appendChild(el);
-           console.log('[subscribeAreas] 新エレメント作成:', el);
-        }
+           console.log('[subscribeAreas] 新エリア作成:', id);
       }
+
 
       if (!el) {
         console.warn('[subscribeAreas] el not found, skip. id=', id);
@@ -5270,15 +5266,14 @@ function subscribeAreas() {
 
       // Position & Scale sync
       if (data.isAbsolute) {
-        console.log('[subscribeAreas] isAbsolute: 位置を上書き x=', data.x, 'y=', data.y, 'el=', el);
-        el.dataset.areaId = id; // ★ 常時IDを付与する（同期的に移動された場合でも拾えるように）
+        el.dataset.areaId = id; 
         if (el.parentElement !== field) {
           el.style.width = el.offsetWidth + 'px';
           el.style.height = el.offsetHeight + 'px';
           field.appendChild(el);
-          console.log('[subscribeAreas] el を field に reparent');
         }
         el.style.position = 'absolute';
+        el.style.zIndex = '5'; // 背面要素（プレイエリア等）より前面に
         if (data.x !== undefined) el.style.left = data.x + 'px';
         if (data.y !== undefined) el.style.top = data.y + 'px';
         if (data.width !== undefined) el.style.width = data.width + 'px';
@@ -5666,7 +5661,7 @@ let placingArea = null;
 
 function stopAreaPlacement() {
   if (placingArea) {
-    console.warn('[stopAreaPlacement] 配置モード終了', new Error().stack.split('\n')[1]?.trim());
+    if (placingArea.el) delete placingArea.el.dataset.moving;
     placingArea.el.style.opacity = placingArea.origOpacity;
     placingArea.el.style.pointerEvents = 'auto';
     placingArea.el.style.filter = '';
@@ -5683,82 +5678,48 @@ function stopAreaPlacement() {
 function startAreaPlacement(areaEl, isNew, areaId, forceType) {
   stopAreaPlacement();
 
-  console.group('[startAreaPlacement] 開始');
-  console.log('  areaId:', areaId, '  isNew:', isNew);
-  console.log('  areaEl:', areaEl);
-  console.log('  areaEl.className:', areaEl.className);
-  console.log('  areaEl.parentElement:', areaEl.parentElement);
-  console.log('  areaEl.offsetWidth:', areaEl.offsetWidth, '  offsetHeight:', areaEl.offsetHeight);
-  const cs0 = getComputedStyle(areaEl);
-  console.log('  computedStyle: display=', cs0.display, 'visibility=', cs0.visibility, 'position=', cs0.position,'z-index=', cs0.zIndex, 'opacity=', cs0.opacity);
-  console.log('  getBoundingClientRect():', JSON.stringify(areaEl.getBoundingClientRect()));
-  console.groupEnd();
-
   areaEl.dataset.areaId = areaId;
+  areaEl.dataset.moving = 'true';
 
   const origOpacity = areaEl.style.opacity || '1';
   areaEl.style.opacity = '0.6';
   areaEl.style.pointerEvents = 'none'; 
   areaEl.style.zIndex = '10000';
 
-  // ★ placingArea を早期設定: Firestore onSnapshot が早い段階で来てもスキップできるように
   placingArea = { el: areaEl, origOpacity, isNew, type: null, mouseMoveHandler: null, clickHandler: null, cancelHandler: null, overlap: false };
 
   if (!isNew) {
-    const cw = areaEl.offsetWidth;
-    const ch = areaEl.offsetHeight;
-    console.log('[startAreaPlacement] サイズ固定前 offsetWidth=', cw, 'offsetHeight=', ch);
-    areaEl.style.width = cw + 'px';
-    areaEl.style.height = ch + 'px';
+    areaEl.style.width = areaEl.offsetWidth + 'px';
+    areaEl.style.height = areaEl.offsetHeight + 'px';
     if (areaEl.parentElement && areaEl.parentElement.id !== 'field') {
-      // reparent 前に画面座標を取得し、移動後も同じ位置に見えるよう left/top を設定
       const rect = areaEl.getBoundingClientRect();
-      console.log('[startAreaPlacement] reparent前 rect:', JSON.stringify(rect));
       field.appendChild(areaEl);
-      areaEl.style.position = 'absolute'; // 先に設定してから座標計算
+      areaEl.style.position = 'absolute';
       const fieldRect = field.getBoundingClientRect();
       const z = typeof zoom !== 'undefined' ? zoom : 1;
-      const newLeft = ((rect.left - fieldRect.left) / z);
-      const newTop  = ((rect.top  - fieldRect.top)  / z);
-      areaEl.style.left = newLeft + 'px';
-      areaEl.style.top  = newTop + 'px';
-      console.log('[startAreaPlacement] reparent後 left=', newLeft, 'top=', newTop, 'zoom=', z);
-      console.log('[startAreaPlacement] reparent後 getBoundingClientRect():', JSON.stringify(areaEl.getBoundingClientRect()));
-    } else {
-      console.log('[startAreaPlacement] reparent不要（既にfieldの子、またはparentなし）. parentElement:', areaEl.parentElement?.id, areaEl.parentElement?.className);
+      areaEl.style.left = ((rect.left - fieldRect.left) / z) + 'px';
+      areaEl.style.top  = ((rect.top  - fieldRect.top)  / z) + 'px';
     }
   } else {
     areaEl.style.width = '140px';
     areaEl.style.height = '160px';
     field.appendChild(areaEl);
   }
-
   areaEl.style.position = 'absolute';
-  const cs1 = getComputedStyle(areaEl);
-  console.log('[startAreaPlacement] 配置直後 computedStyle: display=', cs1.display, 'visibility=', cs1.visibility, 'z-index=', cs1.zIndex, 'opacity=', cs1.opacity, 'width=', cs1.width, 'height=', cs1.height, 'left=', cs1.left, 'top=', cs1.top);
-  console.log('[startAreaPlacement] 配置直後 getBoundingClientRect():', JSON.stringify(areaEl.getBoundingClientRect()));
-  console.log('[startAreaPlacement] field.contains(areaEl):', field.contains(areaEl));
 
   const typeClasses = ['hand-area', 'deck-area', 'discard-area'];
   const type = forceType || [...areaEl.classList].find(c => typeClasses.includes(c)) || 'deck-area';
-  console.log('[startAreaPlacement] type:', type);
-
 
   const mouseMoveHandler = (e) => {
     if (!placingArea) return;
     const fieldRect = field.getBoundingClientRect();
     const mx = e.clientX;
     const my = e.clientY;
-    
-    // Zoom in use:
     let z = typeof zoom !== 'undefined' ? zoom : 1;
-    
     const w = areaEl.offsetWidth * z;
     const h = areaEl.offsetHeight * z;
-    
     const x = ((mx - fieldRect.left) / z) - (w / z / 2);
     const y = ((my - fieldRect.top) / z) - (h / z / 2);
-    
     areaEl.style.left = x + 'px';
     areaEl.style.top = y + 'px';
 
@@ -5784,7 +5745,6 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     if (!placingArea) return;
     e.preventDefault();
     e.stopPropagation();
-    
     if (placingArea.overlap) return;
 
     const x = parseFloat(areaEl.style.left);
@@ -5792,10 +5752,10 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     const width = parseFloat(areaEl.style.width);
     const height = parseFloat(areaEl.style.height);
 
-    // ★ await前にリスナー削除・placingArea=null → awaitの中断中にsnapshotが来ても正しく処理される
     document.removeEventListener('mousemove', placingArea.mouseMoveHandler);
     document.removeEventListener('click', placingArea.clickHandler);
     document.removeEventListener('contextmenu', placingArea.cancelHandler);
+    delete areaEl.dataset.moving;
     placingArea = null;
 
     areaEl.style.opacity = origOpacity;
@@ -5825,12 +5785,10 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     document.addEventListener('contextmenu', cancelHandler);
   }, 100);
 
-  // ★ 早期設定した placingArea にハンドラーと type を追記（この時点では既に設定済み）
   placingArea.type = type;
   placingArea.mouseMoveHandler = mouseMoveHandler;
   placingArea.clickHandler = clickHandler;
   placingArea.cancelHandler = cancelHandler;
-  console.log('[startAreaPlacement] placingArea 完全設定完了 areaId=', areaId);
 }
 
 // 起動時にロード処理

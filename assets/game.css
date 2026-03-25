@@ -1054,14 +1054,14 @@
       /* 下地(#board-play)より前面 */
     }
 
-    #board-center .center-deck {
+    .center-deck {
       background: #f90;
       /* 既存 deck と同色 */
       position: relative;
       border: 4px dashed #666;
     }
 
-    #board-center .center-discard {
+    .center-discard {
       background: #cc6666;
       /* 既存 discard と同色 */
       position: relative;
