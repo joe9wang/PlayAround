@@ -5203,6 +5203,9 @@ function subscribeAreas() {
     snap.docChanges().forEach(change => {
       const id = change.doc.id;
       const data = change.doc.data();
+
+      // 移動配置モード中は、配置中エリアへの Firestore 更新をスキップ（位置が上書きされて固まるのを防ぐ）
+      if (placingArea && placingArea.el && placingArea.el.dataset.areaId === id) return;
       
       let el = null;
       // ID例: "player-1-play-area" -> selector: .player-area.player-1 .play-area
