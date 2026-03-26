@@ -318,6 +318,16 @@
 
     .card.selected {
       border: 3px solid red;
+      box-shadow: 0 0 10px rgba(255,0,0,0.5);
+    }
+
+    #marquee {
+      position: absolute;
+      border: 1px solid #0078d7;
+      background: rgba(0, 120, 215, 0.2);
+      pointer-events: none;
+      z-index: 9999;
+      display: none;
     }
 
     /* 背面画像を敷くカード */

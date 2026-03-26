@@ -4235,27 +4235,45 @@ window.confirmCollectMyCardsToDeck = async function () {
 window.deleteSelectedMine = async function () {
   try {
     if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
-    const card = getCurrentlySelectedCard();
-    if (!card) { alert('赤枠の「指定カード」を選んでください'); return; }
+    const cards = getCurrentlySelectedCards();
+    if (cards.length === 0) { alert('赤枠の「指定カード」を選んでください'); return; }
 
-    // 自分のカードかチェック（ownerUid / ownerSeat）
-    const ownerUid = card.dataset.ownerUid || null;
-    const ownerSeat = card.dataset.ownerSeat || null;
-    const isMine = (ownerUid && ownerUid === CURRENT_UID) || (ownerSeat && String(ownerSeat) === String(CURRENT_PLAYER));
-    if (!isMine) { alert('自分のカードではありません'); return; }
+    const mine = cards.filter(card => {
+      const ownerUid = card.dataset.ownerUid || null;
+      const ownerSeat = card.dataset.ownerSeat || null;
+      return (ownerUid && ownerUid === CURRENT_UID) || (ownerSeat && String(ownerSeat) === String(CURRENT_PLAYER));
+    });
 
-    const id = card.dataset.cardId;
-    if (!id) return;
+    if (mine.length === 0) { alert('自分のカードではありません'); return; }
 
-    // Firestore から削除
-    await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+    const confirmDel = confirm(`選択した ${mine.length} 枚の自分のカードを削除しますか？`);
+    if (!confirmDel) return;
 
-    // 画面からも除去
-    const el = cardDomMap.get(id);
-    if (el) { el.remove(); cardDomMap.delete(id); }
-    fullImageStore?.delete?.(id);
+    let batch = writeBatch(db);
+    let count = 0;
+
+    for (const card of mine) {
+      const id = card.dataset.cardId;
+      if (!id) continue;
+
+      batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+
+      // 画面からも除去
+      const el = cardDomMap.get(id);
+      if (el) { el.remove(); cardDomMap.delete(id); }
+      fullImageStore?.delete?.(id);
+
+      if (++count >= 450) {
+        await batch.commit();
+        batch = writeBatch(db);
+        count = 0;
+      }
+    }
+
+    if (count > 0) await batch.commit();
+
     if (window.previewImg) { setPreview(); }
-    postLog('選択中のカードを削除しました');
+    postLog(`選択中のカード ${mine.length} 枚を削除しました`);
 
   } catch (e) {
     console.error(e);
@@ -4272,22 +4290,26 @@ function getCurrentlySelectedCard() {
   return localSel || window.selectedCard || document.querySelector('.card.selected') || null;
 }
 
+// 現在選択中のすべてのカードを取得
+function getCurrentlySelectedCards() {
+  return Array.from(document.querySelectorAll('.card.selected'));
+}
+
 
 // === 指定カードを最背面へ（自分のカード限定） ===
 window.sendSelectedToBack = async function () {
   try {
     if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
-    const card = getCurrentlySelectedCard();
-    if (!card) { alert('赤枠の「指定カード」を選んでください'); return; }
+    const cards = getCurrentlySelectedCards();
+    if (cards.length === 0) { alert('赤枠の「指定カード」を選んでください'); return; }
 
-    // 自分のカードかチェック
-    const ownerUid = card.dataset.ownerUid || null;
-    const ownerSeat = card.dataset.ownerSeat || null;
-    const isMine = (ownerUid && ownerUid === CURRENT_UID) || (ownerSeat && String(ownerSeat) === String(CURRENT_PLAYER));
-    if (!isMine) { alert('自分のカードではありません'); return; }
+    const mine = cards.filter(card => {
+      const ownerUid = card.dataset.ownerUid || null;
+      const ownerSeat = card.dataset.ownerSeat || null;
+      return (ownerUid && ownerUid === CURRENT_UID) || (ownerSeat && String(ownerSeat) === String(CURRENT_PLAYER));
+    });
 
-    const id = card.dataset.cardId;
-    if (!id) return;
+    if (mine.length === 0) { alert('自分のカードではありません'); return; }
 
     // 画面上に存在する zIndex の最小値を探す
     let minZ = Infinity;
@@ -4297,23 +4319,25 @@ window.sendSelectedToBack = async function () {
     });
     if (!isFinite(minZ)) minZ = 1;
 
-    // 一番下になるように さらに -1
-    const newZ = minZ - 1;
+    // 複数選択時は、元々のZ順を保ちつつ一番下に持っていく
+    mine.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
 
-    // 表示を先に更新（体感即時）
-    card.style.zIndex = newZ;
+    mine.forEach((el, index) => {
+      const newZ = minZ - mine.length + index;
+      el.style.zIndex = newZ;
+      const id = el.dataset.cardId;
+      if (id) {
+        // Firestore へも反映（バッチ最適化経由）
+        updateCardBatched(id, { zIndex: newZ });
+      }
+    });
 
-    // Firestore へも反映（バッチ最適化経由）
-    updateCardBatched(id, { zIndex: newZ });
-
-    postLog('選択中のカードを最背面に送りました');
-
-
+    postLog(`選択中のカード ${mine.length} 枚を最背面に送りました`);
   } catch (e) {
     console.error(e);
-    alert('最背面化に失敗しました。');
   }
 };
+
 
 
 
@@ -4359,12 +4383,14 @@ function closeMyCardsDialog() { cardListModal.style.display = 'none'; }
 cardListClose?.addEventListener('click', closeMyCardsDialog);
 cardListModal?.addEventListener('click', (e) => { if (e.target === cardListModal) closeMyCardsDialog(); });
 
-async function focusCardById(cardId) {
+async function focusCardById(cardId, additive = false) {
   const el = cardDomMap.get(cardId) || document.querySelector(`[data-card-id="${cardId}"]`);
   if (!el) return;
   const newZ = getMaxZIndex() + 1;
   el.style.zIndex = newZ; // 表示だけ（サーバーへは書かない）
-  if (selectedCard) selectedCard.classList.remove('selected');
+  if (!additive) {
+    document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+  }
   el.classList.add('selected');
   selectedCard = el;
   const full = fullImageStore.get(cardId);
@@ -4585,6 +4611,75 @@ function bindPanZoomHandlers() {
     if (e.button !== 0) return;
     if (e.detail > 1) return;
     if (e.target.closest(".card")) return;
+
+    if (e.shiftKey) {
+      // Marquee selection
+      e.preventDefault();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const marquee = document.getElementById('marquee');
+      if (!marquee) return;
+
+      marquee.style.display = 'block';
+      marquee.style.left = `${startX}px`;
+      marquee.style.top = `${startY}px`;
+      marquee.style.width = '0px';
+      marquee.style.height = '0px';
+
+      const onMove = e2 => {
+        const curX = e2.clientX;
+        const curY = e2.clientY;
+        const left = Math.min(startX, curX);
+        const top = Math.min(startY, curY);
+        const width = Math.abs(curX - startX);
+        const height = Math.abs(curY - startY);
+        marquee.style.left = `${left}px`;
+        marquee.style.top = `${top}px`;
+        marquee.style.width = `${width}px`;
+        marquee.style.height = `${height}px`;
+      };
+
+      const onUp = () => {
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+
+        const rect = marquee.getBoundingClientRect();
+        marquee.style.display = 'none';
+
+        if (rect.width < 5 && rect.height < 5) return;
+
+        // Convert marquee rect to field coordinates
+        const fieldRect = field.getBoundingClientRect();
+        const minX = (rect.left - fieldRect.left - panOffsetX) / zoom;
+        const minY = (rect.top - fieldRect.top - panOffsetY) / zoom;
+        const width = rect.width / zoom;
+        const height = rect.height / zoom;
+
+        const cards = getCardsInsideRect({ minX, minY, width, height });
+
+        // Add to selection
+        if (cards.length > 0) {
+          cards.forEach(({ el }, index) => {
+            // First one or singular should clear previous if we want absolute selection, 
+            // but usually marquee REPLACES selection unless some other key is held.
+            // Let's make it REPLACE selection for now (clear at start of the loop)
+            if (index === 0) {
+              document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+            }
+            el.classList.add('selected');
+
+            // Update preview for the "last" one
+            if (index === cards.length - 1) {
+              focusCardById(el.dataset.cardId, true); // additive=true to keep others
+            }
+          });
+        }
+      };
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+      return;
+    }
+
     const TH = 5;
     let panning = false;
     let sx = e.clientX, sy = e.clientY;
@@ -4671,8 +4766,9 @@ function bindPanZoomHandlers() {
 
   // === 余白クリックで選択解除
   field.addEventListener("click", () => {
-    if (selectedCard) {
-      selectedCard.classList.remove("selected");
+    const selected = document.querySelectorAll('.card.selected');
+    if (selected.length > 0) {
+      selected.forEach(el => el.classList.remove("selected"));
       selectedCard = null;
       setPreview();
     }
