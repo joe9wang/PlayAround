@@ -5689,8 +5689,14 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
   placingArea = { el: areaEl, origOpacity, isNew, type: null, mouseMoveHandler: null, clickHandler: null, cancelHandler: null, overlap: false };
 
   if (!isNew) {
-    areaEl.style.width = areaEl.offsetWidth + 'px';
-    areaEl.style.height = areaEl.offsetHeight + 'px';
+    const isBoardArea = !!areaEl.closest('#board-layout');
+    const boardScale = isBoardArea ? 1.3 : 1.0;
+
+    const curW = areaEl.offsetWidth * boardScale;
+    const curH = areaEl.offsetHeight * boardScale;
+    areaEl.style.width = curW + 'px';
+    areaEl.style.height = curH + 'px';
+
     if (areaEl.parentElement && areaEl.parentElement.id !== 'field') {
       const rect = areaEl.getBoundingClientRect();
       field.appendChild(areaEl);
