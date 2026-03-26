@@ -15,9 +15,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- 同じファビコン等（必要に応じて） -->
   <link href="/favicon.ico" rel="icon" sizes="any" />
-  <link href="/favicon-32.png?v=1" rel="icon" sizes="32x32" type="image/png" />
-  <link href="/favicon-16.png?v=1" rel="icon" sizes="16x16" type="image/png" />
-  <link href="/apple-touch-icon.png?v=1" rel="apple-touch-icon" sizes="180x180" />
+  <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
+  <link href="/favicon-16.png?v=3" rel="icon" sizes="16x16" type="image/png" />
+  <link href="/apple-touch-icon.png?v=3" rel="apple-touch-icon" sizes="180x180" />
   <link href="/site.webmanifest" rel="manifest" />
 
   <style>
@@ -400,6 +400,76 @@
             <a class="small-btn room-enter-btn" href="#" data-slot="3" style="display:none;">ルームに入る</a>
           </div>
         </li>
+        <li class="item" id="room-slot-4">
+          <div>
+            <div><strong>スロット4</strong></div>
+            <div class="muted room-slot-updated">最終更新: -</div>
+            <div class="muted room-slot-info">データなし</div>
+          </div>
+          <div class="right">
+            <a class="small-btn room-enter-btn" href="#" data-slot="4" style="display:none;">ルームに入る</a>
+          </div>
+        </li>
+        <li class="item" id="room-slot-5">
+          <div>
+            <div><strong>スロット5</strong></div>
+            <div class="muted room-slot-updated">最終更新: -</div>
+            <div class="muted room-slot-info">データなし</div>
+          </div>
+          <div class="right">
+            <a class="small-btn room-enter-btn" href="#" data-slot="5" style="display:none;">ルームに入る</a>
+          </div>
+        </li>
+        <li class="item" id="room-slot-6">
+          <div>
+            <div><strong>スロット6</strong></div>
+            <div class="muted room-slot-updated">最終更新: -</div>
+            <div class="muted room-slot-info">データなし</div>
+          </div>
+          <div class="right">
+            <a class="small-btn room-enter-btn" href="#" data-slot="6" style="display:none;">ルームに入る</a>
+          </div>
+        </li>
+        <li class="item" id="room-slot-7">
+          <div>
+            <div><strong>スロット7</strong></div>
+            <div class="muted room-slot-updated">最終更新: -</div>
+            <div class="muted room-slot-info">データなし</div>
+          </div>
+          <div class="right">
+            <a class="small-btn room-enter-btn" href="#" data-slot="7" style="display:none;">ルームに入る</a>
+          </div>
+        </li>
+        <li class="item" id="room-slot-8">
+          <div>
+            <div><strong>スロット8</strong></div>
+            <div class="muted room-slot-updated">最終更新: -</div>
+            <div class="muted room-slot-info">データなし</div>
+          </div>
+          <div class="right">
+            <a class="small-btn room-enter-btn" href="#" data-slot="8" style="display:none;">ルームに入る</a>
+          </div>
+        </li>
+        <li class="item" id="room-slot-9">
+          <div>
+            <div><strong>スロット9</strong></div>
+            <div class="muted room-slot-updated">最終更新: -</div>
+            <div class="muted room-slot-info">データなし</div>
+          </div>
+          <div class="right">
+            <a class="small-btn room-enter-btn" href="#" data-slot="9" style="display:none;">ルームに入る</a>
+          </div>
+        </li>
+        <li class="item" id="room-slot-10">
+          <div>
+            <div><strong>スロット10</strong></div>
+            <div class="muted room-slot-updated">最終更新: -</div>
+            <div class="muted room-slot-info">データなし</div>
+          </div>
+          <div class="right">
+            <a class="small-btn room-enter-btn" href="#" data-slot="10" style="display:none;">ルームに入る</a>
+          </div>
+        </li>
       </ul>
     </section>
 
@@ -439,7 +509,7 @@
             <a class="small-btn slot-list-btn" href="#" data-slot="2">一覧</a>
           </div>
         </li>
-        <!-- ▼スロット3（新規追加） -->
+        <!-- ▼スロット3 -->
         <li class="item">
           <div>
             <div>
@@ -453,6 +523,118 @@
           </div>
           <div class="right">
             <a class="small-btn slot-list-btn" href="#" data-slot="3">一覧</a>
+          </div>
+        </li>
+        <!-- ▼スロット4 -->
+        <li class="item">
+          <div>
+            <div>
+              <strong>スロット4</strong><span class="count" id="slot4-count">(0枚)</span>
+            </div>
+            <div class="muted" id="slot4-updated">最終更新: -</div>
+            <div class="thumbs" id="slot4-thumbs"><span class="empty">空き</span></div>
+            <div class="slot-list" id="slot4-list">
+              <div class="thumbs-grid" id="slot4-list-grid"></div>
+            </div>
+          </div>
+          <div class="right">
+            <a class="small-btn slot-list-btn" href="#" data-slot="4">一覧</a>
+          </div>
+        </li>
+        <!-- ▼スロット5 -->
+        <li class="item">
+          <div>
+            <div>
+              <strong>スロット5</strong><span class="count" id="slot5-count">(0枚)</span>
+            </div>
+            <div class="muted" id="slot5-updated">最終更新: -</div>
+            <div class="thumbs" id="slot5-thumbs"><span class="empty">空き</span></div>
+            <div class="slot-list" id="slot5-list">
+              <div class="thumbs-grid" id="slot5-list-grid"></div>
+            </div>
+          </div>
+          <div class="right">
+            <a class="small-btn slot-list-btn" href="#" data-slot="5">一覧</a>
+          </div>
+        </li>
+        <!-- ▼スロット6 -->
+        <li class="item">
+          <div>
+            <div>
+              <strong>スロット6</strong><span class="count" id="slot6-count">(0枚)</span>
+            </div>
+            <div class="muted" id="slot6-updated">最終更新: -</div>
+            <div class="thumbs" id="slot6-thumbs"><span class="empty">空き</span></div>
+            <div class="slot-list" id="slot6-list">
+              <div class="thumbs-grid" id="slot6-list-grid"></div>
+            </div>
+          </div>
+          <div class="right">
+            <a class="small-btn slot-list-btn" href="#" data-slot="6">一覧</a>
+          </div>
+        </li>
+        <!-- ▼スロット7 -->
+        <li class="item">
+          <div>
+            <div>
+              <strong>スロット7</strong><span class="count" id="slot7-count">(0枚)</span>
+            </div>
+            <div class="muted" id="slot7-updated">最終更新: -</div>
+            <div class="thumbs" id="slot7-thumbs"><span class="empty">空き</span></div>
+            <div class="slot-list" id="slot7-list">
+              <div class="thumbs-grid" id="slot7-list-grid"></div>
+            </div>
+          </div>
+          <div class="right">
+            <a class="small-btn slot-list-btn" href="#" data-slot="7">一覧</a>
+          </div>
+        </li>
+        <!-- ▼スロット8 -->
+        <li class="item">
+          <div>
+            <div>
+              <strong>スロット8</strong><span class="count" id="slot8-count">(0枚)</span>
+            </div>
+            <div class="muted" id="slot8-updated">最終更新: -</div>
+            <div class="thumbs" id="slot8-thumbs"><span class="empty">空き</span></div>
+            <div class="slot-list" id="slot8-list">
+              <div class="thumbs-grid" id="slot8-list-grid"></div>
+            </div>
+          </div>
+          <div class="right">
+            <a class="small-btn slot-list-btn" href="#" data-slot="8">一覧</a>
+          </div>
+        </li>
+        <!-- ▼スロット9 -->
+        <li class="item">
+          <div>
+            <div>
+              <strong>スロット9</strong><span class="count" id="slot9-count">(0枚)</span>
+            </div>
+            <div class="muted" id="slot9-updated">最終更新: -</div>
+            <div class="thumbs" id="slot9-thumbs"><span class="empty">空き</span></div>
+            <div class="slot-list" id="slot9-list">
+              <div class="thumbs-grid" id="slot9-list-grid"></div>
+            </div>
+          </div>
+          <div class="right">
+            <a class="small-btn slot-list-btn" href="#" data-slot="9">一覧</a>
+          </div>
+        </li>
+        <!-- ▼スロット10 -->
+        <li class="item">
+          <div>
+            <div>
+              <strong>スロット10</strong><span class="count" id="slot10-count">(0枚)</span>
+            </div>
+            <div class="muted" id="slot10-updated">最終更新: -</div>
+            <div class="thumbs" id="slot10-thumbs"><span class="empty">空き</span></div>
+            <div class="slot-list" id="slot10-list">
+              <div class="thumbs-grid" id="slot10-list-grid"></div>
+            </div>
+          </div>
+          <div class="right">
+            <a class="small-btn slot-list-btn" href="#" data-slot="10">一覧</a>
           </div>
         </li>
       </ul>
@@ -471,7 +653,7 @@
       setPersistence, browserLocalPersistence
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
     import {
-      getFirestore, doc, getDoc, collection, getDocs, query, limit
+      getFirestore, doc, getDoc, collection, getDocs, query, limit, updateDoc, writeBatch
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
     import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
 
@@ -518,6 +700,8 @@
       return {
         exists: snap.exists(),
         roomName: d.roomName || '保存したルーム',
+        roomId: d.roomId || d.originalRoomId || '不明',
+        password: d.password || 'なし',
         cardsCount: d.cardsCount || 0,
         chatCount: d.chatCount || 0,
         updatedAt: d.updatedAt?.toDate?.() || null
@@ -525,7 +709,8 @@
     }
 
     async function refreshRoomSaveSlots() {
-      for (const slot of [1, 2, 3]) {
+      const SLOTS = Array.from({ length: 10 }, (_, i) => i + 1);
+      for (const slot of SLOTS) {
         const meta = await fetchRoomSlotMeta(slot);
         const itemEl = document.getElementById(`room-slot-${slot}`);
         if (!itemEl) continue;
@@ -533,14 +718,43 @@
         const uEl = itemEl.querySelector('.room-slot-updated');
         const iEl = itemEl.querySelector('.room-slot-info');
         const btn = itemEl.querySelector('.room-enter-btn');
+        const rightDiv = itemEl.querySelector('.right');
 
         if (meta.exists) {
           if (uEl) uEl.textContent = `最終更新: ${meta.updatedAt ? meta.updatedAt.toLocaleString() : '-'}`;
           if (iEl) {
-            iEl.innerHTML = `<span style="color:#222">${meta.roomName}</span><br/>📝 ${meta.cardsCount}枚 / 💬 ${meta.chatCount}件`;
+            iEl.innerHTML = `
+              <div style="margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                <span style="font-size:13px; color:#555; white-space: nowrap;">ルーム名:</span>
+                <input type="text" class="room-name-input" data-slot="${slot}" value="${meta.roomName}" style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 4px; width: 160px; font-size: 14px;">
+              </div>
+              <div style="font-size: 13px; color: #555;">ルームID: ${meta.roomId}</div>
+              <div style="font-size: 13px; color: #555;">パスワード: ${meta.password}</div>
+              <div style="font-size: 13px; margin-top: 4px;">📝 ${meta.cardsCount}枚 / 💬 ${meta.chatCount}件</div>
+            `;
             iEl.classList.remove('muted');
           }
-          if (btn) btn.style.display = 'inline-block';
+          if (btn) btn.style.display = 'inline-flex';
+
+          if (rightDiv) {
+            rightDiv.style.display = 'flex';
+            rightDiv.style.flexDirection = 'column';
+            rightDiv.style.alignItems = 'stretch';
+
+            let delBtn = rightDiv.querySelector('.room-delete-btn');
+            if (!delBtn) {
+              delBtn = document.createElement('button');
+              delBtn.className = 'small-btn room-delete-btn';
+              delBtn.dataset.slot = slot;
+              delBtn.textContent = 'ルームを削除する';
+              delBtn.style.marginTop = '8px';
+              delBtn.style.borderColor = '#e53e3e';
+              delBtn.style.color = '#e53e3e';
+              delBtn.style.background = '#fff4f4';
+              delBtn.style.cursor = 'pointer';
+              rightDiv.appendChild(delBtn);
+            }
+          }
         } else {
           if (uEl) uEl.textContent = '最終更新: -';
           if (iEl) {
@@ -548,18 +762,82 @@
             iEl.classList.add('muted');
           }
           if (btn) btn.style.display = 'none';
+
+          if (rightDiv) {
+            const delBtn = rightDiv.querySelector('.room-delete-btn');
+            if (delBtn) delBtn.remove();
+          }
         }
       }
     }
 
-    // ルームに入るボタンの制御
-    document.getElementById('roomSaveList')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.room-enter-btn');
-      if (!btn) return;
-      e.preventDefault();
-      const slot = parseInt(btn.dataset.slot, 10);
-      if (slot) {
-        window.location.href = `./game.html?restore_room_slot=${slot}`;
+    // ルームに入る/削除/名前編集の制御
+    document.getElementById('roomSaveList')?.addEventListener('click', async (e) => {
+      // ルームに入る
+      const enterBtn = e.target.closest('.room-enter-btn');
+      if (enterBtn) {
+        e.preventDefault();
+        const slot = parseInt(enterBtn.dataset.slot, 10);
+        if (slot) {
+          window.location.href = `./game.html?restore_room_slot=${slot}`;
+        }
+        return;
+      }
+
+      // ルームを削除する
+      const delBtn = e.target.closest('.room-delete-btn');
+      if (delBtn) {
+        e.preventDefault();
+        const slot = parseInt(delBtn.dataset.slot, 10);
+        if (!slot) return;
+        if (!confirm(`スロット${slot}の保存済みルームを削除しますか？`)) return;
+
+        delBtn.disabled = true;
+        delBtn.textContent = '削除中...';
+        try {
+          const baseRef = doc(db, roomSlPath(slot));
+          const collectionsToClear = ['cards', 'seats', 'chat'];
+          for (const colName of collectionsToClear) {
+            const q = query(collection(db, `${roomSlPath(slot)}/${colName}`), limit(500));
+            let currentSnap = await getDocs(q);
+            while (!currentSnap.empty) {
+              let b = writeBatch(db);
+              currentSnap.docs.forEach(d => b.delete(d.ref));
+              await b.commit();
+              currentSnap = await getDocs(q);
+            }
+          }
+          // Firebase V9 doesn't export deleteDoc above in my original replacement so I better use writeBatch for the last one
+          // Wait I added updateDoc, writeBatch but forgot deleteDoc. Let me just use updateDoc or batch
+          const finalBatch = writeBatch(db);
+          finalBatch.delete(baseRef);
+          await finalBatch.commit();
+
+          alert(`スロット${slot}のデータ削除が完了しました。`);
+          await refreshRoomSaveSlots();
+        } catch (err) {
+          console.error('Delete error', err);
+          alert('削除に失敗しました。');
+          delBtn.disabled = false;
+          delBtn.textContent = 'ルームを削除する';
+        }
+      }
+    });
+
+    // ルーム名の入力（変更時自動保存）
+    document.getElementById('roomSaveList')?.addEventListener('change', async (e) => {
+      if (e.target.classList.contains('room-name-input')) {
+        const slot = parseInt(e.target.dataset.slot, 10);
+        if (!slot) return;
+        const newName = e.target.value.trim();
+        e.target.style.opacity = '0.5';
+        try {
+          await updateDoc(doc(db, roomSlPath(slot)), { roomName: newName });
+        } catch (err) {
+          console.error('Fail to update room name:', err);
+        } finally {
+          e.target.style.opacity = '1';
+        }
       }
     });
 
@@ -612,15 +890,56 @@
     }
 
     async function refreshSaveSlots() {
-      for (const slot of [1, 2, 3]) {
+      const SLOTS = Array.from({ length: 10 }, (_, i) => i + 1);
+      for (const slot of SLOTS) {
         const { count, updatedAt } = await fetchSlotMeta(slot);
-        const thumbs = await fetchSlotThumbs(slot, 5);
-        const tEl = document.getElementById(`slot${slot}-thumbs`);
+        const itemEl = document.querySelector(`#saveList li:nth-child(${slot})`);
+        if (!itemEl) continue;
+
         const cEl = document.getElementById(`slot${slot}-count`);
         const uEl = document.getElementById(`slot${slot}-updated`);
-        if (cEl) cEl.textContent = `(${count}枚)`;
-        if (uEl) uEl.textContent = `最終更新: ${updatedAt ? updatedAt.toLocaleString() : '-'}`;
-        if (tEl) renderThumbs(tEl, thumbs, count);
+        const tEl = document.getElementById(`slot${slot}-thumbs`);
+        const bEl = itemEl.querySelector('.slot-list-btn');
+        const rightDiv = itemEl.querySelector('.right');
+
+        if (count > 0) {
+          if (cEl) cEl.textContent = `(${count}枚)`;
+          if (uEl) uEl.textContent = `最終更新: ${updatedAt ? updatedAt.toLocaleString() : '-'}`;
+          const urls = await fetchSlotThumbs(slot, 5);
+          if (tEl) renderThumbs(tEl, urls, count);
+          if (bEl) bEl.style.display = 'inline-flex';
+
+          if (rightDiv) {
+            rightDiv.style.display = 'flex';
+            rightDiv.style.flexDirection = 'column';
+            rightDiv.style.alignItems = 'stretch';
+
+            let delBtn = rightDiv.querySelector('.slot-delete-btn');
+            if (!delBtn) {
+              delBtn = document.createElement('button');
+              delBtn.className = 'small-btn slot-delete-btn';
+              delBtn.dataset.slot = slot;
+              delBtn.textContent = '削除する';
+              delBtn.style.marginTop = '8px';
+              delBtn.style.borderColor = '#e53e3e';
+              delBtn.style.color = '#e53e3e';
+              delBtn.style.background = '#fff4f4';
+              delBtn.style.cursor = 'pointer';
+              rightDiv.appendChild(delBtn);
+            }
+          }
+
+        } else {
+          if (cEl) cEl.textContent = '(0枚)';
+          if (uEl) uEl.textContent = '最終更新: -';
+          if (tEl) renderThumbs(tEl, [], 0);
+          if (bEl) bEl.style.display = 'none';
+
+          if (rightDiv) {
+            const delBtn = rightDiv.querySelector('.slot-delete-btn');
+            if (delBtn) delBtn.remove();
+          }
+        }
       }
     }
 
@@ -630,7 +949,8 @@
       if (!wrap || !grid) return;
       const willOpen = (wrap.style.display !== 'block');
       // 他のスロットは閉じる
-      for (const s of [1, 2, 3]) {
+      const SLOTS = Array.from({ length: 10 }, (_, i) => i + 1);
+      for (const s of SLOTS) {
         const w = document.getElementById(`slot${s}-list`);
         if (w) w.style.display = 'none';
       }
@@ -651,14 +971,62 @@
       });
     }
 
-    // 「一覧」ボタンのイベント委譲 → モーダルを開く
-    document.getElementById('saveList')?.addEventListener('click', (e) => {
-      const a = e.target.closest('.slot-list-btn');
-      if (!a) return;
-      e.preventDefault();
-      const slot = parseInt(a.dataset.slot, 10);
-      if (slot) openSlotModal(slot);
+    // 「一覧」ボタン「削除する」ボタンのイベント委譲 → モーダルを開く・削除する
+    document.getElementById('saveList')?.addEventListener('click', async (e) => {
+      // 一覧
+      const listBtn = e.target.closest('.slot-list-btn');
+      if (listBtn) {
+        e.preventDefault();
+        const slot = parseInt(listBtn.dataset.slot, 10);
+        if (slot) openSlotModal(slot);
+        return;
+      }
+
+      // 削除
+      const delBtn = e.target.closest('.slot-delete-btn');
+      if (delBtn) {
+        e.preventDefault();
+        const slot = parseInt(delBtn.dataset.slot, 10);
+        if (slot) await deleteSlot(slot, delBtn);
+      }
     });
+
+    async function deleteSlot(slot, btnElement) {
+      if (!confirm(`スロット${slot}のセーブデータを削除しますか？`)) return;
+
+      if (btnElement) {
+        btnElement.disabled = true;
+        btnElement.textContent = '削除中...';
+      }
+
+      try {
+        const baseRef = doc(db, slPath(slot));
+        const cardsCol = collection(db, `${slPath(slot)}/cards`);
+
+        const q = query(cardsCol, limit(500));
+        let currentSnap = await getDocs(q);
+        while (!currentSnap.empty) {
+          let b = writeBatch(db);
+          currentSnap.docs.forEach(d => b.delete(d.ref));
+          await b.commit();
+          currentSnap = await getDocs(q);
+        }
+
+        const finalBatch = writeBatch(db);
+        finalBatch.delete(baseRef);
+        await finalBatch.commit();
+
+        alert(`スロット${slot}のデータを削除しました。`);
+        await refreshSaveSlots();
+      } catch (err) {
+        console.error('Delete error', err);
+        alert('削除に失敗しました。');
+        if (btnElement) {
+          btnElement.disabled = false;
+          btnElement.textContent = '削除する';
+        }
+      }
+    }
 
     function applyUser(u) {
       // 表示名は「メール > displayName > 'Player'」の優先順
@@ -793,20 +1161,39 @@
           item.appendChild(img);
           grid.appendChild(item);
         });
+
+        // delete btn setup
+        const delBtn = document.getElementById('card-list-delete');
+        if (delBtn) {
+          delBtn.style.display = 'block';
+          delBtn.dataset.slot = slot;
+        }
+
       } catch (_e) {
         grid.innerHTML = '<div class="muted">取得に失敗しました</div>';
+        const delBtn = document.getElementById('card-list-delete');
+        if (delBtn) delBtn.style.display = 'none';
       }
     }
 
 
-    // モーダルの閉じる挙動（イベント委譲：要素が後で挿入されてもOK）
-    document.addEventListener('click', (e) => {
+    // モーダルの閉じる・削除挙動（イベント委譲：要素が後で挿入されてもOK）
+    document.addEventListener('click', async (e) => {
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
       // 「閉じる」ボタン
       if (t.id === 'card-list-close') {
         const m = document.getElementById('card-list-modal');
         if (m) m.style.display = 'none';
+      }
+      // 「削除する」ボタン（モーダル内）
+      if (t.id === 'card-list-delete') {
+        const slot = parseInt(t.dataset.slot, 10);
+        if (slot) {
+          await deleteSlot(slot, t);
+          const m = document.getElementById('card-list-modal');
+          if (m) m.style.display = 'none'; // 削除終わったらモーダルは閉じる
+        }
       }
       // 背景クリックで閉じる
       if (t.id === 'card-list-modal') {
@@ -826,8 +1213,13 @@
       <div id="card-list-header"
         style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
         <div id="card-list-title" style="font-weight:700;">自分のカード一覧</div>
-        <button id="card-list-close" type="button"
-          style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;">閉じる</button>
+        <div style="display:flex; gap:8px;">
+          <button id="card-list-delete" type="button"
+            style="display:none; border:1px solid #e53e3e; background:#fff4f4; color:#e53e3e; padding:6px 10px; border-radius:8px; cursor:pointer;"
+            data-slot="">削除する</button>
+          <button id="card-list-close" type="button"
+            style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;">閉じる</button>
+        </div>
       </div>
       <div id="card-list-body" style="padding:12px; overflow:auto;">
         <div id="card-list-grid" style="display:grid; gap:10px;"></div>

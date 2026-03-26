@@ -9,9 +9,9 @@
 
   <!-- Favicon -->
   <link href="/favicon.ico" rel="icon" sizes="any" />
-  <link href="/favicon-32.png?v=1" rel="icon" sizes="32x32" type="image/png" />
-  <link href="/favicon-16.png?v=1" rel="icon" sizes="16x16" type="image/png" />
-  <link href="/apple-touch-icon.png?v=1" rel="apple-touch-icon" sizes="180x180" />
+  <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
+  <link href="/favicon-16.png?v=3" rel="icon" sizes="16x16" type="image/png" />
+  <link href="/apple-touch-icon.png?v=3" rel="apple-touch-icon" sizes="180x180" />
   <link href="/site.webmanifest" rel="manifest" />
   <script async="" crossorigin="anonymous"
     src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665">
@@ -108,28 +108,33 @@
         </a>
       </div>
       <!-- ロビー上部のログインUI（リンクの直下） -->
-      <div class="lobby-auth">
-        <!-- 中央ボタン配置用のスペーサーやラッパー -->
-        <div class="auth-spacer"></div>
+      <div class="lobby-auth" id="lobby-auth-area">
 
-        <div class="auth-buttons">
-          <button class="btn secondary" id="login-google" style="padding:8px 12px;" data-i18n="auth.login">
-            Googleでログイン
-          </button>
-          <button class="btn secondary" id="logout-google" style="padding:8px 12px; display:none;"
-            data-i18n="auth.logout">
-            ログアウト
-          </button>
-          <button class="btn secondary" id="btn-mypage" style="padding:8px 12px; display:none;" data-i18n="app.mypage"
-            onclick="location.href='./mypage.html'">
-            マイページ
+        <!-- ===== 未ログイン時：ログインボタンだけ表示 ===== -->
+        <div id="auth-form-area" class="auth-buttons" style="text-align:center;">
+          <button class="btn secondary" id="login-go-btn" style="padding:8px 16px;"
+            onclick="location.href='./login.html'" data-i18n="auth.loginBtn">
+            ログインする
           </button>
         </div>
 
-        <div class="auth-user-info">
-          <span id="whoami" style="color:#555; font-size:12px; display:none;"></span>
-          <span id="lobby-premium-badge" style="display:none;"></span>
+        <!-- ===== ログイン済みユーザー情報（ログイン時のみ表示） ===== -->
+        <div id="auth-loggedin-area" style="display:none;">
+          <div class="auth-user-info">
+            <span id="whoami" style="color:#555; font-size:13px;"></span>
+            <span id="lobby-premium-badge" style="display:none;"></span>
+          </div>
+          <div class="auth-buttons">
+            <button class="btn secondary" id="logout-google" style="padding:8px 12px;" data-i18n="auth.logout">
+              ログアウト
+            </button>
+            <button class="btn secondary" id="btn-mypage" style="padding:8px 12px;" data-i18n="app.mypage"
+              onclick="location.href='./mypage.html'">
+              マイページ
+            </button>
+          </div>
         </div>
+
       </div>
       <div class="lobby-grid">
         <!-- Join (left column) -->
@@ -248,10 +253,6 @@
             <button class="seat-btn" data-create-seat="6" type="button" style="display:none;">P6</button>
             <button class="seat-btn" data-create-seat="7" type="button" style="display:none;">P7</button>
             <button class="seat-btn" data-create-seat="8" type="button" style="display:none;">P8</button>
-            <button class="seat-btn spectator-btn" data-create-seat="spectator" type="button"
-              data-i18n="create.seat.spectator" style="grid-column: 1 / -1;">
-              観戦
-            </button>
           </div>
           <label class="lobby-label" data-i18n="create.chooseMode" style="margin-top:10px;">
             フィールド構成を選択
@@ -277,9 +278,17 @@
       <div class="lobby-credit">BatriTable — © 2025 SOLVENTER</div>
     </div>
   </div>
-  <div id="upload-area">
-    📥 画像をタップ（またはドラッグ＆ドロップ）で追加
-    <input accept="image/*" id="file-input" multiple="" type="file" />
+  <div id="upload-areas" style="height: var(--upload-h); display: flex; align-items: stretch; border-bottom: 2px solid #ccc; user-select: none; margin: 0; padding: 0;">
+    <div id="upload-card" class="upload-box" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-right: 1px solid #ccc; background: #fff; cursor: pointer;">
+      <div style="font-weight:bold;">🃏 カードを追加</div>
+      <div style="font-size:10px; color:#666; margin-top:2px;">（タップまたはD&D）</div>
+      <input accept="image/*" id="file-input-card" multiple="" type="file" style="display:none;" />
+    </div>
+    <div id="upload-token" class="upload-box" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-left: 1px solid #ccc; background: #fff; cursor: pointer;">
+      <div style="font-weight:bold;">🪙 トークンを追加</div>
+      <div style="font-size:10px; color:#666; margin-top:2px;">（原画サイズ）</div>
+      <input accept="image/*" id="file-input-token" multiple="" type="file" style="display:none;" />
+    </div>
   </div>
   <div id="sidebar" style="display:flex; flex-direction:column; overflow:hidden;">
 
@@ -423,6 +432,7 @@
 
   </div>
   <div id="container">
+    <div id="marquee"></div>
     <div id="field">
       <div class="player-area player-1">
         <div class="player-label">
@@ -702,8 +712,8 @@
   </div>
   <div id="preview">
     <h2 class="panel-title panel-title--right">
-      <button id="toggle-right" class="inline-toggle" title="選択肢のカードの表示/非表示" data-i18n-title="preview.toggle">▶</button>
-      <span class="panel-title__text" data-i18n="preview.title">選択肢のカード</span>
+      <button id="toggle-right" class="inline-toggle" title="選択中のカードの表示/非表示" data-i18n-title="preview.toggle">▶</button>
+      <span class="panel-title__text" data-i18n="preview.title">選択中のカード</span>
     </h2>
     <div id="preview-top">
       <img alt="プレビュー画像" id="preview-img" />
@@ -742,12 +752,19 @@
   <div id="save-load-modal"
     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
     <div
-      style="background:#fff; padding:16px; border-radius:12px; width:280px; max-width:90%; box-shadow:0 6px 24px rgba(0,0,0,.2);">
+      style="background:#fff; padding:16px; border-radius:12px; width:420px; max-width:90%; box-shadow:0 6px 24px rgba(0,0,0,.2);">
       <div id="sl-title" style="font-weight:700; margin-bottom:12px;">スロットを選択</div>
-      <div class="row" style="display:flex; gap:8px; margin-bottom:12px;">
-        <button class="slot-btn" data-slot="1" style="flex:1; padding:10px;">SLOT 1</button>
-        <button class="slot-btn" data-slot="2" style="flex:1; padding:10px;">SLOT 2</button>
-        <button class="slot-btn" data-slot="3" style="flex:1; padding:10px;">SLOT 3</button>
+      <div class="row" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+        <button class="slot-btn" data-slot="1" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 1</button>
+        <button class="slot-btn" data-slot="2" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 2</button>
+        <button class="slot-btn" data-slot="3" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 3</button>
+        <button class="slot-btn" data-slot="4" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 4</button>
+        <button class="slot-btn" data-slot="5" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 5</button>
+        <button class="slot-btn" data-slot="6" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 6</button>
+        <button class="slot-btn" data-slot="7" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 7</button>
+        <button class="slot-btn" data-slot="8" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 8</button>
+        <button class="slot-btn" data-slot="9" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 9</button>
+        <button class="slot-btn" data-slot="10" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 10</button>
       </div>
 
       <!-- ▼スロットごとのプレビュー（各5枚） -->
@@ -755,6 +772,13 @@
         <div class="slot-preview" data-slot="1"><span class="empty">空き</span></div>
         <div class="slot-preview" data-slot="2"><span class="empty">空き</span></div>
         <div class="slot-preview" data-slot="3"><span class="empty">空き</span></div>
+        <div class="slot-preview" data-slot="4"><span class="empty">空き</span></div>
+        <div class="slot-preview" data-slot="5"><span class="empty">空き</span></div>
+        <div class="slot-preview" data-slot="6"><span class="empty">空き</span></div>
+        <div class="slot-preview" data-slot="7"><span class="empty">空き</span></div>
+        <div class="slot-preview" data-slot="8"><span class="empty">空き</span></div>
+        <div class="slot-preview" data-slot="9"><span class="empty">空き</span></div>
+        <div class="slot-preview" data-slot="10"><span class="empty">空き</span></div>
       </div>
 
       <div style="display:flex; justify-content:flex-end; gap:8px;">
@@ -769,10 +793,18 @@
     <div
       style="background:#fff; padding:16px; border-radius:12px; width:280px; max-width:90%; box-shadow:0 6px 24px rgba(0,0,0,.2);">
       <div id="room-sl-title" style="font-weight:700; margin-bottom:12px;">ルーム保存先スロットを選択</div>
-      <div class="row" style="display:flex; gap:8px; margin-bottom:12px;">
-        <button class="room-slot-btn" data-slot="1" style="flex:1; padding:10px;">SLOT 1</button>
-        <button class="room-slot-btn" data-slot="2" style="flex:1; padding:10px;">SLOT 2</button>
-        <button class="room-slot-btn" data-slot="3" style="flex:1; padding:10px;">SLOT 3</button>
+      <div class="row" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+        <button class="room-slot-btn" data-slot="1" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 1</button>
+        <button class="room-slot-btn" data-slot="2" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 2</button>
+        <button class="room-slot-btn" data-slot="3" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 3</button>
+        <button class="room-slot-btn" data-slot="4" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 4</button>
+        <button class="room-slot-btn" data-slot="5" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 5</button>
+        <button class="room-slot-btn" data-slot="6" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 6</button>
+        <button class="room-slot-btn" data-slot="7" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 7</button>
+        <button class="room-slot-btn" data-slot="8" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 8</button>
+        <button class="room-slot-btn" data-slot="9" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 9</button>
+        <button class="room-slot-btn" data-slot="10" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT
+          10</button>
       </div>
 
       <!-- ▼スロットごとのプレビュー -->
@@ -780,6 +812,13 @@
         <div class="room-slot-preview" data-slot="1"><span class="empty">データなし</span></div>
         <div class="room-slot-preview" data-slot="2"><span class="empty">データなし</span></div>
         <div class="room-slot-preview" data-slot="3"><span class="empty">データなし</span></div>
+        <div class="room-slot-preview" data-slot="4"><span class="empty">データなし</span></div>
+        <div class="room-slot-preview" data-slot="5"><span class="empty">データなし</span></div>
+        <div class="room-slot-preview" data-slot="6"><span class="empty">データなし</span></div>
+        <div class="room-slot-preview" data-slot="7"><span class="empty">データなし</span></div>
+        <div class="room-slot-preview" data-slot="8"><span class="empty">データなし</span></div>
+        <div class="room-slot-preview" data-slot="9"><span class="empty">データなし</span></div>
+        <div class="room-slot-preview" data-slot="10"><span class="empty">データなし</span></div>
       </div>
 
       <div style="display:flex; justify-content:flex-end; gap:8px;">
@@ -810,15 +849,48 @@
   <footer class="site-footer" role="contentinfo">
     <div class="site-footer__inner">
       <!-- A8.net アフィリエイト広告 -->
-
-      <a href="https://px.a8.net/svt/ejp?a8mat=45DZ26+HV0XE+49YI+5Z6WX" rel="nofollow">
-        <img border="0" width="468" height="60" alt=""
-          src="https://www24.a8.net/svt/bgt?aid=250914750030&wid=001&eno=01&mid=s00000019953001004000&mc=1"></a>
-      <img border="0" width="1" height="1" src="https://www14.a8.net/0.gif?a8mat=45DZ26+HV0XE+49YI+5Z6WX" alt="">
+      <!--
+      <div id="footer-ad-container">
+        <a href="https://px.a8.net/svt/ejp?a8mat=45DZ26+HV0XE+49YI+5Z6WX" rel="nofollow">
+          <img border="0" width="468" height="60" alt=""
+            src="https://www24.a8.net/svt/bgt?aid=250914750030&wid=001&eno=01&mid=s00000019953001004000&mc=1"></a>
+        <img border="0" width="1" height="1" src="https://www14.a8.net/0.gif?a8mat=45DZ26+HV0XE+49YI+5Z6WX" alt="">
+      </div>
+      -->
 
       <small>© 2025 SOLVENTER / BatriTable</small>
     </div>
   </footer>
+  <!-- === Area Background Selection Context Menu === -->
+  <div id="area-context-menu" class="area-context-menu" style="display: none; position: absolute; z-index: 10001;">
+    <ul>
+      <li id="area-ctx-enlarge" class="host-only">🔍 拡大</li>
+      <li id="area-ctx-shrink" class="host-only">🔍 縮小</li>
+      <li id="area-ctx-move" class="host-only">🖐 移動</li>
+      <li id="area-ctx-add" class="host-only menu-has-sub">➕ エリア追加 ▶
+        <ul class="sub-menu">
+          <li id="area-ctx-add-deck">デッキエリア</li>
+        </ul>
+      </li>
+      <hr id="area-ctx-hr" class="host-only" style="margin: 4px 0; border: 0; border-top: 1px solid #555;">
+      <li id="area-ctx-change-bg">🖼 エリア画像変更</li>
+      <li id="area-ctx-remove-bg" style="color: #ff4444;">❌ エリア画像削除</li>
+    </ul>
+  </div>
+  <!-- Hidden file input for area background -->
+  <input type="file" id="area-bg-file" accept="image/*" style="display: none;" />
+
+  <!-- === Token Context Menu === -->
+  <div id="token-context-menu" class="area-context-menu" style="display: none; position: absolute; z-index: 10001;">
+    <ul>
+      <li id="token-ctx-to-front">⬆ 最前面に移動</li>
+      <li id="token-ctx-to-back">⬇ 最背面に移動</li>
+      <li id="token-ctx-enlarge">🔍 拡大</li>
+      <li id="token-ctx-shrink">🔍 縮小</li>
+      <li id="token-ctx-delete" style="color: #ff4444;">❌ 削除</li>
+    </ul>
+  </div>
+
 </body>
 
 
