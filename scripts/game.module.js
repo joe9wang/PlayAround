@@ -1183,16 +1183,17 @@ function centerOfMainPlay(seat, w, h) {
 
 function getCardsInsideRect(rect) {
   const cards = [];
+  const rectRight = rect.minX + rect.width;
+  const rectBottom = rect.minY + rect.height;
+
   document.querySelectorAll('.card').forEach(el => {
     const id = el.dataset.cardId;
     const left = parseFloat(el.style.left) || 0;
     const top = parseFloat(el.style.top) || 0;
     
-    // Intersection check (using rect properties: minX, minY, width, height)
+    // Intersection check using CARD_W and CARD_H
     const cardRight = left + CARD_W;
     const cardBottom = top + CARD_H;
-    const rectRight = rect.minX + rect.width;
-    const rectBottom = rect.minY + rect.height;
 
     if (left < rectRight && cardRight > rect.minX && top < rectBottom && cardBottom > rect.minY) {
       cards.push({ id, el });
@@ -4621,9 +4622,9 @@ function bindPanZoomHandlers() {
     if (e.shiftKey) {
       // Marquee selection
       e.preventDefault();
-      const rect = container.getBoundingClientRect();
-      const startX = e.clientX - rect.left;
-      const startY = e.clientY - rect.top;
+      const containerRect = container.getBoundingClientRect();
+      const startX = e.clientX - containerRect.left;
+      const startY = e.clientY - containerRect.top;
       const marquee = document.getElementById('marquee');
       if (!marquee) return;
 
@@ -4634,8 +4635,8 @@ function bindPanZoomHandlers() {
       marquee.style.height = '0px';
 
       const onMove = e2 => {
-        const curX = e2.clientX - rect.left;
-        const curY = e2.clientY - rect.top;
+        const curX = e2.clientX - containerRect.left;
+        const curY = e2.clientY - containerRect.top;
         const left = Math.min(startX, curX);
         const top = Math.min(startY, curY);
         const width = Math.abs(curX - startX);
@@ -4650,37 +4651,39 @@ function bindPanZoomHandlers() {
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
 
-        const rect = marquee.getBoundingClientRect();
+        // Capture viewport dimensions before hiding
+        const mRect = marquee.getBoundingClientRect();
         marquee.style.display = 'none';
 
-        if (rect.width < 5 && rect.height < 5) return;
+        if (mRect.width < 5 && mRect.height < 5) return;
 
-        // Convert marquee rect to field coordinates
-        const fieldRect = field.getBoundingClientRect();
-        const minX = (rect.left - fieldRect.left) / zoom;
-        const minY = (rect.top - fieldRect.top) / zoom;
-        const width = rect.width / zoom;
-        const height = rect.height / zoom;
+        // Convert marquee rect to field local coordinates using pan/zoom directly
+        // The field origin (0,0) in viewport is at (containerRect.left + panOffsetX, containerRect.top + panOffsetY)
+        const fieldOriginX = containerRect.left + panOffsetX;
+        const fieldOriginY = containerRect.top + panOffsetY;
+
+        const minX = (mRect.left - fieldOriginX) / zoom;
+        const minY = (mRect.top - fieldOriginY) / zoom;
+        const width = mRect.width / zoom;
+        const height = mRect.height / zoom;
 
         const cards = getCardsInsideRect({ minX, minY, width, height });
 
-        // Selection
         if (cards.length > 0) {
           // Clear current selection
           document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
 
-          // Add new ones
+          // Add selected class and trigger focus
           cards.forEach(({ el }) => {
             el.classList.add('selected');
           });
 
           if (cards.length === 1) {
-            // Singular selection: focus and update preview
-            focusCardById(cards[0].el.dataset.cardId, true);
+            focusCardById(cards[0].id, true);
           } else {
-            // Multiple selection: focus last one for state but skip preview update
-            const lastCard = cards[cards.length - 1];
-            focusCardById(lastCard.el.dataset.cardId, true, true);
+            // Focus the last one but skip the preview image update
+            const lastId = cards[cards.length - 1].id;
+            focusCardById(lastId, true, true);
           }
         }
       };
