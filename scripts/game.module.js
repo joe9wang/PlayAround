@@ -1186,16 +1186,20 @@ function getCardsInsideRect(rect) {
   const rectRight = rect.minX + rect.width;
   const rectBottom = rect.minY + rect.height;
 
+  console.log('[debug] getCardsInsideRect target:', rect);
+
   document.querySelectorAll('.card').forEach(el => {
     const id = el.dataset.cardId;
     const left = parseFloat(el.style.left) || 0;
     const top = parseFloat(el.style.top) || 0;
     
-    // Intersection check using CARD_W and CARD_H
     const cardRight = left + CARD_W;
     const cardBottom = top + CARD_H;
 
-    if (left < rectRight && cardRight > rect.minX && top < rectBottom && cardBottom > rect.minY) {
+    const isInside = (left < rectRight && cardRight > rect.minX && top < rectBottom && cardBottom > rect.minY);
+    
+    if (isInside) {
+      console.log(`[debug] card found inside: ${id}`, { left, top, cardRight, cardBottom });
       cards.push({ id, el });
     }
   });
@@ -4651,23 +4655,27 @@ function bindPanZoomHandlers() {
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
 
-        // Capture viewport dimensions before hiding
         const mRect = marquee.getBoundingClientRect();
+        console.log('[debug] marquee viewport rect:', mRect);
         marquee.style.display = 'none';
 
-        if (mRect.width < 5 && mRect.height < 5) return;
+        if (mRect.width < 5 && mRect.height < 5) {
+          console.log('[debug] marquee too small, ignoring');
+          return;
+        }
 
-        // Convert marquee rect to field local coordinates using pan/zoom directly
-        // The field origin (0,0) in viewport is at (containerRect.left + panOffsetX, containerRect.top + panOffsetY)
         const fieldOriginX = containerRect.left + panOffsetX;
         const fieldOriginY = containerRect.top + panOffsetY;
+        console.log('[debug] field origin in viewport:', { fieldOriginX, fieldOriginY, panOffsetX, panOffsetY, zoom });
 
         const minX = (mRect.left - fieldOriginX) / zoom;
         const minY = (mRect.top - fieldOriginY) / zoom;
         const width = mRect.width / zoom;
         const height = mRect.height / zoom;
+        console.log('[debug] calculated local rect:', { minX, minY, width, height });
 
         const cards = getCardsInsideRect({ minX, minY, width, height });
+        console.log(`[debug] selection result: ${cards.length} cards`);
 
         if (cards.length > 0) {
           // Clear current selection
