@@ -4407,9 +4407,10 @@ async function focusCardById(cardId, additive = false, skipPreview = false) {
   const thumbEl = el.querySelector('img');
   const isFaceUp = el.dataset.faceUp === 'true';
   const otherHand = isOtherPlayersHandCard(el);
+  const ownerSeatValue = parseInt(el.dataset.ownerSeat || '0', 10);
   const frontSrc = full || (thumbEl && thumbEl.src) || '';
   const previewSrc = (!isFaceUp || otherHand)
-    ? getSeatBackUrl(ownerSeat)
+    ? getSeatBackUrl(ownerSeatValue)
     : frontSrc;
   if (!skipPreview) {
     setPreview(previewSrc);
