@@ -1186,8 +1186,6 @@ function getCardsInsideRect(rect) {
   const rectRight = rect.minX + rect.width;
   const rectBottom = rect.minY + rect.height;
 
-  console.log('[debug] getCardsInsideRect target:', rect);
-
   document.querySelectorAll('.card').forEach(el => {
     const id = el.dataset.cardId;
     const left = parseFloat(el.style.left) || 0;
@@ -1199,7 +1197,6 @@ function getCardsInsideRect(rect) {
     const isInside = (left < rectRight && cardRight > rect.minX && top < rectBottom && cardBottom > rect.minY);
     
     if (isInside) {
-      console.log(`[debug] card found inside: ${id}`, { left, top, cardRight, cardBottom });
       cards.push({ id, el });
     }
   });
@@ -4394,20 +4391,14 @@ cardListClose?.addEventListener('click', closeMyCardsDialog);
 cardListModal?.addEventListener('click', (e) => { if (e.target === cardListModal) closeMyCardsDialog(); });
 
 async function focusCardById(cardId, additive = false, skipPreview = false) {
-  console.log(`[debug] focusCardById start: ${cardId}, additive=${additive}, skipPreview=${skipPreview}`);
   const el = cardDomMap.get(cardId) || document.querySelector(`[data-card-id="${cardId}"]`);
-  if (!el) {
-    console.warn(`[debug] focusCardById card not found: ${cardId}`);
-    return;
-  }
+  if (!el) return;
   const newZ = getMaxZIndex() + 1;
-  el.style.zIndex = newZ;
+  el.style.zIndex = newZ; 
   if (!additive) {
-    console.log('[debug] clearing selection in focusCardById');
     document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
   }
   el.classList.add('selected');
-  console.log(`[debug] card classList after add:`, el.className);
   selectedCard = el;
   const full = fullImageStore.get(cardId);
   const thumbEl = el.querySelector('img');
@@ -4423,7 +4414,6 @@ async function focusCardById(cardId, additive = false, skipPreview = false) {
     const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
     previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
   }
-  console.log(`[debug] focusCardById end: ${cardId}`);
 }
 
 
@@ -4664,50 +4654,26 @@ function bindPanZoomHandlers() {
         document.removeEventListener("mouseup", onUp);
 
         const mRect = marquee.getBoundingClientRect();
-        console.log('[debug] marquee viewport rect:', mRect);
         marquee.style.display = 'none';
 
-        if (mRect.width < 5 && mRect.height < 5) {
-          console.log('[debug] marquee too small, ignoring');
-          return;
-        }
+        if (mRect.width < 5 && mRect.height < 5) return;
 
         const fieldOriginX = containerRect.left + panOffsetX;
         const fieldOriginY = containerRect.top + panOffsetY;
-        console.log('[debug] field origin in viewport:', { fieldOriginX, fieldOriginY, panOffsetX, panOffsetY, zoom });
 
         const minX = (mRect.left - fieldOriginX) / zoom;
         const minY = (mRect.top - fieldOriginY) / zoom;
         const width = mRect.width / zoom;
         const height = mRect.height / zoom;
-        console.log('[debug] calculated local rect:', { minX, minY, width, height });
 
         const cards = getCardsInsideRect({ minX, minY, width, height });
-        console.log(`[debug] selection result: ${cards.length} cards`);
 
         if (cards.length > 0) {
-          console.log('[debug] clearing current selection...');
-          document.querySelectorAll('.card.selected').forEach(c => {
-            console.log(`[debug] removing selected from ${c.dataset.cardId}`);
-            c.classList.remove('selected');
-          });
+          // Clear current selection
+          document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
 
           cards.forEach(({ id, el }) => {
-            console.log(`[debug] adding selected to ${id}`);
             el.classList.add('selected');
-
-            // --- Add MutationObserver for debugging ---
-            if (!el._debugObs) {
-              el._debugObs = new MutationObserver((mutations) => {
-                mutations.forEach((m) => {
-                  if (m.attributeName === 'class' && !el.classList.contains('selected')) {
-                    console.warn(`[debug-mutation] selected class REMOVED from ${id}! stack:`, new Error().stack);
-                  }
-                });
-              });
-              el._debugObs.observe(el, { attributes: true });
-            }
-            // ------------------------------------------
           });
 
           if (cards.length === 1) {
@@ -4716,7 +4682,6 @@ function bindPanZoomHandlers() {
             const lastId = cards[cards.length - 1].id;
             focusCardById(lastId, true, true);
           }
-          console.log('[debug] onUp processing complete');
         }
       };
       document.addEventListener("mousemove", onMove);
@@ -4809,7 +4774,9 @@ function bindPanZoomHandlers() {
   container.addEventListener('touchcancel', endTouch);
 
   // === 余白クリックで選択解除
-  field.addEventListener("click", () => {
+  field.addEventListener("click", e => {
+    if (e.shiftKey) return; // 範囲選択（Shift+Drag）直後のブブリングによる解除を防止
+    
     const selected = document.querySelectorAll('.card.selected');
     if (selected.length > 0) {
       selected.forEach(el => el.classList.remove("selected"));
