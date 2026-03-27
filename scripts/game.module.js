@@ -2877,8 +2877,15 @@ function createCardDom(cardId, imageSrc, state) {
     card.style.zIndex = newZ;
     updateOverlapBadges(); //Z順変更で最新化
 
-    if (selectedCard) selectedCard.classList.remove("selected");
-    card.classList.add("selected");
+    if (selectedCard) {
+      if (!card.classList.contains("selected")) {
+        // 選択されていないカードをクリックしたときのみ、他を解除してこれ単体を選択
+        document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+        card.classList.add("selected");
+      }
+    } else {
+      card.classList.add("selected");
+    }
     selectedCard = card;
 
     const isToken = card.classList.contains('token');
@@ -2915,8 +2922,6 @@ function createCardDom(cardId, imageSrc, state) {
   card.addEventListener("contextmenu", async (e) => {
     e.preventDefault();
 
-
-    // まず種類を判定
     const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
     const isTextToken = (state?.type === 'token') || card.classList.contains('token');
     const isImageToken = (state?.type === 'image-token') || card.classList.contains('image-token');
@@ -2924,7 +2929,7 @@ function createCardDom(cardId, imageSrc, state) {
     const isNumCtr = (state?.type === 'numcounter') || card.classList.contains('numcounter');
     
     if (isToken) {
-      if (!canOperateCard(card, 'delete')) return; // 共有ONでも削除・操作は不可（オーナーのみ）
+      if (!canOperateCard(card, 'delete')) return;
       if (typeof globalThis.showTokenContextMenu === 'function') {
         globalThis.showTokenContextMenu(e, card.dataset.cardId);
       }
@@ -2932,11 +2937,10 @@ function createCardDom(cardId, imageSrc, state) {
     }
     
     if (isCounter || isNumCtr) {
-      if (!canOperateCard(card, 'delete')) return; // 共有ONでも削除は不可（オーナーのみ）
+      if (!canOperateCard(card, 'delete')) return;
       try {
         const id = card.dataset.cardId;
         await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
-        // ★ 追加: 直近削除マーキング（差分レースでの復活を防止）
         markLocal(id);
         markLocalDelete(id);
       } catch (err) {
@@ -2944,43 +2948,53 @@ function createCardDom(cardId, imageSrc, state) {
       }
       return;
     }
-    // ここから通常カードの表裏トグル
+
     if (!canOperateCard(card, 'flip')) return;
 
+    const isSelected = card.classList.contains('selected');
+    const cardsToFlip = isSelected 
+      ? Array.from(document.querySelectorAll('.card.selected')) 
+      : [card];
 
-    const isFaceUp = card.dataset.faceUp === 'true';
-    const nextFaceUp = !isFaceUp;
-    card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
-    const imgEl = card.querySelector('img');
+    const nextFaceUp = !(card.dataset.faceUp === 'true');
 
+    cardsToFlip.forEach(c => {
+      if (!canOperateCard(c, 'flip')) return;
+      
+      c.dataset.faceUp = nextFaceUp ? 'true' : 'false';
+      const imgEl = c.querySelector('img');
+      const cId = c.dataset.cardId;
 
-    if (imgEl) {
-      if (nextFaceUp) {
-        imgEl.style.display = 'block';
-        card.style.backgroundColor = '#fff';
-        if (selectedCard === card) {
-          const full = card.dataset.fullUrl || fullImageStore.get(cardId);
-          setPreview(full || imgEl.src);
-        }
-      } else {
-        imgEl.style.display = 'none';
-        // 席に設定された背面画像を適用（なければ黒）
-        applyCardBackStyle(card);
-        if (selectedCard === card) {
-          const back = seatBackUrl(parseInt(card.dataset.ownerSeat || '0', 10));
-          setPreview(back || '');
+      if (imgEl) {
+        if (nextFaceUp) {
+          imgEl.style.display = 'block';
+          c.style.backgroundColor = '#fff';
+        } else {
+          imgEl.style.display = 'none';
+          applyCardBackStyle(c);
         }
       }
+
+      const tokenEl = c.querySelector('.token-input');
+      if (tokenEl) {
+        if (nextFaceUp) { tokenEl.style.display = 'block'; c.style.backgroundColor = '#fff'; }
+        else { tokenEl.style.display = 'none'; c.style.backgroundColor = '#000'; }
+      }
+
+      updateCardBatched(cId, { faceUp: nextFaceUp });
+    });
+
+    if (selectedCard && (selectedCard === card || cardsToFlip.includes(selectedCard))) {
+      const isUp = selectedCard.dataset.faceUp === 'true';
+      const fUrl = selectedCard.dataset.fullUrl || fullImageStore.get(selectedCard.dataset.cardId);
+      const tEl = selectedCard.querySelector('img');
+      const fSrc = fUrl || (tEl && tEl.src) || '';
+      const isOther = isOtherPlayersHandCard(selectedCard);
+      const oSeat = parseInt(selectedCard.dataset.ownerSeat || '0', 10);
+      const sBack = seatBackUrl(oSeat) || TRUMP_BACK_URL;
+      const pSrc = (!isUp || isOther) ? sBack : fSrc;
+      setPreview(pSrc);
     }
-
-    const tokenEl = card.querySelector('.token-input');
-
-    if (tokenEl) {
-      if (nextFaceUp) { tokenEl.style.display = 'block'; card.style.backgroundColor = '#fff'; }
-      else { tokenEl.style.display = 'none'; card.style.backgroundColor = '#000'; if (selectedCard === card) setPreview(); }
-    }
-
-    updateCardBatched(cardId, { faceUp: nextFaceUp });
   });
 
 
@@ -2991,19 +3005,29 @@ function createCardDom(cardId, imageSrc, state) {
   // ダブルクリックで90°回転（自分のカードのみ）
   card.addEventListener("dblclick", async (e) => {
     e.stopPropagation();
-    if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
-
-    // ★ 数値カウンターは回転させない
-    if (card.classList.contains('numcounter')) return;
+    
+    const isSelected = card.classList.contains('selected');
+    const cardsToRotate = isSelected 
+      ? Array.from(document.querySelectorAll('.card.selected')) 
+      : [card];
 
     const currentStyle = card.style.transform || '';
     const match = currentStyle.match(/rotate\((-?\d+(?:\.\d+)?)deg\)/);
     const current = match ? parseFloat(match[1]) : (typeof state?.rotation === 'number' ? state.rotation : 0);
     const next = ((current + 270) % 360 + 360) % 360;
-    const matchScale = currentStyle.match(/scale\(([^)]+)\)/);
-    const currentScale = matchScale ? matchScale[1] : 1;
-    card.style.transform = `rotate(${next}deg) scale(${currentScale})`;
-    updateCardBatched(cardId, { rotation: next });
+
+    cardsToRotate.forEach(c => {
+      if (c.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+      if (c.classList.contains('numcounter')) return;
+
+      const cId = c.dataset.cardId;
+      const cStyle = c.style.transform || '';
+      const matchScale = cStyle.match(/scale\(([^)]+)\)/);
+      const currentScale = matchScale ? matchScale[1] : 1;
+      
+      c.style.transform = `rotate(${next}deg) scale(${currentScale})`;
+      updateCardBatched(cId, { rotation: next });
+    });
   });
 
 
@@ -3427,6 +3451,9 @@ function makeDraggable(card) {
   let isDragging = false;
   let startClientX = 0, startClientY = 0;
   let grabOffsetX = 0, grabOffsetY = 0;
+  
+  let selectedCards = [];
+  let initialPositions = new Map();
 
   card.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
@@ -3442,33 +3469,69 @@ function makeDraggable(card) {
     grabOffsetX = mouseX - (parseFloat(card.style.left || '0') || 0);
     grabOffsetY = mouseY - (parseFloat(card.style.top || '0') || 0);
 
+    if (card.classList.contains('selected')) {
+      selectedCards = Array.from(document.querySelectorAll('.card.selected'));
+      initialPositions.clear();
+      selectedCards.forEach(c => {
+        initialPositions.set(c.dataset.cardId, {
+          left: parseFloat(c.style.left) || 0,
+          top: parseFloat(c.style.top) || 0,
+          zIndex: parseInt(c.style.zIndex) || 0
+        });
+      });
+    } else {
+      selectedCards = [card];
+      initialPositions.clear();
+      initialPositions.set(card.dataset.cardId, {
+        left: parseFloat(card.style.left) || 0,
+        top: parseFloat(card.style.top) || 0,
+        zIndex: parseInt(card.style.zIndex) || 0
+      });
+    }
+
     const onMove = (e2) => {
-      const dx = e2.clientX - startClientX;
-      const dy = e2.clientY - startClientY;
+      const dx = (e2.clientX - startClientX) / zoom;
+      const dy = (e2.clientY - startClientY) / zoom;
+      
       if (!isDragging) {
-        if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+        if (Math.hypot(e2.clientX - startClientX, e2.clientY - startClientY) < DRAG_THRESHOLD) return;
         isDragging = true;
-        card.style.cursor = "grabbing";
-        card.style.zIndex = getMaxZIndex() + 1; // 表示のみ
+        
+        const newZBase = getMaxZIndex() + 1;
+        selectedCards.forEach((c, idx) => {
+          c.style.cursor = "grabbing";
+          c.style.zIndex = newZBase + idx;
+        });
       }
-      const x = (e2.clientX - rect.left - panOffsetX) / zoom;
-      const y = (e2.clientY - rect.top - panOffsetY) / zoom;
-      card.style.left = `${x - grabOffsetX}px`;
-      card.style.top = `${y - grabOffsetY}px`;
+
+      selectedCards.forEach(c => {
+        const init = initialPositions.get(c.dataset.cardId);
+        if (init) {
+          c.style.left = `${init.left + dx}px`;
+          c.style.top = `${init.top + dy}px`;
+        }
+      });
     };
 
     const onUp = async () => {
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
-      card.style.cursor = "grab";
+      
+      selectedCards.forEach(c => {
+        c.style.cursor = "grab";
+      });
+
       if (!isDragging) return;
       isDragging = false;
-      const id = card.dataset.cardId;
-      const x = parseFloat(card.style.left) || 0;
-      const y = parseFloat(card.style.top) || 0;
-      const zIndex = parseInt(card.style.zIndex) || 1;
-      updateCardBatched(id, { x, y, zIndex });
-      updateOverlapBadges(); //ドラッグ終了で最新化
+
+      selectedCards.forEach(c => {
+        const id = c.dataset.cardId;
+        const x = parseFloat(c.style.left) || 0;
+        const y = parseFloat(c.style.top) || 0;
+        const zIndex = parseInt(c.style.zIndex) || 1;
+        updateCardBatched(id, { x, y, zIndex });
+      });
+      updateOverlapBadges();
     };
 
     document.addEventListener("mousemove", onMove);
@@ -3476,7 +3539,6 @@ function makeDraggable(card) {
   });
 
 
-  // === Touch drag (mobile) ===
   card.addEventListener('touchstart', (e) => {
     if (!canOperateCard(card, 'move')) return;
     if (e.touches.length !== 1) return;
@@ -3492,45 +3554,76 @@ function makeDraggable(card) {
     grabOffsetY = mouseY - (parseFloat(card.style.top || '0') || 0);
     isDragging = false;
 
+    if (card.classList.contains('selected')) {
+      selectedCards = Array.from(document.querySelectorAll('.card.selected'));
+      initialPositions.clear();
+      selectedCards.forEach(c => {
+        initialPositions.set(c.dataset.cardId, {
+          left: parseFloat(c.style.left) || 0,
+          top: parseFloat(c.style.top) || 0,
+          zIndex: parseInt(c.style.zIndex) || 0
+        });
+      });
+    } else {
+      selectedCards = [card];
+      initialPositions.clear();
+      initialPositions.set(card.dataset.cardId, {
+        left: parseFloat(card.style.left) || 0,
+        top: parseFloat(card.style.top) || 0,
+        zIndex: parseInt(card.style.zIndex) || 0
+      });
+    }
+
     const onMove = (ev) => {
       if (ev.touches.length !== 1) return;
       ev.preventDefault();
       const tt = ev.touches[0];
-      const dx = tt.clientX - startClientX;
-      const dy = tt.clientY - startClientY;
+      const dx = (tt.clientX - startClientX) / zoom;
+      const dy = (tt.clientY - startClientY) / zoom;
+
       if (!isDragging) {
-        if (Math.hypot(dx, dy) < 5) return;
+        if (Math.hypot(tt.clientX - startClientX, tt.clientY - startClientY) < 5) return;
         isDragging = true;
-        card.style.cursor = "grabbing";
-        card.style.zIndex = getMaxZIndex() + 1;
+        const newZBase = getMaxZIndex() + 1;
+        selectedCards.forEach((c, idx) => {
+          c.style.cursor = "grabbing";
+          c.style.zIndex = newZBase + idx;
+        });
       }
-      const x = (tt.clientX - rect.left - panOffsetX) / zoom;
-      const y = (tt.clientY - rect.top - panOffsetY) / zoom;
-      card.style.left = `${x - grabOffsetX}px`;
-      card.style.top = `${y - grabOffsetY}px`;
+
+      selectedCards.forEach(c => {
+        const init = initialPositions.get(c.dataset.cardId);
+        if (init) {
+          c.style.left = `${init.left + dx}px`;
+          c.style.top = `${init.top + dy}px`;
+        }
+      });
     };
     const onEnd = async () => {
       document.removeEventListener('touchmove', onMove, { passive: false });
       document.removeEventListener('touchend', onEnd);
       document.removeEventListener('touchcancel', onEnd);
-      card.style.cursor = "grab";
+      
+      selectedCards.forEach(c => {
+        c.style.cursor = "grab";
+      });
+
       if (!isDragging) return;
       isDragging = false;
-      const id = card.dataset.cardId;
-      const x = parseFloat(card.style.left) || 0;
-      const y = parseFloat(card.style.top) || 0;
-      const zIndex = parseInt(card.style.zIndex) || 1;
-      updateCardBatched(id, { x, y, zIndex });
+      
+      selectedCards.forEach(c => {
+        const id = c.dataset.cardId;
+        const x = parseFloat(c.style.left) || 0;
+        const y = parseFloat(c.style.top) || 0;
+        const zIndex = parseInt(c.style.zIndex) || 1;
+        updateCardBatched(id, { x, y, zIndex });
+      });
       updateOverlapBadges();
     };
     document.addEventListener('touchmove', onMove, { passive: false });
     document.addEventListener('touchend', onEnd);
     document.addEventListener('touchcancel', onEnd);
   }, { passive: false });
-
-
-
-
 }
 
 function getMaxZIndex() { let max = 0; document.querySelectorAll(".card").forEach(c => { const z = parseInt(c.style.zIndex) || 0; if (z > max) max = z; }); return max; }
