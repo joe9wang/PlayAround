@@ -58,6 +58,7 @@ const I18N = {
         "side.rollD10": "🎲 10面ダイス",
         "side.rollD20": "🎲 20面ダイス",
         "side.shuffle": "⇅ デッキをシャッフル",
+        "side.collectSelected": "❖ 選択カードをまとめる",
         "side.collect": "❖ 全カードを集める",
         "side.allMyCards": "🔍 全カード一覧",
         "side.deckList": "🔍 デッキ一覧",
@@ -99,6 +100,7 @@ const I18N = {
         // alerts
         "err.roomId": "ルームIDを入力してください",
         "err.playerName": "プレイヤー名を入力してください",
+        "err.noSelectedCards": "カードが選択されていません。",
         "err.seat": "座席を選んでください",
         "err.passWrong": "パスワードが違います。",
         "err.hostAbsent": "ホストが不在のため、このルームには参加できません。",
@@ -181,6 +183,7 @@ const I18N = {
         "side.rollD10": "🎲 Roll a d10",
         "side.rollD20": "🎲 Roll a d20",
         "side.shuffle": "⇅ Shuffle my Deck",
+        "side.collectSelected": "❖ Gather selected cards",
         "side.collect": "❖ Gather my cards",
         "side.allMyCards": "🔍 All my cards",
         "side.deckList": "🔍 My deck-area cards",
@@ -222,6 +225,7 @@ const I18N = {
         // alerts
         "err.roomId": "Please enter a Room ID.",
         "err.playerName": "Please enter your player name.",
+        "err.noSelectedCards": "No cards selected.",
         "err.seat": "Please select a seat.",
         "err.passWrong": "Wrong password.",
         "err.hostAbsent": "The host is not available, so you can't join this room.",
