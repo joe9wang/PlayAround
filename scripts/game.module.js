@@ -4394,14 +4394,20 @@ cardListClose?.addEventListener('click', closeMyCardsDialog);
 cardListModal?.addEventListener('click', (e) => { if (e.target === cardListModal) closeMyCardsDialog(); });
 
 async function focusCardById(cardId, additive = false, skipPreview = false) {
+  console.log(`[debug] focusCardById start: ${cardId}, additive=${additive}, skipPreview=${skipPreview}`);
   const el = cardDomMap.get(cardId) || document.querySelector(`[data-card-id="${cardId}"]`);
-  if (!el) return;
+  if (!el) {
+    console.warn(`[debug] focusCardById card not found: ${cardId}`);
+    return;
+  }
   const newZ = getMaxZIndex() + 1;
-  el.style.zIndex = newZ; // 表示だけ（サーバーへは書かない）
+  el.style.zIndex = newZ;
   if (!additive) {
+    console.log('[debug] clearing selection in focusCardById');
     document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
   }
   el.classList.add('selected');
+  console.log(`[debug] card classList after add:`, el.className);
   selectedCard = el;
   const full = fullImageStore.get(cardId);
   const thumbEl = el.querySelector('img');
@@ -4417,6 +4423,7 @@ async function focusCardById(cardId, additive = false, skipPreview = false) {
     const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
     previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
   }
+  console.log(`[debug] focusCardById end: ${cardId}`);
 }
 
 
@@ -4679,21 +4686,37 @@ function bindPanZoomHandlers() {
         console.log(`[debug] selection result: ${cards.length} cards`);
 
         if (cards.length > 0) {
-          // Clear current selection
-          document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+          console.log('[debug] clearing current selection...');
+          document.querySelectorAll('.card.selected').forEach(c => {
+            console.log(`[debug] removing selected from ${c.dataset.cardId}`);
+            c.classList.remove('selected');
+          });
 
-          // Add selected class and trigger focus
-          cards.forEach(({ el }) => {
+          cards.forEach(({ id, el }) => {
+            console.log(`[debug] adding selected to ${id}`);
             el.classList.add('selected');
+
+            // --- Add MutationObserver for debugging ---
+            if (!el._debugObs) {
+              el._debugObs = new MutationObserver((mutations) => {
+                mutations.forEach((m) => {
+                  if (m.attributeName === 'class' && !el.classList.contains('selected')) {
+                    console.warn(`[debug-mutation] selected class REMOVED from ${id}! stack:`, new Error().stack);
+                  }
+                });
+              });
+              el._debugObs.observe(el, { attributes: true });
+            }
+            // ------------------------------------------
           });
 
           if (cards.length === 1) {
             focusCardById(cards[0].id, true);
           } else {
-            // Focus the last one but skip the preview image update
             const lastId = cards[cards.length - 1].id;
             focusCardById(lastId, true, true);
           }
+          console.log('[debug] onUp processing complete');
         }
       };
       document.addEventListener("mousemove", onMove);
