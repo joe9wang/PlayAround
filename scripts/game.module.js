@@ -4615,8 +4615,9 @@ function bindPanZoomHandlers() {
     if (e.shiftKey) {
       // Marquee selection
       e.preventDefault();
-      const startX = e.clientX;
-      const startY = e.clientY;
+      const rect = container.getBoundingClientRect();
+      const startX = e.clientX - rect.left;
+      const startY = e.clientY - rect.top;
       const marquee = document.getElementById('marquee');
       if (!marquee) return;
 
@@ -4627,8 +4628,8 @@ function bindPanZoomHandlers() {
       marquee.style.height = '0px';
 
       const onMove = e2 => {
-        const curX = e2.clientX;
-        const curY = e2.clientY;
+        const curX = e2.clientX - rect.left;
+        const curY = e2.clientY - rect.top;
         const left = Math.min(startX, curX);
         const top = Math.min(startY, curY);
         const width = Math.abs(curX - startX);
@@ -4650,8 +4651,8 @@ function bindPanZoomHandlers() {
 
         // Convert marquee rect to field coordinates
         const fieldRect = field.getBoundingClientRect();
-        const minX = (rect.left - fieldRect.left - panOffsetX) / zoom;
-        const minY = (rect.top - fieldRect.top - panOffsetY) / zoom;
+        const minX = (rect.left - fieldRect.left) / zoom;
+        const minY = (rect.top - fieldRect.top) / zoom;
         const width = rect.width / zoom;
         const height = rect.height / zoom;
 
