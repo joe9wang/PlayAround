@@ -1187,9 +1187,14 @@ function getCardsInsideRect(rect) {
     const id = el.dataset.cardId;
     const left = parseFloat(el.style.left) || 0;
     const top = parseFloat(el.style.top) || 0;
-    const cx = left + CARD_W / 2;
-    const cy = top + CARD_H / 2;
-    if (cx >= rect.minX && cx <= rect.minX + rect.width && cy >= rect.minY && cy <= rect.minY + rect.height) {
+    
+    // Intersection check (using rect properties: minX, minY, width, height)
+    const cardRight = left + CARD_W;
+    const cardBottom = top + CARD_H;
+    const rectRight = rect.minX + rect.width;
+    const rectBottom = rect.minY + rect.height;
+
+    if (left < rectRight && cardRight > rect.minX && top < rectBottom && cardBottom > rect.minY) {
       cards.push({ id, el });
     }
   });
@@ -4383,7 +4388,7 @@ function closeMyCardsDialog() { cardListModal.style.display = 'none'; }
 cardListClose?.addEventListener('click', closeMyCardsDialog);
 cardListModal?.addEventListener('click', (e) => { if (e.target === cardListModal) closeMyCardsDialog(); });
 
-async function focusCardById(cardId, additive = false) {
+async function focusCardById(cardId, additive = false, skipPreview = false) {
   const el = cardDomMap.get(cardId) || document.querySelector(`[data-card-id="${cardId}"]`);
   if (!el) return;
   const newZ = getMaxZIndex() + 1;
@@ -4401,10 +4406,11 @@ async function focusCardById(cardId, additive = false) {
   const previewSrc = (!isFaceUp || otherHand)
     ? getSeatBackUrl(ownerSeat)
     : frontSrc;
-  setPreview(previewSrc);
-
-  const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
-  previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
+  if (!skipPreview) {
+    setPreview(previewSrc);
+    const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
+    previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
+  }
 }
 
 
@@ -4658,22 +4664,24 @@ function bindPanZoomHandlers() {
 
         const cards = getCardsInsideRect({ minX, minY, width, height });
 
-        // Add to selection
+        // Selection
         if (cards.length > 0) {
-          cards.forEach(({ el }, index) => {
-            // First one or singular should clear previous if we want absolute selection, 
-            // but usually marquee REPLACES selection unless some other key is held.
-            // Let's make it REPLACE selection for now (clear at start of the loop)
-            if (index === 0) {
-              document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
-            }
-            el.classList.add('selected');
+          // Clear current selection
+          document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
 
-            // Update preview for the "last" one
-            if (index === cards.length - 1) {
-              focusCardById(el.dataset.cardId, true); // additive=true to keep others
-            }
+          // Add new ones
+          cards.forEach(({ el }) => {
+            el.classList.add('selected');
           });
+
+          if (cards.length === 1) {
+            // Singular selection: focus and update preview
+            focusCardById(cards[0].el.dataset.cardId, true);
+          } else {
+            // Multiple selection: focus last one for state but skip preview update
+            const lastCard = cards[cards.length - 1];
+            focusCardById(lastCard.el.dataset.cardId, true, true);
+          }
         }
       };
       document.addEventListener("mousemove", onMove);
