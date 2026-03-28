@@ -4757,11 +4757,11 @@ function bindPanZoomHandlers() {
 
   // === マウス1本パン
   container.addEventListener("mousedown", e => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 && e.button !== 1) return;
     if (e.detail > 1) return;
     if (e.target.closest(".card")) return;
 
-    if (e.shiftKey) {
+    if (e.shiftKey || e.button === 1) {
       // Marquee selection
       e.preventDefault();
       const containerRect = container.getBoundingClientRect();
