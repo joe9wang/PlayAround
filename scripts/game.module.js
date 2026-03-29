@@ -5494,7 +5494,7 @@ function subscribeAreas() {
       }
 
       if (change.type === 'removed') {
-        if (!parts) {
+        if (el.classList.contains('dynamic-area')) {
           console.warn('[subscribeAreas] removed → el.remove() id=', id);
           el.remove();
         } else {
@@ -5504,6 +5504,18 @@ function subscribeAreas() {
           el.style.backgroundRepeat = '';
         }
         return;
+      }
+
+      // Deleted flag sync from other players
+      if (data.isDeleted) {
+        if (el.classList.contains('dynamic-area') || el.classList.contains('center-deck') || el.classList.contains('center-discard')) {
+          el.remove();
+        } else {
+          el.style.display = 'none';
+        }
+        return;
+      } else {
+        el.style.display = ''; // Restore if undeleted
       }
 
       // Background image sync
@@ -5836,7 +5848,10 @@ function bindAreaContextMenuOnce() {
       if (!confirm('このエリアを完全に削除（非表示）にしますか？\n※ページをリロードすると元に戻る場合があります')) return;
 
       try {
-        await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`));
+        const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`);
+        await setDoc(docRef, { isDeleted: true }, { merge: true });
+        
+        // ローカルでも直ちに反映
         const el = getCurrentTargetAreaElement();
         if (el) {
           if (el.classList.contains('dynamic-area') || el.classList.contains('center-deck') || el.classList.contains('center-discard')) {
