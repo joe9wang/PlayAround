@@ -22,7 +22,7 @@ function initAdmin() {
 const SEAT_STALE_MS = 60_000; // 既存のSEAT_STALE_MSに合わせる（必要に応じて調整）
 
 async function isSomeoneAlive(db, roomId) {
-  const seats = [1, 2, 3, 4];
+  const seats = [1, 2, 3, 4, 5, 6, 7, 8];
   for (const n of seats) {
     const ref = db.doc(`rooms/${roomId}/seats/${n}`);
     const snap = await ref.get();
@@ -56,7 +56,7 @@ async function resetSeatsAndCards(db, roomId) {
 
   // 2) seats を4席ぶん作り直す（最小項目：必要に応じて既存スキーマに合わせて増やしてOK）
   const batch = db.batch();
-  for (const n of [1,2,3,4]) {
+  for (const n of [1, 2, 3, 4, 5, 6, 7, 8]) {
     const ref = db.doc(`rooms/${roomId}/seats/${n}`);
     batch.set(ref, {
       claimedByUid: null,

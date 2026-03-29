@@ -163,36 +163,7 @@
             <input class="field" data-i18n-placeholder="join.name.ph" id="player-name" maxlength="24"
               placeholder="例: SOLVENTER" type="text" />
           </div>
-          <label class="lobby-label" data-i18n="join.chooseSeat">
-            座席を選択
-          </label>
-          <!-- join 用の座席グリッド（IDは付けない：JSが :not(#create-seat-grid) で拾う） -->
-          <div aria-label="Join seats" class="seat-grid" role="group">
-            <button class="seat-btn" data-seat="1" type="button">
-              P1
-              <span class="seat-note">
-              </span>
-            </button>
-            <button class="seat-btn" data-seat="2" type="button">
-              P2
-              <span class="seat-note">
-              </span>
-            </button>
-            <button class="seat-btn" data-seat="3" type="button">
-              P3
-              <span class="seat-note">
-              </span>
-            </button>
-            <button class="seat-btn" data-seat="4" type="button">
-              P4
-              <span class="seat-note">
-              </span>
-            </button>
-            <button class="seat-btn spectator-btn" data-seat="spectator" type="button" data-i18n="join.seat.spectator"
-              style="grid-column: 1 / -1;">
-              観戦
-            </button>
-          </div>
+
           <div class="row" style="margin-top:auto; padding-top:16px; justify-content:flex-end; gap:8px;">
             <button class="btn" data-i18n="join.start" disabled="" id="start-btn" type="button">
               開始
@@ -240,20 +211,7 @@
               <option value="8">8人</option>
             </select>
           </div>
-          <label class="lobby-label" data-i18n="create.chooseSeat">
-            座席を選択
-          </label>
-          <!-- create 用の座席グリッド（JSが #create-seat-grid を参照） -->
-          <div aria-label="Create seats" class="seat-grid" id="create-seat-grid" role="group">
-            <button class="seat-btn" data-create-seat="1" type="button">P1</button>
-            <button class="seat-btn" data-create-seat="2" type="button">P2</button>
-            <button class="seat-btn" data-create-seat="3" type="button">P3</button>
-            <button class="seat-btn" data-create-seat="4" type="button">P4</button>
-            <button class="seat-btn" data-create-seat="5" type="button" style="display:none;">P5</button>
-            <button class="seat-btn" data-create-seat="6" type="button" style="display:none;">P6</button>
-            <button class="seat-btn" data-create-seat="7" type="button" style="display:none;">P7</button>
-            <button class="seat-btn" data-create-seat="8" type="button" style="display:none;">P8</button>
-          </div>
+
           <label class="lobby-label" data-i18n="create.chooseMode" style="margin-top:10px;">
             フィールド構成を選択
           </label>
@@ -391,6 +349,14 @@
           </div>
         </div>
       </div>
+
+      <!-- ★ 座席操作 -->
+      <button class="sl-btn" id="sit-seat-btn" style="display:none; font-weight:bold;">
+        🪑 座席に座る
+      </button>
+      <button class="sl-btn" id="leave-seat-btn" style="display:none; font-weight:bold;">
+        🚶‍♂️ 座席から外れる
+      </button>
 
       <!-- ★ 非ホスト専用：退室ボタン（参加中のみ表示） -->
       <button class="sl-btn" id="leave-room-btn" style="display:none">
@@ -833,6 +799,20 @@
   </div>
   </div>
   </div>
+
+  <!-- 座席選択モーダル -->
+  <div id="seat-select-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:20px; border-radius:12px; max-width:90%; width:320px; box-shadow:0 6px 24px rgba(0,0,0,.3);">
+      <div style="font-weight:700; font-size:16px; margin-bottom:12px;">座席を選択してください</div>
+      <div id="seat-select-grid" class="seat-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
+        <!-- JSで動的にボタンを生成します -->
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button id="seat-select-cancel" class="btn secondary">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
 
 
   <!-- process スタブ（非module。先に読み込む） -->
