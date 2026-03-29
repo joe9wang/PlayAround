@@ -5550,8 +5550,10 @@ function subscribeAreas() {
       }
       
       const scaleLevel = data.scaleLevel || 0;
+      const multX = data.multX || 1;
+      const multY = data.multY || 1;
       const scale = Math.pow(1.2, scaleLevel);
-      el.style.transform = `scale(${scale})`;
+      el.style.transform = `scale(${scale * multX}, ${scale * multY})`;
       el.style.transformOrigin = '50% 50%';
     });
   });
@@ -5679,6 +5681,10 @@ function bindAreaContextMenuOnce() {
   const fileInput = document.getElementById('area-bg-file');
   const btnEnlarge = document.getElementById('area-ctx-enlarge');
   const btnShrink = document.getElementById('area-ctx-shrink');
+  const btnEnlargeW = document.getElementById('area-ctx-enlarge-w');
+  const btnShrinkW = document.getElementById('area-ctx-shrink-w');
+  const btnEnlargeH = document.getElementById('area-ctx-enlarge-h');
+  const btnShrinkH = document.getElementById('area-ctx-shrink-h');
   const btnMove = document.getElementById('area-ctx-move');
   const btnAddArea = document.getElementById('area-ctx-add');
   const btnAddDeck = document.getElementById('area-ctx-add-deck');
@@ -5920,6 +5926,62 @@ function bindAreaContextMenuOnce() {
         const snap = await getDoc(docRef);
         const currentLevel = snap.exists() && typeof snap.data().scaleLevel === 'number' ? snap.data().scaleLevel : 0;
         await setDoc(docRef, { scaleLevel: currentLevel - 1, updatedAt: serverTimestamp() }, { merge: true });
+      } catch (err) { console.warn(err); }
+    });
+  }
+
+  if (btnEnlargeW) {
+    btnEnlargeW.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      ctxMenu.style.display = 'none';
+      if (!CURRENT_ROOM || !currentTargetAreaId) return;
+      try {
+        const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`);
+        const snap = await getDoc(docRef);
+        const cur = snap.exists() && typeof snap.data().multX === 'number' ? snap.data().multX : 1;
+        await setDoc(docRef, { multX: cur * 2, updatedAt: serverTimestamp() }, { merge: true });
+      } catch (err) { console.warn(err); }
+    });
+  }
+
+  if (btnShrinkW) {
+    btnShrinkW.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      ctxMenu.style.display = 'none';
+      if (!CURRENT_ROOM || !currentTargetAreaId) return;
+      try {
+        const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`);
+        const snap = await getDoc(docRef);
+        const cur = snap.exists() && typeof snap.data().multX === 'number' ? snap.data().multX : 1;
+        await setDoc(docRef, { multX: cur * 0.5, updatedAt: serverTimestamp() }, { merge: true });
+      } catch (err) { console.warn(err); }
+    });
+  }
+
+  if (btnEnlargeH) {
+    btnEnlargeH.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      ctxMenu.style.display = 'none';
+      if (!CURRENT_ROOM || !currentTargetAreaId) return;
+      try {
+        const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`);
+        const snap = await getDoc(docRef);
+        const cur = snap.exists() && typeof snap.data().multY === 'number' ? snap.data().multY : 1;
+        await setDoc(docRef, { multY: cur * 2, updatedAt: serverTimestamp() }, { merge: true });
+      } catch (err) { console.warn(err); }
+    });
+  }
+
+  if (btnShrinkH) {
+    btnShrinkH.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      ctxMenu.style.display = 'none';
+      if (!CURRENT_ROOM || !currentTargetAreaId) return;
+      try {
+        const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`);
+        const snap = await getDoc(docRef);
+        const cur = snap.exists() && typeof snap.data().multY === 'number' ? snap.data().multY : 1;
+        await setDoc(docRef, { multY: cur * 0.5, updatedAt: serverTimestamp() }, { merge: true });
       } catch (err) { console.warn(err); }
     });
   }
