@@ -618,7 +618,7 @@ createSeatButtons.forEach(b => {
 
 const picked = document.getElementById('create-seat-picked');
 
-if (picked) picked.textContent = `P${CREATE_SELECTED_SEAT}`;
+if (picked) picked.textContent = `SEAT${CREATE_SELECTED_SEAT}`;
 
 
 
@@ -3081,7 +3081,7 @@ createSeatButtonsEls.forEach(btn => {
 
     const picked = document.getElementById('create-seat-picked');
 
-    if (picked) picked.textContent = `P${CREATE_SELECTED_SEAT === 'spectator' ? '観戦' : CREATE_SELECTED_SEAT}`;
+    if (picked) picked.textContent = `SEAT${CREATE_SELECTED_SEAT === 'spectator' ? '観戦' : CREATE_SELECTED_SEAT}`;
 
   });
 
@@ -3225,7 +3225,7 @@ function renderSeatAvailability() {
 
     if (alive) {
 
-      if (note) note.textContent = data.displayName || `P${seat}`;
+      if (note) note.textContent = data.displayName || `SEAT${seat}`;
 
       btn.disabled = true;
 
@@ -3431,7 +3431,7 @@ function renderFieldLabels() {
 
       const nameEl = area?.querySelector('.player-label .label-name');
 
-      if (seatEl) seatEl.textContent = `P${s}`;
+      if (seatEl) seatEl.textContent = `SEAT${s}`;
 
       if (nameEl) {
 
@@ -3459,7 +3459,7 @@ function renderFieldLabels() {
 
       const nameElB = handEl?.querySelector('.board-name .label-name');
 
-      if (seatElB) seatElB.textContent = `P${s}`;
+      if (seatElB) seatElB.textContent = `SEAT${s}`;
 
       if (nameElB) {
 
@@ -4630,7 +4630,7 @@ function bindLifecycleHandlers() {
 
 function updateSessionIndicator() {
   if (!CURRENT_ROOM || !CURRENT_PLAYER) {
-    sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
+    sessionIndicator.textContent = 'ROOM: - / PLAYER: - / SEAT: -';
     return;
   }
   let pName = (playerNameInput.value || '').trim() || 'Guest';
@@ -4638,7 +4638,7 @@ function updateSessionIndicator() {
   if (CURRENT_PLAYER !== 'spectator') {
     const seatData = currentSeatMap[CURRENT_PLAYER];
     if (seatData && seatData.displayName) pName = seatData.displayName;
-    seatDisplay = `P${CURRENT_PLAYER}`;
+    seatDisplay = `SEAT${CURRENT_PLAYER}`;
   }
   sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: ${pName} / SEAT: ${seatDisplay}`;
   
@@ -4845,11 +4845,11 @@ function myDisplayName() {
 
     const fallback = document.getElementById('new-player-name')?.value;
 
-    return nameFromSeat || fallback || `P${CURRENT_PLAYER || '-'}`;
+    return nameFromSeat || fallback || `SEAT${CURRENT_PLAYER || '-'}`;
 
   } catch (_) {
 
-    return `P${CURRENT_PLAYER || '-'}`;
+    return `SEAT${CURRENT_PLAYER || '-'}`;
 
   }
 
@@ -5011,7 +5011,7 @@ function renderChatDoc(d) {
 
   // ログでもプレイヤー名を表示（name が無ければ seat から P番号を推定）
 
-  const who = data.name || (typeof data.seat === 'number' ? `P${data.seat}` : '');
+  const who = data.name || (typeof data.seat === 'number' ? `SEAT${data.seat}` : '');
 
   head.textContent = `[${hh}:${mm}] ${who}`;
 
@@ -5739,7 +5739,7 @@ function createCardDom(cardId, imageSrc, state) {
 
 
 
-    const ownerPlayerNum = card.dataset.ownerSeat ? `P${card.dataset.ownerSeat}` : "?";
+    const ownerPlayerNum = card.dataset.ownerSeat ? `SEAT${card.dataset.ownerSeat}` : "?";
 
     if (isToken) {
 
@@ -8943,7 +8943,7 @@ async function focusCardById(cardId, additive = false, skipPreview = false) {
 
     setPreview(previewSrc);
 
-    const ownerPlayerNum = el.dataset.ownerSeat ? `P${el.dataset.ownerSeat}` : '?';
+    const ownerPlayerNum = el.dataset.ownerSeat ? `SEAT${el.dataset.ownerSeat}` : '?';
 
     previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
 
@@ -10671,7 +10671,7 @@ async function checkRestoreRoomSlot() {
 
     await copyCollection('seats', (d, id) => {
 
-      // 復元したホストをP1(CURRENT_PLAYER)に強制アサイン
+      // 復元したホストをSEAT1(CURRENT_PLAYER)に強制アサイン
 
       if (id === '1') {
 
@@ -10745,7 +10745,7 @@ async function checkRestoreRoomSlot() {
 
     CURRENT_ROOM = newRoomId;
 
-    CURRENT_PLAYER = 1; // 復元ホストは基本P1
+    CURRENT_PLAYER = 1; // 復元ホストは基本SEAT1
 
 
 
@@ -12369,10 +12369,10 @@ if (sitSeatBtn) {
       if (isUsed) {
         btn.classList.add('active');
         btn.disabled = true;
-        btn.textContent = P (満席);
+        btn.textContent = `SEAT${i} (満席)`;
         btn.style.opacity = '0.5';
       } else {
-        btn.textContent = P;
+        btn.textContent = `SEAT${i}`;
       }
       btn.dataset.seat = i;
       
@@ -12383,7 +12383,7 @@ if (sitSeatBtn) {
         try { await showRoomInterstitial({ force: true, cooldownMs: 0 }); } catch (_) { }
         
         const ok = await claimSeat(CURRENT_ROOM, i);
-        if (!ok) { alert(`P${i} はいま埋まりました。別の座席を選んでください。`); return; }
+        if (!ok) { alert(`SEAT${i} はいま埋まりました。別の座席を選んでください。`); return; }
         
         CURRENT_PLAYER = i;
         document.body.classList.remove('is-spectator');

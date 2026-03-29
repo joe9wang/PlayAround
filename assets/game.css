@@ -1805,7 +1805,7 @@
     }
 
     /* === 観戦モード用 UI制御 === */
-    body.is-spectator #ops-scroll .sl-btn:not(#leave-room-btn):not(#end-room-btn),
+    body.is-spectator #ops-scroll .sl-btn:not(#leave-room-btn):not(#end-room-btn):not(#sit-seat-btn),
     body.is-spectator #ops-scroll .sl-row,
     body.is-spectator #ops-scroll .section-label,
     body.is-spectator #ops-scroll #field-size-options,
