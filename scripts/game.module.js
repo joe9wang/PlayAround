@@ -5663,6 +5663,7 @@ function bindAreaContextMenuOnce() {
   const ctxMenu = document.getElementById('area-context-menu');
   const btnChangeBg = document.getElementById('area-ctx-change-bg');
   const btnRemoveBg = document.getElementById('area-ctx-remove-bg');
+  const btnDeleteArea = document.getElementById('area-ctx-delete-area');
   const fileInput = document.getElementById('area-bg-file');
   const btnEnlarge = document.getElementById('area-ctx-enlarge');
   const btnShrink = document.getElementById('area-ctx-shrink');
@@ -5771,6 +5772,17 @@ function bindAreaContextMenuOnce() {
       }
     }
 
+    if (isHost && btnDeleteArea) {
+      const isPlayOrHand = ['play-area', 'main-play-area', 'hand-area', 'board-play', 'board-hand'].includes(aClass) || 
+                           ['board-play', 'board-hand'].includes(currentTargetAreaId) || 
+                           area.classList.contains('board-hand') || area.classList.contains('hand-area');
+      if (isPlayOrHand) {
+        btnDeleteArea.style.display = 'none';
+      } else {
+        btnDeleteArea.style.display = 'flex';
+      }
+    }
+
     // 画面外にはみ出ないように位置調整
     const menuWidth = ctxMenu.offsetWidth;
     const menuHeight = ctxMenu.offsetHeight;
@@ -5814,6 +5826,30 @@ function bindAreaContextMenuOnce() {
       console.warn('Failed to delete area bg:', err);
     }
   });
+
+  if (btnDeleteArea) {
+    btnDeleteArea.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      ctxMenu.style.display = 'none';
+      if (!CURRENT_ROOM || !currentTargetAreaId) return;
+
+      if (!confirm('このエリアを完全に削除（非表示）にしますか？\n※ページをリロードすると元に戻る場合があります')) return;
+
+      try {
+        await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`));
+        const el = getCurrentTargetAreaElement();
+        if (el) {
+          if (el.classList.contains('dynamic-area') || el.classList.contains('center-deck') || el.classList.contains('center-discard')) {
+            el.remove();
+          } else {
+            el.style.display = 'none';
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to delete area entirely:', err);
+      }
+    });
+  }
 
   // ファイル選択時: アップロードしてFirestoreに書き込み
   fileInput.addEventListener('change', async (e) => {
