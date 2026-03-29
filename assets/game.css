@@ -172,8 +172,8 @@
       background: none;
       /* Dynamic Grid for Player Areas */
       display: grid;
-      grid-template-rows: 1fr 1fr;
-      grid-auto-columns: 1fr;
+      grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+      grid-auto-columns: minmax(0, 1fr);
       grid-auto-flow: column;
       width: 100%;
       height: 100%;
@@ -186,9 +186,9 @@
       border: 5px dashed #666;
       box-sizing: border-box;
       display: grid;
-      grid-template-columns: var(--special-w) 1fr;
+      grid-template-columns: var(--special-w) minmax(0, 1fr);
       /* 左: 特殊 / 右: メイン */
-      grid-template-rows: 2fr 1fr;
+      grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
       /* 上: プレイ / 下: 手札 */
       gap: 6px;
     }
