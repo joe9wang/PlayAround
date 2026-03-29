@@ -216,6 +216,7 @@
       background: #9c27b0;
       position: relative;
       box-sizing: border-box;
+      z-index: 200;
     }
 
     /* 右上：プレイ行（左=プレイ、右=デッキ縦スタック） */
@@ -223,7 +224,7 @@
       grid-column: 2 / 3;
       grid-row: 1 / 2;
       position: relative;
-      z-index: 0;
+      z-index: 100;
       display: grid;
       /* プレイ : スタック = 9 : 1（縮小を許可） */
       grid-template-columns: minmax(0, 10fr) minmax(0, 2fr);
@@ -250,6 +251,7 @@
       background: #2d8;
       position: relative;
       box-sizing: border-box;
+      z-index: 100;
     }
 
     /* デッキ縦スタック（上=捨て札、下=デッキ） */
@@ -263,6 +265,7 @@
       background: #cc6666;
       position: relative;
       box-sizing: border-box;
+      z-index: 200;
     }
 
     /* 捨て札 */
@@ -270,6 +273,7 @@
       background: #f90;
       position: relative;
       box-sizing: border-box;
+      z-index: 200;
     }
 
     /* デッキ */
@@ -280,7 +284,7 @@
       grid-row: 2 / 3;
       position: relative;
       background: #228be6;
-      z-index: 0;
+      z-index: 200;
       box-sizing: border-box;
     }
 
@@ -297,7 +301,7 @@
       cursor: grab;
       user-select: none;
       transition: border .2s;
-      z-index: 1;
+      z-index: 300;
       transform-origin: 50% 50%;
     }
 
@@ -350,7 +354,7 @@
       display: flex;
       flex-direction: column;
       position: relative;
-      z-index: 10;
+      z-index: 500;
       /* 右サイドも前面に固定 */
     }
 
@@ -817,7 +821,7 @@
       padding: 2px 8px;
       border-radius: 4px;
       pointer-events: none;
-      z-index: 10;
+      z-index: 400;
     }
 
     /* 追加（ボード / トランプ用：手札エリア左下に表示） */
@@ -832,7 +836,7 @@
       padding: 2px 8px;
       border-radius: 4px;
       pointer-events: none;
-      z-index: 10;
+      z-index: 400;
     }
 
     .board-name .label-seat {
@@ -850,7 +854,7 @@
       padding: 1px 6px;
       border-radius: 4px;
       pointer-events: none;
-      z-index: 5;
+      z-index: 400;
     }
 
     .seat-grid .seat-btn.active {
@@ -1014,7 +1018,7 @@
       /* 既存の main-play-area と同系色 */
       border: 4px dashed #666;
       /* 見やすいように枠 */
-      z-index: 0;
+      z-index: 100;
       /* 下地 */
     }
 
@@ -1030,7 +1034,7 @@
       /* 既存 hand と同色 */
       border: 4px dashed #666;
       box-sizing: border-box;
-      z-index: 1;
+      z-index: 200;
       /* 下地(#board-play)より前面 */
     }
 
@@ -1066,7 +1070,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      z-index: 1;
+      z-index: 200;
       /* 下地(#board-play)より前面 */
     }
 

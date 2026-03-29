@@ -3075,7 +3075,11 @@ function applyCardState(card, data) {
 
   card.style.left = `${data.x || 0}px`;
   card.style.top = `${data.y || 0}px`;
-  if (data.zIndex) card.style.zIndex = data.zIndex;
+  if (data.zIndex) {
+    // 互換性確保：古いデータ(z-index < 300)は300以上のレイヤーに底上げする
+    const z = parseInt(data.zIndex, 10);
+    card.style.zIndex = (z < 300) ? (z + 300) : z;
+  }
 
   const rot = (typeof data.rotation === 'number') ? data.rotation : 0;
   const scaleLevel = (typeof data.scaleLevel === 'number') ? data.scaleLevel : 0;
@@ -3626,8 +3630,8 @@ function makeDraggable(card) {
   }, { passive: false });
 }
 
-function getMaxZIndex() { let max = 0; document.querySelectorAll(".card").forEach(c => { const z = parseInt(c.style.zIndex) || 0; if (z > max) max = z; }); return max; }
-function getMinZIndex() { let min = 1000000; let found = false; document.querySelectorAll(".card").forEach(c => { const z = parseInt(c.style.zIndex); if (!isNaN(z)) { if (z < min) min = z; found = true; } }); return found ? min : 0; }
+function getMaxZIndex() { let max = 300; document.querySelectorAll(".card").forEach(c => { const z = parseInt(c.style.zIndex) || 0; if (z > max) max = z; }); return max; }
+function getMinZIndex() { let min = 1000000; let found = false; document.querySelectorAll(".card").forEach(c => { const z = parseInt(c.style.zIndex); if (!isNaN(z)) { if (z < min) min = z; found = true; } }); return found ? min : 300; }
 
 // ★ added: 重なり判定 & バッジ更新 =========================
 function rectOfCard(el) {
@@ -5520,7 +5524,9 @@ function subscribeAreas() {
           field.appendChild(el);
         }
         el.style.position = 'absolute';
-        el.style.zIndex = '5'; // 背面要素（プレイエリア等）より前面に
+        // z-index を動的に設定（100: プレイエリア系 / 200: サブエリア系）。カード(300〜)より背面を維持。
+        const isPlayType = (id.includes('play-area') || id.includes('main-play-area') || id.includes('board-play'));
+        el.style.zIndex = isPlayType ? '100' : '200';
         if (data.x !== undefined) el.style.left = data.x + 'px';
         if (data.y !== undefined) el.style.top = data.y + 'px';
         if (data.width !== undefined) el.style.width = data.width + 'px';
