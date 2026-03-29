@@ -1426,8 +1426,11 @@ createRoomBtn.addEventListener('click', async () => {
     // ※ SEAT_STALE_MS を超えた seat は死んでいる扱い（既存の isSeatStale と同義）
     const roomRef = doc(db, `rooms/${id}`);
     const existsSnap = await getDoc(roomRef);
-    if (existsSnap.exists() && existsSnap.data()?.hostUid && existsSnap.data().hostUid !== uid) {
-      // 座席8つ（旧互換含む）を並列取得して“生存者がいるか”を判定
+    const roomData = existsSnap.exists() ? existsSnap.data() : null;
+
+    if (roomData && (roomData.hostUid !== uid || roomData.roomClosed === true)) {
+      if (roomData.hostUid !== uid) {
+        // 座席8つ（旧互換含む）を並列取得して“生存者がいるか”を判定
       const seatDocs = await Promise.all([1, 2, 3, 4, 5, 6, 7, 8].map(n => getDoc(doc(db, `rooms/${id}/seats/${n}`))));
       const someoneAlive = seatDocs.some(s => {
         if (!s.exists()) return false;
@@ -1437,10 +1440,11 @@ createRoomBtn.addEventListener('click', async () => {
         return alive;
       });
       if (someoneAlive) {
-        alert('このルームIDは他のホストが使用中です。別のIDにしてください。');
-        return;
+          alert('このルームIDは他のホストが使用中です。別のIDにしてください。');
+          return;
+        }
       }
-      // ▼ 誰も座っていない → サーバAPIで「乗っ取り」を実行（管理者権限で初期化）
+      // ▼ サーバAPIで「初期化処理」を実行（管理者権限で初期化）
       try {
         const payload = JSON.stringify({ roomId: id, idToken: AUTH_ID_TOKEN || null });
         const res = await fetch('/api/takeover-room', {

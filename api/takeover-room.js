@@ -103,8 +103,8 @@ module.exports = async (req, res) => {
     }
 
     const room = roomSnap.data() || {};
-    // すでに自分がホストならOK
-    if (room.hostUid === uid) {
+    // すでに自分がホストで、かつ閉鎖されていなければOK
+    if (room.hostUid === uid && room.roomClosed !== true) {
       res.status(200).json({ ok: true, alreadyHost: true });
       return;
     }
