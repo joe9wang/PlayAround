@@ -4730,9 +4730,9 @@ function updateSessionIndicator() {
   if (CURRENT_PLAYER !== 'spectator') {
     const seatData = currentSeatMap[CURRENT_PLAYER];
     if (seatData && seatData.displayName) pName = seatData.displayName;
-    seatDisplay = P;
+    seatDisplay = `P${CURRENT_PLAYER}`;
   }
-  sessionIndicator.textContent = ROOM:  / PLAYER:  / SEAT: ;
+  sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: ${pName} / SEAT: ${seatDisplay}`;
   
   const sitBtn = document.getElementById('sit-seat-btn');
   const leaveBtn = document.getElementById('leave-seat-btn');
@@ -4747,15 +4747,7 @@ function updateSessionIndicator() {
   }
 }
 
-  const seatData = currentSeatMap[CURRENT_PLAYER];
 
-  const defaultName = CURRENT_PLAYER === 'spectator' ? '観戦' : `P${CURRENT_PLAYER}`;
-
-  const pName = seatData && seatData.displayName ? seatData.displayName : defaultName;
-
-  sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: ${pName}`;
-
-}
 
 
 
@@ -12483,7 +12475,7 @@ if (sitSeatBtn) {
         try { await showRoomInterstitial({ force: true, cooldownMs: 0 }); } catch (_) { }
         
         const ok = await claimSeat(CURRENT_ROOM, i);
-        if (!ok) { alert(P はいま埋まりました。別の座席を選んでください。); return; }
+        if (!ok) { alert(`P${i} はいま埋まりました。別の座席を選んでください。`); return; }
         
         CURRENT_PLAYER = i;
         document.body.classList.remove('is-spectator');
@@ -12499,8 +12491,7 @@ if (sitSeatBtn) {
         const isHost = CURRENT_ROOM_META?.hostUid === CURRENT_UID;
         if (isHost) {
           try {
-            await setDoc(doc(db, 
-ooms/), { hostSeat: i, updatedAt: serverTimestamp() }, { merge: true });
+            await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { hostSeat: i, updatedAt: serverTimestamp() }, { merge: true });
           } catch(e) {}
         }
       });
@@ -12544,8 +12535,7 @@ if (leaveSeatBtn) {
     const isHost = CURRENT_ROOM_META?.hostUid === CURRENT_UID;
     if (isHost && CURRENT_ROOM) {
       try {
-        await setDoc(doc(db, 
-ooms/), { hostSeat: null, updatedAt: serverTimestamp() }, { merge: true });
+        await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { hostSeat: null, updatedAt: serverTimestamp() }, { merge: true });
       } catch(e) {}
     }
     
