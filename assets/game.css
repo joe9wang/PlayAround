@@ -252,6 +252,7 @@
       position: relative;
       box-sizing: border-box;
       z-index: 100;
+      grid-column: 1;
     }
 
     /* デッキ縦スタック（上=捨て札、下=デッキ） */
@@ -259,6 +260,7 @@
       display: grid;
       grid-template-rows: 1fr 1fr;
       gap: 6px;
+      grid-column: 2;
     }
 
     .discard-area {
@@ -266,6 +268,7 @@
       position: relative;
       box-sizing: border-box;
       z-index: 200;
+      grid-row: 1;
     }
 
     /* 捨て札 */
@@ -274,6 +277,7 @@
       position: relative;
       box-sizing: border-box;
       z-index: 200;
+      grid-row: 2;
     }
 
     /* デッキ */
@@ -1079,6 +1083,7 @@
       /* 既存 deck と同色 */
       position: relative;
       border: 4px dashed #666;
+      grid-column: 1;
     }
 
     .center-discard {
@@ -1086,6 +1091,7 @@
       /* 既存 discard と同色 */
       position: relative;
       border: 4px dashed #666;
+      grid-column: 2;
     }
 
 
