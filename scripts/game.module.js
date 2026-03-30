@@ -9798,19 +9798,9 @@ function bindPanZoomHandlers() {
 // ===============================
 
 function updateEndRoomButtonVisibility() {
-
-  const isHostUid = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
-
-  const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
-
-  const isHost = !!(CURRENT_ROOM && isHostUid && isHostSeat);
-
-  // ホストUI
-
-  if (endRoomBtn) endRoomBtn.style.display = isHost ? 'block' : 'none';
-
-  if (hostOtherOpsWrap) hostOtherOpsWrap.style.display = isHost ? 'block' : 'none';
-
+  if (endRoomBtn) {
+    endRoomBtn.style.display = (CURRENT_ROOM && IS_ROOM_CREATOR) ? 'block' : 'none';
+  }
 }
 
 
@@ -9824,19 +9814,9 @@ function updateEndRoomButtonVisibility() {
 // 非ホスト専用の「退室する」ボタン制御
 
 function updateLeaveRoomButtonVisibility() {
-
-  // 「自分が今、どこかの席に座っている」 かつ 「ホストではない」場合だけ表示
-
-  const isHostUid = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
-
-  const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
-
-  const isHost = !!(CURRENT_ROOM && isHostUid && isHostSeat);
-
-  const show = !!(CURRENT_ROOM && CURRENT_PLAYER && !isHost);
-
+  // 自分が今、どこかの席に座っている かつ 「ホストではない」場合だけ表示
+  const show = !!(CURRENT_ROOM && CURRENT_PLAYER && !IS_ROOM_CREATOR);
   if (leaveRoomBtn) leaveRoomBtn.style.display = show ? 'block' : 'none';
-
 }
 
 
@@ -9905,12 +9885,9 @@ if (leaveRoomBtn) leaveRoomBtn.style.display = showLeave ? 'block' : 'none';
 
 endRoomBtn?.addEventListener('click', async () => {
 
-  if (!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID && CURRENT_ROOM_META?.hostSeat === CURRENT_PLAYER)) {
-
-    alert('この操作は、ホスト座席に座ったホストのみ実行できます。');
-
+  if (!IS_ROOM_CREATOR) {
+    alert('この操作は、ホストのみ実行できます。');
     return;
-
   }
 
   if (!confirm('ルームを終了します。全カードと座席情報が削除され、全員が退出します。よろしいですか？')) return;
