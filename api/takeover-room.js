@@ -22,6 +22,16 @@ function initAdmin() {
 const SEAT_STALE_MS = 60_000; // 既存のSEAT_STALE_MSに合わせる（必要に応じて調整）
 
 async function isSomeoneAlive(db, roomId) {
+  // 1) 部屋自体のホスト生存確認 (hostHeartbeatAt)
+  const roomRef = db.doc(`rooms/${roomId}`);
+  const roomSnap = await roomRef.get();
+  if (roomSnap.exists) {
+    const rd = roomSnap.data() || {};
+    const hhb = rd.hostHeartbeatAt && rd.hostHeartbeatAt.toMillis ? rd.hostHeartbeatAt.toMillis() : 0;
+    if ((Date.now() - hhb) <= SEAT_STALE_MS) return true;
+  }
+
+  // 2) 各座席の生存確認 (heartbeatAt)
   const seats = [1, 2, 3, 4, 5, 6, 7, 8];
   for (const n of seats) {
     const ref = db.doc(`rooms/${roomId}/seats/${n}`);

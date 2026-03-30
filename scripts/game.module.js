@@ -3803,7 +3803,8 @@ function validateLobby() {
 
   // if (!hostHere && !roomEmpty && ACTIVE_MODE === 'join') { startBtn.disabled = true; return; }
 
-  if (ACTIVE_MODE === 'create') { startBtn.disabled = true; return; }  const roomOk = !!(joinRoomInput.value || '').trim();
+  if (ACTIVE_MODE === 'create') { startBtn.disabled = true; return; }
+  const roomOk = !!(joinRoomInput.value || '').trim();
   const nameNow = (playerNameInput.value || '').trim();
   const nameOk = nameNow.length > 0 && nameNow.length <= 24;
   startBtn.disabled = !(roomOk && nameOk);
@@ -4203,10 +4204,7 @@ let hostHeartbeatTimer = null;
 // [HB] host heartbeat
 
 function startHostHeartbeat(roomId) {
-
-  // 専用ループは起動しない（座席HBの中で hostHeartbeatAt を更新）
-
-  if (hostHeartbeatTimer) { clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; }
+  if (hostHeartbeatTimer) return;
 
 
 
