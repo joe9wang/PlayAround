@@ -313,7 +313,7 @@ const joinRoomInput = document.getElementById('join-room-id');
 const playerNameInput = document.getElementById('player-name');
 
 const endRoomBtn = document.getElementById('end-room-btn');
-
+const hostLoadRoomBtn = document.getElementById('host-load-room-btn');
 const leaveRoomBtn = document.getElementById('leave-room-btn');
 
 const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
