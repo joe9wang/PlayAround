@@ -3190,15 +3190,12 @@ function isSeatStale(data) {
 // 追加: 全席が空(=生きていない)かを判定
 
 function isRoomEmpty() {
+  if (IS_ROOM_CREATOR) return false;
 
   return [1, 2, 3, 4, 5, 6, 7, 8].every(s => {
-
     const d = currentSeatMap[s];
-
     return !d || isSeatStale(d) || !d.claimedByUid;
-
   });
-
 }
 
 
@@ -4221,10 +4218,11 @@ function startHostHeartbeat(roomId) {
       if (CURRENT_ROOM_META?.roomClosed) return;
 
       await setDoc(
-
         doc(db, `rooms/${roomId}`),
-
-        { hostHeartbeatAt: serverTimestamp() }, { merge: true });
+        {
+          hostHeartbeatAt: serverTimestamp(),
+          lastSeatPing: serverTimestamp() // ホストが座っていなくても空室自動削除を防ぐために更新
+        }, { merge: true });
 
 
 
