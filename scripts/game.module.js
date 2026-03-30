@@ -990,22 +990,20 @@ window.openSaveLoadDialog = openSaveLoadDialog;
 
 // ==== ルーム保存モーダル制御 ====
 
-function openRoomSaveDialog() {
+let roomSLMode = 'save';
 
+function openRoomSaveDialog(mode = 'save') {
+  roomSLMode = mode;
   const modal = document.getElementById('room-save-modal');
-
   if (!modal) return;
 
-
-
-  // プレビューを更新
+  const title = document.getElementById('room-sl-title');
+  if (title) {
+    title.textContent = mode === 'save' ? 'ルーム保存先スロットを選択' : 'ルーム読み込み先を選択';
+  }
 
   updateRoomSlotPreviews();
-
-
-
   modal.style.display = 'flex';
-
 }
 
 window.openRoomSaveDialog = openRoomSaveDialog;
@@ -1037,17 +1035,15 @@ window.openRoomSaveDialog = openRoomSaveDialog;
 
 
   modal.querySelectorAll('.room-slot-btn').forEach(btn => {
-
     btn.addEventListener('click', async () => {
-
       const slot = parseInt(btn.dataset.slot, 10);
-
       modal.style.display = 'none';
-
-      await saveRoomToSlot(slot);
-
+      if (roomSLMode === 'save') {
+        await saveRoomToSlot(slot);
+      } else {
+        await loadRoomFromSlot(slot);
+      }
     });
-
   });
 
 })();
@@ -1203,13 +1199,9 @@ async function updateRoomSlotPreviews() {
         const dateStr = data.updatedAt?.toDate?.().toLocaleString() || '-';
 
         box.innerHTML = `
-
           <div style="font-size:12px; margin-bottom:4px;">${data.roomName || '保存したルーム'}</div>
-
-          <div style="font-size:10px; color:#666;">📝 ${data.cardsCount || 0}枚 / 💬 ${data.chatCount || 0}件</div>
-
+          <div style="font-size:10px; color:#666;">🖼 ${data.areasCount || 0} / 📝 ${data.cardsCount || 0} / 💬 ${data.chatCount || 0}</div>
           <div style="font-size:10px; color:#999;">${dateStr}</div>
-
         `;
 
       } catch (e) {
@@ -1275,17 +1267,12 @@ async function saveRoomToSlot(slot) {
     // 1. データ取得
 
     const roomRef = doc(db, `rooms/${CURRENT_ROOM}`);
-
-    const [roomSnap, cardsSnap, seatsSnap, logSnap] = await Promise.all([
-
+    const [roomSnap, cardsSnap, seatsSnap, logSnap, areasSnap] = await Promise.all([
       getDoc(roomRef),
-
       getDocs(collection(db, `rooms/${CURRENT_ROOM}/cards`)),
-
       getDocs(collection(db, `rooms/${CURRENT_ROOM}/seats`)),
-
-      getDocs(collection(db, `rooms/${CURRENT_ROOM}/chat`))
-
+      getDocs(collection(db, `rooms/${CURRENT_ROOM}/chat`)),
+      getDocs(collection(db, `rooms/${CURRENT_ROOM}/areas`))
     ]);
 
 
@@ -1331,12 +1318,10 @@ async function saveRoomToSlot(slot) {
     // 3. メタデータの保存
 
     await setDoc(baseRef, {
-
       updatedAt: serverTimestamp(),
-
       cardsCount: cardsSnap.size,
-
       chatCount: logSnap.size,
+      areasCount: areasSnap.size,
 
       originalRoomId: CURRENT_ROOM,
 
@@ -9798,9 +9783,9 @@ function bindPanZoomHandlers() {
 // ===============================
 
 function updateEndRoomButtonVisibility() {
-  if (endRoomBtn) {
-    endRoomBtn.style.display = (CURRENT_ROOM && IS_ROOM_CREATOR) ? 'block' : 'none';
-  }
+  const show = !!(CURRENT_ROOM && IS_ROOM_CREATOR);
+  if (endRoomBtn) endRoomBtn.style.display = show ? 'block' : 'none';
+  if (hostLoadRoomBtn) hostLoadRoomBtn.style.display = show ? 'block' : 'none';
 }
 
 

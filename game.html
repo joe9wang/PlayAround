@@ -330,8 +330,8 @@
       <div aria-live="polite" class="host-toggle" id="host-otherops">
         <div class="section-label">ホスト専用</div>
         <div class="sl-row" role="group" aria-label="Save Room">
-          <button class="sl-btn" onclick="openRoomSaveDialog()" data-i18n="side.saveRoom" style="width:100%;">💾
-            ルームを保存</button>
+          <button class="sl-btn" onclick="openRoomSaveDialog('save')">💾 ルームをセーブ</button>
+          <button class="sl-btn" onclick="openRoomSaveDialog('load')">📂 ルームをロード</button>
         </div>
         <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
           <div style="font-size:12px;color:#555;">
@@ -361,6 +361,10 @@
       <!-- ★ 参加中のみ表示：退室/終了ボタン -->
       <button class="sl-btn" id="leave-room-btn" style="display:none">
         🚪 退室する
+      </button>
+
+      <button class="sl-btn" id="host-load-room-btn" style="display:none; margin-top:20px;" onclick="openRoomSaveDialog('load')">
+        📂 ルームをロード
       </button>
 
       <button class="danger sl-btn" id="end-room-btn" style="display:none">
