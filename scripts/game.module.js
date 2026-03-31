@@ -313,6 +313,7 @@ const joinRoomInput = document.getElementById('join-room-id');
 const playerNameInput = document.getElementById('player-name');
 
 const endRoomBtn = document.getElementById('end-room-btn');
+const hostSaveRoomBtn = document.getElementById('host-save-room-btn');
 const hostLoadRoomBtn = document.getElementById('host-load-room-btn');
 const leaveRoomBtn = document.getElementById('leave-room-btn');
 
@@ -1291,7 +1292,7 @@ async function saveRoomToSlot(slot) {
 
     // サブコレクションのクリア処理
 
-    const collectionsToClear = ['cards', 'seats', 'chat'];
+    const collectionsToClear = ['cards', 'seats', 'chat', 'areas'];
 
     for (const colName of collectionsToClear) {
 
@@ -1401,6 +1402,12 @@ async function saveRoomToSlot(slot) {
 
 
 
+    // エリアの保存
+
+    await writeCollection(areasSnap, 'areas');
+
+
+
     alert(`SLOT ${slot} にルームを保存しました。`);
 
     postLog(`ホストがルームの状態を保存しました`);
@@ -1420,8 +1427,193 @@ async function saveRoomToSlot(slot) {
 }
 
 
+async function loadRoomFromSlot(slot) {
+
+  // ===== ルームロード: プレミアム限定 =====
+
+  if (!IS_PREMIUM) {
+
+    alert('ルームロードはプレミアム会員限定の機能です。');
+
+    return;
+
+  }
 
 
+
+  await ensureAuthReady();
+
+  if (!CURRENT_ROOM || !CURRENT_UID) {
+
+    alert('ルームに参加してから実行してください'); return;
+
+  }
+
+  // ホストチェック
+
+  if (CURRENT_ROOM_META?.hostUid !== CURRENT_UID) {
+
+    alert('ルームのロードはホストのみ実行可能です'); return;
+
+  }
+
+
+
+  try {
+
+    // 1. スロットのメタ情報を読む
+
+    const baseRef = doc(db, roomSlDocPath(slot));
+
+    const metaSnap = await getDoc(baseRef);
+
+    if (!metaSnap.exists()) { alert(`SLOT ${slot} は空です。`); return; }
+
+    const metaData = metaSnap.data();
+
+
+
+    const confirmLoad = confirm(
+
+      `SLOT ${slot} の保存データをロードします。\n現在のルーム上のカード・チャット・エリアはすべて上書きされます。\nよろしいですか？`
+
+    );
+
+    if (!confirmLoad) return;
+
+
+
+    // 2. スロットのサブコレクションを読む
+
+    const [savedCards, savedSeats, savedChat, savedAreas] = await Promise.all([
+
+      getDocs(collection(db, `${roomSlDocPath(slot)}/cards`)),
+
+      getDocs(collection(db, `${roomSlDocPath(slot)}/seats`)),
+
+      getDocs(collection(db, `${roomSlDocPath(slot)}/chat`)),
+
+      getDocs(collection(db, `${roomSlDocPath(slot)}/areas`))
+
+    ]);
+
+
+
+    // 3. 現在のルームのサブコレクションをクリア
+
+    const roomCollsToClear = ['cards', 'seats', 'chat', 'areas'];
+
+    for (const colName of roomCollsToClear) {
+
+      const q = query(collection(db, `rooms/${CURRENT_ROOM}/${colName}`), limit(500));
+
+      let currentSnap = await getDocs(q);
+
+      while (!currentSnap.empty) {
+
+        let b = writeBatch(db);
+
+        currentSnap.docs.forEach(d => b.delete(d.ref));
+
+        await b.commit();
+
+        currentSnap = await getDocs(q);
+
+      }
+
+    }
+
+
+
+    // 4. ルームdocの座席数やfieldMode等を更新
+
+    const savedRoomData = metaData.roomData || {};
+
+    const updatePayload = { updatedAt: serverTimestamp() };
+
+    if (savedRoomData.playerCount) updatePayload.playerCount = savedRoomData.playerCount;
+
+    if (savedRoomData.fieldMode) updatePayload.fieldMode = savedRoomData.fieldMode;
+
+    if (savedRoomData.fieldSize) updatePayload.fieldSize = savedRoomData.fieldSize;
+
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), updatePayload, { merge: true });
+
+
+
+    // 5. サブコレクションの復元 (バッチ処理)
+
+    const restoreCollection = async (snap, colName) => {
+
+      if (snap.empty) return;
+
+      const targetCol = collection(db, `rooms/${CURRENT_ROOM}/${colName}`);
+
+      let batch = writeBatch(db);
+
+      let n = 0;
+
+      for (const d of snap.docs) {
+
+        batch.set(doc(targetCol, d.id), d.data());
+
+        if (++n >= 450) {
+
+          await batch.commit();
+
+          batch = writeBatch(db);
+
+          n = 0;
+
+        }
+
+      }
+
+      if (n > 0) await batch.commit();
+
+    };
+
+
+
+    // カードの復元
+
+    await restoreCollection(savedCards, 'cards');
+
+
+
+    // 座席情報の復元
+
+    await restoreCollection(savedSeats, 'seats');
+
+
+
+    // チャットの復元
+
+    await restoreCollection(savedChat, 'chat');
+
+
+
+    // エリアの復元
+
+    await restoreCollection(savedAreas, 'areas');
+
+
+
+    alert(`SLOT ${slot} からルームをロードしました。`);
+
+    postLog(`ホストがルームの状態を SLOT ${slot} からロードしました`);
+
+
+
+  } catch (e) {
+
+    console.error('ROOM LOAD ERROR', e);
+
+    alert(`ルームのロードに失敗しました（${e?.code || 'unknown'}）。`);
+
+  }
+
+}
 
 
 
@@ -9785,6 +9977,7 @@ function bindPanZoomHandlers() {
 function updateEndRoomButtonVisibility() {
   const show = !!(CURRENT_ROOM && IS_ROOM_CREATOR);
   if (endRoomBtn) endRoomBtn.style.display = show ? 'block' : 'none';
+  if (hostSaveRoomBtn) hostSaveRoomBtn.style.display = show ? 'block' : 'none';
   if (hostLoadRoomBtn) hostLoadRoomBtn.style.display = show ? 'block' : 'none';
 }
 
