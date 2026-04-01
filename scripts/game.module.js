@@ -7879,7 +7879,7 @@ window.rollD6 = async function () {
 
 function setDiceButtonsDisabled(disabled) {
 
-  ['roll-d6-btn', 'roll-d10-btn', 'roll-d20-btn', 'flip-coin-btn'].forEach(id => {
+  ['roll-d4-btn', 'roll-d6-btn', 'roll-d10-btn', 'roll-d20-btn', 'roll-d100-btn', 'flip-coin-btn'].forEach(id => {
 
     const el = document.getElementById(id);
 
@@ -7917,7 +7917,7 @@ function svgNumberDiceDataUrl(n) {
 
       <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle"
 
-            font-size="${n >= 10 ? 34 : 40}" font-family="ui-sans-serif, system-ui" fill="#111" font-weight="700">${n}</text>
+            font-size="${n >= 100 ? 26 : n >= 10 ? 34 : 40}" font-family="ui-sans-serif, system-ui" fill="#111" font-weight="700">${n}</text>
 
     </svg>`;
 
@@ -8106,6 +8106,130 @@ window.rollD20 = async function () {
   } catch (e) {
 
     console.error(e); alert('20面ダイスの作成に失敗しました。');
+
+  }
+
+};
+
+
+
+// ==== D4 ====
+
+window.rollD4 = async function () {
+
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+
+  disableDiceButtons(3000);
+
+  try {
+
+    await resetMyDiceIfAny();
+
+    const val = (Math.random() * 4 | 0) + 1;
+
+    const imgUrl = svgNumberDiceDataUrl(val);
+
+    const SIZE = 72;
+
+    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
+
+    const z = getMaxZIndex() + 100;
+
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+
+      type: 'dice',
+
+      diceValue: val,
+
+      imageUrl: imgUrl,
+
+      fullUrl: imgUrl,
+
+      x, y, zIndex: z,
+
+      faceUp: true,
+
+      ownerUid: CURRENT_UID,
+
+      ownerSeat: CURRENT_PLAYER,
+
+      rotation: 0,
+
+      visibleToAll: true,
+
+      createdAt: serverTimestamp(),
+
+      updatedAt: serverTimestamp()
+
+    });
+
+    postLog(`4面ダイスを振りました → ${val}`);
+
+  } catch (e) {
+
+    console.error(e); alert('4面ダイスの作成に失敗しました。');
+
+  }
+
+};
+
+
+
+// ==== D100 ====
+
+window.rollD100 = async function () {
+
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+
+  disableDiceButtons(3000);
+
+  try {
+
+    await resetMyDiceIfAny();
+
+    const val = (Math.random() * 100 | 0) + 1;
+
+    const imgUrl = svgNumberDiceDataUrl(val);
+
+    const SIZE = 72;
+
+    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
+
+    const z = getMaxZIndex() + 100;
+
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
+
+      type: 'dice',
+
+      diceValue: val,
+
+      imageUrl: imgUrl,
+
+      fullUrl: imgUrl,
+
+      x, y, zIndex: z,
+
+      faceUp: true,
+
+      ownerUid: CURRENT_UID,
+
+      ownerSeat: CURRENT_PLAYER,
+
+      rotation: 0,
+
+      visibleToAll: true,
+
+      createdAt: serverTimestamp(),
+
+      updatedAt: serverTimestamp()
+
+    });
+
+    postLog(`100面ダイスを振りました → ${val}`);
+
+  } catch (e) {
+
+    console.error(e); alert('100面ダイスの作成に失敗しました。');
 
   }
 
@@ -10324,6 +10448,10 @@ Object.assign(window, {
   rollD10,
 
   rollD20,
+
+  rollD4: window.rollD4,
+
+  rollD100: window.rollD100,
 
 
 
