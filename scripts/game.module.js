@@ -315,6 +315,7 @@ const playerNameInput = document.getElementById('player-name');
 const endRoomBtn = document.getElementById('end-room-btn');
 const hostSaveRoomBtn = document.getElementById('host-save-room-btn');
 const hostLoadRoomBtn = document.getElementById('host-load-room-btn');
+const hostOtherOpsSaveBtn = document.getElementById('host-otherops-save-btn');
 const leaveRoomBtn = document.getElementById('leave-room-btn');
 
 const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
@@ -9976,8 +9977,12 @@ function bindPanZoomHandlers() {
 
 function updateEndRoomButtonVisibility() {
   const show = !!(CURRENT_ROOM && IS_ROOM_CREATOR);
+  const seated = show && CURRENT_PLAYER !== 'spectator';
   if (endRoomBtn) endRoomBtn.style.display = show ? 'block' : 'none';
-  if (hostSaveRoomBtn) hostSaveRoomBtn.style.display = show ? 'block' : 'none';
+  // Save buttons: only when host is seated
+  if (hostSaveRoomBtn) hostSaveRoomBtn.style.display = seated ? 'block' : 'none';
+  if (hostOtherOpsSaveBtn) hostOtherOpsSaveBtn.style.display = seated ? '' : 'none';
+  // Load buttons: always when host is in room
   if (hostLoadRoomBtn) hostLoadRoomBtn.style.display = show ? 'block' : 'none';
 }
 
