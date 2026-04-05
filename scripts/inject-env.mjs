@@ -100,6 +100,7 @@ for (const f of [
   "./BatriTable-icon.png",
   "./field-card-pic.png",
   "./field-board-pic.png",
+  "./PlayExample.png",
   "./favicon.ico",
   "./favicon-32.png",
   "./favicon-16.png",
