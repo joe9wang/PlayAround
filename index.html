@@ -93,7 +93,7 @@
     .layout {
       min-height: 100dvh;
       display: grid;
-      grid-template-columns: 260px minmax(0, 1fr) 320px;
+      grid-template-columns: 260px minmax(0, 1fr);
       grid-template-rows: 1fr;
       gap: var(--gap);
       padding: var(--gap);
@@ -457,30 +457,6 @@
 
     </main>
 
-    <!-- 右側サイドバー（赤・橙カード） -->
-    <div class="right-sidebar">
-      <!-- 右上：赤カード（更新情報など） -->
-      <section class="card right-top" id="news" aria-labelledby="news-title">
-        <h3 id="news-title">お知らせ</h3>
-        <ul style="margin:0; padding-left:1.1em">
-          <li>v0.9：手札の裏表示固定、デッキ整列／シャッフル改善</li>
-          <li>v0.8：共有プレイエリア追加、ズーム＆パン個別視点</li>
-          <li>v0.7：画像複数アップロード対応、右クリックで表裏反転</li>
-        </ul>
-      </section>
-
-      <!-- 右下：橙カード（使い方） -->
-      <section class="card right-bottom" id="howto" aria-labelledby="howto-title">
-        <div>
-          <h3 id="howto-title" style="color:#3d2600">かんたん3ステップ</h3>
-          <ol style="margin:0; padding-left:1.2em">
-            <li>ルーム番号を決めて共有</li>
-            <li>各自プレイヤー番号を選んで入室</li>
-            <li>画像をアップロードしてカードを並べるだけ！</li>
-          </ol>
-        </div>
-      </section>
-    </div>
 
     <!-- 下部：青い横帯（CTA） -->
     <!-- フッター -->
