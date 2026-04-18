@@ -72,6 +72,22 @@
 
 
 
+    .site-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .site-brand h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      letter-spacing: .2px;
+      color: #fff;
+    }
+
+
     .upload-box {
       transition: background 0.2s;
     }
