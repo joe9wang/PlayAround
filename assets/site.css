@@ -8,14 +8,14 @@
   color:#fff; text-decoration:none;
   background:linear-gradient(135deg, #3cd08e 0%, #218d6a 60%, #3cd08e 100%);
   background-size:220% 220%;
-  box-shadow:0 8px 20px rgba(144, 238, 144, .55);
+  box-shadow:0 4px 12px rgba(0, 0, 0, .2);
   transition:transform .15s ease, box-shadow .35s ease, background-position .6s ease;
   position:relative; overflow:hidden;
 }
 .btn-play-green:hover{
   transform:translateY(-1px) scale(1.03);
   background-position:60% 0;
-  box-shadow:0 12px 28px rgba(144, 238, 144, .45);
+  box-shadow:0 6px 18px rgba(0, 0, 0, .25);
 }
 .btn-play-green:active{ transform:translateY(0) scale(0.98) }
 
