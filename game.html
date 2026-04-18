@@ -94,19 +94,6 @@
       <div class="lobby-title" data-i18n="lobby.welcome">
         バトライテーブルへようこそ！
       </div>
-      <div class="lobby-links">
-        <a data-i18n="links.privacy" href="/privacy.html" rel="noopener" target="_blank">
-          プライバシーポリシー
-        </a>
-        |
-        <a data-i18n="links.terms" href="/terms.html" rel="noopener" target="_blank">
-          利用規約
-        </a>
-        |
-        <a data-i18n="links.contact" href="/contact.html" rel="noopener" target="_blank">
-          お問い合わせ
-        </a>
-      </div>
       <!-- ロビー上部のログインUI（リンクの直下） -->
       <div class="lobby-auth" id="lobby-auth-area">
 
@@ -236,13 +223,16 @@
       <div class="lobby-credit">BatriTable — © 2025 SOLVENTER</div>
     </div>
   </div>
-  <div id="upload-areas" style="height: var(--upload-h); display: flex; align-items: stretch; border-bottom: 2px solid #ccc; user-select: none; margin: 0; padding: 0;">
-    <div id="upload-card" class="upload-box" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-right: 1px solid #ccc; background: #fff; cursor: pointer;">
+  <div id="upload-areas"
+    style="height: var(--upload-h); display: flex; align-items: stretch; border-bottom: 2px solid #ccc; user-select: none; margin: 0; padding: 0;">
+    <div id="upload-card" class="upload-box"
+      style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-right: 1px solid #ccc; background: #fff; cursor: pointer;">
       <div style="font-weight:bold;">🃏 カードを追加</div>
       <div style="font-size:10px; color:#666; margin-top:2px;">（タップまたはD&D）</div>
       <input accept="image/*" id="file-input-card" multiple="" type="file" style="display:none;" />
     </div>
-    <div id="upload-token" class="upload-box" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-left: 1px solid #ccc; background: #fff; cursor: pointer;">
+    <div id="upload-token" class="upload-box"
+      style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-left: 1px solid #ccc; background: #fff; cursor: pointer;">
       <div style="font-weight:bold;">🪙 トークンを追加</div>
       <div style="font-size:10px; color:#666; margin-top:2px;">（原画サイズ）</div>
       <input accept="image/*" id="file-input-token" multiple="" type="file" style="display:none;" />
@@ -367,10 +357,12 @@
         🚪 退室する
       </button>
 
-      <button class="sl-btn" id="host-save-room-btn" style="display:none; margin-top:20px;" onclick="openRoomSaveDialog('save')">
+      <button class="sl-btn" id="host-save-room-btn" style="display:none; margin-top:20px;"
+        onclick="openRoomSaveDialog('save')">
         💾 ルームをセーブ
       </button>
-      <button class="sl-btn" id="host-load-room-btn" style="display:none; margin-top:4px;" onclick="openRoomSaveDialog('load')">
+      <button class="sl-btn" id="host-load-room-btn" style="display:none; margin-top:4px;"
+        onclick="openRoomSaveDialog('load')">
         📂 ルームをロード
       </button>
 
@@ -812,10 +804,13 @@
   </div>
 
   <!-- 座席選択モーダル -->
-  <div id="seat-select-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
-    <div style="background:#fff; padding:20px; border-radius:12px; max-width:90%; width:320px; box-shadow:0 6px 24px rgba(0,0,0,.3);">
+  <div id="seat-select-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+    <div
+      style="background:#fff; padding:20px; border-radius:12px; max-width:90%; width:320px; box-shadow:0 6px 24px rgba(0,0,0,.3);">
       <div style="font-weight:700; font-size:16px; margin-bottom:12px;">座席を選択してください</div>
-      <div id="seat-select-grid" class="seat-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
+      <div id="seat-select-grid" class="seat-grid"
+        style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
         <!-- JSで動的にボタンを生成します -->
       </div>
       <div style="display:flex; justify-content:flex-end;">
