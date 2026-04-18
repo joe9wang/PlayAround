@@ -1,6 +1,7 @@
     :root {
       --sidebar-w: 300px;
       --preview-w: 300px;
+      --header-margin: 12px;
       --header-h: 60px;
       /* site-headerの高さに合わせる */
       --upload-h: 56px;
@@ -8,7 +9,7 @@
       --gheader-h: 0px;
       /* h1を削除したため0に */
       --special-w: 16.6%;
-      --stack-h: calc(var(--header-h) + var(--upload-h));
+      --stack-h: calc(var(--header-h) + var(--upload-h) + var(--header-margin) * 1);
     }
 
     body {
@@ -20,8 +21,11 @@
 
     /* === 統合ヘッダー (game.html固有) === */
     .game-header {
-      background: #444;
-      /* 既存のh1の色に合わせるか、site-headerの色を上書きするか */
+      background: linear-gradient(135deg, #b350be 0%, #8e3a9b 100%);
+      margin: var(--header-margin) var(--header-margin) 0;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
+      color: #fff;
     }
 
     .game-header .site-header__inner {
@@ -29,6 +33,7 @@
       align-items: center;
       justify-content: space-between;
       height: var(--header-h);
+      padding: 0 20px;
       /* navのラップを防ぐため固定長 */
     }
 
