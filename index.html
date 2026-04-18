@@ -96,6 +96,7 @@
       padding: 0 24px;
       box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
       border-radius: var(--radius);
+      margin: 16px 16px 0;
     }
 
     .header-inner {
@@ -156,10 +157,10 @@
 
     /* ====== グリッド全体 ====== */
     .layout {
-      min-height: 100dvh;
+      min-height: calc(100dvh - 64px);
       display: grid;
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: 1fr auto;
       gap: var(--gap);
       padding: var(--gap);
     }
@@ -407,25 +408,26 @@
 </head>
 
 <body>
-  <div class="layout">
-    <!-- ヘッダー -->
-    <div id="header-mount"></div>
-    <script>
-      (async () => {
-        const el = document.getElementById('header-mount');
-        async function loadHeader() {
-          const tries = ["./partials/header.html", "/partials/header.html"];
-          for (const url of tries) {
-            try {
-              const res = await fetch(url, { cache: "no-store" });
-              if (res.ok) { el.innerHTML = await res.text(); return; }
-            } catch (e) { }
-          }
-          console.warn("header.html が見つかりませんでした。");
+  <!-- ヘッダー -->
+  <div id="header-mount"></div>
+  <script>
+    (async () => {
+      const el = document.getElementById('header-mount');
+      async function loadHeader() {
+        const tries = ["./partials/header.html", "/partials/header.html"];
+        for (const url of tries) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (res.ok) { el.innerHTML = await res.text(); return; }
+          } catch (e) { }
         }
-        loadHeader();
-      })();
-    </script>
+        console.warn("header.html が見つかりませんでした。");
+      }
+      loadHeader();
+    })();
+  </script>
+
+  <div class="layout">
 
     <!-- 中央：ヒーロー（大きい緑） -->
     <main class="hero">
