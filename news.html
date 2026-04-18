@@ -67,70 +67,84 @@
         "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", Meiryo, sans-serif;
     }
 
-    /* レイアウト（index準拠） */
-    .layout {
-      min-height: 100dvh;
-      display: grid;
-      grid-template-columns: 260px minmax(0, 1fr) 320px;
-      grid-template-rows: 1fr;
-      gap: var(--gap);
-      padding: var(--gap);
+    /* ====== ヘッダー ====== */
+    .site-header {
+      background: linear-gradient(135deg, var(--purple) 0%, #8e3a9b 100%);
+      color: #fff;
+      padding: 0 24px;
+      box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
     }
 
-    /* サイドバー */
-    .sidebar {
-      grid-row: 1;
-      grid-column: 1;
-      background: var(--purple);
-      color: #fff;
-      border-radius: var(--radius);
-      padding: 20px 18px;
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
       display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-shadow: 0 8px 24px rgba(164, 10, 179, .25);
+      align-items: center;
+      gap: 16px;
+      height: 64px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .brand h1 {
       margin: 0;
-      font-size: 1.2rem;
-      letter-spacing: .2px
+      font-size: 1.15rem;
+      letter-spacing: .2px;
+      color: #fff;
     }
 
     .nav {
-      margin-top: 18px;
-      display: grid;
-      gap: 10px
+      display: flex;
+      gap: 6px;
+      margin-left: 8px;
     }
 
     .nav a {
       color: #fff;
       text-decoration: none;
-      padding: 10px 12px;
+      padding: 8px 14px;
       border-radius: 10px;
       background: rgba(255, 255, 255, .08);
       backdrop-filter: saturate(140%) blur(2px);
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background .2s;
     }
 
     .nav a:hover {
-      background: rgba(255, 255, 255, .16)
+      background: rgba(255, 255, 255, .18)
     }
 
-    .credit {
-      font-size: .8rem;
-      opacity: .85
+    .header-spacer {
+      flex: 1;
+    }
+
+    .header-play-btn {
+      font-size: 0.9rem !important;
+      padding: 8px 20px !important;
+      border-radius: 10px !important;
+      flex-shrink: 0;
+    }
+
+    /* レイアウト（ヘッダー下） */
+    .layout {
+      min-height: calc(100dvh - 64px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      grid-template-rows: auto auto auto;
+      gap: var(--gap);
+      padding: var(--gap);
     }
 
     /* メイン（緑の面） */
     .hero {
-      grid-column: 2;
-      grid-row: 1;
+      grid-column: 1;
+      grid-row: 1 / 4;
       background: var(--green);
       border-radius: var(--radius);
       padding: 40px 42px;
@@ -198,100 +212,113 @@
     }
 
     .right-top {
-      grid-column: 3;
+      grid-column: 2;
       grid-row: 1;
       background: var(--red)
     }
 
     .right-bottom {
-      grid-column: 3;
-      grid-row: 1;
-      align-self: end;
+      grid-column: 2;
+      grid-row: 2;
       background: var(--orange);
       color: #3d2600
     }
 
-    /* 下部青帯（CTA） */
-    .cta {
-      grid-column: 2 / 4;
-      grid-row: 2;
-      background: var(--blue);
-      color: #fff;
-      border-radius: var(--radius);
-      padding: 22px;
+    /* フッター */
+    footer {
+      grid-column: 1 / -1;
+      grid-row: 4;
+      background: #1e82e0;
+      padding: 40px 32px;
+      border-radius: 14px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      box-shadow: 0 10px 24px rgba(13, 115, 232, .25);
-    }
-
-    .btn-white {
-      display: inline-block;
-      background: #fff;
-      color: #0d73e8;
-      text-decoration: none;
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-weight: 700;
+      flex-direction: column;
+      gap: 24px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.15);
+      margin-top: 0px;
     }
 
     /* レスポンシブ */
     @media (max-width: 1000px) {
-      .layout {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto auto auto
-      }
-
-      .sidebar {
-        grid-row: auto;
-        grid-column: auto;
-        flex-direction: row;
-        align-items: center;
-        gap: 14px
+      .header-inner {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 12px 0;
+        gap: 10px;
       }
 
       .nav {
-        grid-auto-flow: column;
-        overflow: auto;
+        order: 3;
+        width: 100%;
+        overflow-x: auto;
         white-space: nowrap;
-        gap: 8px;
-        margin: 0
+        gap: 6px;
+        margin-left: 0;
+        padding-bottom: 4px;
       }
 
-      .hero,
-      .right-top,
-      .right-bottom,
-      .cta {
-        grid-column: auto;
-        grid-row: auto
+      .nav a {
+        padding: 6px 12px;
+        font-size: 0.85rem;
       }
 
-      .credit {
-        display: none
+      .header-spacer {
+        display: none;
+      }
+
+      .header-play-btn {
+        margin-left: auto;
+      }
+
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto auto auto;
+      }
+
+      .hero {
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      .right-top {
+        grid-column: 1;
+        grid-row: 2;
+      }
+
+      .right-bottom {
+        grid-column: 1;
+        grid-row: 3;
+      }
+
+      footer {
+        grid-column: 1;
+        grid-row: 4;
       }
     }
   </style>
 </head>
 
 <body>
-  <div class="layout">
-
-    <!-- 共通サイドバー -->
-    <div id="sidebar-mount"></div>
-    <script>
-      (async () => {
-        const el = document.getElementById('sidebar-mount');
-        for (const url of ["./partials/sidebar.html", "/partials/sidebar.html"]) {
+  <!-- ヘッダー -->
+  <div id="header-mount"></div>
+  <script>
+    (async () => {
+      const el = document.getElementById('header-mount');
+      async function loadHeader() {
+        const tries = ["./partials/header.html", "/partials/header.html"];
+        for (const url of tries) {
           try {
             const res = await fetch(url, { cache: "no-store" });
             if (res.ok) { el.innerHTML = await res.text(); return; }
-          } catch { }
+          } catch (e) { }
         }
-        console.warn("sidebar.html が見つかりませんでした。");
-      })();
-    </script>
+        console.warn("header.html が見つかりませんでした。");
+      }
+      loadHeader();
+    })();
+  </script>
+
+  <div class="layout">
 
     <!-- メイン（緑） -->
     <main class="hero" role="main">
@@ -424,7 +451,6 @@
       <p style="margin:0"><a href="https://www.batritable.com/contact.html" style="color:#3d2600">▶ お問い合わせページへ</a></p>
     </aside>
 
-    <!-- 下部CTA：いますぐ遊ぶ -->
     <!-- フッター -->
     <footer style="grid-column: 1 / -1; background: #1e82e0; padding: 40px 32px; border-radius: 14px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.15); margin-top: 0px;">
       <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">

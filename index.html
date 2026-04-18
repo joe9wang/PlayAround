@@ -89,81 +89,83 @@
       background: var(--bg);
     }
 
-    /* ====== グリッド全体 ====== */
-    .layout {
-      min-height: 100dvh;
-      display: grid;
-      grid-template-columns: 260px minmax(0, 1fr);
-      grid-template-rows: 1fr;
-      gap: var(--gap);
-      padding: var(--gap);
-    }
-
-    /* 左：サイドバー（縦帯） */
-    .sidebar {
-      grid-row: 1;
-      grid-column: 1;
+    /* ====== ヘッダー ====== */
+    .site-header {
       background: linear-gradient(135deg, var(--purple) 0%, #8e3a9b 100%);
       color: #fff;
-      border-radius: var(--radius);
-      padding: 20px 18px;
+      padding: 0 24px;
+      box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
       display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-shadow: 0 8px 24px rgba(164, 10, 179, .25);
+      align-items: center;
+      gap: 16px;
+      height: 64px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-
-    .brand-mark {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: #fff;
-      color: var(--purple);
-      display: grid;
-      place-items: center;
-      font-weight: 800;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, .15);
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .brand h1 {
       margin: 0;
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       letter-spacing: .2px;
+      color: #fff;
     }
 
     .nav {
-      margin-top: 18px;
-      display: grid;
-      gap: 10px;
+      display: flex;
+      gap: 6px;
+      margin-left: 8px;
     }
 
     .nav a {
       color: #fff;
       text-decoration: none;
-      padding: 10px 12px;
+      padding: 8px 14px;
       border-radius: 10px;
       background: rgba(255, 255, 255, .08);
       backdrop-filter: saturate(140%) blur(2px);
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background .2s;
     }
 
     .nav a:hover {
-      background: rgba(255, 255, 255, .16)
+      background: rgba(255, 255, 255, .18)
     }
 
-    .sidebar .credit {
-      font-size: .8rem;
-      opacity: .85;
+    .header-spacer {
+      flex: 1;
+    }
+
+    .header-play-btn {
+      font-size: 0.9rem !important;
+      padding: 8px 20px !important;
+      border-radius: 10px !important;
+      flex-shrink: 0;
+    }
+
+    /* ====== グリッド全体 ====== */
+    .layout {
+      min-height: calc(100dvh - 64px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: 1fr auto;
+      gap: var(--gap);
+      padding: var(--gap);
     }
 
     /* 中央：ヒーロー（大きい緑の面） */
     .hero {
-      grid-column: 2;
+      grid-column: 1;
       grid-row: 1;
       background: linear-gradient(135deg, var(--green) 0%, #2fb078 100%);
       border-radius: var(--radius);
@@ -268,7 +270,7 @@
 
     /* 下：横帯（青） */
     .cta {
-      grid-column: 2 / 4;
+      grid-column: 1 / -1;
       grid-row: 2;
       background: var(--blue);
       color: #fff;
@@ -354,39 +356,43 @@
 
 
     /* ====== レスポンシブ ====== */
-    @media (max-width: 1000px) {
-      .layout {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto auto auto;
-      }
-
-      .sidebar {
-        grid-row: auto;
-        grid-column: auto;
-        flex-direction: row;
-        align-items: center;
-        gap: 14px;
+    @media (max-width: 768px) {
+      .header-inner {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 12px 0;
+        gap: 10px;
       }
 
       .nav {
-        grid-auto-flow: column;
-        overflow: auto;
+        order: 3;
+        width: 100%;
+        overflow-x: auto;
         white-space: nowrap;
-        gap: 8px;
-        margin: 0
+        gap: 6px;
+        margin-left: 0;
+        padding-bottom: 4px;
       }
 
       .nav a {
-        padding: 8px 10px
+        padding: 6px 12px;
+        font-size: 0.85rem;
+      }
+
+      .header-spacer {
+        display: none;
+      }
+
+      .header-play-btn {
+        margin-left: auto;
+      }
+
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto;
       }
 
       .hero {
-        grid-column: auto;
-        grid-row: auto
-      }
-
-      .right-top,
-      .right-bottom {
         grid-column: auto;
         grid-row: auto
       }
@@ -395,48 +401,41 @@
         grid-column: auto;
         grid-row: auto
       }
-
-      .sidebar .credit {
-        display: none
-      }
-
-      /* モバイルは簡素化 */
     }
   </style>
 </head>
 
 <body>
-  <div class="layout">
-
-    <!-- 左：縦帯（サイドバー）を共通化 -->
-    <div id="sidebar-mount"></div>
-    <script>
-      (async () => {
-        const el = document.getElementById('sidebar-mount');
-        // 相対→絶対の順でフォールバック読み込み（どちらか存在すればOK）
-        async function loadSidebar() {
-          const tries = ["./partials/sidebar.html", "/partials/sidebar.html"];
-          for (const url of tries) {
-            try {
-              const res = await fetch(url, { cache: "no-store" });
-              if (res.ok) { el.innerHTML = await res.text(); return; }
-            } catch (e) { }
-          }
-          console.warn("sidebar.html が見つかりませんでした。");
+  <!-- ヘッダー -->
+  <div id="header-mount"></div>
+  <script>
+    (async () => {
+      const el = document.getElementById('header-mount');
+      async function loadHeader() {
+        const tries = ["./partials/header.html", "/partials/header.html"];
+        for (const url of tries) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (res.ok) { el.innerHTML = await res.text(); return; }
+          } catch (e) { }
         }
-        loadSidebar();
-      })();
-    </script>
+        console.warn("header.html が見つかりませんでした。");
+      }
+      loadHeader();
+    })();
+  </script>
+
+  <div class="layout">
 
     <!-- 中央：ヒーロー（大きい緑） -->
     <main class="hero">
       <div>
-        <h2>カードやボドゲを “自由に作り, すぐに遊ぶ”</h2>
+        <h2>カードやボドゲを "自由に作り, すぐに遊ぶ"</h2>
         <p>画像をアップロードしてカード化。すぐに遊ぶことが可能！<br>
           ダイス・トークン・カウンター機能搭載。ボドゲ・カードゲームのプレイを最大限にサポート！<br>
           ドラッグ・回転・表裏反転・デッキシャッフル機能搭載。リアルに近いプレイ体験を！<br>
           ブラウザだけで、すぐにプレイ可能。基本無料・インストール不要！<br>
-          自分だけのカードゲーム・ボードゲームを“すぐに”友達と！<br>
+          自分だけのカードゲーム・ボードゲームを"すぐに"友達と！<br>
           最大8人までのプレイ人数に対応。<br>
           <!-- すぐに遊べる、オリジナルゲームが搭載。<br> -->
         </p>
