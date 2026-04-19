@@ -1,36 +1,28 @@
 // scripts/inject-env.mjs
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, cpSync, existsSync } from "node:fs";
-import { dirname } from "node:path";
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, cpSync, existsSync, rmSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // 1) 入力/出力ファイル
 const OUT_DIR = "./dist";
-// 置換対象：HTML（従来どおり）
 const PAGES = ["./index.html", "./game.html", "./mypage.html", "./login.html", "./plans.html"];
-// 置換対象：JS/ESM（必要に応じて追加）
-// 例: game.html から外出しした module スクリプトをここに追加
 const JS_MODULES = [
-  "./scripts/game.module.js",   // 本体
-  "./scripts/firebase.init.js", // Firebase初期化
-  "./scripts/state.js",         // 共有状態
-  "./scripts/i18n.js",          // 多言語対応
-  "./scripts/hp.js",            // プレイヤーHPモジュール
-  "./scripts/room.module.js",   // ルーム関連処理モジュール  
-  // "./scripts/他にも置換したい.mjs",
+  "./scripts/game.module.js",
+  "./scripts/firebase.init.js",
+  "./scripts/state.js",
+  "./scripts/i18n.js",
+  "./scripts/hp.js",
+  "./scripts/room.module.js",
 ];
 
-// 丸ごとコピーするディレクトリ（public 廃止）
-// ※ ここに列挙されたものだけ dist に展開されます
 const DIRS = [
   { src: "./assets", dest: "assets" },
   { src: "./partials", dest: "partials" },
-  { src: "./scripts", dest: "scripts" }, // polyfills.js / 分割JS も配布
+  { src: "./scripts", dest: "scripts" },
 ];
 
-
-// 2) 置換マップ（Vercelの環境変数 → プレースホルダ）
 const replMap = {
   "__NEXT_PUBLIC_FIREBASE_API_KEY__": process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
   "__NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN__": process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
@@ -42,103 +34,72 @@ const replMap = {
 };
 
 try {
-  // 3) 置換して dist へ出力（HTML と JS を別々に処理）
-  mkdirSync(OUT_DIR, { recursive: true });
-  for (const src of PAGES) {
-    console.log(`Processing page: ${src}`);
-    if (!existsSync(src)) {
-      console.warn(`Page not found: ${src}`);
-      continue;
+  // 1. DO NOT Clean dist here (handled by shell locally, but Vercel needs it)
+  if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
+
+  // 1.5. Copy directories (needed for Vercel/production)
+  const DIRS = [
+    { src: "./assets", dest: "assets" },
+    { src: "./partials", dest: "partials" },
+    { src: "./scripts", dest: "scripts" },
+  ];
+  for (const { src, dest } of DIRS) {
+    if (existsSync(src)) {
+      console.log(`Copying directory: ${src} -> ${join(OUT_DIR, dest)}`);
+      try {
+        cpSync(src, join(OUT_DIR, dest), { recursive: true, force: true });
+      } catch (e) {
+        console.warn(`Initial cpSync failed for ${src}, trying fallback...`, e);
+        // Fallback or ignore if it's just a local lock
+      }
     }
-    let html = readFileSync(src, "utf8");   // 読み込み
-    for (const [ph, val] of Object.entries(replMap)) {  // 置換
-      const safe = String(val).replaceAll(/[$]/g, '$$$$');
-      html = html.split(ph).join(safe);
-    }
-    const outPath = `${OUT_DIR}/${src.replace(/^.\//, "")}`; // 例: ./mypage.html → dist/mypage.html
-    mkdirSync(dirname(outPath), { recursive: true });
-    writeFileSync(outPath, html, "utf8");      // 出力
   }
 
-  // 3.5) JS/ESM の置換（必要なときだけ。無ければ空配列でOK）
-  for (const src of JS_MODULES) {
-    console.log(`Processing module: ${src}`);
-    if (!existsSync(src)) {
-      console.warn(`Module not found: ${src}`);
-      continue;
-    }
-    let code = readFileSync(src, "utf8");
+  // 2. Inject and overwrite files in dist
+  for (const src of PAGES) {
+    if (!existsSync(src)) continue;
+    console.log(`Injecting env to page: ${src}`);
+    let content = readFileSync(src, "utf8");
     for (const [ph, val] of Object.entries(replMap)) {
       const safe = String(val).replaceAll(/[$]/g, '$$$$');
-      code = code.split(ph).join(safe);
+      content = content.split(ph).join(safe);
     }
-    const outPath = `${OUT_DIR}/${src.replace(/^.\//, "")}`; // 例: ./scripts/game.module.js → dist/scripts/game.module.js
+    const outPath = join(OUT_DIR, src.replace(/^\.\//, ""));
     mkdirSync(dirname(outPath), { recursive: true });
-    writeFileSync(outPath, code, "utf8");
+    writeFileSync(outPath, content, "utf8");
   }
 
-
-  // 4) ディレクトリをそのままコピー（Node 18+ の fs.cp を使用）
-  // 同じ dest への重複コピーは気にせず上書きOK
-  for (const { src, dest } of DIRS) {
-    console.log(`Copying directory: ${src} -> ${dest}`);
-    if (existsSync(src)) {
-      cpSync(src, `${OUT_DIR}/${dest}`, { recursive: true });
+  for (const src of JS_MODULES) {
+    if (!existsSync(src)) continue;
+    console.log(`Injecting env to module: ${src}`);
+    let content = readFileSync(src, "utf8");
+    for (const [ph, val] of Object.entries(replMap)) {
+      const safe = String(val).replaceAll(/[$]/g, '$$$$');
+      content = content.split(ph).join(safe);
     }
+    const outPath = join(OUT_DIR, src.replace(/^\.\//, ""));
+    mkdirSync(dirname(outPath), { recursive: true });
+    writeFileSync(outPath, content, "utf8");
   }
 
-  // 5) 追加の静的ファイルがあればここでコピー
+  // 3. Copy specific static files directly to dist
   const staticFiles = [
-    { src: "./ads.txt", dest: "ads.txt" },
-    { src: "./privacy.html", dest: "privacy.html" },
-    { src: "./contact.html", dest: "contact.html" },
-    { src: "./terms.html", dest: "terms.html" },
-    { src: "./law.html", dest: "law.html" },
-    { src: "./about.html", dest: "about.html" },
-    { src: "./howto.html", dest: "howto.html" },
-    { src: "./news.html", dest: "news.html" },
-    { src: "./Geki-Mahjong.html", dest: "Geki-Mahjong.html" },
+    "./ads.txt", "./robots.txt", "./sitemap.xml", "./privacy.html", 
+    "./contact.html", "./terms.html", "./law.html", "./about.html", 
+    "./howto.html", "./news.html", "./Geki-Mahjong.html",
+    "./BatriTable-icon.png", "./PlayExample.png", "./favicon.ico",
+    "./favicon-32.png", "./favicon-16.png", "./favicon-192.png",
+    "./favicon-512.png"
   ];
 
-  for (const { src, dest } of staticFiles) {
-    console.log(`Copying static file: ${src}`);
-    if (existsSync(src)) {
-      copyFileSync(src, `${OUT_DIR}/${dest}`);
-    } else {
-      console.warn(`Static file missing: ${src}`);
+  for (const f of staticFiles) {
+    if (existsSync(f)) {
+      copyFileSync(f, join(OUT_DIR, f.replace(/^\.\//, "")));
     }
   }
 
-  try {
-    if (existsSync("./robots.txt")) copyFileSync("./robots.txt", `${OUT_DIR}/robots.txt`);
-  } catch { }
-  try {
-    if (existsSync("./sitemap.xml")) copyFileSync("./sitemap.xml", `${OUT_DIR}/sitemap.xml`);
-  } catch { }
-
-  // 6) ルート直下の画像・アイコン類を dist へコピー（存在するものだけ）
-  for (const f of [
-    "./BatriTable-icon.png",
-    "./field-card-pic.png",
-    "./field-board-pic.png",
-    "./PlayExample.png",
-    "./favicon.ico",
-    "./favicon-32.png",
-    "./favicon-16.png",
-    "./favicon-192.png",
-    "./favicon-512.png",
-    "./apple-touch-icon.png"
-  ]) {
-    try {
-      if (existsSync(f)) {
-        copyFileSync(f, `${OUT_DIR}/${f.replace(/^.\//, "")}`);
-      }
-    } catch { }
-  }
-
-  console.log("Build done: env injected, assets/ & partials/ & scripts/ copied to dist/");
+  console.log("Injection successful!");
 } catch (err) {
-  console.error("BUILD FATAL ERROR:", err);
+  console.error("INJECTION FATAL ERROR:", err);
   process.exit(1);
 }
-

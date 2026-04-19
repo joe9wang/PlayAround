@@ -1,32 +1,407 @@
-<!DOCTYPE html><html lang="ja"><head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>プライバシーポリシー | BatriTable</title>
-<style>
-  body{font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif;line-height:1.8;margin:24px;max-width:860px}
-  footer{margin:32px 0 12px;color:#777;font-size:12px;text-align:center}
-</style>
-</head><body>
-<h1>プライバシーポリシー</h1>
-<p>本サービス「BatriTable」（以下「本サービス」）は、ゲーム体験の提供のために最小限の情報を取り扱います。</p>
+<!DOCTYPE html>
+<html lang="ja">
 
-<h2>1. 収集する情報</h2>
-<ul>
-  <li>Cookie・類似技術（利用状況の把握、機能提供）</li>
-  <li>Google AdSense による広告配信のための情報（以下「広告関連情報」）</li>
-</ul>
+<head>
 
-<h2>2. 第三者配信（Google AdSense）</h2>
-<p>本サービスは Google およびパートナーが広告を配信するために Cookie を使用する場合があります。ユーザーは広告設定からパーソナライズ広告を無効にできます。</p>
-<p>詳細：<a href="https://policies.google.com/technologies/ads?hl=ja" target="_blank" rel="noopener">Google の広告ポリシー</a></p>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
+    crossorigin="anonymous"></script>
 
-<h2>3. 画像アップロードと著作権</h2>
-<p>ユーザーは、権利を侵害しない素材のみをアップロードしてください。権利者からの申立てや通報があった場合は、確認の上、速やかに対応します。</a></p>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="/favicon.ico" rel="icon" sizes="any" />
+  <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
+  <link href="/favicon-16.png?v=3" rel="icon" sizes="16x16" type="image/png" />
+  <link href="/apple-touch-icon.png?v=3" rel="apple-touch-icon" sizes="180x180" />
+  <title>BatriTable — プライバシーポリシー</title>
+  <meta name="description" content="BatriTableのプライバシーポリシー。Cookie、広告（Google AdSense）、アクセス解析、保存期間、ユーザーの権利などの取り扱いを説明します。">
+  <link rel="canonical" href="https://www.batritable.com/privacy.html">
+  <meta name="robots" content="index, follow">
 
-<h2>4. お問い合わせ</h2>
-<p>個人情報・広告・著作権に関するお問い合わせ：<a href="mailto:solventer.com@gmail.com">solventer.com@gmail.com</a></p>
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="BatriTable">
+  <meta property="og:title" content="BatriTable — プライバシーポリシー">
+  <meta property="og:description" content="BatriTableのプライバシーポリシー。Cookie、広告、アクセス解析の取り扱いを説明します。">
+  <meta property="og:url" content="https://www.batritable.com/privacy.html">
+  <meta property="og:image" content="https://www.batritable.com/assets/ogp.jpg">
 
-<p>改定日：2025-08-13</p>
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BatriTable — プライバシーポリシー">
+  <meta name="twitter:description" content="BatriTableのプライバシーポリシー。Cookie、広告、アクセス解析の取り扱いを説明します。">
+  <meta name="twitter:image" content="https://www.batritable.com/assets/ogp.jpg">
 
-<footer>BatriTable — © 2025 SOLVENTER</footer>
-</body></html>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/site.css">
+
+  <style>
+    :root {
+      --gap: 16px;
+      --radius: 14px;
+      /* BatriTable配色（index.htmlと揃え） */
+      --purple: #b350be;
+      --green: #3cd08e;
+      --red: #e64a5a;
+      --orange: #f79f27;
+      --blue: #1e82e0;
+      --ink: #0f172a;
+      --bg: #f6f7fb;
+      --card: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
+        "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", Meiryo, sans-serif;
+    }
+
+    /* ====== ヘッダー ====== */
+    .site-header {
+      background: linear-gradient(135deg, var(--purple) 0%, #8e3a9b 100%);
+      color: #fff;
+      padding: 0 24px;
+      box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: 64px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      letter-spacing: .2px;
+      color: #fff;
+    }
+
+    .nav {
+      display: flex;
+      gap: 6px;
+      margin-left: 8px;
+    }
+
+    .nav a {
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .08);
+      backdrop-filter: saturate(140%) blur(2px);
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background .2s;
+    }
+
+    .nav a:hover {
+      background: rgba(255, 255, 255, .18)
+    }
+
+    .header-spacer {
+      flex: 1;
+    }
+
+    .header-play-btn {
+      font-size: 0.9rem !important;
+      padding: 8px 20px !important;
+      border-radius: 10px !important;
+      flex-shrink: 0;
+    }
+
+    /* レイアウト（ヘッダー下） */
+    .layout {
+      min-height: calc(100dvh - 64px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      grid-template-rows: auto auto auto;
+      gap: var(--gap);
+      padding: var(--gap);
+    }
+
+    /* メイン（緑の面） */
+    .hero {
+      grid-column: 1;
+      grid-row: 1 / 4;
+      background: var(--green);
+      border-radius: var(--radius);
+      padding: 40px 42px;
+      color: #053021;
+      box-shadow: 0 10px 24px rgba(39, 217, 138, .25);
+    }
+
+    .hero h2 {
+      margin: 0 0 6px;
+      font-size: 1.9rem
+    }
+
+    .hero p.lead {
+      margin: 6px 0 22px;
+      font-size: 1.05rem
+    }
+
+    .policy {
+      background: rgba(255, 255, 255, .9);
+      border-radius: 12px;
+      padding: 22px;
+      line-height: 1.8;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
+    }
+
+    .policy h3 {
+      margin: 18px 0 8px;
+      font-size: 1.15rem;
+      color: #0b3b2b
+    }
+
+    .policy ul {
+      margin: 0 0 12px 1.2em
+    }
+
+    .policy p {
+      margin: 0 0 12px
+    }
+
+    /* 右上（赤）／右下（橙）カード */
+    .card {
+      border-radius: var(--radius);
+      padding: 22px;
+      color: #fff;
+      box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
+    }
+
+    .card h3 {
+      margin: 0 0 10px
+    }
+
+    .right-top {
+      grid-column: 2;
+      grid-row: 1;
+      background: var(--red)
+    }
+
+    .right-bottom {
+      grid-column: 2;
+      grid-row: 2;
+      background: var(--orange);
+      color: #3d2600
+    }
+
+    /* フッター */
+    footer {
+      grid-column: 1 / -1;
+      grid-row: 4;
+      background: #1e82e0;
+      padding: 40px 32px;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.15);
+      margin-top: 0px;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 1000px) {
+      .header-inner {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 12px 0;
+        gap: 10px;
+      }
+
+      .nav {
+        order: 3;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        gap: 6px;
+        margin-left: 0;
+        padding-bottom: 4px;
+      }
+
+      .nav a {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+      }
+
+      .header-spacer {
+        display: none;
+      }
+
+      .header-play-btn {
+        margin-left: auto;
+      }
+
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto auto auto;
+      }
+
+      .hero {
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      .right-top {
+        grid-column: 1;
+        grid-row: 2;
+      }
+
+      .right-bottom {
+        grid-column: 1;
+        grid-row: 3;
+      }
+
+      footer {
+        grid-column: 1;
+        grid-row: 4;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ヘッダー -->
+  <div id="header-mount"></div>
+  <script>
+    (async () => {
+      const el = document.getElementById('header-mount');
+      async function loadHeader() {
+        const tries = ["./partials/header.html", "/partials/header.html"];
+        for (const url of tries) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (res.ok) { el.innerHTML = await res.text(); return; }
+          } catch (e) { }
+        }
+        console.warn("header.html が見つかりませんでした。");
+      }
+      loadHeader();
+    })();
+  </script>
+
+  <div class="layout">
+
+    <!-- メイン（緑） -->
+    <main class="hero" role="main">
+      <header>
+        <h2>プライバシーポリシー</h2>
+        <p class="lead">BatriTable（以下「当サイト」）は、ユーザーのプライバシーを尊重し、関連法令に従って個人情報を適切に取り扱います。</p>
+      </header>
+
+      <section class="policy">
+        <h3>1. 取得する情報</h3>
+        <ul>
+          <li>お問い合わせ時にご入力いただく情報（メールアドレス、氏名など）</li>
+          <li>利用状況の把握のために収集する技術情報（IPアドレス、端末/ブラウザ情報、アクセスログ、Cookie 等の識別子）</li>
+        </ul>
+
+        <h3>2. 利用目的</h3>
+        <ul>
+          <li>サービス提供、機能改善、品質向上のため</li>
+          <li>不具合調査、利用状況の分析、セキュリティ対策のため</li>
+          <li>お問い合わせ対応、重要なお知らせの送付のため</li>
+        </ul>
+
+        <h3>3. Cookie・広告（Google AdSense）</h3>
+        <p>当サイトは第三者配信の広告サービスを利用し、第三者は Cookie（広告識別子を含む）を用いて過去のアクセス情報に基づく広告配信を行います。ユーザーは
+          <a href="https://adssettings.google.com/authenticated" target="_blank" rel="noopener">広告設定</a>
+          にてパーソナライズ広告を無効化できます。各社のデータ取り扱いについては
+          <a href="https://policies.google.com/technologies/ads?hl=ja" target="_blank" rel="noopener">こちら</a> をご確認ください。
+        </p>
+
+        <h3>4. アクセス解析</h3>
+        <p>サイト改善の目的でアクセス解析ツールを使用する場合があります。取得データは統計的に処理され、個人を特定するものではありません。</p>
+
+        <h3>5. 外部送信・第三者提供</h3>
+        <p>法令に基づく場合を除き、本人の同意なく第三者に提供しません。</p>
+
+        <h3>6. 保存期間</h3>
+        <p>収集した情報は、利用目的の達成に必要な範囲で保存し、不要になった場合には遅滞なく削除または匿名化します。</p>
+
+        <h3>7. 安全管理措置</h3>
+        <p>不正アクセス、漏えい、改ざん等を防止するため、必要かつ適切な技術的・組織的安全管理措置を講じます。</p>
+
+        <h3>8. ユーザーの権利</h3>
+        <p>ご本人からの開示、訂正、利用停止、削除等のご請求には、合理的な範囲で対応します。ご連絡は下記窓口までお願いします。</p>
+
+        <h3>9. 児童の個人情報</h3>
+        <p>当サイトは原則として児童を対象としておらず、児童の個人情報を故意に収集しません。</p>
+
+        <h3>10. 国外移転</h3>
+        <p>サービス運用上、情報が保存されるサーバ等が国外に所在する場合があります。その場合も適用法令を遵守します。</p>
+
+        <h3>11. お問い合わせ窓口</h3>
+        <p>個人情報、広告、著作権に関するお問い合わせ：<a href="mailto:joe9bk@gmail.com">joe9bk@gmail.com</a></p>
+
+        <h3>12. 改定</h3>
+        <p>本ポリシーは予告なく改定される場合があります。最新の内容は本ページに掲示します。施行日：2025-08-30</p>
+      </section>
+    </main>
+
+    <!-- 右上カード：簡易要約 -->
+    <aside class="card right-top" aria-labelledby="summary-title">
+      <h3 id="summary-title">要点まとめ</h3>
+      <ul style="margin:0; padding-left:1.1em">
+        <li>Cookieと広告識別子を広告/解析に利用</li>
+        <li>目的：提供・改善・不具合対応・問合せ対応</li>
+        <li>第三者提供は法令等を除き行いません</li>
+      </ul>
+    </aside>
+
+    <!-- 右下カード：ユーザーの選択肢 -->
+    <aside class="card right-bottom" aria-labelledby="controls-title">
+      <h3 id="controls-title" style="color:#3d2600">あなたの選択肢</h3>
+      <ol style="margin:0; padding-left:1.2em; color:#3d2600">
+        <li>広告のパーソナライズ設定を見直す</li>
+        <li>問い合わせで開示・訂正等を請求</li>
+        <li>ブラウザのCookie設定を調整</li>
+      </ol>
+    </aside>
+
+    <!-- フッター -->
+    <footer style="grid-column: 1 / -1; background: #1e82e0; padding: 40px 32px; border-radius: 14px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.15); margin-top: 0px;">
+      <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
+        <a href="/terms.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">利用規約</a>
+        <a href="/privacy.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">プライバシーポリシー</a>
+        <a href="/law.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">特定商取引法に基づく表記</a>
+        <a href="/contact.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">お問い合わせ</a>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="/BatriTable-icon.png?v=3" alt="BatriTable" style="width: 28px; height: 28px; border-radius: 6px;">
+          <strong style="font-size: 1.2rem; color: #fff; letter-spacing: 0.05em;">BatriTable</strong>
+        </div>
+        <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.8rem;">
+          © 2025 SOLVENTER
+        </div>
+      </div>
+    </footer>
+
+  </div>
+</body>
+
+</html>
