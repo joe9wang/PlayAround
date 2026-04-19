@@ -10737,7 +10737,6 @@ function loadLobbyCache() {
 
       if (cache.fieldMode === 'board' && pickModeBoardBtn) pickModeBoardBtn.click();
 
-      if (cache.fieldMode === 'trump' && pickModeTrumpBtn) pickModeTrumpBtn.click();
 
     }
 
@@ -10777,7 +10776,7 @@ seatButtons.forEach(b => b.addEventListener('click', () => setTimeout(saveLobbyC
 
 createSeatButtons.forEach(b => b.addEventListener('click', () => setTimeout(saveLobbyCache, 10)));
 
-[pickModeCardBtn, pickModeBoardBtn, pickModeTrumpBtn].forEach(b => {
+[pickModeCardBtn, pickModeBoardBtn].forEach(b => {
 
   if (b) b.addEventListener('click', () => setTimeout(saveLobbyCache, 10));
 

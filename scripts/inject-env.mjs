@@ -41,83 +41,104 @@ const replMap = {
   "__NEXT_PUBLIC_APPCHECK_KEY__": process.env.NEXT_PUBLIC_APPCHECK_KEY || ""
 };
 
-// 3) 置換して dist へ出力（HTML と JS を別々に処理）
-mkdirSync(OUT_DIR, { recursive: true });
-for (const src of PAGES) {
-  let html = readFileSync(src, "utf8");   // 読み込み
-  for (const [ph, val] of Object.entries(replMap)) {  // 置換
-    const safe = String(val).replaceAll(/[$]/g, '$$$$');
-    html = html.split(ph).join(safe);
+try {
+  // 3) 置換して dist へ出力（HTML と JS を別々に処理）
+  mkdirSync(OUT_DIR, { recursive: true });
+  for (const src of PAGES) {
+    console.log(`Processing page: ${src}`);
+    if (!existsSync(src)) {
+      console.warn(`Page not found: ${src}`);
+      continue;
+    }
+    let html = readFileSync(src, "utf8");   // 読み込み
+    for (const [ph, val] of Object.entries(replMap)) {  // 置換
+      const safe = String(val).replaceAll(/[$]/g, '$$$$');
+      html = html.split(ph).join(safe);
+    }
+    const outPath = `${OUT_DIR}/${src.replace(/^.\//, "")}`; // 例: ./mypage.html → dist/mypage.html
+    mkdirSync(dirname(outPath), { recursive: true });
+    writeFileSync(outPath, html, "utf8");      // 出力
   }
-  const outPath = `${OUT_DIR}/${src.replace(/^.\//, "")}`; // 例: ./mypage.html → dist/mypage.html
-  mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, html, "utf8");      // 出力
-}
 
-// 3.5) JS/ESM の置換（必要なときだけ。無ければ空配列でOK）
-for (const src of JS_MODULES) {
-  if (!existsSync(src)) continue;
-  let code = readFileSync(src, "utf8");
-  for (const [ph, val] of Object.entries(replMap)) {
-    const safe = String(val).replaceAll(/[$]/g, '$$$$');
-    code = code.split(ph).join(safe);
+  // 3.5) JS/ESM の置換（必要なときだけ。無ければ空配列でOK）
+  for (const src of JS_MODULES) {
+    console.log(`Processing module: ${src}`);
+    if (!existsSync(src)) {
+      console.warn(`Module not found: ${src}`);
+      continue;
+    }
+    let code = readFileSync(src, "utf8");
+    for (const [ph, val] of Object.entries(replMap)) {
+      const safe = String(val).replaceAll(/[$]/g, '$$$$');
+      code = code.split(ph).join(safe);
+    }
+    const outPath = `${OUT_DIR}/${src.replace(/^.\//, "")}`; // 例: ./scripts/game.module.js → dist/scripts/game.module.js
+    mkdirSync(dirname(outPath), { recursive: true });
+    writeFileSync(outPath, code, "utf8");
   }
-  const outPath = `${OUT_DIR}/${src.replace(/^.\//, "")}`; // 例: ./scripts/game.module.js → dist/scripts/game.module.js
-  mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, code, "utf8");
-}
 
 
-// 4) ディレクトリをそのままコピー（Node 18+ の fs.cp を使用）
-// 同じ dest への重複コピーは気にせず上書きOK
-for (const { src, dest } of DIRS) {
-  if (existsSync(src)) {
-    cpSync(src, `${OUT_DIR}/${dest}`, { recursive: true });
+  // 4) ディレクトリをそのままコピー（Node 18+ の fs.cp を使用）
+  // 同じ dest への重複コピーは気にせず上書きOK
+  for (const { src, dest } of DIRS) {
+    console.log(`Copying directory: ${src} -> ${dest}`);
+    if (existsSync(src)) {
+      cpSync(src, `${OUT_DIR}/${dest}`, { recursive: true });
+    }
   }
+
+  // 5) 追加の静的ファイルがあればここでコピー
+  const staticFiles = [
+    { src: "./ads.txt", dest: "ads.txt" },
+    { src: "./privacy.html", dest: "privacy.html" },
+    { src: "./contact.html", dest: "contact.html" },
+    { src: "./terms.html", dest: "terms.html" },
+    { src: "./law.html", dest: "law.html" },
+    { src: "./about.html", dest: "about.html" },
+    { src: "./howto.html", dest: "howto.html" },
+    { src: "./news.html", dest: "news.html" },
+    { src: "./Geki-Mahjong.html", dest: "Geki-Mahjong.html" },
+  ];
+
+  for (const { src, dest } of staticFiles) {
+    console.log(`Copying static file: ${src}`);
+    if (existsSync(src)) {
+      copyFileSync(src, `${OUT_DIR}/${dest}`);
+    } else {
+      console.warn(`Static file missing: ${src}`);
+    }
+  }
+
+  try {
+    if (existsSync("./robots.txt")) copyFileSync("./robots.txt", `${OUT_DIR}/robots.txt`);
+  } catch { }
+  try {
+    if (existsSync("./sitemap.xml")) copyFileSync("./sitemap.xml", `${OUT_DIR}/sitemap.xml`);
+  } catch { }
+
+  // 6) ルート直下の画像・アイコン類を dist へコピー（存在するものだけ）
+  for (const f of [
+    "./BatriTable-icon.png",
+    "./field-card-pic.png",
+    "./field-board-pic.png",
+    "./PlayExample.png",
+    "./favicon.ico",
+    "./favicon-32.png",
+    "./favicon-16.png",
+    "./favicon-192.png",
+    "./favicon-512.png",
+    "./apple-touch-icon.png"
+  ]) {
+    try {
+      if (existsSync(f)) {
+        copyFileSync(f, `${OUT_DIR}/${f.replace(/^.\//, "")}`);
+      }
+    } catch { }
+  }
+
+  console.log("Build done: env injected, assets/ & partials/ & scripts/ copied to dist/");
+} catch (err) {
+  console.error("BUILD FATAL ERROR:", err);
+  process.exit(1);
 }
-
-// 5) 追加の静的ファイルがあればここでコピー
-// ads.txt を dist にコピー
-copyFileSync("./ads.txt", `${OUT_DIR}/ads.txt`);
-// robots / sitemap（あれば）を dist にコピー
-try { copyFileSync("./robots.txt", `${OUT_DIR}/robots.txt`); } catch { }
-try { copyFileSync("./sitemap.xml", `${OUT_DIR}/sitemap.xml`); } catch { }
-
-// privacy.html を dist にコピー
-copyFileSync("./privacy.html", `${OUT_DIR}/privacy.html`);
-// contact.html を dist にコピー
-copyFileSync("./contact.html", `${OUT_DIR}/contact.html`);
-// terms.html を dist にコピー
-copyFileSync("./terms.html", `${OUT_DIR}/terms.html`);
-copyFileSync("./law.html", `${OUT_DIR}/law.html`);
-copyFileSync("./about.html", `${OUT_DIR}/about.html`);
-copyFileSync("./howto.html", `${OUT_DIR}/howto.html`);
-copyFileSync("./news.html", `${OUT_DIR}/news.html`);
-copyFileSync("./Geki-Mahjong.html", `${OUT_DIR}/Geki-Mahjong.html`);
-
-// 6) ルート直下の画像・アイコン類を dist へコピー（存在するものだけ）
-for (const f of [
-  "./BatriTable-icon.png",
-  "./field-card-pic.png",
-  "./field-board-pic.png",
-  "./PlayExample.png",
-  "./favicon.ico",
-  "./favicon-32.png",
-  "./favicon-16.png",
-  "./favicon-192.png",
-  "./favicon-512.png",
-  "./apple-touch-icon.png"
-]) {
-  try { copyFileSync(f, `${OUT_DIR}/${f.replace(/^.\//, "")}`); } catch { }
-}
-
-
-
-// BoardGame.html を dist にコピー
-//copyFileSync("./BoardGame.html", `${OUT_DIR}/BoardGame.html`);
-// CardGame.html を dist にコピー
-//copyFileSync("./CardGame.html", `${OUT_DIR}/CardGame.html`);
-
-
-console.log("Build done: env injected, assets/ & partials/ & scripts/ copied to dist/");
 
