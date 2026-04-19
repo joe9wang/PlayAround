@@ -1,11 +1,8 @@
 // scripts/inject-env.mjs
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, cpSync, existsSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-// 1) 入力/出力ファイル
 const OUT_DIR = "./dist";
 const PAGES = ["./index.html", "./game.html", "./mypage.html", "./login.html", "./plans.html"];
 const JS_MODULES = [
@@ -21,6 +18,16 @@ const DIRS = [
   { src: "./assets", dest: "assets" },
   { src: "./partials", dest: "partials" },
   { src: "./scripts", dest: "scripts" },
+  { src: "./TrumpPicture", dest: "TrumpPicture" },
+];
+
+const staticFiles = [
+  "./ads.txt", "./robots.txt", "./sitemap.xml", "./privacy.html", 
+  "./contact.html", "./terms.html", "./law.html", "./about.html", 
+  "./howto.html", "./news.html", "./Geki-Mahjong.html",
+  "./BatriTable-icon.png", "./PlayExample.png", "./favicon.ico",
+  "./favicon-32.png", "./favicon-16.png", "./favicon-192.png",
+  "./favicon-512.png", "./sw.js", "./site.webmanifest"
 ];
 
 const replMap = {
@@ -33,26 +40,28 @@ const replMap = {
   "__NEXT_PUBLIC_APPCHECK_KEY__": process.env.NEXT_PUBLIC_APPCHECK_KEY || ""
 };
 
+function copyRecursiveSync(src, dest) {
+  if (!existsSync(src)) return;
+  const stats = statSync(src);
+  if (stats.isDirectory()) {
+    if (!existsSync(dest)) mkdirSync(dest, { recursive: true });
+    readdirSync(src).forEach((child) => {
+      copyRecursiveSync(join(src, child), join(dest, child));
+    });
+  } else {
+    mkdirSync(dirname(dest), { recursive: true });
+    copyFileSync(src, dest);
+  }
+}
+
 try {
-  // 1. DO NOT Clean dist here (handled by shell locally, but Vercel needs it)
+  // 1. Ensure dist exists
   if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
 
-  // 1.5. Copy directories (needed for Vercel/production)
-  const DIRS = [
-    { src: "./assets", dest: "assets" },
-    { src: "./partials", dest: "partials" },
-    { src: "./scripts", dest: "scripts" },
-  ];
+  // 1.5. Copy directories
   for (const { src, dest } of DIRS) {
-    if (existsSync(src)) {
-      console.log(`Copying directory: ${src} -> ${join(OUT_DIR, dest)}`);
-      try {
-        cpSync(src, join(OUT_DIR, dest), { recursive: true, force: true });
-      } catch (e) {
-        console.warn(`Initial cpSync failed for ${src}, trying fallback...`, e);
-        // Fallback or ignore if it's just a local lock
-      }
-    }
+    console.log(`Copying directory: ${src} -> ${join(OUT_DIR, dest)}`);
+    copyRecursiveSync(src, join(OUT_DIR, dest));
   }
 
   // 2. Inject and overwrite files in dist
@@ -83,23 +92,16 @@ try {
   }
 
   // 3. Copy specific static files directly to dist
-  const staticFiles = [
-    "./ads.txt", "./robots.txt", "./sitemap.xml", "./privacy.html", 
-    "./contact.html", "./terms.html", "./law.html", "./about.html", 
-    "./howto.html", "./news.html", "./Geki-Mahjong.html",
-    "./BatriTable-icon.png", "./PlayExample.png", "./favicon.ico",
-    "./favicon-32.png", "./favicon-16.png", "./favicon-192.png",
-    "./favicon-512.png"
-  ];
-
   for (const f of staticFiles) {
     if (existsSync(f)) {
+      console.log(`Copying static file: ${f}`);
       copyFileSync(f, join(OUT_DIR, f.replace(/^\.\//, "")));
     }
   }
 
   console.log("Injection successful!");
 } catch (err) {
-  console.error("INJECTION FATAL ERROR:", err);
+  console.error("INJECTION FATAL ERROR:");
+  console.error(err);
   process.exit(1);
 }
