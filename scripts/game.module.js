@@ -11819,13 +11819,13 @@ function bindAreaContextMenuOnce() {
 
 
     const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
+    const isCardMode = CURRENT_ROOM_META?.fieldMode === 'card';
 
     document.querySelectorAll('#area-context-menu .host-only').forEach(el => {
-
-      el.style.display = isHost ? 'flex' : 'none';
-
-      if(el.tagName === 'HR') el.style.display = isHost ? 'block' : 'none'; // HR fallback
-
+      // カードゲームモードの場合は、ホストであってもレイアウト操作系を非表示にする
+      let show = isHost && !isCardMode;
+      el.style.display = show ? 'flex' : 'none';
+      if(el.tagName === 'HR') el.style.display = show ? 'block' : 'none'; // HR fallback
     });
 
 
@@ -11843,45 +11843,36 @@ function bindAreaContextMenuOnce() {
     
 
     // Hide 'Move' or 'Add' depending on area
-
     if (isHost && btnMove && btnAddArea) {
-
-      if (aClass === 'play-area' || aClass === 'main-play-area') {
-
+      if (isCardMode) {
         btnMove.style.display = 'none';
-
-        btnAddArea.style.display = 'flex';
-
-      } else {
-
-        btnMove.style.display = 'flex';
-
         btnAddArea.style.display = 'none';
-
+      } else {
+        if (aClass === 'play-area' || aClass === 'main-play-area') {
+          btnMove.style.display = 'none';
+          btnAddArea.style.display = 'flex';
+        } else {
+          btnMove.style.display = 'flex';
+          btnAddArea.style.display = 'none';
+        }
       }
-
     }
 
 
 
     if (isHost && btnDeleteArea) {
-
-      const isPlayOrHand = ['play-area', 'main-play-area', 'hand-area', 'board-play', 'board-hand'].includes(aClass) || 
-
-                           ['board-play', 'board-hand'].includes(currentTargetAreaId) || 
-
-                           area.classList.contains('board-hand') || area.classList.contains('hand-area');
-
-      if (isPlayOrHand) {
-
+      if (isCardMode) {
         btnDeleteArea.style.display = 'none';
-
       } else {
-
-        btnDeleteArea.style.display = 'flex';
-
+        const isPlayOrHand = ['play-area', 'main-play-area', 'hand-area', 'board-play', 'board-hand'].includes(aClass) || 
+                             ['board-play', 'board-hand'].includes(currentTargetAreaId) || 
+                             area.classList.contains('board-hand') || area.classList.contains('hand-area');
+        if (isPlayOrHand) {
+          btnDeleteArea.style.display = 'none';
+        } else {
+          btnDeleteArea.style.display = 'flex';
+        }
       }
-
     }
 
 
