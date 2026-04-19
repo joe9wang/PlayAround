@@ -9,9 +9,9 @@
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BatriTable｜画像対応のオンライン・ボード／カードゲーム（最大4人対戦）</title>
+  <title>BatriTable｜画像対応のオンライン・ボード／カードゲーム</title>
   <meta name="description"
-    content="BatriTableは画像対応のオンライン・ボード／カードゲーム。最大4人でルーム作成し、カードやボードを自由に配置・反転・整列・シャッフル。スマホ/PC対応で、すぐに友達と遊べます。" />
+    content="BatriTableは画像対応のオンライン・ボード／カードゲーム。ルーム作成し、カードやボードを自由に配置・反転・整列・シャッフル。スマホ/PC対応で、すぐに友達と遊べます。" />
   <link rel="canonical" href="https://www.batritable.com/">
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 
@@ -19,7 +19,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="BatriTable">
   <meta property="og:title" content="BatriTable｜画像対応のオンライン・ボード／カードゲーム">
-  <meta property="og:description" content="最大4人で画像カードを使って対戦。部屋作成、反転・整列・シャッフルなど操作も簡単。PC/スマホ対応。">
+  <meta property="og:description" content="画像カードを使って対戦。部屋作成、反転・整列・シャッフルなど操作も簡単。PC/スマホ対応。">
   <meta property="og:url" content="https://www.batritable.com/">
   <meta property="og:image" content="https://www.batritable.com/assets/ogp.jpg">
 
@@ -89,81 +89,85 @@
       background: var(--bg);
     }
 
-    /* ====== グリッド全体 ====== */
-    .layout {
-      min-height: 100dvh;
-      display: grid;
-      grid-template-columns: 260px minmax(0, 1fr) 320px;
-      grid-template-rows: 1fr;
-      gap: var(--gap);
-      padding: var(--gap);
-    }
-
-    /* 左：サイドバー（縦帯） */
-    .sidebar {
-      grid-row: 1;
-      grid-column: 1;
+    /* ====== ヘッダー ====== */
+    .site-header {
       background: linear-gradient(135deg, var(--purple) 0%, #8e3a9b 100%);
       color: #fff;
+      padding: 0 24px;
+      box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
       border-radius: var(--radius);
-      padding: 20px 18px;
+      margin: 16px 16px 0;
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
       display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-shadow: 0 8px 24px rgba(164, 10, 179, .25);
+      align-items: center;
+      gap: 16px;
+      height: 80px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-
-    .brand-mark {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: #fff;
-      color: var(--purple);
-      display: grid;
-      place-items: center;
-      font-weight: 800;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, .15);
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .brand h1 {
       margin: 0;
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       letter-spacing: .2px;
+      color: #fff;
     }
 
     .nav {
-      margin-top: 18px;
-      display: grid;
-      gap: 10px;
+      display: flex;
+      gap: 6px;
+      margin-left: 8px;
     }
 
     .nav a {
       color: #fff;
       text-decoration: none;
-      padding: 10px 12px;
+      padding: 8px 14px;
       border-radius: 10px;
       background: rgba(255, 255, 255, .08);
       backdrop-filter: saturate(140%) blur(2px);
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background .2s;
     }
 
     .nav a:hover {
-      background: rgba(255, 255, 255, .16)
+      background: rgba(255, 255, 255, .18)
     }
 
-    .sidebar .credit {
-      font-size: .8rem;
-      opacity: .85;
+    .header-spacer {
+      flex: 1;
+    }
+
+    .header-play-btn {
+      font-size: 0.9rem !important;
+      padding: 8px 20px !important;
+      border-radius: 10px !important;
+      flex-shrink: 0;
+    }
+
+    /* ====== グリッド全体 ====== */
+    .layout {
+      min-height: calc(100dvh - 80px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: 1fr auto;
+      gap: var(--gap);
+      padding: var(--gap);
     }
 
     /* 中央：ヒーロー（大きい緑の面） */
     .hero {
-      grid-column: 2;
+      grid-column: 1;
       grid-row: 1;
       background: linear-gradient(135deg, var(--green) 0%, #2fb078 100%);
       border-radius: var(--radius);
@@ -268,7 +272,7 @@
 
     /* 下：横帯（青） */
     .cta {
-      grid-column: 2 / 4;
+      grid-column: 1 / -1;
       grid-row: 2;
       background: var(--blue);
       color: #fff;
@@ -354,39 +358,43 @@
 
 
     /* ====== レスポンシブ ====== */
-    @media (max-width: 1000px) {
-      .layout {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto auto auto;
-      }
-
-      .sidebar {
-        grid-row: auto;
-        grid-column: auto;
-        flex-direction: row;
-        align-items: center;
-        gap: 14px;
+    @media (max-width: 768px) {
+      .header-inner {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 12px 0;
+        gap: 10px;
       }
 
       .nav {
-        grid-auto-flow: column;
-        overflow: auto;
+        order: 3;
+        width: 100%;
+        overflow-x: auto;
         white-space: nowrap;
-        gap: 8px;
-        margin: 0
+        gap: 6px;
+        margin-left: 0;
+        padding-bottom: 4px;
       }
 
       .nav a {
-        padding: 8px 10px
+        padding: 6px 12px;
+        font-size: 0.85rem;
+      }
+
+      .header-spacer {
+        display: none;
+      }
+
+      .header-play-btn {
+        margin-left: auto;
+      }
+
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto;
       }
 
       .hero {
-        grid-column: auto;
-        grid-row: auto
-      }
-
-      .right-top,
-      .right-bottom {
         grid-column: auto;
         grid-row: auto
       }
@@ -395,51 +403,48 @@
         grid-column: auto;
         grid-row: auto
       }
-
-      .sidebar .credit {
-        display: none
-      }
-
-      /* モバイルは簡素化 */
     }
   </style>
 </head>
 
 <body>
-  <div class="layout">
-
-    <!-- 左：縦帯（サイドバー）を共通化 -->
-    <div id="sidebar-mount"></div>
-    <script>
-      (async () => {
-        const el = document.getElementById('sidebar-mount');
-        // 相対→絶対の順でフォールバック読み込み（どちらか存在すればOK）
-        async function loadSidebar() {
-          const tries = ["./partials/sidebar.html", "/partials/sidebar.html"];
-          for (const url of tries) {
-            try {
-              const res = await fetch(url, { cache: "no-store" });
-              if (res.ok) { el.innerHTML = await res.text(); return; }
-            } catch (e) { }
-          }
-          console.warn("sidebar.html が見つかりませんでした。");
+  <!-- ヘッダー -->
+  <div id="header-mount"></div>
+  <script>
+    (async () => {
+      const el = document.getElementById('header-mount');
+      async function loadHeader() {
+        const tries = ["./partials/header.html", "/partials/header.html"];
+        for (const url of tries) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (res.ok) { el.innerHTML = await res.text(); return; }
+          } catch (e) { }
         }
-        loadSidebar();
-      })();
-    </script>
+        console.warn("header.html が見つかりませんでした。");
+      }
+      loadHeader();
+    })();
+  </script>
+
+  <div class="layout">
 
     <!-- 中央：ヒーロー（大きい緑） -->
     <main class="hero">
       <div>
-        <h2>カードやボドゲを “自由に作り, すぐに遊ぶ”</h2>
-        <p>画像をアップロードしてカード化。すぐに遊ぶことが可能！<br>
-          ダイス・トークン・カウンター機能搭載。ボドゲ・カードゲームのプレイを最大限にサポート！<br>
-          ドラッグ・回転・表裏反転・デッキシャッフル機能搭載。リアルに近いプレイ体験を！<br>
-          ブラウザだけで、すぐにプレイ可能。基本無料・インストール不要！<br>
-          自分だけのカードゲーム・ボードゲームを“すぐに”友達と！<br>
-          最大8人までのプレイ人数に対応。<br>
-          <!-- すぐに遊べる、オリジナルゲームが搭載。<br> -->
-        </p>
+        <center>
+          <h2>
+            友達とオンラインで自由にボドゲ・カードゲームを楽しもう！<br>
+            カードやボドゲを "自由に作り, すぐに遊べる" バトライテーブル<br>
+          </h2>
+        </center>
+      </div>
+
+      <!-- プレイするボタン -->
+      <div style="text-align:center; margin-top: 20px;">
+        <a href="game.html" class="btn-play" aria-label="BatriTableをプレイする">
+          ▶ プレイする
+        </a>
       </div>
 
       <!-- 中央の画像 (PlayExample.png) -->
@@ -448,39 +453,21 @@
           style="width:100%; max-width:900px; height:auto; border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1);" />
       </div>
 
-      <!-- プレイするボタン -->
-      <div style="text-align:center; margin-top: 0px;">
-        <a href="game.html" class="btn-play" aria-label="BatriTableをプレイする">
-          ▶ プレイする
-        </a>
+      <div>
+        <p>画像をアップロードしてカード化。すぐに遊ぶことが可能！<br>
+          ダイス・トークン・カウンター機能搭載。ボドゲ・カードゲームのプレイを最大限にサポート！<br>
+          ドラッグ・回転・表裏反転・デッキシャッフル機能搭載。リアルに近いプレイ体験を！<br>
+          ブラウザだけで、すぐにプレイ可能。基本無料・インストール不要！<br>
+          自分だけのカードゲーム・ボードゲームを"すぐに"友達と！<br>
+          最大8人までのプレイ人数に対応。<br>
+          <!-- すぐに遊べる、オリジナルゲームが搭載。<br> -->
+        </p>
       </div>
+
+
 
     </main>
 
-    <!-- 右側サイドバー（赤・橙カード） -->
-    <div class="right-sidebar">
-      <!-- 右上：赤カード（更新情報など） -->
-      <section class="card right-top" id="news" aria-labelledby="news-title">
-        <h3 id="news-title">お知らせ</h3>
-        <ul style="margin:0; padding-left:1.1em">
-          <li>v0.9：手札の裏表示固定、デッキ整列／シャッフル改善</li>
-          <li>v0.8：共有プレイエリア追加、ズーム＆パン個別視点</li>
-          <li>v0.7：画像複数アップロード対応、右クリックで表裏反転</li>
-        </ul>
-      </section>
-
-      <!-- 右下：橙カード（使い方） -->
-      <section class="card right-bottom" id="howto" aria-labelledby="howto-title">
-        <div>
-          <h3 id="howto-title" style="color:#3d2600">かんたん3ステップ</h3>
-          <ol style="margin:0; padding-left:1.2em">
-            <li>ルーム番号を決めて共有</li>
-            <li>各自プレイヤー番号を選んで入室</li>
-            <li>画像をアップロードしてカードを並べるだけ！</li>
-          </ol>
-        </div>
-      </section>
-    </div>
 
     <!-- 下部：青い横帯（CTA） -->
     <!-- フッター -->

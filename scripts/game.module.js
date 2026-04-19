@@ -404,8 +404,6 @@ const pickModeCardBtn = document.getElementById('pick-mode-card');
 
 const pickModeBoardBtn = document.getElementById('pick-mode-board');
 
-const pickModeTrumpBtn = document.getElementById('pick-mode-trump');
-
 
 
 
@@ -426,15 +424,11 @@ function updateModePickButtons() {
 
   set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
 
-  if (pickModeTrumpBtn) set(pickModeTrumpBtn, CREATE_FIELD_MODE === 'trump'); //
-
 }
 
 pickModeCardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'card'; updateModePickButtons(); });
 
 pickModeBoardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'board'; updateModePickButtons(); });
-
-pickModeTrumpBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'trump'; updateModePickButtons(); });
 
 updateModePickButtons();
 

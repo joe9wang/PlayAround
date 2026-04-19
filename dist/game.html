@@ -50,8 +50,11 @@
   <header class="site-header game-header" role="banner">
     <div class="site-header__inner">
       <div class="header-left">
-        <a class="site-brand" href="/" aria-label="BatriTable Home">BatriTable</a>
-        <span aria-label="SOLVENTER" class="brand-badge-header">SOLVENTER</span>
+        <a class="site-brand" href="/" aria-label="BatriTable Home">
+          <img src="/BatriTable-icon.png?v=3" alt="BatriTableアイコン"
+            style="width:36px; height:36px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.15);" />
+          <h1>BatriTable</h1>
+        </a>
       </div>
 
       <nav class="site-nav" aria-label="Global">
@@ -93,19 +96,6 @@
       </div>
       <div class="lobby-title" data-i18n="lobby.welcome">
         バトライテーブルへようこそ！
-      </div>
-      <div class="lobby-links">
-        <a data-i18n="links.privacy" href="/privacy.html" rel="noopener" target="_blank">
-          プライバシーポリシー
-        </a>
-        |
-        <a data-i18n="links.terms" href="/terms.html" rel="noopener" target="_blank">
-          利用規約
-        </a>
-        |
-        <a data-i18n="links.contact" href="/contact.html" rel="noopener" target="_blank">
-          お問い合わせ
-        </a>
       </div>
       <!-- ロビー上部のログインUI（リンクの直下） -->
       <div class="lobby-auth" id="lobby-auth-area">
@@ -163,36 +153,7 @@
             <input class="field" data-i18n-placeholder="join.name.ph" id="player-name" maxlength="24"
               placeholder="例: SOLVENTER" type="text" />
           </div>
-          <label class="lobby-label" data-i18n="join.chooseSeat">
-            座席を選択
-          </label>
-          <!-- join 用の座席グリッド（IDは付けない：JSが :not(#create-seat-grid) で拾う） -->
-          <div aria-label="Join seats" class="seat-grid" role="group">
-            <button class="seat-btn" data-seat="1" type="button">
-              P1
-              <span class="seat-note">
-              </span>
-            </button>
-            <button class="seat-btn" data-seat="2" type="button">
-              P2
-              <span class="seat-note">
-              </span>
-            </button>
-            <button class="seat-btn" data-seat="3" type="button">
-              P3
-              <span class="seat-note">
-              </span>
-            </button>
-            <button class="seat-btn" data-seat="4" type="button">
-              P4
-              <span class="seat-note">
-              </span>
-            </button>
-            <button class="seat-btn spectator-btn" data-seat="spectator" type="button" data-i18n="join.seat.spectator"
-              style="grid-column: 1 / -1;">
-              観戦
-            </button>
-          </div>
+
           <div class="row" style="margin-top:auto; padding-top:16px; justify-content:flex-end; gap:8px;">
             <button class="btn" data-i18n="join.start" disabled="" id="start-btn" type="button">
               開始
@@ -240,20 +201,7 @@
               <option value="8">8人</option>
             </select>
           </div>
-          <label class="lobby-label" data-i18n="create.chooseSeat">
-            座席を選択
-          </label>
-          <!-- create 用の座席グリッド（JSが #create-seat-grid を参照） -->
-          <div aria-label="Create seats" class="seat-grid" id="create-seat-grid" role="group">
-            <button class="seat-btn" data-create-seat="1" type="button">P1</button>
-            <button class="seat-btn" data-create-seat="2" type="button">P2</button>
-            <button class="seat-btn" data-create-seat="3" type="button">P3</button>
-            <button class="seat-btn" data-create-seat="4" type="button">P4</button>
-            <button class="seat-btn" data-create-seat="5" type="button" style="display:none;">P5</button>
-            <button class="seat-btn" data-create-seat="6" type="button" style="display:none;">P6</button>
-            <button class="seat-btn" data-create-seat="7" type="button" style="display:none;">P7</button>
-            <button class="seat-btn" data-create-seat="8" type="button" style="display:none;">P8</button>
-          </div>
+
           <label class="lobby-label" data-i18n="create.chooseMode" style="margin-top:10px;">
             フィールド構成を選択
           </label>
@@ -266,7 +214,6 @@
               type="button">
               🎲 ボードゲーム
             </button>
-            <button id="pick-mode-trump" class="btn secondary" data-i18n="create.mode.trump">トランプ</button>
           </div>
           <div class="row" id="create-btn-row" style="margin-top:auto; padding-top:16px; justify-content:flex-end;">
             <button class="btn" data-i18n="create.createBtn" id="create-room-btn">
@@ -283,13 +230,13 @@
     <div id="upload-card" class="upload-box"
       style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-right: 1px solid #ccc; background: #fff; cursor: pointer;">
       <div style="font-weight:bold;">🃏 カードを追加</div>
-      <div style="font-size:10px; color:#666; margin-top:2px;">（自動でカードサイズに合わせる）</div>
+      <div style="font-size:10px; color:#666; margin-top:2px;">（タップまたはD&D）</div>
       <input accept="image/*" id="file-input-card" multiple="" type="file" style="display:none;" />
     </div>
     <div id="upload-token" class="upload-box"
       style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-left: 1px solid #ccc; background: #fff; cursor: pointer;">
       <div style="font-weight:bold;">🪙 トークンを追加</div>
-      <div style="font-size:10px; color:#666; margin-top:2px;">（サイズを変更しない）</div>
+      <div style="font-size:10px; color:#666; margin-top:2px;">（原画サイズ）</div>
       <input accept="image/*" id="file-input-token" multiple="" type="file" style="display:none;" />
     </div>
   </div>
@@ -322,6 +269,7 @@
         <button class="sl-btn" onclick="faceUpAll()" data-i18n="side.faceUp">🂡 全て表に</button>
       </div>
       <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
+      <button class="sl-btn" onclick="collectSelectedCards()" data-i18n="side.collectSelected">❖ 選択カードをまとめる</button>
       <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードを集める</button>
       <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
       <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
@@ -331,11 +279,15 @@
       </div>
       <div class="sl-row" role="group" aria-label="dice-coin-row1">
         <button class="sl-btn" id="flip-coin-btn" onclick="flipCoin()" data-i18n="side.flipCoin">🪙 コイントス</button>
-        <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイス</button>
+        <button class="sl-btn" id="roll-d4-btn" onclick="rollD4()" data-i18n="side.rollD4">🎲 4面ダイス</button>
       </div>
       <div class="sl-row" role="group" aria-label="dice-coin-row2">
+        <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイス</button>
         <button class="sl-btn" id="roll-d10-btn" onclick="rollD10()" data-i18n="side.rollD10">🎲 10面ダイス</button>
+      </div>
+      <div class="sl-row" role="group" aria-label="dice-coin-row3">
         <button class="sl-btn" id="roll-d20-btn" onclick="rollD20()" data-i18n="side.rollD20">🎲 20面ダイス</button>
+        <button class="sl-btn" id="roll-d100-btn" onclick="rollD100()" data-i18n="side.rollD100">🎲 100面ダイス</button>
       </div>
       <div class="section-label">カウンター・トークン<br>
         <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで削除)</span>
@@ -374,8 +326,8 @@
       <div aria-live="polite" class="host-toggle" id="host-otherops">
         <div class="section-label">ホスト専用</div>
         <div class="sl-row" role="group" aria-label="Save Room">
-          <button class="sl-btn" onclick="openRoomSaveDialog()" data-i18n="side.saveRoom" style="width:100%;">💾
-            ルームを保存</button>
+          <button class="sl-btn" id="host-otherops-save-btn" onclick="openRoomSaveDialog('save')">💾 ルームをセーブ</button>
+          <button class="sl-btn" onclick="openRoomSaveDialog('load')">📂 ルームをロード</button>
         </div>
         <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
           <div style="font-size:12px;color:#555;">
@@ -394,13 +346,30 @@
         </div>
       </div>
 
-      <!-- ★ 非ホスト専用：退室ボタン（参加中のみ表示） -->
+      <!-- ★ 座席操作 -->
+      <button class="sl-btn" id="sit-seat-btn" style="display:none; font-weight:bold;">
+        🪑 座席に座る
+      </button>
+      <button class="sl-btn" id="leave-seat-btn" style="display:none; font-weight:bold;">
+        🚶‍♂️ 座席から外れる
+      </button>
+
+      <!-- ★ 参加中のみ表示：退室/終了ボタン -->
       <button class="sl-btn" id="leave-room-btn" style="display:none">
-        🚪 退室する（ゲスト）
+        🚪 退室する
+      </button>
+
+      <button class="sl-btn" id="host-save-room-btn" style="display:none; margin-top:20px;"
+        onclick="openRoomSaveDialog('save')">
+        💾 ルームをセーブ
+      </button>
+      <button class="sl-btn" id="host-load-room-btn" style="display:none; margin-top:4px;"
+        onclick="openRoomSaveDialog('load')">
+        📂 ルームをロード
       </button>
 
       <button class="danger sl-btn" id="end-room-btn" style="display:none">
-        🚪 ルームを終了（ホスト）
+        🚪 ルームを終了する
       </button>
 
     </div><!-- /#ops-scroll -->
@@ -440,7 +409,7 @@
       <div class="player-area player-1">
         <div class="player-label">
           <span class="label-seat">
-            P1
+            SEAT1
           </span>
           <span class="label-name">
           </span>
@@ -471,7 +440,7 @@
       <div class="player-area player-2">
         <div class="player-label">
           <span class="label-seat">
-            P2
+            SEAT2
           </span>
           <span class="label-name">
           </span>
@@ -502,7 +471,7 @@
       <div class="player-area player-3">
         <div class="player-label">
           <span class="label-seat">
-            P3
+            SEAT3
           </span>
           <span class="label-name">
           </span>
@@ -533,7 +502,7 @@
       <div class="player-area player-4">
         <div class="player-label">
           <span class="label-seat">
-            P4
+            SEAT4
           </span>
           <span class="label-name">
           </span>
@@ -561,7 +530,7 @@
       <div class="player-area player-5" style="display:none;">
         <div class="player-label">
           <span class="label-seat">
-            P5
+            SEAT5
           </span>
           <span class="label-name">
           </span>
@@ -589,7 +558,7 @@
       <div class="player-area player-6" style="display:none;">
         <div class="player-label">
           <span class="label-seat">
-            P6
+            SEAT6
           </span>
           <span class="label-name">
           </span>
@@ -617,7 +586,7 @@
       <div class="player-area player-7" style="display:none;">
         <div class="player-label">
           <span class="label-seat">
-            P7
+            SEAT7
           </span>
           <span class="label-name">
           </span>
@@ -645,7 +614,7 @@
       <div class="player-area player-8" style="display:none;">
         <div class="player-label">
           <span class="label-seat">
-            P8
+            SEAT8
           </span>
           <span class="label-name">
           </span>
@@ -675,30 +644,30 @@
           <div class="zone-label" data-i18n="zone.play.shared">プレイエリア（共有）</div>
         </div>
         <div class="board-hand" id="board-hand-1">
-          <div class="zone-label" data-i18n="zone.hand">手札エリア P1</div>
+          <div class="zone-label" data-i18n="zone.hand">手札エリア SEAT1</div>
           <div class="board-name">
-            <span class="label-seat">P1</span>
+            <span class="label-seat">SEAT1</span>
             <span class="label-name"></span>
           </div>
         </div>
         <div class="board-hand" id="board-hand-2">
-          <div class="zone-label" data-i18n="zone.hand">手札エリア P2</div>
+          <div class="zone-label" data-i18n="zone.hand">手札エリア SEAT2</div>
           <div class="board-name">
-            <span class="label-seat">P2</span>
+            <span class="label-seat">SEAT2</span>
             <span class="label-name"></span>
           </div>
         </div>
         <div class="board-hand" id="board-hand-3">
-          <div class="zone-label" data-i18n="zone.hand">手札エリア P3</div>
+          <div class="zone-label" data-i18n="zone.hand">手札エリア SEAT3</div>
           <div class="board-name">
-            <span class="label-seat">P3</span>
+            <span class="label-seat">SEAT3</span>
             <span class="label-name"></span>
           </div>
         </div>
         <div class="board-hand" id="board-hand-4">
-          <div class="zone-label" data-i18n="zone.hand">手札エリア P4</div>
+          <div class="zone-label" data-i18n="zone.hand">手札エリア SEAT4</div>
           <div class="board-name">
-            <span class="label-seat">P4</span>
+            <span class="label-seat">SEAT4</span>
             <span class="label-name"></span>
           </div>
         </div>
@@ -836,6 +805,23 @@
   </div>
   </div>
 
+  <!-- 座席選択モーダル -->
+  <div id="seat-select-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+    <div
+      style="background:#fff; padding:20px; border-radius:12px; max-width:90%; width:320px; box-shadow:0 6px 24px rgba(0,0,0,.3);">
+      <div style="font-weight:700; font-size:16px; margin-bottom:12px;">座席を選択してください</div>
+      <div id="seat-select-grid" class="seat-grid"
+        style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
+        <!-- JSで動的にボタンを生成します -->
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button id="seat-select-cancel" class="btn secondary">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+
 
   <!-- process スタブ（非module。先に読み込む） -->
   <script src="scripts/polyfills.js"></script>
@@ -869,6 +855,10 @@
     <ul>
       <li id="area-ctx-enlarge" class="host-only">🔍 拡大</li>
       <li id="area-ctx-shrink" class="host-only">🔍 縮小</li>
+      <li id="area-ctx-enlarge-h" class="host-only">↕️ 縦に2倍</li>
+      <li id="area-ctx-shrink-h" class="host-only">↕️ 縦に半分</li>
+      <li id="area-ctx-enlarge-w" class="host-only">↔️ 横に2倍</li>
+      <li id="area-ctx-shrink-w" class="host-only">↔️ 横に半分</li>
       <li id="area-ctx-move" class="host-only">🖐 移動</li>
       <li id="area-ctx-add" class="host-only menu-has-sub">➕ エリア追加 ▶
         <ul class="sub-menu">
@@ -877,7 +867,8 @@
       </li>
       <hr id="area-ctx-hr" class="host-only" style="margin: 4px 0; border: 0; border-top: 1px solid #555;">
       <li id="area-ctx-change-bg">🖼 エリア画像変更</li>
-      <li id="area-ctx-remove-bg" style="color: #ff4444;">❌ エリア画像削除</li>
+      <li id="area-ctx-remove-bg" style="color: #ffaa44;">🧹 エリア画像リセット</li>
+      <li id="area-ctx-delete-area" class="host-only" style="color: #ff4444;">🗑️ エリアを完全に削除</li>
     </ul>
   </div>
   <!-- Hidden file input for area background -->
