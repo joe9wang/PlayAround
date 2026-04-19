@@ -22,13 +22,6 @@
     <priority>0.6</priority>
   </url>
 
-  <!-- お知らせ -->
-  <url>
-    <loc>https://www.batritable.com/news.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
   <!-- 利用規約 -->
   <url>
     <loc>https://www.batritable.com/terms.html</loc>

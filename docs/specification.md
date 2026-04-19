@@ -41,7 +41,6 @@ BatriTable は、**画像をアップロードしてカード化し、最大4人
 | **遊び方** | `howto.html` | 操作ガイド |
 | **激・麻雀** | `Geki-Mahjong.html` | 搭載オリジナルゲーム「激・麻雀」のルール解説 |
 | **マイページ** | `mypage.html` | プロフィール＆セーブデータ管理（要Googleログイン） |
-| **お知らせ** | `news.html` | 更新情報 |
 | **運営者情報** | `about.html` | 運営情報 |
 | **プライバシー** | `privacy.html` | プライバシーポリシー |
 | **利用規約** | `terms.html` | 利用規約 |
@@ -513,7 +512,6 @@ card-game/
 ├── howto.html              # 遊び方ガイド
 ├── Geki-Mahjong.html       # 激・麻雀ルール解説
 ├── mypage.html             # マイページ
-├── news.html               # お知らせ
 ├── about.html              # 運営者情報
 ├── privacy.html            # プライバシーポリシー
 ├── terms.html              # 利用規約
