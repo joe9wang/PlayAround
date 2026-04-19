@@ -3502,6 +3502,52 @@ function renderAreaColors() {
 
 }
 
+async function triggerAreaColorPicker(el, seat, key) {
+
+  if (seat !== CURRENT_PLAYER) return;
+
+  if (!CURRENT_ROOM) return;
+
+
+
+  const input = document.createElement('input');
+
+  input.type = 'color';
+
+  input.value = getSeatAreaColor(seat, key);
+
+  input.style.position = 'fixed';
+
+  input.style.left = '-9999px';
+
+  document.body.appendChild(input);
+
+
+
+  input.addEventListener('change', async () => {
+
+    const picked = input.value;
+
+    el.style.background = picked;
+
+    const prev = (currentSeatMap[seat]?.areaColors) || {};
+
+    const next = { ...prev, [key]: picked };
+
+    updateSeatBatched(seat, { areaColors: next, updatedAt: serverTimestamp() });
+
+    input.remove();
+
+  }, { once: true });
+
+
+
+  input.click();
+
+}
+
+
+
 function bindAreaColorHandlers() {
 
   const currentSeats = Object.keys(currentSeatMap).map(Number);
@@ -3530,8 +3576,6 @@ function bindAreaColorHandlers() {
 
     ].forEach(({ el, key }) => {
 
-
-
       if (!el || el.__colorHandlerBound) return;
 
       el.__colorHandlerBound = true;
@@ -3542,39 +3586,7 @@ function bindAreaColorHandlers() {
 
         ev.stopPropagation();
 
-        if (seat !== CURRENT_PLAYER) return;
-
-        if (!CURRENT_ROOM) return;
-
-        const input = document.createElement('input');
-
-        input.type = 'color';
-
-        input.value = getSeatAreaColor(seat, key);
-
-        input.style.position = 'fixed';
-
-        input.style.left = '-9999px';
-
-        document.body.appendChild(input);
-
-        input.addEventListener('change', async () => {
-
-          const picked = input.value;
-
-          el.style.background = picked;
-
-          const prev = (currentSeatMap[seat]?.areaColors) || {};
-
-          const next = { ...prev, [key]: picked };
-
-          updateSeatBatched(seat, { areaColors: next, updatedAt: serverTimestamp() });
-
-          input.remove();
-
-        }, { once: true });
-
-        input.click();
+        triggerAreaColorPicker(el, seat, key);
 
       });
 
@@ -11090,7 +11102,11 @@ let unsubscribeAreas = null;
 
 let areaContextMenuBound = false;
 
-let currentTargetAreaId = null;
+let currentTargetAreaId = null; 
+// For context menu targeting
+let currentTargetAreaSeat = null; // 1..8 if seat area
+let currentTargetAreaKey = null;  // 'deck', 'main', etc.
+let currentTargetAreaElement = null;
 
 
 
@@ -11590,6 +11606,8 @@ function bindAreaContextMenuOnce() {
 
   const btnChangeBg = document.getElementById('area-ctx-change-bg');
 
+  const btnChangeColor = document.getElementById('area-ctx-change-color');
+
   const btnRemoveBg = document.getElementById('area-ctx-remove-bg');
 
   const btnDeleteArea = document.getElementById('area-ctx-delete-area');
@@ -11726,15 +11744,31 @@ function bindAreaContextMenuOnce() {
 
 
 
+    currentTargetAreaSeat = null;
+
+    currentTargetAreaKey = null;
+
+    currentTargetAreaElement = area;
+
+
+
     if (playerArea) {
 
-      const pMatch = playerArea.className.match(/(player-\d)/);
+      const pMatch = playerArea.className.match(/player-(\d)/);
 
       pClass = pMatch ? pMatch[1] : '';
 
-      if (!pClass || !aClass) return; // IDがない場合はメニューを閉じる（表示しない）
+      if (!pClass || !aClass) return; 
 
-      currentTargetAreaId = `${pClass}-${aClass}`;
+
+
+      const seatNum = parseInt(pClass, 10);
+
+      currentTargetAreaSeat = seatNum;
+
+      currentTargetAreaKey = aClass === 'main-play-area' ? 'main' : aClass.replace('-area', '');
+
+      currentTargetAreaId = `player-${seatNum}-${currentTargetAreaKey}`;
 
     } else if (isDynamicOrMoved) {
 
@@ -11793,6 +11827,18 @@ function bindAreaContextMenuOnce() {
       if(el.tagName === 'HR') el.style.display = isHost ? 'block' : 'none'; // HR fallback
 
     });
+
+
+
+    // エリア色変更の表示制御: 自分の座席エリアのみ
+
+    if (btnChangeColor) {
+
+      const isMyArea = currentTargetAreaSeat === CURRENT_PLAYER;
+
+      btnChangeColor.style.display = isMyArea ? 'flex' : 'none';
+
+    }
 
     
 
@@ -11875,6 +11921,28 @@ function bindAreaContextMenuOnce() {
     ctxMenu.style.display = 'none';
 
   });
+
+
+
+  // メニュー: エリア色変更をクリック
+
+  if (btnChangeColor) {
+
+    btnChangeColor.addEventListener('click', (e) => {
+
+      e.stopPropagation();
+
+      ctxMenu.style.display = 'none';
+
+      if (currentTargetAreaElement && currentTargetAreaSeat && currentTargetAreaKey) {
+
+        triggerAreaColorPicker(currentTargetAreaElement, currentTargetAreaSeat, currentTargetAreaKey);
+
+      }
+
+    });
+
+  }
 
 
 
