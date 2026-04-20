@@ -19,6 +19,7 @@ const DIRS = [
   { src: "./partials", dest: "partials" },
   { src: "./scripts", dest: "scripts" },
   { src: "./TrumpPicture", dest: "TrumpPicture" },
+  { src: "./image", dest: "image" },
 ];
 
 const staticFiles = [
