@@ -202,12 +202,30 @@
       border: 5px dashed #666;
       box-sizing: border-box;
       display: grid;
-      /* 3列構成: 左(特殊) / 中(メイン) / 右(スタック) */
+      /* スタンダード（デフォルト）のグリッド構成 */
       grid-template-columns: var(--special-w) 10fr 2fr;
-      /* 3行構成: プレイ1 / プレイ2 / 手札 (比率 1.5 : 1.5 : 1 = 合計75% vs 25%) */
       grid-template-rows: 1.5fr 1.5fr 1fr;
       gap: 6px;
       min-width: 0;
+    }
+
+    /* === シンプルレイアウト適用時 === */
+    .player-area.layout-simple {
+      grid-template-columns: 1fr;
+      grid-template-rows: 3fr 1fr; /* メイン 75% / 手札 25% */
+    }
+    .player-area.layout-simple .special-area,
+    .player-area.layout-simple .discard-area,
+    .player-area.layout-simple .deck-area {
+      display: none !important;
+    }
+    .player-area.layout-simple .main-play-area {
+      grid-column: 1 / 2;
+      grid-row: 1 / 2;
+    }
+    .player-area.layout-simple .hand-area {
+      grid-column: 1 / 2;
+      grid-row: 2 / 3;
     }
 
     /* モーダル内リンク */

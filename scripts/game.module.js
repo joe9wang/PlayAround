@@ -2889,64 +2889,79 @@ async function ensureAuthReady(timeoutMs = 8000) {
 }
 
 // ===== create room (host)
-
-//createRoomBtn.addEventListener('click', async () => {
-
-//await ensureAuthReady();
-
-
+let TEMP_CREATE_ROOM_ID = '';
+let TEMP_CREATE_CREATOR_NAME = '';
 
 createRoomBtn.addEventListener('click', async () => {
-
   await ensureAuthReady();
 
+  TEMP_CREATE_ROOM_ID = (newRoomIdInput.value || '').trim();
+  TEMP_CREATE_CREATOR_NAME = (newPlayerNameInput.value || '').trim();
+  if (!TEMP_CREATE_ROOM_ID) { alert(t('err.roomId')); return; }
+  if (!TEMP_CREATE_CREATOR_NAME) { alert(t('err.playerName')); newPlayerNameInput.focus(); return; }
 
-
-  const id = (newRoomIdInput.value || '').trim();
-
-  const creatorName = (newPlayerNameInput.value || '').trim();  if (!id) { alert(t('err.roomId')); return; }
-  if (!creatorName) { alert(t('err.playerName')); newPlayerNameInput.focus(); return; }
-
-
-
-  // ===== ルーム作成回数制限（非課金: 1日5回） =====
-
+  // 1日5回上限チェック
   if (!IS_PREMIUM) {
-
     const today = new Date().toISOString().slice(0, 10);
-
     const lsKey = `pa:rooms-created-${today}`;
-
     const count = parseInt(localStorage.getItem(lsKey) || '0', 10);
-
     const limit = getLimits(false).roomsPerDay;
-
     if (count >= limit) {
-
       alert(`本日のルーム作成上限（${limit}回）に達しました。\nプレミアム会員は無制限に作成できます。`);
-
       return;
-
     }
-
-    localStorage.setItem(lsKey, String(count + 1));
-
   }
 
+  // カードゲームモードの場合、レイアウト選択モーダルを表示
+  if (CREATE_FIELD_MODE === 'card') {
+    window.selectLayoutOption('standard'); // 初期値
+    document.getElementById('field-layout-modal').style.display = 'flex';
+  } else {
+    // ボードゲームモード等はそのまま作成
+    executeRoomCreation('standard');
+  }
+});
 
+// モーダルのOK/キャンセル
+document.getElementById('field-layout-ok')?.addEventListener('click', () => {
+  executeRoomCreation(window.CURRENT_LAYOUT_SELECTION || 'standard');
+});
+document.getElementById('field-layout-cancel')?.addEventListener('click', () => {
+  document.getElementById('field-layout-modal').style.display = 'none';
+});
 
-  //createRoomBtn.disabled = true;
+window.selectLayoutOption = function(type) {
+  window.CURRENT_LAYOUT_SELECTION = type;
+  const opts = document.querySelectorAll('.layout-option');
+  opts.forEach(opt => {
+    const isActive = opt.id === `layout-opt-${type}`;
+    opt.classList.toggle('active', isActive);
+    const wrap = opt.querySelector('.layout-preview-wrap');
+    const label = opt.querySelector('div:last-child');
+    const overlay = opt.querySelector('.selection-overlay');
+    if (wrap) wrap.style.borderColor = isActive ? '#2d8' : '#eee';
+    if (label) label.style.color = isActive ? '#2d8' : '#555';
+    if (overlay) overlay.style.opacity = isActive ? '1' : '0';
+  });
+};
 
-  //const oldText = createRoomBtn.textContent;
+async function executeRoomCreation(layoutType) {
+  const modal = document.getElementById('field-layout-modal');
+  if (modal) modal.style.display = 'none';
 
-  //createRoomBtn.textContent = '作成中…';
+  const id = TEMP_CREATE_ROOM_ID;
+  const creatorName = TEMP_CREATE_CREATOR_NAME;
 
-
+  // 制限カウントアップ（非課金時のみ）
+  if (!IS_PREMIUM) {
+    const today = new Date().toISOString().slice(0, 10);
+    const lsKey = `pa:rooms-created-${today}`;
+    const count = parseInt(localStorage.getItem(lsKey) || '0', 10);
+    localStorage.setItem(lsKey, String(count + 1));
+  }
 
   createRoomBtn.disabled = true;
-
   const oldText = createRoomBtn.textContent;
-
   createRoomBtn.textContent = '作成中…';
 
 
@@ -3118,124 +3133,77 @@ createRoomBtn.addEventListener('click', async () => {
       roomClosed: false,
 
       fieldMode: isTrump ? 'board' : CREATE_FIELD_MODE,
-
+      fieldLayout: layoutType || 'standard',
       joinPassHash: joinPassHash,
-
       hasPassword: !!joinPassHash,
-
       playerCount: parseInt(document.getElementById('new-player-count')?.value || '4', 10)
-
     };
 
-    // trump のときだけ追加（undefined を書かない）
-
+    // trump のときだけ追加
     if (isTrump) {
-
       payload.allowOtherOps = true;
-
       payload.initTrump = true;
-
     }
 
-
-
     await setDoc(roomRef, payload, { merge: true });
-
     await resetRoomState(id);
 
-
-
     IS_ROOM_CREATOR = true;
-
     startHostHeartbeat(id);
 
-
-
-    CURRENT_ROOM_META = { ...(CURRENT_ROOM_META || {}), hostUid: CURRENT_UID, hostDisplayName: creatorName };
-
+    CURRENT_ROOM_META = { 
+      ...(CURRENT_ROOM_META || {}), 
+      hostUid: uid, 
+      hostDisplayName: creatorName,
+      fieldMode: isTrump ? 'board' : CREATE_FIELD_MODE,
+      fieldLayout: layoutType || 'standard'
+    };
     renderFieldLabels();
 
-
-
-    playerNameInput.value = creatorName;    joinRoomInput.value = id;
+    if (playerNameInput) playerNameInput.value = creatorName;
+    if (joinRoomInput) joinRoomInput.value = id;
+    
     loadSeatStatus();
     await setDoc(doc(db, `rooms/${id}`), { hostSeat: null, updatedAt: serverTimestamp() }, { merge: true });
+    
     CURRENT_PLAYER = 'spectator';
     startSession(id, 'spectator');
-
-
-
-    // 座席確定後にHP購読を開始（ロビーでは購読しない）
-
     CURRENT_ROOM = id;
 
     try {
-
       subscribeHP(CURRENT_ROOM);
-
-      renderHPPanel(); // isMe が true になり、自席HP入力が有効化される
-
+      renderHPPanel();
     } catch (e) {
-
       console.warn('[HP] subscribe failed', e);
-
     }
-
-
-
-    // ★修正: trump モードでは、まず room.fieldMode='trump' を確実に適用してから共有デッキに生成
 
     if (CREATE_FIELD_MODE === 'trump') {
-
-      // 1) ルーム doc に fieldMode を即反映（購読更新を待たずローカルにも反映）
-
       await setDoc(doc(db, `rooms/${id}`), { fieldMode: 'trump', updatedAt: serverTimestamp() }, { merge: true });
-
-      CURRENT_ROOM_META = { ...(CURRENT_ROOM_META || {}), fieldMode: 'trump' };
-
-      applyFieldModeLayout(); // ボード系DOM(#board-center .center-deck)を有効化
-
-
-
-      // 2) 共有デッキ矩形が測れるまで待ってから中央に生成（waitForBoardDeckRect 内で待機）
-
+      CURRENT_ROOM_META.fieldMode = 'trump';
+      applyFieldModeLayout();
       try {
-
         await spawnTrumpDeck(id);
-
         await setDoc(doc(db, `rooms/${id}`), { trumpInitialized: true, updatedAt: serverTimestamp() }, { merge: true });
-
       } catch (e) {
-
         console.warn('spawnTrumpDeck failed', e);
-
       }
-
     }
 
-
+    createRoomBtn.disabled = false;
+    createRoomBtn.textContent = oldText;
+    if (lobby) lobby.style.display = 'none';
 
   } catch (e) {
-
     console.error('[create-room] failed:', e);
-
-    // エラーコードとメッセージも表示して切り分け容易に
-
     const code = e?.code || e?.name || 'unknown';
-
     const msg = e?.message || String(e);
-
-    alert(`ルーム作成に失敗しました\ncode: ${code}\n${msg}`);
-
-  } finally {
-
+    alert(`ルームの作成に失敗しました (${code}): ${msg}`);
     createRoomBtn.disabled = false;
-
     createRoomBtn.textContent = oldText;
-
   }
+}
 
-});
+
 
 
 
@@ -3699,11 +3667,15 @@ function applyFieldModeLayout() {
   // Hide or show `.player-area` nodes dynamically
 
   for (let i = 1; i <= 8; i++) {
-
     const el = document.querySelector(`.player-${i}`);
-
-    if (el) el.style.display = (mode === 'card' && i <= pc) ? '' : 'none';
-
+    if (el) {
+      el.style.display = (mode === 'card' && i <= pc) ? '' : 'none';
+      if (mode === 'card') {
+        const layout = CURRENT_ROOM_META?.fieldLayout || 'standard';
+        el.classList.toggle('layout-simple', layout === 'simple');
+        el.classList.toggle('layout-standard', layout === 'standard');
+      }
+    }
   }
 
 
