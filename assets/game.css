@@ -202,11 +202,12 @@
       border: 5px dashed #666;
       box-sizing: border-box;
       display: grid;
-      grid-template-columns: var(--special-w) minmax(0, 1fr);
-      /* 左: 特殊 / 右: メイン */
-      grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
-      /* 上: プレイ / 下: 手札 */
+      /* 3列構成: 左(特殊) / 中(メイン) / 右(スタック) */
+      grid-template-columns: var(--special-w) 10fr 2fr;
+      /* 3行構成: プレイ1 / プレイ2 / 手札 */
+      grid-template-rows: 1fr 1fr 1fr;
       gap: 6px;
+      min-width: 0;
     }
 
     /* モーダル内リンク */
@@ -225,83 +226,55 @@
       margin: 0 5px;
     }
 
-    /* 左の縦帯：特殊エリア（プレイ＋手札の左） */
+    /* 左の縦帯：特殊エリア（全行貫通） */
     .special-area {
       grid-column: 1 / 2;
-      grid-row: 1 / 3;
+      grid-row: 1 / 4;
       background: #9c27b0;
       position: relative;
       box-sizing: border-box;
       z-index: 200;
     }
 
-    /* 右上：プレイ行（左=プレイ、右=デッキ縦スタック） */
-    .play-area {
-      grid-column: 2 / 3;
-      grid-row: 1 / 2;
-      position: relative;
-      z-index: 100;
-      display: grid;
-      /* プレイ : スタック = 9 : 1（縮小を許可） */
-      grid-template-columns: minmax(0, 10fr) minmax(0, 2fr);
-      gap: 6px;
-      min-width: 0;
-      box-sizing: border-box;
-    }
-
-    /* 念のためプレイヤー領域の右列側（= .play-areaの親）も縮小許可 */
-    .player-area {
-      min-width: 0;
-    }
-
-    /* グリッド内の各アイテムがちゃんと縮むように */
-    .main-play-area,
-    .deck-stack,
-    .discard-area,
-    .deck-area {
-      min-width: 0;
-    }
-
-
+    /* メインプレイエリア（上段2行分） */
     .main-play-area {
+      grid-column: 2 / 3;
+      grid-row: 1 / 3;
       background: #2d8;
       position: relative;
       box-sizing: border-box;
       z-index: 100;
-      grid-column: 1;
+      min-width: 0;
     }
 
-    /* デッキ縦スタック（上=捨て札、下=デッキ） */
-    .deck-stack {
-      display: grid;
-      grid-template-rows: 1fr 1fr;
-      gap: 6px;
-      grid-column: 2;
-    }
-
+    /* 捨て札エリア（右側上段） */
     .discard-area {
+      grid-column: 3 / 4;
+      grid-row: 1 / 2;
       background: #cc6666;
       position: relative;
       box-sizing: border-box;
       z-index: 200;
-      grid-row: 1;
+      min-width: 0;
     }
 
-    /* 捨て札 */
+    /* デッキエリア（右側中段） */
     .deck-area {
+      grid-column: 3 / 4;
+      grid-row: 2 / 3;
       background: #f90;
       position: relative;
       box-sizing: border-box;
       z-index: 200;
-      grid-row: 2;
+      min-width: 0;
     }
 
     /* デッキ */
 
-    /* 右下：手札行（従来と同じ比率で下段） */
+    /* 右下：手札行（下段、2列分） */
     .hand-area {
-      grid-column: 2 / 3;
-      grid-row: 2 / 3;
+      grid-column: 2 / 4;
+      grid-row: 3 / 4;
       position: relative;
       background: #228be6;
       z-index: 200;

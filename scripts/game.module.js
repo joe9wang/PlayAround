@@ -11310,7 +11310,7 @@ function subscribeAreas() {
 
         // z-index を動的に設定（100: プレイエリア系 / 200: サブエリア系）。カード(300〜)より背面を維持。
 
-        const isPlayType = (id.includes('play-area') || id.includes('main-play-area') || id.includes('board-play'));
+        const isPlayType = (id.includes('main-play-area') || id.includes('board-play'));
 
         el.style.zIndex = isPlayType ? '100' : '200';
 
@@ -11736,7 +11736,7 @@ function bindAreaContextMenuOnce() {
 
     // 実際に保存するキーは対象のメインエリア名 (.play-area など)
 
-    const mainSelectors = ['.play-area', '.main-play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
+    const mainSelectors = ['.main-play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
 
     const foundSel = mainSelectors.find(sel => area.classList.contains(sel.slice(1)));
 
