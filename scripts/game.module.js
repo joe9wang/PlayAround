@@ -9533,7 +9533,7 @@ window.setFieldSize = function (size) {
 
   const colWidths = { small: 1500, medium: 2500, large: 5000 };
 
-  const heights = { small: 1500, medium: 2500, large: 5000 };
+  const heights = { small: 1700, medium: 2500, large: 5000 };
 
   const colW = colWidths[size] || colWidths.small;
 
