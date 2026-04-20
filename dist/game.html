@@ -163,10 +163,10 @@
         <!-- Create (right column) -->
         <section aria-labelledby="create-title" class="lobby-section">
           <div class="lobby-subtitle" data-i18n="create.section" id="create-title">
-            新しいルームを作成して参加（ホスト）
+            新しいルームを作成（ホスト）
           </div>
           <label class="lobby-label" data-i18n="create.roomId">
-            新しいルームを作成
+            新しいルームID
           </label>
           <div class="row" style="margin-bottom:8px;">
             <input class="field" data-i18n-placeholder="create.roomId.ph" id="new-room-id"
@@ -203,16 +203,16 @@
           </div>
 
           <label class="lobby-label" data-i18n="create.chooseMode" style="margin-top:10px;">
-            フィールド構成を選択
+            ゲームの種類
           </label>
           <div class="row" id="create-mode-row" style="gap:8px;">
             <button aria-pressed="true" class="btn secondary" data-i18n="create.mode.card" id="pick-mode-card"
               type="button">
-              🃏 カードゲーム
+              カードゲーム
             </button>
             <button aria-pressed="false" class="btn secondary" data-i18n="create.mode.board" id="pick-mode-board"
               type="button">
-              🎲 ボードゲーム
+              ボードゲーム
             </button>
           </div>
           <div class="row" id="create-btn-row" style="margin-top:auto; padding-top:16px; justify-content:flex-end;">
@@ -408,120 +408,83 @@
     <div id="field">
       <div class="player-area player-1">
         <div class="player-label">
-          <span class="label-seat">
-            SEAT1
-          </span>
-          <span class="label-name">
-          </span>
+          <span class="label-seat">SEAT1</span>
+          <span class="label-name"></span>
         </div>
-        <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
-        <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
-        <div class="play-area">
-          <div class="main-play-area">
-            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
-          </div>
-          <div class="deck-stack">
-            <div class="discard-area">
-              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-            </div>
-            <div class="deck-area">
-              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-            </div>
-          </div>
+        <div class="main-play-area">
+          <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
         </div>
-        <!-- 右下：手札行 -->
+        <div class="discard-area">
+          <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+        </div>
+        <div class="deck-area">
+          <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
+        </div>
         <div class="hand-area">
           <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
         </div>
       </div>
       <div class="player-area player-2">
         <div class="player-label">
-          <span class="label-seat">
-            SEAT2
-          </span>
-          <span class="label-name">
-          </span>
+          <span class="label-seat">SEAT2</span>
+          <span class="label-name"></span>
         </div>
-        <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
-        <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
-        <div class="play-area">
-          <div class="main-play-area">
-            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
-          </div>
-          <div class="deck-stack">
-            <div class="discard-area">
-              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-            </div>
-            <div class="deck-area">
-              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-            </div>
-          </div>
+        <div class="main-play-area">
+          <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
         </div>
-        <!-- 右下：手札行 -->
+        <div class="discard-area">
+          <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+        </div>
+        <div class="deck-area">
+          <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
+        </div>
         <div class="hand-area">
           <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
         </div>
       </div>
       <div class="player-area player-3">
         <div class="player-label">
-          <span class="label-seat">
-            SEAT3
-          </span>
-          <span class="label-name">
-          </span>
+          <span class="label-seat">SEAT3</span>
+          <span class="label-name"></span>
         </div>
-        <!-- 左の縦帯：特殊エリア（プレイ＋手札の左に縦長で常時配置） -->
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
-        <!-- 右上：プレイ行（左=プレイ、右=デッキ縦スタック） -->
-        <div class="play-area">
-          <div class="main-play-area">
-            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
-          </div>
-          <div class="deck-stack">
-            <div class="discard-area">
-              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-            </div>
-            <div class="deck-area">
-              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-            </div>
-          </div>
+        <div class="main-play-area">
+          <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
         </div>
-        <!-- 右下：手札行 -->
+        <div class="discard-area">
+          <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+        </div>
+        <div class="deck-area">
+          <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
+        </div>
         <div class="hand-area">
           <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
         </div>
       </div>
       <div class="player-area player-4">
         <div class="player-label">
-          <span class="label-seat">
-            SEAT4
-          </span>
-          <span class="label-name">
-          </span>
+          <span class="label-seat">SEAT4</span>
+          <span class="label-name"></span>
         </div>
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
-        <div class="play-area">
-          <div class="main-play-area">
-            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
-          </div>
-          <div class="deck-stack">
-            <div class="discard-area">
-              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-            </div>
-            <div class="deck-area">
-              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-            </div>
-          </div>
+        <div class="main-play-area">
+          <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
+        </div>
+        <div class="discard-area">
+          <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+        </div>
+        <div class="deck-area">
+          <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
         </div>
         <div class="hand-area">
           <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
@@ -529,27 +492,20 @@
       </div>
       <div class="player-area player-5" style="display:none;">
         <div class="player-label">
-          <span class="label-seat">
-            SEAT5
-          </span>
-          <span class="label-name">
-          </span>
+          <span class="label-seat">SEAT5</span>
+          <span class="label-name"></span>
         </div>
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
-        <div class="play-area">
-          <div class="main-play-area">
-            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
-          </div>
-          <div class="deck-stack">
-            <div class="discard-area">
-              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-            </div>
-            <div class="deck-area">
-              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-            </div>
-          </div>
+        <div class="main-play-area">
+          <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
+        </div>
+        <div class="discard-area">
+          <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+        </div>
+        <div class="deck-area">
+          <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
         </div>
         <div class="hand-area">
           <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
@@ -557,27 +513,20 @@
       </div>
       <div class="player-area player-6" style="display:none;">
         <div class="player-label">
-          <span class="label-seat">
-            SEAT6
-          </span>
-          <span class="label-name">
-          </span>
+          <span class="label-seat">SEAT6</span>
+          <span class="label-name"></span>
         </div>
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
-        <div class="play-area">
-          <div class="main-play-area">
-            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
-          </div>
-          <div class="deck-stack">
-            <div class="discard-area">
-              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-            </div>
-            <div class="deck-area">
-              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-            </div>
-          </div>
+        <div class="main-play-area">
+          <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
+        </div>
+        <div class="discard-area">
+          <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+        </div>
+        <div class="deck-area">
+          <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
         </div>
         <div class="hand-area">
           <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
@@ -585,27 +534,20 @@
       </div>
       <div class="player-area player-7" style="display:none;">
         <div class="player-label">
-          <span class="label-seat">
-            SEAT7
-          </span>
-          <span class="label-name">
-          </span>
+          <span class="label-seat">SEAT7</span>
+          <span class="label-name"></span>
         </div>
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
-        <div class="play-area">
-          <div class="main-play-area">
-            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
-          </div>
-          <div class="deck-stack">
-            <div class="discard-area">
-              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-            </div>
-            <div class="deck-area">
-              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-            </div>
-          </div>
+        <div class="main-play-area">
+          <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
+        </div>
+        <div class="discard-area">
+          <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+        </div>
+        <div class="deck-area">
+          <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
         </div>
         <div class="hand-area">
           <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
@@ -613,27 +555,20 @@
       </div>
       <div class="player-area player-8" style="display:none;">
         <div class="player-label">
-          <span class="label-seat">
-            SEAT8
-          </span>
-          <span class="label-name">
-          </span>
+          <span class="label-seat">SEAT8</span>
+          <span class="label-name"></span>
         </div>
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
-        <div class="play-area">
-          <div class="main-play-area">
-            <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
-          </div>
-          <div class="deck-stack">
-            <div class="discard-area">
-              <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
-            </div>
-            <div class="deck-area">
-              <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
-            </div>
-          </div>
+        <div class="main-play-area">
+          <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
+        </div>
+        <div class="discard-area">
+          <div class="zone-label" data-i18n="zone.discard">捨て札エリア</div>
+        </div>
+        <div class="deck-area">
+          <div class="zone-label" data-i18n="zone.deck">デッキエリア</div>
         </div>
         <div class="hand-area">
           <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
@@ -866,6 +801,7 @@
         </ul>
       </li>
       <hr id="area-ctx-hr" class="host-only" style="margin: 4px 0; border: 0; border-top: 1px solid #555;">
+      <li id="area-ctx-change-color">🎨 エリア色変更</li>
       <li id="area-ctx-change-bg">🖼 エリア画像変更</li>
       <li id="area-ctx-remove-bg" style="color: #ffaa44;">🧹 エリア画像リセット</li>
       <li id="area-ctx-delete-area" class="host-only" style="color: #ff4444;">🗑️ エリアを完全に削除</li>
