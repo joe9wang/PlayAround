@@ -204,8 +204,8 @@
       display: grid;
       /* 3列構成: 左(特殊) / 中(メイン) / 右(スタック) */
       grid-template-columns: var(--special-w) 10fr 2fr;
-      /* 3行構成: プレイ1 / プレイ2 / 手札 */
-      grid-template-rows: 1fr 1fr 1fr;
+      /* 3行構成: プレイ1 / プレイ2 / 手札 (比率 1.5 : 1.5 : 1 = 合計75% vs 25%) */
+      grid-template-rows: 1.5fr 1.5fr 1fr;
       gap: 6px;
       min-width: 0;
     }
