@@ -11110,7 +11110,13 @@ function subscribeAreas() {
 
       if (parts) {
 
-        el = document.querySelector(`.player-area.${parts[1]} .${parts[2]}`);
+        const seat = parts[1]; // target seat class, e.g. "player-1"
+
+        const key = parts[2];  // short key, e.g. "main", "deck"
+
+        const cls = (key === 'main') ? 'main-play-area' : (key + '-area');
+
+        el = document.querySelector(`.player-area.${seat} .${cls}`);
 
       } else {
 
@@ -12301,7 +12307,13 @@ function getCurrentTargetAreaElement() {
 
   if (match) {
 
-    el = document.querySelector(`.player-area.${match[1]} .${match[2]}`);
+    const seat = match[1]; // e.g. "player-1"
+
+    const key = match[2];  // e.g. "main"
+
+    const cls = (key === 'main') ? 'main-play-area' : (key + '-area');
+
+    el = document.querySelector(`.player-area.${seat} .${cls}`);
 
   }
 
