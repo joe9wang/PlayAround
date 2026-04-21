@@ -6809,7 +6809,13 @@ async function processQueue() {
 
 
 
-          const { x, y } = randomPointInDeck(CURRENT_PLAYER);
+          const isSimple = CURRENT_ROOM_META?.fieldLayout === 'simple';
+
+          const isToken = kind === 'image-token';
+
+          const pos = (isSimple || isToken) ? randomPointInMainPlay(CURRENT_PLAYER) : randomPointInDeck(CURRENT_PLAYER);
+
+          const { x, y } = pos;
 
 
 
