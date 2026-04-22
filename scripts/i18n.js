@@ -107,6 +107,8 @@ const I18N = {
         "err.passWrong": "パスワードが違います。",
         "err.hostAbsent": "ホストが不在のため、このルームには参加できません。",
 
+        "spectator.warning": "現在は【観戦者】です（『座席に座る』ボタンから参加できます）",
+
         "auth.loggedIn": "ログインしました。",
         "auth.loggedOut": "ログアウトしました。",
         "auth.logoutFail": "ログアウトに失敗しました。",
@@ -233,6 +235,8 @@ const I18N = {
         "err.seat": "Please select a seat.",
         "err.passWrong": "Wrong password.",
         "err.hostAbsent": "The host is not available, so you can't join this room.",
+
+        "spectator.warning": "Currently Spectating (Click 'Sit in a seat' to play)",
 
         "auth.loggedIn": "Signed in.",
         "auth.loggedOut": "Signed out.",

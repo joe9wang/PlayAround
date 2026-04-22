@@ -4818,10 +4818,16 @@ function updateSessionIndicator() {
   const leaveRoomBtn = document.getElementById('leave-room-btn');
 
   if (CURRENT_PLAYER === 'spectator') {
-    if (sitBtn) sitBtn.style.display = 'block';
+    if (sitBtn) {
+      sitBtn.style.display = 'block';
+      sitBtn.classList.add('pulse-yellow');
+    }
     if (leaveBtn) leaveBtn.style.display = 'none';
   } else {
-    if (sitBtn) sitBtn.style.display = 'none';
+    if (sitBtn) {
+      sitBtn.style.display = 'none';
+      sitBtn.classList.remove('pulse-yellow');
+    }
     if (leaveBtn) leaveBtn.style.display = 'block';
   }
 }
