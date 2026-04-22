@@ -2912,12 +2912,23 @@ createRoomBtn.addEventListener('click', async () => {
     }
   }
 
-  // カードゲームモードの場合、レイアウト選択モーダルを表示
-  if (CREATE_FIELD_MODE === 'card') {
+  // カードゲームまたはボードゲームモードの場合、レイアウト選択モーダルを表示
+  if (CREATE_FIELD_MODE === 'card' || CREATE_FIELD_MODE === 'board') {
+    // 画像を現在のモードに合わせて切り替える
+    const simpleImg = document.getElementById('layout-img-simple');
+    const standardImg = document.getElementById('layout-img-standard');
+    if (CREATE_FIELD_MODE === 'card') {
+      if (simpleImg) simpleImg.src = 'image/Field_simple_type.png';
+      if (standardImg) standardImg.src = 'image/Field_standard_type.png';
+    } else {
+      if (simpleImg) simpleImg.src = 'image/board simple.png';
+      if (standardImg) standardImg.src = 'image/board standard.png';
+    }
+
     window.selectLayoutOption('standard'); // 初期値
     document.getElementById('field-layout-modal').style.display = 'flex';
   } else {
-    // ボードゲームモード等はそのまま作成
+    // それ以外のモードはそのまま作成
     executeRoomCreation('standard');
   }
 });
@@ -3676,6 +3687,14 @@ function applyFieldModeLayout() {
         el.classList.toggle('layout-standard', layout === 'standard');
       }
     }
+  }
+
+  // Board layout selection
+  const boardLayout = document.getElementById('board-layout');
+  if (boardLayout) {
+    const layout = CURRENT_ROOM_META?.fieldLayout || 'standard';
+    boardLayout.classList.toggle('layout-simple', layout === 'simple');
+    boardLayout.classList.toggle('layout-standard', layout === 'standard');
   }
 
 

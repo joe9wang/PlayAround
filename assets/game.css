@@ -1020,6 +1020,10 @@
       /* 初期は非表示（mode=board のとき表示） */
     }
 
+    #board-layout.layout-simple #board-center {
+      display: none !important;
+    }
+
 
     /* 共有プレイエリア（角の手札と中央ブロック以外の全域） */
     #board-play {
