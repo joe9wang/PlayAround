@@ -10106,8 +10106,11 @@ function updateEndRoomButtonVisibility() {
   const show = !!(CURRENT_ROOM && IS_ROOM_CREATOR);
   const seated = show && CURRENT_PLAYER !== 'spectator';
   if (endRoomBtn) endRoomBtn.style.display = show ? 'block' : 'none';
+  // Host section container
+  if (hostOtherOpsWrap) hostOtherOpsWrap.style.display = show ? 'block' : 'none';
   // Save buttons: only when host is seated
   if (hostSaveRoomBtn) hostSaveRoomBtn.style.display = seated ? 'block' : 'none';
+  // hostOtherOpsSaveBtn is a button inside hostOtherOpsWrap
   if (hostOtherOpsSaveBtn) hostOtherOpsSaveBtn.style.display = seated ? '' : 'none';
   // Load buttons: always when host is in room
   if (hostLoadRoomBtn) hostLoadRoomBtn.style.display = show ? 'block' : 'none';
