@@ -113,13 +113,27 @@ module.exports = async (req, res) => {
     }
 
     const room = roomSnap.data() || {};
-    // すでに自分がホストで、かつ閉鎖されていなければOK
+    const uid = decoded.uid;
+
+    // 1) 同一ホストの再入室なら、24時間以内かどうかに関わらず許可（リセットなし）
     if (room.hostUid === uid && room.roomClosed !== true) {
       res.status(200).json({ ok: true, alreadyHost: true });
       return;
     }
 
-    // 他人のホストでも「誰も生きていなければ」乗っ取り許可
+    // 2) 他人のホストの場合、作成から24時間以内は「削除・リセット（乗っ取り）」を禁止する
+    const createdAt = room.createdAt && room.createdAt.toMillis ? room.createdAt.toMillis() : 0;
+    const isWithin24h = (Date.now() - createdAt) < 24 * 60 * 60 * 1000;
+
+    if (isWithin24h && room.hostUid !== uid) {
+      res.status(403).json({ 
+        error: 'このルームは作成から24時間が経過していないため、他のユーザーは使用できません。',
+        isProtected: true 
+      });
+      return;
+    }
+
+    // 3) 24時間経過後、または元々誰もいない場合は通常通りの判定（誰も生きていなければ乗っ取り許可）
     const alive = await isSomeoneAlive(db, roomId);
     if (alive) { res.status(403).json({ error: 'room still active' }); return; }
 
@@ -128,6 +142,7 @@ module.exports = async (req, res) => {
       hostUid: uid,
       hostSeat: null,
       roomClosed: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(), // 新しいホストが使い始めるので、作成日も更新
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     await resetSeatsAndCards(db, roomId);

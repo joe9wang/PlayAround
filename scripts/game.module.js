@@ -162,57 +162,7 @@ onIdTokenChanged(auth, async (user) => {
 
 
 
-// === Close room API (sendBeacon or keepalive fetch) ===
 
-const BEACON_URL = '/api/close-room';
-
-async function sendCloseBeacon(roomId) {
-
-  if (!roomId) return;
-
-  // IDトークンをボディに同梱（sendBeacon ではヘッダを付けられないため）
-
-  const payload = JSON.stringify({
-
-    roomId,
-
-    idToken: AUTH_ID_TOKEN || null,
-
-  });
-
-  try {
-
-    if (!navigator.sendBeacon) {
-
-      // iOS/Safari 対策: fetch + keepalive
-
-      await fetch(BEACON_URL, {
-
-        method: 'POST',
-
-        headers: { 'Content-Type': 'application/json' },
-
-        body: payload,
-
-        keepalive: true,
-
-      });
-
-    } else {
-
-      const blob = new Blob([payload], { type: 'application/json' });
-
-      navigator.sendBeacon(BEACON_URL, blob);
-
-    }
-
-  } catch (e) {
-
-    console.warn('[beacon] failed', e);
-
-  }
-
-}
 
 
 
@@ -4055,13 +4005,7 @@ function startSession(roomId, playerId) {
 
 
 
-    if (IS_ROOM_CREATOR && CURRENT_ROOM) {
 
-      // 重要：タブが閉じても到達しやすい手段で通知
-
-      sendCloseBeacon(CURRENT_ROOM);
-
-    }
 
 
 
@@ -4073,11 +4017,18 @@ function startSession(roomId, playerId) {
 
   // PCブラウザ向け
 
-  window.addEventListener('beforeunload', __onLeave);
+  window.addEventListener('beforeunload', (e) => {
+    // 完全にページを去る時だけ購読解除などを試みる（ただし、リロード時は即時完了しない可能性あり）
+    stopHeartbeat();
+    stopHostHeartbeat();
+  });
 
   // iOS Safari 等のモバイル向け
 
-  window.addEventListener('pagehide', __onLeave, { once: true });
+  window.addEventListener('pagehide', (e) => {
+    stopHeartbeat();
+    stopHostHeartbeat();
+  }, { once: true });
 
 
 

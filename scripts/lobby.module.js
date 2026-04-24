@@ -9,7 +9,7 @@ import {
   onIdTokenChanged, getIdToken,
   doc, setDoc, getDoc, updateDoc,
   serverTimestamp, collection,
-  query, getDocs, writeBatch
+  query, getDocs, writeBatch, Timestamp
 } from './firebase.init.js';
 
 import { getLimits } from './premium.js';
@@ -223,7 +223,8 @@ async function executeRoomCreation(layoutType) {
       fieldLayout: layoutType || 'standard',
       joinPassHash: joinPassHash,
       hasPassword: !!joinPassHash,
-      playerCount: parseInt(newPlayerCountSelect?.value || '4', 10)
+      playerCount: parseInt(newPlayerCountSelect?.value || '4', 10),
+      expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000)
     };
 
     await setDoc(roomRef, payload, { merge: true });

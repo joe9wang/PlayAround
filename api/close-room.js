@@ -67,8 +67,15 @@ module.exports = async (req, res) => {
       return;
     }
 
-    await deleteRoomHard(db, roomId);
-    res.status(200).json({ ok: true });
+    // デバッグ用：自動削除を停止
+    console.log(`[close-room] Auto-delete skipped for room: ${roomId} (Host requested leave)`);
+    
+    // 必要ならフラグだけ更新し、データは保持する
+    await roomRef.update({ 
+      lastLeaveAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    res.status(200).json({ ok: true, message: 'Room preserved.' });
   } catch (e) {
     console.error('[close-room]', e);
     res.status(500).json({ error: e && e.message ? e.message : String(e) });
