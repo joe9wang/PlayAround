@@ -306,6 +306,26 @@ const authLoggedinArea = document.getElementById('auth-loggedin-area');
 
 // ===== DOM refs
 
+const joinRoomInput = document.getElementById('join-room-id');
+
+const playerNameInput = document.getElementById('player-name');
+
+const joinRoomPassInput = document.getElementById('join-room-pass');
+
+const newRoomIdInput = document.getElementById('new-room-id');
+
+const newPlayerNameInput = document.getElementById('new-player-name');
+
+const newRoomPassInput = document.getElementById('new-room-pass');
+
+const createRoomBtn = document.getElementById('create-room-btn');
+
+const startBtn = document.getElementById('start-btn');
+
+const pickModeCardBtn = document.getElementById('pick-mode-card');
+
+const pickModeBoardBtn = document.getElementById('pick-mode-board');
+
 const lobby = document.getElementById('lobby');
 
 const endRoomBtn = document.getElementById('end-room-btn');
@@ -1927,49 +1947,21 @@ onAuthStateChanged(auth, (user) => {
 
 
     if (whoamiSpan) {
-
       whoamiSpan.style.display = '';
-
       whoamiSpan.textContent = `ログイン中：${user.email || user.displayName || 'No Name'}`;
-
     }
 
-
-
-    // ===== プレミアム状態を常に取得（UIバッジは任意） =====
-
     fetchPremiumStatus(user.uid).then(status => {
-
       IS_PREMIUM = !!status.premium;
-
-      if (IS_PREMIUM) {
-
-        document.body.classList.add('premium-user');
-
-      } else {
-
-        document.body.classList.remove('premium-user');
-
-      }
-
-      console.log('[DEBUG onAuth] fetchPremiumStatus resolved: premium =', status.premium, ', IS_PREMIUM =', IS_PREMIUM, ', uid =', user.uid);
-
+      document.body.classList.toggle('premium-user', IS_PREMIUM);
       if (lobbyPremiumBadge) {
-
         lobbyPremiumBadge.style.display = 'none';
-
         lobbyPremiumBadge.innerHTML = '';
-
         if (status.premium) {
-
           lobbyPremiumBadge.innerHTML = premiumBadgeHTML(status.premium);
-
           lobbyPremiumBadge.style.display = '';
-
         }
-
       }
-
     }).catch(console.error);
 
 
@@ -2054,63 +2046,7 @@ logoutBtn?.addEventListener('click', async () => {
 
 
 
-// UI switching
 
-joinRoomInput.addEventListener('input', () => {
-
-  ACTIVE_MODE = 'join';
-
-  validateLobby();
-
-  const v = (joinRoomInput.value || '').trim();
-
-  if (!v) {
-
-    // 入力が空になったら、クリアボタン相当の処理を自動実行
-
-    CURRENT_PLAYER = null;
-
-    detachSeatsListener();                 // 座席購読を停止
-
-    if (unsubscribeRoomDoc) {              // ルームdoc購読も停止
-
-      unsubscribeRoomDoc();
-
-      unsubscribeRoomDoc = null;
-
-    }
-
-    CURRENT_ROOM_META = null;
-
-    renderSeatAvailability();
-
-    renderFieldLabels();
-
-    updateEndRoomButtonVisibility();
-
-    renderHPPanel();
-
-  }
-
-});
-
-
-
-
-
-// パスワードの再入力でエラー装飾を解除
-
-joinRoomPassInput?.addEventListener('input', () => {
-
-  if (joinRoomPassInput.classList.contains('is-error')) {
-
-    joinRoomPassInput.classList.remove('is-error');
-
-    joinRoomPassInput.removeAttribute('aria-invalid');
-
-  }
-
-});
 
 
 
@@ -2800,73 +2736,7 @@ async function ensureAuthReady(timeoutMs = 8000) {
 
 }
 
-// ===== create room (host)
-let TEMP_CREATE_ROOM_ID = '';
-let TEMP_CREATE_CREATOR_NAME = '';
 
-createRoomBtn.addEventListener('click', async () => {
-  await ensureAuthReady();
-
-  TEMP_CREATE_ROOM_ID = (newRoomIdInput.value || '').trim();
-  TEMP_CREATE_CREATOR_NAME = (newPlayerNameInput.value || '').trim();
-  if (!TEMP_CREATE_ROOM_ID) { alert(t('err.roomId')); return; }
-  if (!TEMP_CREATE_CREATOR_NAME) { alert(t('err.playerName')); newPlayerNameInput.focus(); return; }
-
-  // 1日5回上限チェック
-  if (!IS_PREMIUM) {
-    const today = new Date().toISOString().slice(0, 10);
-    const lsKey = `pa:rooms-created-${today}`;
-    const count = parseInt(localStorage.getItem(lsKey) || '0', 10);
-    const limit = getLimits(false).roomsPerDay;
-    if (count >= limit) {
-      alert(`本日のルーム作成上限（${limit}回）に達しました。\nプレミアム会員は無制限に作成できます。`);
-      return;
-    }
-  }
-
-  // カードゲームまたはボードゲームモードの場合、レイアウト選択モーダルを表示
-  if (CREATE_FIELD_MODE === 'card' || CREATE_FIELD_MODE === 'board') {
-    // 画像を現在のモードに合わせて切り替える
-    const simpleImg = document.getElementById('layout-img-simple');
-    const standardImg = document.getElementById('layout-img-standard');
-    if (CREATE_FIELD_MODE === 'card') {
-      if (simpleImg) simpleImg.src = 'image/Field_simple_type.png';
-      if (standardImg) standardImg.src = 'image/Field_standard_type.png';
-    } else {
-      if (simpleImg) simpleImg.src = 'image/board simple.png';
-      if (standardImg) standardImg.src = 'image/board standard.png';
-    }
-
-    window.selectLayoutOption('standard'); // 初期値
-    document.getElementById('field-layout-modal').style.display = 'flex';
-  } else {
-    // それ以外のモードはそのまま作成
-    executeRoomCreation('standard');
-  }
-});
-
-// モーダルのOK/キャンセル
-document.getElementById('field-layout-ok')?.addEventListener('click', () => {
-  executeRoomCreation(window.CURRENT_LAYOUT_SELECTION || 'standard');
-});
-document.getElementById('field-layout-cancel')?.addEventListener('click', () => {
-  document.getElementById('field-layout-modal').style.display = 'none';
-});
-
-window.selectLayoutOption = function(type) {
-  window.CURRENT_LAYOUT_SELECTION = type;
-  const opts = document.querySelectorAll('.layout-option');
-  opts.forEach(opt => {
-    const isActive = opt.id === `layout-opt-${type}`;
-    opt.classList.toggle('active', isActive);
-    const wrap = opt.querySelector('.layout-preview-wrap');
-    const label = opt.querySelector('div:last-child');
-    const overlay = opt.querySelector('.selection-overlay');
-    if (wrap) wrap.style.borderColor = isActive ? '#2d8' : '#eee';
-    if (label) label.style.color = isActive ? '#2d8' : '#555';
-    if (overlay) overlay.style.opacity = isActive ? '1' : '0';
-  });
-};
 
 
 
@@ -2884,23 +2754,7 @@ window.selectLayoutOption = function(type) {
 
 let unsubscribeSeats = null;
 
-joinRoomInput.addEventListener('change', loadSeatStatus);
 
-joinRoomInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadSeatStatus(); });
-
-
-
-playerNameInput.addEventListener('change', async () => {
-
-  const newName = (playerNameInput.value || '').trim();
-
-  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return;
-
-  // batched
-
-  updateSeatBatched(CURRENT_PLAYER, { displayName: newName, updatedAt: serverTimestamp() });
-
-});
 
 
 
@@ -2983,8 +2837,7 @@ function renderSeatAvailability() {
 
   });
 
-  validateLobby();
-
+  // validateLobby();
 }
 
 
@@ -3331,13 +3184,13 @@ initHP({
 
 
 
-function loadSeatStatus() {
+function loadSeatStatus(rid) {
 
   detachHPListener(); // ★ ルーム切替時にHP購読を解除（hp.js）
 
   if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; }
 
-  const roomId = (joinRoomInput.value || '').trim();
+  const roomId = rid || CURRENT_ROOM || '';
 
 
 
@@ -3569,227 +3422,9 @@ function loadSeatStatus() {
 
 
 
-startBtn.addEventListener('click', async (ev) => {
 
-  ev.preventDefault();
 
-  try { await showRoomInterstitial({ force: true, cooldownMs: 0 }); } catch (_) { }
 
-  await ensureAuthReady();
-
-  ACTIVE_MODE = 'join';
-
-  await ensureAuthReady();
-
-  if (!CURRENT_UID) { alert('認証の初期化に時間がかかっています。数秒後に再度お試しください。'); return; }  const room = (joinRoomInput.value || '').trim();
-  const seat = 'spectator';
-  const nameNow = (playerNameInput.value || '').trim();
-
-  if (!room) { alert(t('err.roomId')); return; }
-  if (!nameNow) { alert(t('err.playerName')); return; }
-
-
-
-  // ★ インタースティシャルを毎回表示（最低5秒ブロック／最大10秒待ち）
-
-  try { await showRoomInterstitial({ force: true, cooldownMs: 0, maxWaitMs: 10000 }); } catch (_) { }
-
-
-
-
-
-  const oldText = startBtn.textContent;
-
-  startBtn.disabled = true;
-
-  startBtn.textContent = '開始中…';
-
-
-
-  try {
-
-    // まず最新のメタ情報を1回読み込む（以降のロジックで使用）
-
-    const roomSnap = await new Promise((resolve, reject) => {
-
-      const unsub = onSnapshot(doc(db, `rooms/${room}`), snap => { unsub(); resolve(snap); }, err => { unsub(); reject(err); });
-
-    });
-
-    const meta = roomSnap.exists() ? roomSnap.data() : null;
-
-
-
-    if (seat === 'spectator' && (!meta || meta.roomClosed || !isHostAlive(meta))) {
-
-      alert('観戦可能なアクティブなルームが見つかりません。');
-
-      startBtn.disabled = false;
-
-      startBtn.textContent = oldText;
-
-      return;
-
-    }
-
-
-
-    // ★追加：自分がホストかどうか（UID一致）を定義しておく
-
-    const iAmHost = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
-
-
-
-    // 自分がホストでルームが終了扱いなら再開する
-
-    if (iAmHost && meta?.roomClosed) {
-
-      try {
-
-        await setDoc(doc(db, `rooms/${room}`), {
-
-          roomClosed: false,
-
-          hostSeat: seat,
-
-          hostDisplayName: nameNow,
-
-          hostHeartbeatAt: serverTimestamp(),
-
-          updatedAt: serverTimestamp()
-
-        }, { merge: true });
-
-        IS_ROOM_CREATOR = true;
-
-        startHostHeartbeat(room);
-
-      } catch (e) {
-
-        console.warn('host reopen failed', e);
-
-      }
-
-    }
-
-
-
-
-
-    // 「ホストUID かつ ホスト席」の人だけパス免除
-
-    const isHostUid = !!(meta?.hostUid && CURRENT_UID && meta.hostUid === CURRENT_UID);
-
-    const isHostSeat = !!(meta?.hostSeat && seat && meta.hostSeat === seat);
-
-    const canSkipPassword = isHostUid && isHostSeat;
-
-
-
-    // 共有パスワードが設定されているなら、免除対象以外は必ず検証
-
-    if (meta?.joinPassHash && !canSkipPassword) {
-
-      const passRaw = (joinRoomPassInput?.value || '').trim();
-
-      const given = passRaw ? await sha256Hex(passRaw) : '';
-
-
-
-      if (given !== meta.joinPassHash) {
-
-        // 視覚フィードバック（赤枠＆振動）
-
-        if (joinRoomPassInput) {
-
-          joinRoomPassInput.classList.add('is-error', 'shake');
-
-          joinRoomPassInput.setAttribute('aria-invalid', 'true');
-
-          joinRoomPassInput.focus();
-
-          // アニメ終了で振動クラスだけ外す（赤枠は入力し直すまで残す）
-
-          joinRoomPassInput.addEventListener('animationend', () => {
-
-            joinRoomPassInput.classList.remove('shake');
-
-          }, { once: true });
-
-          // 選択状態にしてすぐ打ち直せるように
-
-          joinRoomPassInput.select?.();
-
-        }
-
-        // （必要ならアラートは外してOK）
-
-        // alert(t('err.passWrong'));
-
-        startBtn.disabled = false;
-
-        startBtn.textContent = oldText;
-
-        return;
-
-      }
-
-
-
-    }
-
-
-
-
-
-    const hostLikelyHere = !!meta?.hostUid || isHostAlive(meta);
-
-    if (!meta || (!hostLikelyHere && !iAmHost)) {
-
-      alert(t('err.hostAbsent')); return;
-
-    }
-
-    if (iAmHost) IS_ROOM_CREATOR = true;    CURRENT_PLAYER = 'spectator';
-    startSession(room, 'spectator');
-
-
-
-    // 座席確定後にHP購読を開始（ロビーでは購読しない）
-
-    try {
-
-      CURRENT_ROOM = room; // 念のため反映（既に入っていれば重複代入でも問題なし）
-
-      subscribeHP(CURRENT_ROOM);
-
-      renderHPPanel();
-
-    } catch (e) {
-
-      console.warn('[HP] subscribe failed', e);
-
-    }
-
-
-
-
-
-  } catch (e) {
-
-    console.error(e);
-
-    alert('開始に失敗しました。ネットワーク状態を確認してもう一度お試しください。');
-
-  } finally {
-
-    startBtn.disabled = false;
-
-    startBtn.textContent = oldText;
-
-  }
-
-});
 
 
 
@@ -3837,7 +3472,7 @@ async function claimSeat(roomId, seat) {
 
   const seatRef = doc(db, `rooms/${roomId}/seats/${seat}`);
 
-  const displayName = (playerNameInput.value || '').trim();
+  const displayName = localStorage.getItem('pa:last-player-name') || 'Guest';
 
   const color = '#22aaff';
 
@@ -4328,7 +3963,7 @@ function updateSessionIndicator() {
     sessionIndicator.textContent = 'ROOM: - / PLAYER: - / SEAT: -';
     return;
   }
-  let pName = (playerNameInput.value || '').trim() || 'Guest';
+  let pName = localStorage.getItem('pa:last-player-name') || 'Guest';
   let seatDisplay = '観戦';
   if (CURRENT_PLAYER !== 'spectator') {
     const seatData = currentSeatMap[CURRENT_PLAYER];
@@ -4392,9 +4027,9 @@ function startSession(roomId, playerId) {
 
 
 
-  joinRoomInput.value = CURRENT_ROOM;
+  if (joinRoomInput) joinRoomInput.value = CURRENT_ROOM;
 
-  loadSeatStatus();
+  loadSeatStatus(roomId);
 
 
 
