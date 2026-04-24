@@ -308,10 +308,6 @@ const authLoggedinArea = document.getElementById('auth-loggedin-area');
 
 const lobby = document.getElementById('lobby');
 
-const joinRoomInput = document.getElementById('join-room-id');
-
-const playerNameInput = document.getElementById('player-name');
-
 const endRoomBtn = document.getElementById('end-room-btn');
 const hostSaveRoomBtn = document.getElementById('host-save-room-btn');
 const hostLoadRoomBtn = document.getElementById('host-load-room-btn');
@@ -320,23 +316,7 @@ const leaveRoomBtn = document.getElementById('leave-room-btn');
 
 const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
 
-const startBtn = document.getElementById('start-btn');
-
 const sessionIndicator = document.getElementById('session-indicator');
-
-
-
-const newRoomIdInput = document.getElementById('new-room-id');
-
-const newPlayerNameInput = document.getElementById('new-player-name');
-
-const joinRoomPassInput = document.getElementById('join-room-pass');
-
-const newRoomPassInput = document.getElementById('new-room-pass');
-
-const newPlayerColorInput = document.getElementById('new-player-color');
-
-const createRoomBtn = document.getElementById('create-room-btn');
 
 
 
@@ -388,49 +368,7 @@ toggleOtherOpsInput?.addEventListener('change', async () => {
 
 
 
-const createSeatButtons = Array.from(document.querySelectorAll('#create-seat-grid .seat-btn'));
-
-
-
-
-
-// ==== 追加: フィールドモード（'card' | 'board' | 'trump'） ====
-
-let CREATE_FIELD_MODE = 'card';
-
-
-
-const pickModeCardBtn = document.getElementById('pick-mode-card');
-
-const pickModeBoardBtn = document.getElementById('pick-mode-board');
-
-
-
-
-
-function updateModePickButtons() {
-
-  const set = (btn, on) => {
-
-    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-
-    btn.classList.toggle('active', on);
-
-    btn.classList.toggle('secondary', !on);
-
-  };
-
-  set(pickModeCardBtn, CREATE_FIELD_MODE === 'card');
-
-  set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
-
-}
-
-pickModeCardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'card'; updateModePickButtons(); });
-
-pickModeBoardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'board'; updateModePickButtons(); });
-
-updateModePickButtons();
+// サイドバー折り畳み（左=操作パネル, 右=プレビュー）
 
 
 
