@@ -2678,7 +2678,7 @@ function startHostWatch() {
 
         sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
 
-        lobby.style.display = 'flex';
+        if (lobby) lobby.style.display = 'flex';
 
         alert('ホストが退室したため、このルームは終了しました。');
 
@@ -3777,7 +3777,7 @@ function loadSeatStatus() {
 
       // いま実プレイ中で、この roomId に居るなら強制退室
 
-      if (CURRENT_ROOM === roomId && lobby.style.display === 'none') {
+      if (CURRENT_ROOM === roomId && (!lobby || lobby.style.display === 'none')) {
 
         try {
 
@@ -3803,7 +3803,7 @@ function loadSeatStatus() {
 
         sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
 
-        lobby.style.display = 'flex';
+        if (lobby) lobby.style.display = 'flex';
 
         alert('ホストがルームを削除しました。');
 
@@ -4858,7 +4858,7 @@ function startSession(roomId, playerId) {
 
   updateSessionIndicator();
 
-  lobby.style.display = 'none';
+  if (lobby) lobby.style.display = 'none';
 
   startHeartbeat(roomId, playerId);
 
@@ -10178,7 +10178,7 @@ leaveRoomBtn?.addEventListener('click', async () => {
 
     sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
 
-    lobby.style.display = 'flex';
+    if (lobby) lobby.style.display = 'flex';
 
   } finally {
 
@@ -10261,7 +10261,7 @@ endRoomBtn?.addEventListener('click', async () => {
 
     sessionIndicator.textContent = 'ROOM: - / PLAYER: -';
 
-    lobby.style.display = 'flex';
+    if (lobby) lobby.style.display = 'flex';
 
     alert('ルームを終了しました。');
 
@@ -10832,7 +10832,7 @@ async function checkRestoreRoomSlot() {
 
 
 
-  lobby.style.display = 'none'; // 先に隠す
+  if (lobby) lobby.style.display = 'none'; // 先に隠す
 
 
 
@@ -10846,7 +10846,7 @@ async function checkRestoreRoomSlot() {
 
       alert(`SLOT ${slotNum} に保存されたルームはありません。`);
 
-      lobby.style.display = 'flex';
+      if (lobby) lobby.style.display = 'flex';
 
       return false;
 
@@ -11086,7 +11086,7 @@ async function checkRestoreRoomSlot() {
 
     alert('保存ルームの復元に失敗しました。');
 
-    lobby.style.display = 'flex';
+    if (lobby) lobby.style.display = 'flex';
 
     // URL戻す
 
@@ -12658,12 +12658,103 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
 
 
   // URL復元チェック
-
   const isRestoring = await checkRestoreRoomSlot();
+  if (isRestoring) return;
 
-  if (isRestoring) return; // 復元成功ならロビーは不要
-
+  // URL IDチェック
+  await checkUrlParamsAndJoin();
 })();
+
+async function checkUrlParamsAndJoin() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomId = urlParams.get('id');
+  if (!roomId) return;
+
+  await ensureAuthReady();
+  const uid = auth.currentUser?.uid;
+  if (!uid) {
+    // 匿名サインインを試みる
+    try { await signInAnonymously(auth); } catch (e) { console.error(e); }
+  }
+
+  // 既に初期化済みならスキップ
+  if (CURRENT_ROOM === roomId) return;
+
+  try {
+    const roomSnap = await getDoc(doc(db, `rooms/${roomId}`));
+    if (!roomSnap.exists()) {
+      alert('指定されたルームが見つかりません。');
+      window.location.href = 'lobby.html';
+      return;
+    }
+    const meta = roomSnap.data();
+
+    // セッション復旧試行（以前の座席があるか）
+    const seatId = await recoverSession(roomId);
+    
+    // 座席があるか、またはパスワード不要ならそのまま開始
+    if (seatId !== 'spectator' || !meta.hasPassword) {
+      if (seatId !== 'spectator') {
+        const name = localStorage.getItem('pa:last-player-name') || auth.currentUser?.displayName || 'Anonymous';
+        startSession(roomId, seatId);
+      } else {
+        // パスワード不要な場合も直接入室（観戦者として）
+        startSession(roomId, 'spectator');
+      }
+      return;
+    }
+
+    // パスワードまたは名前が必要な場合
+    const modal = document.getElementById('direct-join-modal');
+    const djInfo = document.getElementById('dj-room-info');
+    const djName = document.getElementById('dj-player-name');
+    const djPassArea = document.getElementById('dj-password-area');
+    const djPass = document.getElementById('dj-room-pass');
+    const djStartBtn = document.getElementById('dj-start-btn');
+
+    if (!modal) return;
+    modal.style.display = 'flex';
+    djInfo.textContent = `ROOM ID: ${roomId}`;
+    djName.value = localStorage.getItem('pa:last-player-name') || '';
+    if (meta.hasPassword) djPassArea.style.display = 'block';
+
+    djStartBtn.onclick = async () => {
+      const name = djName.value.trim();
+      const pass = djPass.value.trim();
+      if (!name) { alert(t('err.playerName')); return; }
+      
+      if (meta.hasPassword) {
+        const hash = await sha256Hex(pass);
+        if (hash !== meta.joinPassHash) { alert(t('err.passWrong')); return; }
+      }
+
+      localStorage.setItem('pa:last-player-name', name);
+      modal.style.display = 'none';
+      startSession(roomId, 'spectator');
+    };
+
+  } catch (e) {
+    console.error('URL Join failed', e);
+  }
+}
+
+async function recoverSession(roomId) {
+  try {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return 'spectator';
+    const seatsCol = collection(db, `rooms/${roomId}/seats`);
+    const snap = await getDocs(query(seatsCol, where('claimedByUid', '==', uid)));
+    if (!snap.empty) {
+      // 生存確認
+      const d = snap.docs[0].data();
+      const hb = d.heartbeatAt?.toMillis ? d.heartbeatAt.toMillis() : 0;
+      if (Date.now() - hb <= 15000) {
+        return parseInt(snap.docs[0].id, 10);
+      }
+    }
+  } catch (e) { console.warn('recoverSession failed', e); }
+  return 'spectator';
+}
 
 
 // 

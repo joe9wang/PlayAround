@@ -78,153 +78,28 @@
       </div>
     </div>
   </header>
-  <div aria-modal="true" id="lobby" role="dialog">
-    <div class="lobby-card">
-      <!-- ロビー右上：言語切替 -->
-      <div aria-label="Language Selector" class="lobby-lang" role="group">
-        <span class="lobby-lang-label">
-          Language
-        </span>
-        <select aria-label="Language" class="lang-switch-inline" id="lang-switch-lobby">
-          <option value="ja">
-            日本語
-          </option>
-          <option value="en">
-            English
-          </option>
-        </select>
+  <!-- ルーム入室時のパスワード/名前入力用モーダル（直接リンク用） -->
+  <div id="direct-join-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:30000; align-items:center; justify-content:center;">
+    <div class="lobby-card" style="max-width:400px; padding:24px; background:#fff; border-radius:16px;">
+      <h3 style="margin-top:0;">ルームに入室</h3>
+      <div id="dj-room-info" style="font-size:14px; color:#666; margin-bottom:16px;"></div>
+      
+      <label class="lobby-label">プレイヤー名</label>
+      <input class="field" id="dj-player-name" maxlength="24" placeholder="例: SOLVENTER" type="text" style="margin-bottom:12px;" />
+      
+      <div id="dj-password-area" style="display:none;">
+        <label class="lobby-label">入室パスワード</label>
+        <input class="field" id="dj-room-pass" placeholder="ホストが設定した場合は必須" type="password" style="margin-bottom:16px;" />
       </div>
-      <div class="lobby-title" data-i18n="lobby.welcome">
-        バトライテーブルへようこそ！
+      
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn secondary" onclick="location.href='lobby.html'">ロビーへ戻る</button>
+        <button class="btn" id="dj-start-btn">入室</button>
       </div>
-      <!-- ロビー上部のログインUI（リンクの直下） -->
-      <div class="lobby-auth" id="lobby-auth-area">
-
-        <!-- ===== 未ログイン時：ログインボタンだけ表示 ===== -->
-        <div id="auth-form-area" class="auth-buttons" style="text-align:center;">
-          <button class="btn secondary" id="login-go-btn" style="padding:8px 16px;"
-            onclick="location.href='./login.html'" data-i18n="auth.loginBtn">
-            ログインする
-          </button>
-        </div>
-
-        <!-- ===== ログイン済みユーザー情報（ログイン時のみ表示） ===== -->
-        <div id="auth-loggedin-area" style="display:none;">
-          <div class="auth-user-info">
-            <span id="whoami" style="color:#555; font-size:13px;"></span>
-            <span id="lobby-premium-badge" style="display:none;"></span>
-          </div>
-          <div class="auth-buttons">
-            <button class="btn secondary" id="logout-google" style="padding:8px 12px;" data-i18n="auth.logout">
-              ログアウト
-            </button>
-            <button class="btn secondary" id="btn-mypage" style="padding:8px 12px;" data-i18n="app.mypage"
-              onclick="location.href='./mypage.html'">
-              マイページ
-            </button>
-          </div>
-        </div>
-
-      </div>
-      <div class="lobby-grid">
-        <!-- Join (left column) -->
-        <section aria-labelledby="join-title" class="lobby-section">
-          <div class="lobby-subtitle" data-i18n="join.section" id="join-title">
-            既存ルームに参加（非ホスト）
-          </div>
-          <label class="lobby-label" data-i18n="join.roomId">
-            参加するルームID
-          </label>
-          <div class="row" style="margin-bottom:8px;">
-            <input class="field" data-i18n-placeholder="join.roomId.ph" id="join-room-id"
-              placeholder="例: room-abc / 1234" type="text" />
-          </div>
-          <label class="lobby-label" data-i18n="join.password">
-            入室パスワード
-          </label>
-          <div class="row" style="margin-bottom:12px;">
-            <input class="field" data-i18n-placeholder="join.password.ph" id="join-room-pass"
-              placeholder="ホストが設定した場合は必須" type="password" />
-          </div>
-          <label class="lobby-label" data-i18n="join.name">
-            プレイヤー名
-          </label>
-          <div class="row" style="margin-bottom:12px;">
-            <input class="field" data-i18n-placeholder="join.name.ph" id="player-name" maxlength="24"
-              placeholder="例: SOLVENTER" type="text" />
-          </div>
-
-          <div class="row" style="margin-top:auto; padding-top:16px; justify-content:flex-end; gap:8px;">
-            <button class="btn" data-i18n="join.start" disabled="" id="start-btn" type="button">
-              開始
-            </button>
-          </div>
-        </section>
-        <!-- Create (right column) -->
-        <section aria-labelledby="create-title" class="lobby-section">
-          <div class="lobby-subtitle" data-i18n="create.section" id="create-title">
-            新しいルームを作成（ホスト）
-          </div>
-          <label class="lobby-label" data-i18n="create.roomId">
-            新しいルームID
-          </label>
-          <div class="row" style="margin-bottom:8px;">
-            <input class="field" data-i18n-placeholder="create.roomId.ph" id="new-room-id"
-              placeholder="例: room-abc / 1234" type="text" />
-          </div>
-          <label class="lobby-label" data-i18n="create.password">
-            入室パスワード（任意）
-          </label>
-          <div class="row" style="margin-bottom:12px;">
-            <input class="field" data-i18n-placeholder="create.password.ph" id="new-room-pass" placeholder="設定すると参加時に必須"
-              type="password" />
-          </div>
-          <label class="lobby-label" data-i18n="create.name">
-            プレイヤー名
-          </label>
-          <div class="row" style="margin-bottom:12px;">
-            <input class="field" data-i18n-placeholder="create.name.ph" id="new-player-name" maxlength="24"
-              placeholder="例: SOLVENTER" type="text" />
-          </div>
-          <label class="lobby-label" data-i18n="create.playerCount">
-            プレイ人数
-          </label>
-          <div class="row" style="margin-bottom:12px;">
-            <select class="field" id="new-player-count">
-              <option value="1">1人</option>
-              <option value="2">2人</option>
-              <option value="3">3人</option>
-              <option value="4" selected>4人</option>
-              <option value="5">5人</option>
-              <option value="6">6人</option>
-              <option value="7">7人</option>
-              <option value="8">8人</option>
-            </select>
-          </div>
-
-          <label class="lobby-label" data-i18n="create.chooseMode" style="margin-top:10px;">
-            ゲームの種類
-          </label>
-          <div class="row" id="create-mode-row" style="gap:8px;">
-            <button aria-pressed="true" class="btn secondary" data-i18n="create.mode.card" id="pick-mode-card"
-              type="button">
-              カードゲーム
-            </button>
-            <button aria-pressed="false" class="btn secondary" data-i18n="create.mode.board" id="pick-mode-board"
-              type="button">
-              ボードゲーム
-            </button>
-          </div>
-          <div class="row" id="create-btn-row" style="margin-top:auto; padding-top:16px; justify-content:flex-end;">
-            <button class="btn" data-i18n="create.createBtn" id="create-room-btn">
-              作成
-            </button>
-          </div>
-        </section>
-      </div>
-      <div class="lobby-credit">BatriTable — © 2025 SOLVENTER</div>
     </div>
   </div>
+
   <div id="upload-areas"
     style="height: var(--upload-h); display: flex; align-items: stretch; border-bottom: 2px solid #ccc; user-select: none; margin: 0; padding: 0;">
     <div id="upload-card" class="upload-box"

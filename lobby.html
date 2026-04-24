@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <!-- Favicon -->
+  <link href="/favicon.ico" rel="icon" sizes="any" />
+  <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
+  <link href="/favicon-16.png?v=3" rel="icon" sizes="16x16" type="image/png" />
+  <link href="/apple-touch-icon.png?v=3" rel="apple-touch-icon" sizes="180x180" />
+  <link href="/site.webmanifest" rel="manifest" />
+  <meta charset="utf-8" />
+  <meta name="description" content="BatriTableのロビー画面。ルームを作成して友だちと手軽に遊べます。">
+  <title>ロビー - BatriTable</title>
+  <meta content="width=device-width, initial-scale=1" name="viewport" />
+  <link rel="stylesheet" href="assets/game.css">
+  <style>
+    body {
+      background: #f6f7fb;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+    }
+    #lobby {
+      display: flex !important;
+      position: static !important;
+      background: transparent !important;
+      padding: 20px;
+      flex: 1;
+      align-items: center;
+      justify-content: center;
+    }
+    .lobby-card {
+      max-width: 900px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- === Global Header === -->
+  <header class="site-header game-header" role="banner">
+    <div class="site-header__inner">
+      <div class="header-left">
+        <a class="site-brand" href="/" aria-label="BatriTable Home">
+          <img src="/BatriTable-icon.png?v=3" alt="BatriTableアイコン"
+            style="width:36px; height:36px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.15);" />
+          <h1>BatriTable</h1>
+        </a>
+      </div>
+
+      <nav class="site-nav" aria-label="Global">
+        <a href="/index.html">ホーム</a>
+        <a href="/howto.html">遊び方</a>
+        <a href="/about.html">運営者情報</a>
+        <a href="/privacy.html">プライバシー</a>
+        <a href="/terms.html">利用規約</a>
+        <a href="/contact.html">お問い合わせ</a>
+      </nav>
+
+      <div class="header-right">
+        <select aria-label="Language" class="lang-switch-header" id="lang-switch">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <div aria-modal="true" id="lobby" role="dialog">
+    <div class="lobby-card">
+      <div aria-label="Language Selector" class="lobby-lang" role="group">
+        <span class="lobby-lang-label">Language</span>
+        <select aria-label="Language" class="lang-switch-inline" id="lang-switch-lobby">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <div class="lobby-title" data-i18n="lobby.welcome">バトライテーブルへようこそ！</div>
+      <div class="lobby-auth" id="lobby-auth-area">
+        <div id="auth-form-area" class="auth-buttons" style="text-align:center;">
+          <button class="btn secondary" id="login-go-btn" style="padding:8px 16px;"
+            onclick="location.href='./login.html'" data-i18n="auth.loginBtn">ログインする</button>
+        </div>
+        <div id="auth-loggedin-area" style="display:none;">
+          <div class="auth-user-info">
+            <span id="whoami" style="color:#555; font-size:13px;"></span>
+            <span id="lobby-premium-badge" style="display:none;"></span>
+          </div>
+          <div class="auth-buttons">
+            <button class="btn secondary" id="logout-google" style="padding:8px 12px;" data-i18n="auth.logout">ログアウト</button>
+            <button class="btn secondary" id="btn-mypage" style="padding:8px 12px;" data-i18n="app.mypage"
+              onclick="location.href='./mypage.html'">マイページ</button>
+          </div>
+        </div>
+      </div>
+      <div class="lobby-grid">
+        <section aria-labelledby="join-title" class="lobby-section">
+          <div class="lobby-subtitle" data-i18n="join.section" id="join-title">既存ルームに参加（非ホスト）</div>
+          <label class="lobby-label" data-i18n="join.roomId">参加するルームID</label>
+          <div class="row" style="margin-bottom:8px;">
+            <input class="field" data-i18n-placeholder="join.roomId.ph" id="join-room-id"
+              placeholder="例: room-abc / 1234" type="text" />
+          </div>
+          <label class="lobby-label" data-i18n="join.password">入室パスワード</label>
+          <div class="row" style="margin-bottom:12px;">
+            <input class="field" data-i18n-placeholder="join.password.ph" id="join-room-pass"
+              placeholder="ホストが設定した場合は必須" type="password" />
+          </div>
+          <label class="lobby-label" data-i18n="join.name">プレイヤー名</label>
+          <div class="row" style="margin-bottom:12px;">
+            <input class="field" data-i18n-placeholder="join.name.ph" id="player-name" maxlength="24"
+              placeholder="例: SOLVENTER" type="text" />
+          </div>
+          <div class="row" style="margin-top:auto; padding-top:16px; justify-content:flex-end; gap:8px;">
+            <button class="btn" data-i18n="join.start" disabled="" id="start-btn" type="button">開始</button>
+          </div>
+        </section>
+        <section aria-labelledby="create-title" class="lobby-section">
+          <div class="lobby-subtitle" data-i18n="create.section" id="create-title">新しいルームを作成（ホスト）</div>
+          <label class="lobby-label" data-i18n="create.roomId">新しいルームID</label>
+          <div class="row" style="margin-bottom:8px;">
+            <input class="field" data-i18n-placeholder="create.roomId.ph" id="new-room-id"
+              placeholder="例: room-abc / 1234" type="text" />
+          </div>
+          <label class="lobby-label" data-i18n="create.password">入室パスワード（任意）</label>
+          <div class="row" style="margin-bottom:12px;">
+            <input class="field" data-i18n-placeholder="create.password.ph" id="new-room-pass" placeholder="設定すると参加時に必須"
+              type="password" />
+          </div>
+          <label class="lobby-label" data-i18n="create.name">プレイヤー名</label>
+          <div class="row" style="margin-bottom:12px;">
+            <input class="field" data-i18n-placeholder="create.name.ph" id="new-player-name" maxlength="24"
+              placeholder="例: SOLVENTER" type="text" />
+          </div>
+          <label class="lobby-label" data-i18n="create.playerCount">プレイ人数</label>
+          <div class="row" style="margin-bottom:12px;">
+            <select class="field" id="new-player-count">
+              <option value="1">1人</option>
+              <option value="2">2人</option>
+              <option value="3">3人</option>
+              <option value="4" selected>4人</option>
+              <option value="5">5人</option>
+              <option value="6">6人</option>
+              <option value="7">7人</option>
+              <option value="8">8人</option>
+            </select>
+          </div>
+          <label class="lobby-label" data-i18n="create.chooseMode" style="margin-top:10px;">ゲームの種類</label>
+          <div class="row" id="create-mode-row" style="gap:8px;">
+            <button aria-pressed="true" class="btn secondary" data-i18n="create.mode.card" id="pick-mode-card"
+              type="button">カードゲーム</button>
+            <button aria-pressed="false" class="btn secondary" data-i18n="create.mode.board" id="pick-mode-board"
+              type="button">ボードゲーム</button>
+          </div>
+          <div class="row" id="create-btn-row" style="margin-top:auto; padding-top:16px; justify-content:flex-end;">
+            <button class="btn" data-i18n="create.createBtn" id="create-room-btn">作成</button>
+          </div>
+        </section>
+      </div>
+      <div class="lobby-credit">BatriTable — © 2025 SOLVENTER</div>
+    </div>
+  </div>
+
+  <!-- フィールド構成選択モーダル -->
+  <!-- game.html から移植 -->
+  <div id="field-layout-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:20000; align-items:center; justify-content:center;">
+    <div class="layout-modal-card"
+      style="background:#fff; padding:32px; border-radius:24px; width:720px; max-width:95%; box-shadow:0 12px 48px rgba(0,0,0,0.4); text-align:center;">
+      <div style="font-weight:800; font-size:24px; margin-bottom:24px; letter-spacing:1px; color:#333;">フィールド構成を選択</div>
+      <div style="display:flex; gap:24px; justify-content:center; margin-bottom:32px;">
+        <div class="layout-option" id="layout-opt-simple" style="flex:1; cursor:pointer;" onclick="selectLayoutOption('simple')">
+          <div class="layout-preview-wrap" style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
+            <img id="layout-img-simple" src="image/Field_simple_type.png" alt="Simple" style="width:100%; display:block;" />
+            <div class="selection-overlay" style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
+          </div>
+          <div style="margin-top:12px; font-weight:800; font-size:20px; color:#555;">シンプル</div>
+        </div>
+        <div class="layout-option active" id="layout-opt-standard" style="flex:1; cursor:pointer;" onclick="selectLayoutOption('standard')">
+          <div class="layout-preview-wrap" style="border:4px solid #2d8; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
+            <img id="layout-img-standard" src="image/Field_standard_type.png" alt="Standard" style="width:100%; display:block;" />
+            <div class="selection-overlay" style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:1; transition:0.3s;"></div>
+          </div>
+          <div style="margin-top:12px; font-weight:800; font-size:20px; color:#2d8;">スタンダード</div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:center; gap:20px;">
+        <button id="field-layout-cancel" class="btn secondary" style="padding:12px 32px; font-weight:700;">キャンセル</button>
+        <button id="field-layout-ok" class="btn" style="padding:12px 48px; font-weight:800; font-size:18px;">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="scripts/polyfills.js"></script>
+  <script type="module" src="scripts/lobby.module.js"></script>
+</body>
+
+</html>
