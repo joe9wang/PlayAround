@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const OUT_DIR = "./dist";
-const PAGES = ["./index.html", "./game.html", "./mypage.html", "./login.html", "./plans.html"];
+const PAGES = ["./index.html", "./game.html", "./lobby.html", "./mypage.html", "./login.html", "./plans.html"];
 const JS_MODULES = [
   "./scripts/game.module.js",
   "./scripts/firebase.init.js",
@@ -12,6 +12,8 @@ const JS_MODULES = [
   "./scripts/i18n.js",
   "./scripts/hp.js",
   "./scripts/room.module.js",
+  "./scripts/lobby.module.js",
+  "./scripts/utils.js",
 ];
 
 const DIRS = [
