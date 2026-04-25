@@ -577,6 +577,12 @@
                 if (!user) { signInAnonymously(auth).catch(console.error); return; }
             }
             if (!user) return;
+
+            // 匿名ログインIDを記憶する
+            if (user.isAnonymous) {
+                localStorage.setItem('pa:last-anon-uid', user.uid);
+            }
+
             if (user.isAnonymous) {
                 authFormArea.style.display = '';
                 authLoggedinArea.style.display = 'none';

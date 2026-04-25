@@ -54,9 +54,21 @@ async function init() {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       CURRENT_UID = user.uid;
+      // 匿名ログインIDを記憶する
+      if (user.isAnonymous) {
+        localStorage.setItem('pa:last-anon-uid', user.uid);
+      }
+
       whoamiSpan.textContent = user.displayName || user.email || 'Anonymous';
-      authFormArea.style.display = 'none';
-      authLoggedinArea.style.display = 'block';
+      
+      // 匿名ログイン時は「ログイン」ボタンのみ表示し、ログアウト／マイページは隠す
+      if (user.isAnonymous) {
+        authFormArea.style.display = 'block';
+        authLoggedinArea.style.display = 'none';
+      } else {
+        authFormArea.style.display = 'none';
+        authLoggedinArea.style.display = 'block';
+      }
       
       // Load stored player name if exists
       if (!newPlayerNameInput.value) newPlayerNameInput.value = localStorage.getItem('pa:last-player-name') || '';
@@ -177,6 +189,8 @@ async function executeRoomCreation(layoutType) {
     const roomRef = doc(db, `rooms/${id}`);
     const existsSnap = await getDoc(roomRef);
     const roomData = existsSnap.exists() ? existsSnap.data() : null;
+    const lastAnonUid = localStorage.getItem('pa:last-anon-uid');
+    const isRecentlySameHost = roomData && lastAnonUid && roomData.hostUid === lastAnonUid;
 
     // Room takeover logic (simplified from game.module.js)
     if (roomData && (roomData.hostUid !== uid || roomData.roomClosed === true)) {
@@ -189,7 +203,10 @@ async function executeRoomCreation(layoutType) {
          return !!d.claimedByUid && (Date.now() - hb) <= 15000;
        });
 
-       if (someoneAlive && roomData.hostUid !== uid) {
+       // 匿名ログインIDと一致する場合、または自分がホストの場合は、生存チェックをパスしてAPI呼び出し（リセット）へ進ませる
+       const shouldBlock = someoneAlive && roomData.hostUid !== uid && !isRecentlySameHost;
+
+       if (shouldBlock) {
          alert('このルームIDは他のホストが使用中です。');
          createRoomBtn.disabled = false;
          createRoomBtn.textContent = oldText;
