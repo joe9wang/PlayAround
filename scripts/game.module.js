@@ -7519,7 +7519,6 @@ window.flipCoin = async function () {
     const faceJP = isHeads ? 'オモテ' : 'ウラ';
 
     const val = isHeads ? 1 : 2;   // 便宜的に 1=表, 2=裏
-
     const imgUrl = svgCoinDataUrl(faceJP);
 
 
