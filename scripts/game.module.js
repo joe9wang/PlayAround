@@ -84,7 +84,7 @@ import {
 
   // Storage
 
-  storage, ref, uploadString, uploadBytes, getDownloadURL
+  ref, uploadString, uploadBytes, getDownloadURL
 
 } from './firebase.init.js';
 
