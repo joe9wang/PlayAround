@@ -304,13 +304,9 @@ const toggleOtherOpsText = document.getElementById('toggle-other-ops-text');
 
 
 function applyOtherOpsUI() {
-
-  const on = !!(CURRENT_ROOM_META?.allowOthersMove);
-
+  const on = !!(CURRENT_ROOM_META?.allowOthersMove || CURRENT_ROOM_META?.allowOtherOps);
   if (toggleOtherOpsInput) toggleOtherOpsInput.checked = on;
-
   if (toggleOtherOpsText) toggleOtherOpsText.textContent = on ? 'ON' : 'OFF';
-
 }
 
 
@@ -2116,7 +2112,9 @@ async function waitForBoardDeckRect(maxWaitMs = 1000) {
 
 function isMyCard(cardEl) { return cardEl?.dataset?.ownerSeat === String(CURRENT_PLAYER); }
 
-function allowOperateOthers() { return !!(CURRENT_ROOM_META?.allowOthersMove); }
+function allowOperateOthers() { 
+  return !!(CURRENT_ROOM_META?.allowOthersMove || CURRENT_ROOM_META?.allowOtherOps); 
+}
 
 /**
  * 「かるた方式」: 他人の操作が許可されている場合、触れた瞬間に所有権を自分に移す
