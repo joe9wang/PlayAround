@@ -9919,8 +9919,6 @@ function openBackImagePicker() {
 
       // Storage: rooms/{room}/seats/{seat}/card-back.jpg
 
-      const storage = getStorage();
-
       const path = `rooms/${CURRENT_ROOM}/seats/${CURRENT_PLAYER}/card-back.jpg`;
 
       const sref = ref(storage, path);
