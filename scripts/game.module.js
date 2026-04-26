@@ -84,7 +84,7 @@ import {
 
   // Storage
 
-  ref, uploadString, uploadBytes, getDownloadURL
+  storage, ref, uploadString, uploadBytes, getDownloadURL
 
 } from './firebase.init.js';
 
@@ -3117,27 +3117,38 @@ let hostHeartbeatTimer = null;
 async function generateBoardPreview() {
   try {
     const field = document.getElementById('field') || document.getElementById('game-field');
-    if (!field) return null;
+    if (!field) {
+      console.warn('[Preview] フィールド要素 (#field / #game-field) が見つかりません');
+      return null;
+    }
 
     const canvas = document.createElement('canvas');
     canvas.width = 480;
     canvas.height = 270;
     const ctx = canvas.getContext('2d');
 
-    // 背景色（緑系）
+    // 背景色
     ctx.fillStyle = '#2e7d32'; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const fieldRect = field.getBoundingClientRect();
     const zoomVal = typeof zoom !== 'undefined' ? zoom : 1;
 
-    // 有効なエリア（プレイエリアなど）を特定して描画範囲を決める
-    const areas = Array.from(document.querySelectorAll('.main-play-area, .play-area, .zone, #board-play, .dynamic-area, #board-layout, .zone-area'));
-    if (areas.length === 0) return null;
+    // 範囲決定のための要素
+    const selectors = [
+      '.main-play-area', '.play-area', '.zone', '#board-play', 
+      '.dynamic-area', '#board-layout', '.zone-area', '.player-area',
+      '.field-background', '#field', '#game-field'
+    ];
+    const areas = Array.from(document.querySelectorAll(selectors.join(',')));
+    
+    if (areas.length === 0) {
+      console.warn('[Preview] キャプチャ対象となるエリアが見つかりません');
+      return null;
+    }
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     
-    // フィールド上の相対座標を取得するヘルパー
     const getRelativePos = (el) => {
       const r = el.getBoundingClientRect();
       return {
@@ -3150,16 +3161,18 @@ async function generateBoardPreview() {
 
     areas.forEach(el => {
       const pos = getRelativePos(el);
-      if (pos.w === 0 || pos.h === 0) return;
+      if (pos.w < 10 || pos.h < 10) return; // 小さすぎる要素は除外
       minX = Math.min(minX, pos.l); minY = Math.min(minY, pos.t);
       maxX = Math.max(maxX, pos.l + pos.w); maxY = Math.max(maxY, pos.t + pos.h);
     });
 
-    // 範囲が特定できない場合は終了
-    if (minX === Infinity) return null;
+    if (minX === Infinity) {
+      console.warn('[Preview] 有効な描画範囲を特定できませんでした');
+      return null;
+    }
 
-    // 余白を追加
-    const margin = 60;
+    // 余白
+    const margin = 50;
     minX -= margin; minY -= margin; maxX += margin; maxY += margin;
     const width = maxX - minX;
     const height = maxY - minY;
@@ -3168,17 +3181,18 @@ async function generateBoardPreview() {
     const offsetX = (canvas.width - width * scale) / 2 - minX * scale;
     const offsetY = (canvas.height - height * scale) / 2 - minY * scale;
 
-    // エリアの描画
+    // エリア描画
     areas.forEach(el => {
       const pos = getRelativePos(el);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.fillRect(pos.l * scale + offsetX, pos.t * scale + offsetY, pos.w * scale, pos.h * scale);
     });
 
-    // カードとトークンの描画
+    // カードとトークン
     const cards = Array.from(document.querySelectorAll('.card'));
     cards.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
 
+    let drawCount = 0;
     cards.forEach(el => {
       const pos = getRelativePos(el);
       const drawX = pos.l * scale + offsetX;
@@ -3200,7 +3214,7 @@ async function generateBoardPreview() {
           ctx.fillRect(drawX, drawY, drawW, drawH);
         }
       } else {
-        ctx.fillStyle = '#1b5e20'; // 裏面
+        ctx.fillStyle = '#1b5e20';
         ctx.fillRect(drawX, drawY, drawW, drawH);
       }
 
@@ -3208,25 +3222,26 @@ async function generateBoardPreview() {
       const input = el.querySelector('.token-input');
       if (input && input.value) {
         ctx.fillStyle = '#000';
-        ctx.font = `bold ${Math.max(5, 8 * scale)}px sans-serif`;
+        ctx.font = `bold ${Math.max(5, 7 * scale)}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(input.value.slice(0, 10), drawX + drawW/2, drawY + drawH/2, drawW * 0.9);
       }
       
-      // 数値カウンタ
       const num = el.querySelector('.num-val');
       if (num) {
         ctx.fillStyle = '#d32f2f';
-        ctx.font = `bold ${Math.max(7, 14 * scale)}px sans-serif`;
+        ctx.font = `bold ${Math.max(7, 12 * scale)}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText(num.textContent, drawX + drawW/2, drawY + drawH/2);
       }
+      drawCount++;
     });
 
+    console.log(`[Preview] 画像を生成しました（エリア数: ${areas.length}, カード数: ${drawCount}）`);
     return canvas.toDataURL('image/jpeg', 0.6);
   } catch (e) {
-    console.warn('generateBoardPreview failed', e);
+    console.error('[Preview] プレビュー生成エラー:', e);
     return null;
   }
 }
@@ -3259,20 +3274,25 @@ function startHostHeartbeat(roomId) {
       if (cardsCountSnap) updatePayload.cardsCount = cardsCountSnap.data().count;
       if (chatCountSnap) updatePayload.chatCount = chatCountSnap.data().count;
 
-      // 定期的なプレビュー画像生成とアップロード（5分おき）
+      // 定期的なプレビュー画像生成とアップロード（1分おき）
       const now = Date.now();
       if (now - lastScreenshotTime > SCREENSHOT_INTERVAL_MS) {
+        console.log('[Preview] プレビュー生成を開始します...');
         lastScreenshotTime = now;
         const dataUrl = await generateBoardPreview();
         if (dataUrl) {
           try {
+            console.log('[Preview] 画像生成成功、アップロード中...');
             const previewRef = ref(storage, `rooms/${roomId}/screenshot.jpg`);
             await uploadString(previewRef, dataUrl, 'data_url');
             const url = await getDownloadURL(previewRef);
             updatePayload.screenshotUrl = url;
+            console.log('[Preview] アップロード完了:', url);
           } catch (err) {
-            console.warn('Upload screenshot failed', err);
+            console.error('[Preview] アップロード失敗:', err);
           }
+        } else {
+          console.warn('[Preview] 画像生成に失敗しました（要素が見つかりません）');
         }
       }
 
