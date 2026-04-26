@@ -3915,7 +3915,7 @@ function bindLifecycleHandlers() {
 
 function updateSessionIndicator() {
   if (!CURRENT_ROOM || !CURRENT_PLAYER) {
-    sessionIndicator.textContent = 'ROOM: - / PLAYER: - / SEAT: -';
+    sessionIndicator.innerHTML = '<div>ROOM: -</div><div>PLAYER: -</div><div>SEAT: -</div>';
     return;
   }
   let pName = localStorage.getItem('pa:last-player-name') || 'Guest';
@@ -3923,9 +3923,36 @@ function updateSessionIndicator() {
   if (CURRENT_PLAYER !== 'spectator') {
     const seatData = currentSeatMap[CURRENT_PLAYER];
     if (seatData && seatData.displayName) pName = seatData.displayName;
-    seatDisplay = `SEAT${CURRENT_PLAYER}`;
+    seatDisplay = `${CURRENT_PLAYER}`; // SEATを省く
   }
-  sessionIndicator.textContent = `ROOM: ${CURRENT_ROOM} / PLAYER: ${pName} / SEAT: ${seatDisplay}`;
+
+  // 残り時間の計算
+  let expiryText = '';
+  if (CURRENT_ROOM_META?.expiresAt) {
+    try {
+      const exp = CURRENT_ROOM_META.expiresAt.toMillis();
+      const diffMs = exp - Date.now();
+      const diffHrs = Math.ceil(diffMs / (1000 * 60 * 60));
+      if (diffHrs > 0) {
+        expiryText = ` (${diffHrs}時間後に削除)`;
+      } else {
+        expiryText = ` (間もなく削除)`;
+      }
+    } catch (e) { console.warn('Expiry calculation error', e); }
+  }
+
+  sessionIndicator.innerHTML = `
+    <div>ROOM: ${CURRENT_ROOM}${expiryText}</div>
+    <div>PLAYER: ${pName}</div>
+    <div>SEAT: ${seatDisplay}</div>
+  `;
+  
+  // 1分ごとに表示を更新するためのタイマー（まだなければ設定）
+  if (!window._indicatorTimerId) {
+    window._indicatorTimerId = setInterval(() => {
+      updateSessionIndicator();
+    }, 60000);
+  }
   
   const sitBtn = document.getElementById('sit-seat-btn');
   const leaveBtn = document.getElementById('leave-seat-btn');
