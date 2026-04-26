@@ -997,7 +997,7 @@ async function updateSlotPreviews() {
 
           if (!url) continue;
 
-          const img = document.createElement('img');
+          const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
           img.src = url;
 
@@ -4775,7 +4775,7 @@ function createCardDom(cardId, imageSrc, state) {
 
     // ←← ここが重要：img を作って貼る
 
-    const img = document.createElement('img');
+    const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
     img.src = imageSrc;
 
@@ -4961,7 +4961,7 @@ function createCardDom(cardId, imageSrc, state) {
 
 
 
-  const img = document.createElement('img');
+  const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
   img.decoding = 'async';
 
@@ -8389,7 +8389,7 @@ window.openMyCardsDialog = function () {
 
       item.title = id;
 
-      const img = document.createElement('img');
+      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
       img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
 
@@ -8573,7 +8573,7 @@ window.openMyDeckCardsDialog = function () {
 
       item.title = id;
 
-      const img = document.createElement('img');
+      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
       img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
 
@@ -8699,7 +8699,7 @@ window.openMyDiscardCardsDialog = function () {
 
       item.title = id;
 
-      const img = document.createElement('img');
+      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
       img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
 
