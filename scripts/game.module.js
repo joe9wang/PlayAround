@@ -2790,9 +2790,12 @@ function renderSeatAvailability() {
     const note = btn.querySelector('.seat-note');
 
     const data = currentSeatMap[seat];
-
     const isMe = data && data.claimedByUid === CURRENT_UID;
     const alive = data && !isSeatStale(data) && !!data.claimedByUid && !isMe;
+
+    if (data && data.claimedByUid) {
+      console.log(`[Seat Debug] seat=${seat}, claimedBy=${data.claimedByUid}, CURRENT_UID=${CURRENT_UID}, isMe=${isMe}, stale=${isSeatStale(data)}`);
+    }
 
     if (isMe) {
       if (note) note.textContent = `(あなたの席)`;
@@ -11977,11 +11980,15 @@ if (sitSeatBtn) {
     for (let i = 1; i <= maxSeats; i++) {
       const seatData = currentSeatMap[i];
       const hb = seatData && seatData.heartbeatAt && seatData.heartbeatAt.toMillis ? seatData.heartbeatAt.toMillis() : 0;
-      const isUsed = !!(seatData && seatData.claimedByUid && (Date.now() - hb) <= SEAT_STALE_MS);
+      const isMe = seatData && seatData.claimedByUid === CURRENT_UID;
+      const isUsed = !!(seatData && seatData.claimedByUid && (Date.now() - hb) <= SEAT_STALE_MS && !isMe);
       
       const btn = document.createElement('button');
       btn.className = 'seat-btn';
-      if (isUsed) {
+      if (isMe) {
+        btn.classList.add('is-me');
+        btn.textContent = `SEAT${i} (戻る)`;
+      } else if (isUsed) {
         btn.classList.add('active');
         btn.disabled = true;
         btn.textContent = `SEAT${i} (満席)`;
