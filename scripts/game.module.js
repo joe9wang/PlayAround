@@ -3127,18 +3127,18 @@ async function generateBoardPreview() {
     canvas.height = 360;
     const ctx = canvas.getContext('2d');
 
-    // 背景色（フィールドの色に合わせる）
-    ctx.fillStyle = '#2e7d32'; 
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     const fieldRect = field.getBoundingClientRect();
     const zoomVal = typeof zoom !== 'undefined' ? zoom : 1;
 
-    // 範囲決定のための要素
+    // 実際のフィールド背景色を取得
+    const fieldStyle = window.getComputedStyle(field);
+    ctx.fillStyle = fieldStyle.backgroundColor || '#2e7d32'; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 範囲決定と描画対象の要素
     const selectors = [
-      '.main-play-area', '.play-area', '.zone', '#board-play', 
-      '.dynamic-area', '#board-layout', '.zone-area', '.player-area',
-      '.field-background', '#field', '#game-field'
+      '.player-area', '.shared-play-area', '.deck-area', '.discard-area', '.special-area', '.hand-area',
+      '.main-play-area', '.zone', '.zone-area', '.field-background'
     ];
     const areas = Array.from(document.querySelectorAll(selectors.join(',')));
     
@@ -3161,7 +3161,7 @@ async function generateBoardPreview() {
 
     areas.forEach(el => {
       const pos = getRelativePos(el);
-      if (pos.w < 10 || pos.h < 10) return; // 小さすぎる要素は除外
+      if (pos.w < 5 || pos.h < 5) return; 
       minX = Math.min(minX, pos.l); minY = Math.min(minY, pos.t);
       maxX = Math.max(maxX, pos.l + pos.w); maxY = Math.max(maxY, pos.t + pos.h);
     });
@@ -3172,7 +3172,7 @@ async function generateBoardPreview() {
     }
 
     // 余白
-    const margin = 50;
+    const margin = 40;
     minX -= margin; minY -= margin; maxX += margin; maxY += margin;
     const width = maxX - minX;
     const height = maxY - minY;
@@ -3181,15 +3181,38 @@ async function generateBoardPreview() {
     const offsetX = (canvas.width - width * scale) / 2 - minX * scale;
     const offsetY = (canvas.height - height * scale) / 2 - minY * scale;
 
-    // エリア描画
+    // 1. エリア描画（実際のスタイルを反映）
     areas.forEach(el => {
       const pos = getRelativePos(el);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.fillRect(pos.l * scale + offsetX, pos.t * scale + offsetY, pos.w * scale, pos.h * scale);
+      const style = window.getComputedStyle(el);
+      
+      const drawX = pos.l * scale + offsetX;
+      const drawY = pos.t * scale + offsetY;
+      const drawW = pos.w * scale;
+      const drawH = pos.h * scale;
+
+      // 背景色（透明でない場合のみ）
+      const bgColor = style.backgroundColor;
+      if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(drawX, drawY, drawW, drawH);
+      }
+
+      // 枠線
+      const border = style.borderStyle;
+      if (border && border !== 'none') {
+        ctx.strokeStyle = style.borderColor || 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        if (border === 'dashed' || border === 'dotted') {
+          ctx.setLineDash([2, 2]);
+        }
+        ctx.strokeRect(drawX, drawY, drawW, drawH);
+        ctx.setLineDash([]);
+      }
     });
 
-    // カードとトークン
-    const cards = Array.from(document.querySelectorAll('.card'));
+    // 2. カードとトークン
+    const cards = Array.from(document.querySelectorAll('.card:not(.template)'));
     cards.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
 
     let drawCount = 0;
@@ -3224,11 +3247,11 @@ async function generateBoardPreview() {
         ctx.fillRect(drawX, drawY, drawW, drawH);
       }
 
-      // トークンのテキスト描画
+      // トークン等のテキスト
       const input = el.querySelector('.token-input');
       if (input && input.value) {
         ctx.fillStyle = '#000';
-        ctx.font = `bold ${Math.max(5, 7 * scale)}px sans-serif`;
+        ctx.font = `bold ${Math.max(6, 8 * scale)}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(input.value.slice(0, 10), drawX + drawW/2, drawY + drawH/2, drawW * 0.9);
@@ -3237,7 +3260,7 @@ async function generateBoardPreview() {
       const num = el.querySelector('.num-val');
       if (num) {
         ctx.fillStyle = '#d32f2f';
-        ctx.font = `bold ${Math.max(7, 12 * scale)}px sans-serif`;
+        ctx.font = `bold ${Math.max(8, 14 * scale)}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText(num.textContent, drawX + drawW/2, drawY + drawH/2);
       }
