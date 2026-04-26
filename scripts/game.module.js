@@ -2749,14 +2749,14 @@ const currentSeatMap = { 1: null, 2: null, 3: null, 4: null };
 
 
 function isSeatStale(data) {
-
   if (!data || !data.heartbeatAt) return true;
-
   const hb = data.heartbeatAt?.toMillis ? data.heartbeatAt.toMillis() : 0;
-
   return (Date.now() - hb) > SEAT_STALE_MS;
-
 }
+
+
+
+
 
 
 
@@ -2771,12 +2771,8 @@ function isRoomEmpty() {
   });
 }
 
-
-
 function renderSeatAvailability() {
-
   const hostHere = isHostAlive(CURRENT_ROOM_META);
-
   const roomEmpty = isRoomEmpty();
 
   seatButtons.forEach(btn => {
@@ -3072,41 +3068,36 @@ function renderFieldLabels() {
 // roomMeta.fieldMode に応じて DOM を切替え。
 
 function applyFieldModeLayout() {
-
   const m = CURRENT_ROOM_META?.fieldMode;
-
   // 'board' と 'trump' をボード系DOMにマップ
-
   const mode = (m === 'board' || m === 'trump') ? 'board' : 'card';
-
   const fieldRoot = document.getElementById('field');
-
   if (!fieldRoot) return;
 
   fieldRoot.classList.toggle('mode-card', mode === 'card');
-
   fieldRoot.classList.toggle('mode-board', mode === 'board');
 
-
-
   const pc = getPlayerSeatsCount();
+  const layout = CURRENT_ROOM_META?.fieldLayout || 'standard';
 
-
+  // ボードレイアウトへのクラス適用
+  const boardLayoutEl = document.getElementById('board-layout');
+  if (boardLayoutEl) {
+    boardLayoutEl.classList.toggle('layout-simple', layout === 'simple');
+    boardLayoutEl.classList.toggle('layout-standard', layout === 'standard');
+  }
 
   // Hide or show `.player-area` nodes dynamically
-
   for (let i = 1; i <= 8; i++) {
     const el = document.querySelector(`.player-${i}`);
     if (el) {
       el.style.display = (mode === 'card' && i <= pc) ? '' : 'none';
       if (mode === 'card') {
-        const layout = CURRENT_ROOM_META?.fieldLayout || 'standard';
         el.classList.toggle('layout-simple', layout === 'simple');
         el.classList.toggle('layout-standard', layout === 'standard');
       }
     }
   }
-
 }
 
 // ===============================
