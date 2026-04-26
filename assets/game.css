@@ -4,7 +4,7 @@
       --header-h: 60px;
       /* site-headerの高さに合わせる */
       --upload-h: 56px;
-      --footer-h: 80px;
+      --footer-h: 40px;
       --gheader-h: 0px;
       /* h1を削除したため0に */
       --special-w: 16.6%;
@@ -1764,8 +1764,6 @@
     }
 
     .site-footer small {
-      position: absolute;
-      right: 12px;
     }
 
     /* コンテンツがフッターに隠れないよう余白を確保 */
