@@ -3272,13 +3272,13 @@ async function generateBoardPreview() {
           try {
             ctx.drawImage(img, drawX, drawY, drawW, drawH);
           } catch (e) {
-            ctx.fillStyle = '#fff'; ctx.fillRect(drawX, drawY, drawW, drawH);
+            ctx.fillStyle = '#333'; ctx.fillRect(drawX, drawY, drawW, drawH);
           }
         } else {
-          ctx.fillStyle = '#fff'; ctx.fillRect(drawX, drawY, drawW, drawH);
+          ctx.fillStyle = '#333'; ctx.fillRect(drawX, drawY, drawW, drawH);
         }
       } else {
-        ctx.fillStyle = '#1b5e20';
+        ctx.fillStyle = '#000'; // 裏面を黒に
         ctx.fillRect(drawX, drawY, drawW, drawH);
       }
 
