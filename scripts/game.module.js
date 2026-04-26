@@ -3208,7 +3208,13 @@ async function generateBoardPreview() {
       if (el.dataset.faceUp === 'true') {
         const img = el.querySelector('img');
         if (img && img.complete && img.naturalWidth > 0) {
-          ctx.drawImage(img, drawX, drawY, drawW, drawH);
+          try {
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+          } catch (e) {
+            console.warn('[Preview] 画像の描画に失敗しました（CORS制限等）:', img.src);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(drawX, drawY, drawW, drawH);
+          }
         } else {
           ctx.fillStyle = '#fff';
           ctx.fillRect(drawX, drawY, drawW, drawH);
@@ -4960,6 +4966,8 @@ function createCardDom(cardId, imageSrc, state) {
   img.decoding = 'async';
 
   img.loading = 'lazy';
+
+  img.crossOrigin = 'anonymous';
 
   if (typeof imageSrc === 'string' && imageSrc.trim().length > 0) {
 
