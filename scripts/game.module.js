@@ -3135,7 +3135,7 @@ function updateAuthIndicator(user) {
   if (!authIndicator) return;
   if (!user || user.isAnonymous) {
     authIndicator.innerHTML = `
-      <a href="./index.html" class="login-btn">ログイン</a>
+      <a href="./login.html" class="login-btn">ログイン</a>
     `;
   } else {
     const photo = user.photoURL;
