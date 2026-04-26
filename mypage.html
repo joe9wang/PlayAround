@@ -702,19 +702,29 @@
       if (!CURRENT_UID) return;
       
       try {
+        // インデックスエラー回避のため、単純なクエリに変更
         const q = query(
           collection(db, 'rooms'),
           where('hostUid', '==', CURRENT_UID),
-          where('roomClosed', '!=', true),
-          orderBy('roomClosed'),
-          orderBy('updatedAt', 'desc'),
-          limit(20)
+          limit(100)
         );
         
         const snap = await getDocs(q);
-        if (myRoomCountEl) myRoomCountEl.textContent = `${snap.size}件`;
         
-        if (snap.empty) {
+        // JS側でフィルタリングとソートを行う
+        const rooms = snap.docs
+          .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
+          .filter(d => d.roomClosed !== true)
+          .sort((a, b) => {
+            const timeA = a.updatedAt?.toMillis?.() || 0;
+            const timeB = b.updatedAt?.toMillis?.() || 0;
+            return timeB - timeA;
+          })
+          .slice(0, 20); // 上位20件を表示
+
+        if (myRoomCountEl) myRoomCountEl.textContent = `${rooms.length}件`;
+        
+        if (rooms.length === 0) {
           if (myRoomListEl) myRoomListEl.innerHTML = '';
           if (myRoomEmptyEl) myRoomEmptyEl.style.display = 'block';
           return;
@@ -723,9 +733,8 @@
         if (myRoomEmptyEl) myRoomEmptyEl.style.display = 'none';
         let html = '';
         
-        snap.forEach(docSnap => {
-          const d = docSnap.data();
-          const roomId = docSnap.id;
+        rooms.forEach(d => {
+          const roomId = d.id;
           const roomName = d.roomName || `ルーム: ${roomId}`;
           const updatedAt = d.updatedAt?.toDate?.().toLocaleString() || '-';
           const pass = d.hasPassword ? 'あり' : 'なし';
