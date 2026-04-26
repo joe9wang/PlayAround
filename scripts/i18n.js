@@ -43,6 +43,10 @@ const I18N = {
         "create.mode.trump": "トランプ",
         "create.createBtn": "作成",
         "create.playerCount": "人数",
+        "create.anonWarning.title": "⚠️ 注意",
+        "create.anonWarning.message": "ログインしていない場合は、ルームは作成後24時間で削除されます。",
+        "create.anonWarning.ok": "OK",
+        "create.anonWarning.cancel": "戻る",
 
         // --- Side / Panel / Buttons ---
         "side.panel": "操作パネル",
@@ -172,6 +176,10 @@ const I18N = {
         "create.mode.trump": "Playing cards",
         "create.createBtn": "Create",
         "create.playerCount": "Number of players",
+        "create.anonWarning.title": "⚠️ Warning",
+        "create.anonWarning.message": "If you are not logged in, the room will be deleted 24 hours after creation.",
+        "create.anonWarning.ok": "OK",
+        "create.anonWarning.cancel": "Back",
 
         // --- Side / Panel / Buttons ---
         "side.panel": "Control Panel",

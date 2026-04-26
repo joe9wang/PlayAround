@@ -193,6 +193,23 @@
     </div>
   </div>
 
+  <!-- 匿名ユーザー向け警告モーダル -->
+  <div id="anon-warning-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:21000; align-items:center; justify-content:center;">
+    <div class="layout-modal-card"
+      style="background:#fff; padding:32px; border-radius:24px; width:480px; max-width:90%; box-shadow:0 12px 48px rgba(0,0,0,0.4); text-align:center;">
+      <div data-i18n="create.anonWarning.title" style="font-weight:800; font-size:20px; margin-bottom:16px; color:#e64a5a;">⚠️ 注意</div>
+      <div data-i18n="create.anonWarning.message" style="margin-bottom:24px; font-size:16px; line-height:1.6; color:#333;">
+        ログインしていない場合は、<br>
+        ルームは作成後24時間で削除されます。
+      </div>
+      <div style="display:flex; justify-content:center; gap:16px;">
+        <button id="anon-warning-cancel" class="btn secondary" data-i18n="create.anonWarning.cancel" style="padding:10px 24px; font-weight:700;">戻る</button>
+        <button id="anon-warning-ok" class="btn" data-i18n="create.anonWarning.ok" style="padding:10px 32px; font-weight:800;">OK</button>
+      </div>
+    </div>
+  </div>
+
   <script src="scripts/polyfills.js"></script>
   <script type="module" src="scripts/lobby.module.js"></script>
 </body>

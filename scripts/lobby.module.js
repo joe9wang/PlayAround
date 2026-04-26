@@ -107,6 +107,14 @@ async function init() {
     document.getElementById('field-layout-modal').style.display = 'none';
   });
 
+  document.getElementById('anon-warning-ok')?.addEventListener('click', () => {
+    document.getElementById('anon-warning-modal').style.display = 'none';
+    showLayoutModal();
+  });
+  document.getElementById('anon-warning-cancel')?.addEventListener('click', () => {
+    document.getElementById('anon-warning-modal').style.display = 'none';
+  });
+
   updateModePickButtons();
 }
 
@@ -149,6 +157,14 @@ async function handleCreateRoom() {
   // Store name
   localStorage.setItem('pa:last-player-name', TEMP_CREATE_CREATOR_NAME);
 
+  if (auth.currentUser?.isAnonymous) {
+    document.getElementById('anon-warning-modal').style.display = 'flex';
+  } else {
+    showLayoutModal();
+  }
+}
+
+function showLayoutModal() {
   if (CREATE_FIELD_MODE === 'card' || CREATE_FIELD_MODE === 'board') {
     const simpleImg = document.getElementById('layout-img-simple');
     const standardImg = document.getElementById('layout-img-standard');
