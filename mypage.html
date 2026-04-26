@@ -342,6 +342,89 @@
       border-radius: 6px;
       display: block;
     }
+    /* ▼ マイルームカード */
+    .room-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .room-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    }
+    .room-card-thumb {
+      height: 120px;
+      background: #eee;
+      position: relative;
+      overflow: hidden;
+    }
+    .room-card-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .room-card-body {
+      padding: 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .room-card-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .room-card-meta {
+      font-size: 12px;
+      color: #666;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .room-card-stats {
+      font-size: 12px;
+      color: #555;
+      margin-top: 4px;
+    }
+    .room-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .room-card-actions a, .room-card-actions button {
+      flex: 1;
+      text-align: center;
+      padding: 8px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn-enter {
+      background: #444;
+      color: #fff;
+    }
+    .btn-delete {
+      background: #fff;
+      color: #e53e3e;
+      border: 1px solid #fed7d7;
+    }
+    .room-name-edit {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 2px 6px;
+      width: 100%;
+      font-size: 14px;
+    }
   </style>
 </head>
 
@@ -377,111 +460,18 @@
       </div>
     </section>
 
-    <!-- 保存したルーム -->
-    <section aria-labelledby="sec-room-saves">
-      <h2 id="sec-room-saves">保存したルーム</h2>
-      <ul class="plain" id="roomSaveList">
-        <li class="item" id="room-slot-1">
-          <div>
-            <div><strong>スロット1</strong></div>
-            <div class="muted room-slot-updated">最終更新: -</div>
-            <div class="muted room-slot-info">データなし</div>
-          </div>
-          <div class="right">
-            <a class="small-btn room-enter-btn" href="#" data-slot="1" style="display:none;">ルームに入る</a>
-          </div>
-        </li>
-        <li class="item" id="room-slot-2">
-          <div>
-            <div><strong>スロット2</strong></div>
-            <div class="muted room-slot-updated">最終更新: -</div>
-            <div class="muted room-slot-info">データなし</div>
-          </div>
-          <div class="right">
-            <a class="small-btn room-enter-btn" href="#" data-slot="2" style="display:none;">ルームに入る</a>
-          </div>
-        </li>
-        <li class="item" id="room-slot-3">
-          <div>
-            <div><strong>スロット3</strong></div>
-            <div class="muted room-slot-updated">最終更新: -</div>
-            <div class="muted room-slot-info">データなし</div>
-          </div>
-          <div class="right">
-            <a class="small-btn room-enter-btn" href="#" data-slot="3" style="display:none;">ルームに入る</a>
-          </div>
-        </li>
-        <li class="item" id="room-slot-4">
-          <div>
-            <div><strong>スロット4</strong></div>
-            <div class="muted room-slot-updated">最終更新: -</div>
-            <div class="muted room-slot-info">データなし</div>
-          </div>
-          <div class="right">
-            <a class="small-btn room-enter-btn" href="#" data-slot="4" style="display:none;">ルームに入る</a>
-          </div>
-        </li>
-        <li class="item" id="room-slot-5">
-          <div>
-            <div><strong>スロット5</strong></div>
-            <div class="muted room-slot-updated">最終更新: -</div>
-            <div class="muted room-slot-info">データなし</div>
-          </div>
-          <div class="right">
-            <a class="small-btn room-enter-btn" href="#" data-slot="5" style="display:none;">ルームに入る</a>
-          </div>
-        </li>
-        <li class="item" id="room-slot-6">
-          <div>
-            <div><strong>スロット6</strong></div>
-            <div class="muted room-slot-updated">最終更新: -</div>
-            <div class="muted room-slot-info">データなし</div>
-          </div>
-          <div class="right">
-            <a class="small-btn room-enter-btn" href="#" data-slot="6" style="display:none;">ルームに入る</a>
-          </div>
-        </li>
-        <li class="item" id="room-slot-7">
-          <div>
-            <div><strong>スロット7</strong></div>
-            <div class="muted room-slot-updated">最終更新: -</div>
-            <div class="muted room-slot-info">データなし</div>
-          </div>
-          <div class="right">
-            <a class="small-btn room-enter-btn" href="#" data-slot="7" style="display:none;">ルームに入る</a>
-          </div>
-        </li>
-        <li class="item" id="room-slot-8">
-          <div>
-            <div><strong>スロット8</strong></div>
-            <div class="muted room-slot-updated">最終更新: -</div>
-            <div class="muted room-slot-info">データなし</div>
-          </div>
-          <div class="right">
-            <a class="small-btn room-enter-btn" href="#" data-slot="8" style="display:none;">ルームに入る</a>
-          </div>
-        </li>
-        <li class="item" id="room-slot-9">
-          <div>
-            <div><strong>スロット9</strong></div>
-            <div class="muted room-slot-updated">最終更新: -</div>
-            <div class="muted room-slot-info">データなし</div>
-          </div>
-          <div class="right">
-            <a class="small-btn room-enter-btn" href="#" data-slot="9" style="display:none;">ルームに入る</a>
-          </div>
-        </li>
-        <li class="item" id="room-slot-10">
-          <div>
-            <div><strong>スロット10</strong></div>
-            <div class="muted room-slot-updated">最終更新: -</div>
-            <div class="muted room-slot-info">データなし</div>
-          </div>
-          <div class="right">
-            <a class="small-btn room-enter-btn" href="#" data-slot="10" style="display:none;">ルームに入る</a>
-          </div>
-        </li>
-      </ul>
+    <!-- マイルーム -->
+    <section aria-labelledby="sec-my-rooms">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <h2 id="sec-my-rooms">マイルーム</h2>
+        <span class="muted" id="my-room-count">0件</span>
+      </div>
+      <div id="myRoomList" class="grid cols-2">
+        <!-- 動的に生成 -->
+      </div>
+      <div id="myRoomEmpty" style="display:none; padding: 40px; text-align: center; color: #999;">
+        作成したルームはありません。
+      </div>
     </section>
 
     <!-- セーブデータ一覧（後でFirestore連携する想定） -->
@@ -664,7 +654,8 @@
       setPersistence, browserLocalPersistence, updateProfile
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
     import {
-      getFirestore, doc, getDoc, collection, getDocs, query, limit, updateDoc, writeBatch
+      getFirestore, doc, getDoc, collection, getDocs, query, limit, updateDoc, writeBatch,
+      where, orderBy, deleteDoc, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
     import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
 
@@ -702,155 +693,120 @@
     let CURRENT_UID = null;
     const slPath = (slot) => `users/${CURRENT_UID}/saves/slot${slot}`;
 
-    // ルーム保存機能情報取得
-    const roomSlPath = (slot) => `users/${CURRENT_UID}/savedRooms/slot${slot}`;
+    // ===== マイルーム表示 =====
+    const myRoomListEl = document.getElementById('myRoomList');
+    const myRoomEmptyEl = document.getElementById('myRoomEmpty');
+    const myRoomCountEl = document.getElementById('my-room-count');
 
-    async function fetchRoomSlotMeta(slot) {
-      const snap = await getDoc(doc(db, roomSlPath(slot)));
-      const d = snap.exists() ? (snap.data() || {}) : {};
-      return {
-        exists: snap.exists(),
-        roomName: d.roomName || '保存したルーム',
-        roomId: d.roomId || d.originalRoomId || '不明',
-        password: d.password || 'なし',
-        cardsCount: d.cardsCount || 0,
-        chatCount: d.chatCount || 0,
-        updatedAt: d.updatedAt?.toDate?.() || null
-      };
-    }
-
-    async function refreshRoomSaveSlots() {
-      const SLOTS = Array.from({ length: 10 }, (_, i) => i + 1);
-      for (const slot of SLOTS) {
-        const meta = await fetchRoomSlotMeta(slot);
-        const itemEl = document.getElementById(`room-slot-${slot}`);
-        if (!itemEl) continue;
-
-        const uEl = itemEl.querySelector('.room-slot-updated');
-        const iEl = itemEl.querySelector('.room-slot-info');
-        const btn = itemEl.querySelector('.room-enter-btn');
-        const rightDiv = itemEl.querySelector('.right');
-
-        if (meta.exists) {
-          if (uEl) uEl.textContent = `最終更新: ${meta.updatedAt ? meta.updatedAt.toLocaleString() : '-'}`;
-          if (iEl) {
-            iEl.innerHTML = `
-              <div style="margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
-                <span style="font-size:13px; color:#555; white-space: nowrap;">ルーム名:</span>
-                <input type="text" class="room-name-input" data-slot="${slot}" value="${meta.roomName}" style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 4px; width: 160px; font-size: 14px;">
+    async function refreshMyRooms() {
+      if (!CURRENT_UID) return;
+      
+      try {
+        const q = query(
+          collection(db, 'rooms'),
+          where('hostUid', '==', CURRENT_UID),
+          where('roomClosed', '!=', true),
+          orderBy('roomClosed'),
+          orderBy('updatedAt', 'desc'),
+          limit(20)
+        );
+        
+        const snap = await getDocs(q);
+        if (myRoomCountEl) myRoomCountEl.textContent = `${snap.size}件`;
+        
+        if (snap.empty) {
+          if (myRoomListEl) myRoomListEl.innerHTML = '';
+          if (myRoomEmptyEl) myRoomEmptyEl.style.display = 'block';
+          return;
+        }
+        
+        if (myRoomEmptyEl) myRoomEmptyEl.style.display = 'none';
+        let html = '';
+        
+        snap.forEach(docSnap => {
+          const d = docSnap.data();
+          const roomId = docSnap.id;
+          const roomName = d.roomName || `ルーム: ${roomId}`;
+          const updatedAt = d.updatedAt?.toDate?.().toLocaleString() || '-';
+          const pass = d.hasPassword ? 'あり' : 'なし';
+          const cardsCount = d.cardsCount || 0;
+          const chatCount = d.chatCount || 0;
+          const thumb = d.screenshotUrl || '';
+          
+          html += `
+            <div class="room-card" data-id="${roomId}">
+              <div class="room-card-thumb">
+                ${thumb ? `<img src="${thumb}" alt="Preview">` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-size:12px;">No Preview</div>'}
               </div>
-              <div style="font-size: 13px; color: #555;">ルームID: ${meta.roomId}</div>
-              <div style="font-size: 13px; color: #555;">パスワード: ${meta.password}</div>
-              <div style="font-size: 13px; margin-top: 4px;">📝 ${meta.cardsCount}枚 / 💬 ${meta.chatCount}件</div>
-            `;
-            iEl.classList.remove('muted');
-          }
-          if (btn) btn.style.display = 'inline-flex';
-
-          if (rightDiv) {
-            rightDiv.style.display = 'flex';
-            rightDiv.style.flexDirection = 'column';
-            rightDiv.style.alignItems = 'stretch';
-
-            let delBtn = rightDiv.querySelector('.room-delete-btn');
-            if (!delBtn) {
-              delBtn = document.createElement('button');
-              delBtn.className = 'small-btn room-delete-btn';
-              delBtn.dataset.slot = slot;
-              delBtn.textContent = 'ルームを削除する';
-              delBtn.style.marginTop = '8px';
-              delBtn.style.borderColor = '#e53e3e';
-              delBtn.style.color = '#e53e3e';
-              delBtn.style.background = '#fff4f4';
-              delBtn.style.cursor = 'pointer';
-              rightDiv.appendChild(delBtn);
-            }
-          }
-        } else {
-          if (uEl) uEl.textContent = '最終更新: -';
-          if (iEl) {
-            iEl.textContent = 'データなし';
-            iEl.classList.add('muted');
-          }
-          if (btn) btn.style.display = 'none';
-
-          if (rightDiv) {
-            const delBtn = rightDiv.querySelector('.room-delete-btn');
-            if (delBtn) delBtn.remove();
-          }
-        }
+              <div class="room-card-body">
+                <div class="room-card-title">
+                  <input type="text" class="room-name-edit" value="${roomName}" data-id="${roomId}" title="クリックして名前を変更">
+                </div>
+                <div class="room-card-meta">
+                  <div>ID: ${roomId}</div>
+                  <div>パスワード: ${pass}</div>
+                  <div>更新: ${updatedAt}</div>
+                </div>
+                <div class="room-card-stats">
+                  📝 ${cardsCount}枚 / 💬 ${chatCount}件
+                </div>
+                <div class="room-card-actions">
+                  <a href="./game.html?id=${encodeURIComponent(roomId)}" class="btn-enter">ルームに入る</a>
+                  <button class="btn-delete" data-id="${roomId}">削除</button>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        if (myRoomListEl) myRoomListEl.innerHTML = html;
+        
+      } catch (e) {
+        console.error('refreshMyRooms error', e);
+        if (myRoomListEl) myRoomListEl.innerHTML = `<div style="color:red; padding:20px;">読み込みエラーが発生しました</div>`;
       }
     }
 
-    // ルームに入る/削除/名前編集の制御
-    document.getElementById('roomSaveList')?.addEventListener('click', async (e) => {
-      // ルームに入る
-      const enterBtn = e.target.closest('.room-enter-btn');
-      if (enterBtn) {
-        e.preventDefault();
-        const slot = parseInt(enterBtn.dataset.slot, 10);
-        if (slot) {
-          window.location.href = `./game.html?restore_room_slot=${slot}`;
-        }
-        return;
-      }
-
-      // ルームを削除する
-      const delBtn = e.target.closest('.room-delete-btn');
-      if (delBtn) {
-        e.preventDefault();
-        const slot = parseInt(delBtn.dataset.slot, 10);
-        if (!slot) return;
-        if (!confirm(`スロット${slot}の保存済みルームを削除しますか？`)) return;
-
-        delBtn.disabled = true;
-        delBtn.textContent = '削除中...';
-        try {
-          const baseRef = doc(db, roomSlPath(slot));
-          const collectionsToClear = ['cards', 'seats', 'chat'];
-          for (const colName of collectionsToClear) {
-            const q = query(collection(db, `${roomSlPath(slot)}/${colName}`), limit(500));
-            let currentSnap = await getDocs(q);
-            while (!currentSnap.empty) {
-              let b = writeBatch(db);
-              currentSnap.docs.forEach(d => b.delete(d.ref));
-              await b.commit();
-              currentSnap = await getDocs(q);
-            }
-          }
-          // Firebase V9 doesn't export deleteDoc above in my original replacement so I better use writeBatch for the last one
-          // Wait I added updateDoc, writeBatch but forgot deleteDoc. Let me just use updateDoc or batch
-          const finalBatch = writeBatch(db);
-          finalBatch.delete(baseRef);
-          await finalBatch.commit();
-
-          alert(`スロット${slot}のデータ削除が完了しました。`);
-          await refreshRoomSaveSlots();
-        } catch (err) {
-          console.error('Delete error', err);
-          alert('削除に失敗しました。');
-          delBtn.disabled = false;
-          delBtn.textContent = 'ルームを削除する';
-        }
-      }
-    });
-
-    // ルーム名の入力（変更時自動保存）
-    document.getElementById('roomSaveList')?.addEventListener('change', async (e) => {
-      if (e.target.classList.contains('room-name-input')) {
-        const slot = parseInt(e.target.dataset.slot, 10);
-        if (!slot) return;
+    // イベント委譲でマイルームの操作をハンドル
+    myRoomListEl?.addEventListener('change', async (e) => {
+      if (e.target.classList.contains('room-name-edit')) {
+        const roomId = e.target.dataset.id;
         const newName = e.target.value.trim();
-        e.target.style.opacity = '0.5';
+        if (!roomId || !newName) return;
         try {
-          await updateDoc(doc(db, roomSlPath(slot)), { roomName: newName });
+          await updateDoc(doc(db, `rooms/${roomId}`), {
+            roomName: newName,
+            updatedAt: serverTimestamp()
+          });
+          console.log('Room name updated');
         } catch (err) {
-          console.error('Fail to update room name:', err);
-        } finally {
-          e.target.style.opacity = '1';
+          console.warn('Update room name failed', err);
+          alert('ルーム名の更新に失敗しました');
         }
       }
     });
+
+    myRoomListEl?.addEventListener('click', async (e) => {
+      const delBtn = e.target.closest('.btn-delete');
+      if (delBtn) {
+        const roomId = delBtn.dataset.id;
+        if (!roomId) return;
+        if (!confirm('このルームを完全に削除しますか？\n（元に戻すことはできません）')) return;
+        
+        try {
+          await updateDoc(doc(db, `rooms/${roomId}`), {
+            roomClosed: true,
+            updatedAt: serverTimestamp()
+          });
+          alert('ルームを削除しました');
+          refreshMyRooms();
+        } catch (err) {
+          console.warn('Delete room failed', err);
+          alert('削除に失敗しました');
+        }
+      }
+    });
+
+    // ===== セーブデータ表示（スロット1〜10） =====
 
     async function fetchSlotMeta(slot) {
       const snap = await getDoc(doc(db, slPath(slot)));
@@ -1165,9 +1121,9 @@
       }
       CURRENT_UID = user.uid;
       applyUser(user);
-      // ログイン済みになったらスロット情報を描画
+      // ログイン済みになったら情報を描画
       refreshSaveSlots().catch(console.error);
-      refreshRoomSaveSlots().catch(console.error);
+      refreshMyRooms().catch(console.error);
       // プレミアムステータスを取得・表示
       renderPremiumUI(user.uid).catch(console.error);
     });

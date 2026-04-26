@@ -282,6 +282,7 @@ async function executeRoomCreation(layoutType) {
       joinPassHash: joinPassHash,
       hasPassword: !!joinPassHash,
       playerCount: parseInt(newPlayerCountSelect?.value || '4', 10),
+      roomName: id, // デフォルトはID
     };
 
     // 匿名ユーザー（ゲスト）の場合のみ、24時間で削除される有効期限を設定

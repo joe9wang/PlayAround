@@ -80,7 +80,7 @@ import {
 
   serverTimestamp, runTransaction, deleteDoc, collection, limit,
 
-  addDoc, where, query, getDocs, writeBatch, Timestamp, orderBy,
+  addDoc, where, query, getDocs, writeBatch, Timestamp, orderBy, getCountFromServer,
 
   // Storage
 
@@ -3116,24 +3116,40 @@ function startHostHeartbeat(roomId) {
   if (hostHeartbeatTimer) return;
 
   hostHeartbeatTimer = setInterval(async () => {
-
     try {
-
-      // ルームを離脱/閉鎖している間は doc を再生成しない
-
       if (!CURRENT_ROOM || CURRENT_ROOM !== roomId) return;
-
       if (CURRENT_ROOM_META?.roomClosed) return;
 
-      await setDoc(
-        doc(db, `rooms/${roomId}`),
-        {
-          hostHeartbeatAt: serverTimestamp(),
-          lastSeatPing: serverTimestamp() // ホストが座っていなくても空室自動削除を防ぐために更新
-        }, { merge: true });
+      // 統計情報の取得
+      const [cardsCountSnap, chatCountSnap] = await Promise.all([
+        getCountFromServer(collection(db, `rooms/${roomId}/cards`)),
+        getCountFromServer(collection(db, `rooms/${roomId}/chat`))
+      ]).catch(e => { console.warn('count fetch failed', e); return [null, null]; });
+
+      const updatePayload = {
+        hostHeartbeatAt: serverTimestamp(),
+        lastSeatPing: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      if (cardsCountSnap) updatePayload.cardsCount = cardsCountSnap.data().count;
+      if (chatCountSnap) updatePayload.chatCount = chatCountSnap.data().count;
+
+      // 可能ならプレビュー画像（1枚目のカード等）を取得して更新
+      if (!CURRENT_ROOM_META?.screenshotUrl) {
+        try {
+          const firstCardSnap = await getDocs(query(collection(db, `rooms/${roomId}/cards`), limit(1)));
+          if (!firstCardSnap.empty) {
+            const cardData = firstCardSnap.docs[0].data();
+            const thumb = cardData.thumbUrl || cardData.imageUrl || cardData.fullUrl;
+            if (thumb) updatePayload.screenshotUrl = thumb;
+          }
+        } catch (_) {}
+      }
+
+      await updateDoc(doc(db, `rooms/${roomId}`), updatePayload);
 
     } catch (e) { console.warn('host HB failed', e); }
-
   }, HOST_HEARTBEAT_MS);
 
 }
