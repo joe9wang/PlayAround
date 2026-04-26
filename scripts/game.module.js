@@ -1758,11 +1758,9 @@ async function sha256Hex(str) {
 
 
 function updateCardBatched(cardId, patch) {
-
   if (!CURRENT_ROOM) return;
-
+  if (typeof markLocal === 'function') markLocal(cardId);
   queueUpdate(pathFor(CURRENT_ROOM, 'cards', cardId), patch);
-
 }
 
 function updateSeatBatched(seat, patch) {
@@ -2119,6 +2117,27 @@ async function waitForBoardDeckRect(maxWaitMs = 1000) {
 function isMyCard(cardEl) { return cardEl?.dataset?.ownerSeat === String(CURRENT_PLAYER); }
 
 function allowOperateOthers() { return !!(CURRENT_ROOM_META?.allowOtherOps); }
+
+/**
+ * 「かるた方式」: 他人の操作が許可されている場合、触れた瞬間に所有権を自分に移す
+ * これにより同期の競合（引き戻し）を防ぎ、スムーズな操作を可能にする
+ */
+function maybeTakeOwnership(cardEl) {
+  if (allowOperateOthers() && !isMyCard(cardEl)) {
+    const cardId = cardEl.dataset.cardId;
+    if (!cardId) return;
+
+    // Firestoreを更新
+    updateCardBatched(cardId, { ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER });
+
+    // DOMも即座に書き換えて、後続の権限チェックをパスさせる
+    cardEl.dataset.ownerUid = CURRENT_UID;
+    cardEl.dataset.ownerSeat = String(CURRENT_PLAYER);
+    cardEl.setAttribute('data-owner', 'me');
+    
+    console.log(`[Karuta] 奪取成功: ${cardId}`);
+  }
+}
 
 // kind: 'move' | 'flip' | 'delete' | 'rotate'
 
@@ -5294,8 +5313,8 @@ function createCardDom(cardId, imageSrc, state) {
   //   - それ以外の自分のカードは表裏トグル
 
   card.addEventListener("contextmenu", async (e) => {
-
     e.preventDefault();
+    maybeTakeOwnership(card);
 
 
 
@@ -5372,7 +5391,7 @@ function createCardDom(cardId, imageSrc, state) {
 
 
     cardsToFlip.forEach(c => {
-
+      maybeTakeOwnership(c);
       if (!canOperateCard(c, 'flip')) return;
 
       
@@ -5462,8 +5481,10 @@ function createCardDom(cardId, imageSrc, state) {
   // ダブルクリックで90°回転（自分のカードのみ）
 
   card.addEventListener("dblclick", async (e) => {
-
     e.stopPropagation();
+
+    // かるた方式: 触れた瞬間に所有権を奪う
+    maybeTakeOwnership(card);
 
     
 
@@ -5488,8 +5509,9 @@ function createCardDom(cardId, imageSrc, state) {
 
 
     cardsToRotate.forEach(c => {
-
-      if (c.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+      // かるた方式: 選択カード全取得
+      maybeTakeOwnership(c);
+      if (!canOperateCard(c, 'rotate')) return;
 
       if (c.classList.contains('numcounter')) return;
 
@@ -6379,8 +6401,14 @@ function makeDraggable(card) {
 
 
   card.addEventListener("mousedown", (e) => {
-
     if (e.button !== 0) return;
+
+    // かるた方式: 触れたカード（および選択中の全カード）の所有権を奪う
+    if (card.classList.contains('selected')) {
+      Array.from(document.querySelectorAll('.card.selected')).forEach(c => maybeTakeOwnership(c));
+    } else {
+      maybeTakeOwnership(card);
+    }
 
     if (!canOperateCard(card, 'move')) return;
 
@@ -6547,6 +6575,12 @@ function makeDraggable(card) {
 
 
   card.addEventListener('touchstart', (e) => {
+    // かるた方式: 触れたカード（および選択中の全カード）の所有権を奪う
+    if (card.classList.contains('selected')) {
+      Array.from(document.querySelectorAll('.card.selected')).forEach(c => maybeTakeOwnership(c));
+    } else {
+      maybeTakeOwnership(card);
+    }
 
     if (!canOperateCard(card, 'move')) return;
 
