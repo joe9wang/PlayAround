@@ -236,10 +236,13 @@ async function executeRoomCreation(layoutType) {
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({ roomId: id, idToken: AUTH_ID_TOKEN })
          });
-         if (!res.ok) throw new Error('Takeover failed');
+         if (!res.ok) {
+           const errData = await res.json().catch(() => ({}));
+           throw new Error(errData.error || 'Takeover failed');
+         }
        } catch (e) {
          console.warn('Takeover failed', e);
-         alert('ルームの引き継ぎに失敗しました。');
+         alert(e.message || 'ルームの引き継ぎに失敗しました。');
          createRoomBtn.disabled = false;
          createRoomBtn.textContent = oldText;
          return;
