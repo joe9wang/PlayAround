@@ -65,8 +65,8 @@
     }
 
     .lang-switch-header {
-      font-size: 12px;
-      padding: 4px;
+      font-size: 13px;
+      padding: 3px 6px;
       border-radius: 4px;
       border: 1px solid #777;
       background: #fff;
@@ -1721,6 +1721,7 @@
     .site-nav {
       margin-left: auto;
       display: flex;
+      align-items: center;
       gap: 14px;
       flex-wrap: wrap
     }
