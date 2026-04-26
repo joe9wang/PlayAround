@@ -113,7 +113,6 @@ module.exports = async (req, res) => {
     }
 
     const room = roomSnap.data() || {};
-    const uid = decoded.uid;
 
     // 1) 同一ホストの再入室なら、24時間以内かどうかに関わらず許可（リセットなし）
     if (room.hostUid === uid && room.roomClosed !== true) {

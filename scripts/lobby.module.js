@@ -257,8 +257,15 @@ async function executeRoomCreation(layoutType) {
       joinPassHash: joinPassHash,
       hasPassword: !!joinPassHash,
       playerCount: parseInt(newPlayerCountSelect?.value || '4', 10),
-      expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000)
     };
+
+    // 匿名ユーザー（ゲスト）の場合のみ、24時間で削除される有効期限を設定
+    if (auth.currentUser?.isAnonymous) {
+      payload.expiresAt = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+    } else {
+      // ログイン済みユーザーの場合は期限を設けない（もし既存ルームの上書きなら明示的に削除）
+      payload.expiresAt = null;
+    }
 
     await setDoc(roomRef, payload, { merge: true });
     

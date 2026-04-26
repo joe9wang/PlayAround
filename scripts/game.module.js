@@ -3214,6 +3214,11 @@ function loadSeatStatus(rid) {
 
 
 
+    // 匿名ホストからGoogle/メールログインにアップグレードした場合、ルームを無期限化（expiresAtを削除）
+    if (CURRENT_ROOM_META?.expiresAt && auth.currentUser && !auth.currentUser.isAnonymous && CURRENT_ROOM_META.hostUid === CURRENT_UID) {
+      updateDoc(doc(db, `rooms/${roomId}`), { expiresAt: null, updatedAt: serverTimestamp() }).catch(e => console.warn('Room upgrade failed', e));
+    }
+
 
 
     // UI反映
@@ -4150,19 +4155,16 @@ async function postChat(text) {
 
   try {
 
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/chat`), {
-
+    const payload = {
       type: 'chat',
-
       text: String(text).slice(0, 500),
-
       seat: CURRENT_PLAYER,
-
       name: myDisplayName(),
-
       createdAt: serverTimestamp()
+    };
+    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
-    });
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/chat`), payload);
 
   } catch (e) {
 
@@ -4192,19 +4194,16 @@ async function postLog(text) {
 
   try {
 
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/chat`), {
-
+    const payload = {
       type: 'log',
-
       text: String(text),
-
       seat: CURRENT_PLAYER,
-
       name: myDisplayName(),
-
       createdAt: serverTimestamp()
+    };
+    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
-    });
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/chat`), payload);
 
   } catch (e) {
 
@@ -6010,15 +6009,14 @@ async function processQueue() {
 
           // 3) Firestore のカードに URL を反映
 
-          await updateDoc(refDoc, {
-
+          const payload = {
             imageUrl: thumbUrl,
-
             fullUrl: fullUrl,
-
             updatedAt: serverTimestamp()
+          };
+          if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
-          });
+          await updateDoc(refDoc, payload);
 
 
 
@@ -7126,33 +7124,23 @@ window.rollD10 = async function () {
 
 
 
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-
+    const payload = {
       type: 'dice',
-
       diceValue: val,
-
       imageUrl: imgUrl,
-
       fullUrl: imgUrl,
-
       x, y, zIndex: z,
-
       faceUp: true,
-
       ownerUid: CURRENT_UID,
-
       ownerSeat: CURRENT_PLAYER,
-
       rotation: 0,
-
       visibleToAll: true,
-
       createdAt: serverTimestamp(),
-
       updatedAt: serverTimestamp()
+    };
+    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
-    });
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
 
     postLog(`10面ダイスを振りました → ${val}`);
 
@@ -7192,33 +7180,23 @@ window.rollD20 = async function () {
 
 
 
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-
+    const payload = {
       type: 'dice',
-
       diceValue: val,
-
       imageUrl: imgUrl,
-
       fullUrl: imgUrl,
-
       x, y, zIndex: z,
-
       faceUp: true,
-
       ownerUid: CURRENT_UID,
-
       ownerSeat: CURRENT_PLAYER,
-
       rotation: 0,
-
       visibleToAll: true,
-
       createdAt: serverTimestamp(),
-
       updatedAt: serverTimestamp()
+    };
+    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
-    });
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
 
     postLog(`20面ダイスを振りました → ${val}`);
 
@@ -7254,33 +7232,23 @@ window.rollD4 = async function () {
 
     const z = getMaxZIndex() + 100;
 
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-
+    const payload = {
       type: 'dice',
-
       diceValue: val,
-
       imageUrl: imgUrl,
-
       fullUrl: imgUrl,
-
       x, y, zIndex: z,
-
       faceUp: true,
-
       ownerUid: CURRENT_UID,
-
       ownerSeat: CURRENT_PLAYER,
-
       rotation: 0,
-
       visibleToAll: true,
-
       createdAt: serverTimestamp(),
-
       updatedAt: serverTimestamp()
+    };
+    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
-    });
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
 
     postLog(`4面ダイスを振りました → ${val}`);
 
@@ -7316,33 +7284,23 @@ window.rollD100 = async function () {
 
     const z = getMaxZIndex() + 100;
 
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-
+    const payload = {
       type: 'dice',
-
       diceValue: val,
-
       imageUrl: imgUrl,
-
       fullUrl: imgUrl,
-
       x, y, zIndex: z,
-
       faceUp: true,
-
       ownerUid: CURRENT_UID,
-
       ownerSeat: CURRENT_PLAYER,
-
       rotation: 0,
-
       visibleToAll: true,
-
       createdAt: serverTimestamp(),
-
       updatedAt: serverTimestamp()
+    };
+    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
-    });
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
 
     postLog(`100面ダイスを振りました → ${val}`);
 
@@ -7388,35 +7346,24 @@ window.flipCoin = async function () {
 
 
 
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), {
-
+    const payload = {
       type: 'dice',          // 既存の .card.dice の見た目/削除挙動に合わせる
-
       diceKind: 'coin',      // ← コイン判定用フラグを保存
-
       diceValue: val,
-
       imageUrl: imgUrl,
-
       fullUrl: imgUrl,
-
       x, y, zIndex: z,
-
       faceUp: true,
-
       ownerUid: CURRENT_UID,
-
       ownerSeat: CURRENT_PLAYER,
-
       rotation: 0,
-
       visibleToAll: true,
-
       createdAt: serverTimestamp(),
-
       updatedAt: serverTimestamp()
+    };
+    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
-    });
+    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
 
     postLog(`コイントス → ${faceJP}`);
 
@@ -7660,31 +7607,22 @@ window.spawnCounter = async function (label) {
 
     const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
 
-    await addDoc(baseCol, {
-
+    const payload = {
       type: 'counter',
-
       imageUrl: imgUrl,
-
       fullUrl: imgUrl,
-
       x, y, zIndex: z,
-
       faceUp: true,
-
       ownerUid: CURRENT_UID,
-
       ownerSeat: CURRENT_PLAYER,
-
       rotation: 0,
-
       visibleToAll: true,
-
       createdAt: serverTimestamp(),
-
       updatedAt: serverTimestamp()
+    };
+    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
-    });
+    await addDoc(baseCol, payload);
 
   } catch (e) {
 
@@ -7758,33 +7696,23 @@ window.spawnToken = async function () {
 
     const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
 
-    await addDoc(baseCol, {
-
+    const payload = {
       type: 'token',
-
       tokenText: '',
-
       imageUrl: imgUrl,
-
       fullUrl: imgUrl,
-
       x, y, zIndex: z,
-
       faceUp: true,
-
       ownerUid: CURRENT_UID,
-
       ownerSeat: CURRENT_PLAYER,
-
       rotation: 0,
-
       visibleToAll: true,
-
       createdAt: serverTimestamp(),
-
       updatedAt: serverTimestamp()
+    };
+    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
-    });
+    await addDoc(baseCol, payload);
 
   } catch (e) {
 
