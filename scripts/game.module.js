@@ -287,6 +287,7 @@ const leaveRoomBtn = document.getElementById('leave-room-btn');
 const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create-seat-grid) .seat-btn'));
 
 const sessionIndicator = document.getElementById('session-indicator');
+const authIndicator = document.getElementById('auth-indicator');
 
 
 
@@ -1858,6 +1859,8 @@ onAuthStateChanged(auth, (user) => {
 
   // ロビーのボタン表示を更新（元のロジックを踏襲）
 
+  updateAuthIndicator(user);
+
   if (user.isAnonymous) {
 
     // 未ログイン（匿名）→ フォームを表示、ログインUI非表示
@@ -3082,31 +3085,69 @@ function applyFieldModeLayout() {
     }
   }
 
-  // Board layout selection
-  const boardLayout = document.getElementById('board-layout');
-  if (boardLayout) {
-    const layout = CURRENT_ROOM_META?.fieldLayout || 'standard';
-    boardLayout.classList.toggle('layout-simple', layout === 'simple');
-    boardLayout.classList.toggle('layout-standard', layout === 'standard');
-  }
+}
 
+// ===============================
 
+// ハートビート
 
-  // Recalculate field size using the dynamically set width/height
+// ===============================
 
-  if (typeof window.setFieldSize === 'function') {
+// ホスト/座席の存活を定期更新し、他クライアントが監視できるようにします。
 
-    window.setFieldSize(window.currentFieldSize || 'small');
+// ===== heartbeats (rate-limited)
 
-  }
+let heartbeatTimer = null;
+
+let hostHeartbeatTimer = null;
+
+// [HB] host heartbeat
+
+function startHostHeartbeat(roomId) {
+  if (hostHeartbeatTimer) return;
+
+  hostHeartbeatTimer = setInterval(async () => {
+
+    try {
+
+      // ルームを離脱/閉鎖している間は doc を再生成しない
+
+      if (!CURRENT_ROOM || CURRENT_ROOM !== roomId) return;
+
+      if (CURRENT_ROOM_META?.roomClosed) return;
+
+      await setDoc(
+        doc(db, `rooms/${roomId}`),
+        {
+          hostHeartbeatAt: serverTimestamp(),
+          lastSeatPing: serverTimestamp() // ホストが座っていなくても空室自動削除を防ぐために更新
+        }, { merge: true });
+
+    } catch (e) { console.warn('host HB failed', e); }
+
+  }, HOST_HEARTBEAT_MS);
 
 }
 
+function stopHostHeartbeat() { if (hostHeartbeatTimer) { clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; } }
 
-
-
-
-
+function updateAuthIndicator(user) {
+  if (!authIndicator) return;
+  if (!user || user.isAnonymous) {
+    authIndicator.innerHTML = `
+      <a href="./index.html" class="login-btn">ログイン</a>
+    `;
+  } else {
+    const photo = user.photoURL;
+    const name = user.displayName || user.email || 'Player';
+    const initial = name.charAt(0).toUpperCase();
+    authIndicator.innerHTML = `
+      <a href="./mypage.html" class="avatar-btn" title="マイページへ">
+        ${photo ? `<img src="${photo}" alt="Avatar">` : initial}
+      </a>
+    `;
+  }
+}
 
 
 
@@ -3466,70 +3507,6 @@ async function claimSeat(roomId, seat) {
   } catch (e) { console.error('claimSeat error', e); return false; }
 
 }
-
-
-
-
-
-// ===============================
-
-// ハートビート
-
-// ===============================
-
-// ホスト/座席の存活を定期更新し、他クライアントが監視できるようにします。
-
-// ===== heartbeats (rate-limited)
-
-let heartbeatTimer = null;
-
-let hostHeartbeatTimer = null;
-
-
-
-// [HB] host heartbeat
-
-function startHostHeartbeat(roomId) {
-  if (hostHeartbeatTimer) return;
-
-
-
-
-
-  hostHeartbeatTimer = setInterval(async () => {
-
-    try {
-
-      // ルームを離脱/閉鎖している間は doc を再生成しない
-
-      if (!CURRENT_ROOM || CURRENT_ROOM !== roomId) return;
-
-      if (CURRENT_ROOM_META?.roomClosed) return;
-
-      await setDoc(
-        doc(db, `rooms/${roomId}`),
-        {
-          hostHeartbeatAt: serverTimestamp(),
-          lastSeatPing: serverTimestamp() // ホストが座っていなくても空室自動削除を防ぐために更新
-        }, { merge: true });
-
-
-
-    } catch (e) { console.warn('host HB failed', e); }
-
-  }, HOST_HEARTBEAT_MS);
-
-}
-
-
-
-
-
-
-
-
-
-function stopHostHeartbeat() { if (hostHeartbeatTimer) { clearInterval(hostHeartbeatTimer); hostHeartbeatTimer = null; } }
 
 
 

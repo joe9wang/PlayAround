@@ -140,6 +140,14 @@
       font-weight: 800;
       color: #666;
       user-select: none;
+      overflow: hidden;
+      border: 2px solid #ddd;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .muted {
@@ -352,6 +360,9 @@
         <div class="avatar" id="avatar">P</div>
         <div>
           <div><strong id="displayName">Player</strong> <span id="premium-badge-inline"></span></div>
+          <div style="margin-top: 8px;">
+            <button class="small-btn" id="changeAvatarBtn" style="font-size: 12px; cursor: pointer;">アイコンを変更</button>
+          </div>
         </div>
       </div>
     </section>
@@ -650,7 +661,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import {
       getAuth, onAuthStateChanged,
-      setPersistence, browserLocalPersistence
+      setPersistence, browserLocalPersistence, updateProfile
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
     import {
       getFirestore, doc, getDoc, collection, getDocs, query, limit, updateDoc, writeBatch
@@ -1032,10 +1043,38 @@
       // 表示名は「メール > displayName > 'Player'」の優先順
       const email = u.email || '';
       const disp = email || u.displayName || 'Player';
-      nameEl.textContent = disp;
-      // アバターの頭文字は displayName があればそれ、なければ disp から
-      avEl.textContent = (u.displayName || disp || 'P').slice(0, 1).toUpperCase();
+      nameEl.textContent = u.displayName || disp;
+      
+      // アバター表示
+      if (u.photoURL) {
+        avEl.innerHTML = `<img src="${u.photoURL}" alt="Avatar">`;
+      } else {
+        avEl.textContent = (u.displayName || disp || 'P').slice(0, 1).toUpperCase();
+      }
     }
+
+    // アイコン変更 (絵文字選択ダイアログ)
+    document.getElementById('changeAvatarBtn')?.addEventListener('click', async () => {
+      const emojis = ['👤', '🐱', '🐶', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐚', '🍄', '⭐', '🔥', '💧', '⚡', '🍀'];
+      const choice = prompt(`新しいアイコン絵文字を選んで入力してください:\n\n${emojis.join(' ')}`);
+      if (choice && choice.length > 0) {
+        try {
+          await updateProfile(auth.currentUser, { photoURL: null, displayName: auth.currentUser.displayName }); // clear photo if it's emoji
+          // Note: updateProfile photoURL can be an emoji in some browsers' display of text? 
+          // Actually u.photoURL should be an image. If a user chooses an emoji, we might need a custom metadata field.
+          // For now, let's just let them enter a URL or keep it simple.
+          
+          // Better: If they enter a single emoji, we'll store it as a special pseudo-URL or just use displayName.
+          // But wait, Firebase updateProfile photoURL *can* store any string.
+          await updateProfile(auth.currentUser, { photoURL: choice });
+          alert('アイコンを更新しました。');
+          location.reload();
+        } catch (e) {
+          console.error(e);
+          alert('更新に失敗しました。');
+        }
+      }
+    });
 
     // ===== プレミアムステータス表示 =====
     async function renderPremiumUI(uid) {

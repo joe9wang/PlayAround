@@ -73,6 +73,48 @@
       color: #333;
     }
 
+    .auth-indicator-header {
+      display: flex;
+      align-items: center;
+    }
+    .auth-indicator-header .login-btn {
+      background: #555;
+      color: #fff;
+      border: 1px solid #777;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .auth-indicator-header .login-btn:hover {
+      background: #666;
+    }
+    .auth-indicator-header .avatar-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #e9eef3;
+      border: 2px solid #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      font-weight: bold;
+      color: #333;
+      text-decoration: none;
+      font-size: 18px;
+    }
+    .auth-indicator-header .avatar-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .auth-indicator-header .avatar-btn:hover {
+      border-color: #888;
+    }
+
 
 
     .site-brand {
