@@ -305,7 +305,7 @@ const toggleOtherOpsText = document.getElementById('toggle-other-ops-text');
 
 function applyOtherOpsUI() {
 
-  const on = !!(CURRENT_ROOM_META?.allowOtherOps);
+  const on = !!(CURRENT_ROOM_META?.allowOthersMove);
 
   if (toggleOtherOpsInput) toggleOtherOpsInput.checked = on;
 
@@ -329,9 +329,9 @@ toggleOtherOpsInput?.addEventListener('change', async () => {
 
   try {
 
-    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { allowOtherOps: val, updatedAt: serverTimestamp() }, { merge: true });
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { allowOthersMove: val, updatedAt: serverTimestamp() }, { merge: true });
 
-  } catch (e) { console.warn('toggle allowOtherOps failed', e); }
+  } catch (e) { console.warn('toggle allowOthersMove failed', e); }
 
 });
 
@@ -1224,7 +1224,7 @@ async function saveRoomToSlot(slot) {
 
         playerCount: roomData.playerCount || 4,
 
-        allowOtherOps: roomData.allowOtherOps || false,
+        allowOthersMove: roomData.allowOthersMove || false,
 
         fieldMode: roomData.fieldMode || 'card',
 
@@ -2116,7 +2116,7 @@ async function waitForBoardDeckRect(maxWaitMs = 1000) {
 
 function isMyCard(cardEl) { return cardEl?.dataset?.ownerSeat === String(CURRENT_PLAYER); }
 
-function allowOperateOthers() { return !!(CURRENT_ROOM_META?.allowOtherOps); }
+function allowOperateOthers() { return !!(CURRENT_ROOM_META?.allowOthersMove); }
 
 /**
  * 「かるた方式」: 他人の操作が許可されている場合、触れた瞬間に所有権を自分に移す
@@ -10063,7 +10063,7 @@ async function checkRestoreRoomSlot() {
 
       playerCount: roomData.playerCount || 4,
 
-      allowOtherOps: roomData.allowOtherOps || false,
+      allowOthersMove: roomData.allowOthersMove || false,
 
       isRestored: true,
 

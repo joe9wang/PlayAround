@@ -118,7 +118,7 @@ rooms/{roomId}
   ├── roomClosed: boolean
   ├── fieldMode: "card" | "board" | "trump"
   ├── passwordHash: string | null
-  ├── allowOtherOps: boolean
+  ├── allowOthersMove: boolean
   ├── updatedAt: Timestamp
   │
   ├── /seats/{1..8}
