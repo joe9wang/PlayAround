@@ -3130,34 +3130,61 @@ async function generateBoardPreview() {
     const fieldRect = field.getBoundingClientRect();
     const zoomVal = typeof zoom !== 'undefined' ? zoom : 1;
 
-    // 色取得ヘルパー: 透明なら親を遡る
+    // 色取得ヘルパー: 透明なら親を遡る、または子から探す
     const getEffectiveBackgroundColor = (el) => {
-      let current = el;
+      // 1. 本人の色を確認
+      const style = window.getComputedStyle(el);
+      const bg = style.backgroundColor;
+      if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg;
+
+      // 2. 子要素から「一番面積の大きい背景色」を探す（フィールド自体が透明なケース対策）
+      const children = Array.from(el.querySelectorAll('div'));
+      let bestBg = null;
+      let maxArea = 0;
+      for (const child of children) {
+        const cStyle = window.getComputedStyle(child);
+        const cBg = cStyle.backgroundColor;
+        if (cBg && cBg !== 'rgba(0, 0, 0, 0)' && cBg !== 'transparent') {
+          const area = child.offsetWidth * child.offsetHeight;
+          if (area > maxArea) {
+            maxArea = area;
+            bestBg = cBg;
+          }
+        }
+      }
+      if (bestBg) return bestBg;
+
+      // 3. 親を遡る
+      let current = el.parentElement;
       while (current && current !== document.body) {
-        const style = window.getComputedStyle(current);
-        const bg = style.backgroundColor;
-        if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg;
+        const pStyle = window.getComputedStyle(current);
+        const pBg = pStyle.backgroundColor;
+        if (pBg && pBg !== 'rgba(0, 0, 0, 0)' && pBg !== 'transparent') return pBg;
         current = current.parentElement;
       }
-      return null;
+      return '#2ecc71'; // 最終手段の緑
     };
 
-    // 1. フィールド背景
-    const actualFieldBg = getEffectiveBackgroundColor(field) || '#2ecc71'; // 明るい緑をデフォルトに
+    // 1. フィールド背景の決定
+    const actualFieldBg = getEffectiveBackgroundColor(field);
     ctx.fillStyle = actualFieldBg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 2. 描画対象エリアの収集
+    // 2. 描画対象エリアの収集（ボードレイアウト用セレクターを追加）
     const selectors = [
       '.player-area', '.shared-play-area', '.deck-area', '.discard-area', '.special-area', 
       '.hand-area', '.main-play-area', '.zone', '.zone-area', '.field-background',
-      '[class*="hand-area"]', '[class*="play-area"]', '[class*="player-slot"]'
+      '#board-play', '.board-hand', '.center-deck', '.center-discard', '#board-center',
+      '[class*="hand-area"]', '[class*="play-area"]', '[class*="player-slot"]', '[id*="board"]'
     ];
     const rawAreas = Array.from(document.querySelectorAll(selectors.join(',')));
-    // 重複除去
-    const areas = [...new Set(rawAreas)];
+    const areas = [...new Set(rawAreas)].filter(el => {
+      // 非表示の要素は除外
+      const s = window.getComputedStyle(el);
+      return s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
+    });
     
-    console.log(`[Preview] 見つかったエリア候補数: ${areas.length}`);
+    console.log(`[Preview] 有効なエリア候補数: ${areas.length}`);
 
     const getRelativePos = (el) => {
       const r = el.getBoundingClientRect();
@@ -3174,14 +3201,13 @@ async function generateBoardPreview() {
 
     areas.forEach(el => {
       const pos = getRelativePos(el);
-      if (pos.w < 1 || pos.h < 1) return; 
+      if (pos.w < 2 || pos.h < 2) return; 
       
       validAreas.push({ el, pos });
       minX = Math.min(minX, pos.l); minY = Math.min(minY, pos.t);
       maxX = Math.max(maxX, pos.l + pos.w); maxY = Math.max(maxY, pos.t + pos.h);
     });
 
-    // カードも含めて範囲決定（カードがエリア外にある場合のため）
     const cardEls = Array.from(document.querySelectorAll('.card:not(.template)'));
     cardEls.forEach(el => {
       const pos = getRelativePos(el);
@@ -3190,11 +3216,11 @@ async function generateBoardPreview() {
     });
 
     if (minX === Infinity) {
-      console.warn('[Preview] 有効な描画範囲を特定できませんでした');
+      console.warn('[Preview] 描画対象が見つかりません');
       return null;
     }
 
-    const margin = 40;
+    const margin = 30;
     minX -= margin; minY -= margin; maxX += margin; maxY += margin;
     const width = maxX - minX;
     const height = maxY - minY;
@@ -3211,8 +3237,8 @@ async function generateBoardPreview() {
       const drawW = pos.w * scale;
       const drawH = pos.h * scale;
 
-      const bgColor = getEffectiveBackgroundColor(el);
-      if (bgColor) {
+      const bgColor = style.backgroundColor;
+      if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
         ctx.fillStyle = bgColor;
         ctx.fillRect(drawX, drawY, drawW, drawH);
       }
@@ -3220,7 +3246,7 @@ async function generateBoardPreview() {
       const border = style.borderStyle;
       if (border && border !== 'none') {
         ctx.strokeStyle = style.borderColor || 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = Math.max(1, 1 * scale);
         if (border === 'dashed' || border === 'dotted') ctx.setLineDash([2, 2]);
         ctx.strokeRect(drawX, drawY, drawW, drawH);
         ctx.setLineDash([]);
