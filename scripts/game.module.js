@@ -3128,22 +3128,38 @@ async function generateBoardPreview() {
     ctx.fillStyle = '#2e7d32'; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    const fieldRect = field.getBoundingClientRect();
+    const zoomVal = typeof zoom !== 'undefined' ? zoom : 1;
+
     // 有効なエリア（プレイエリアなど）を特定して描画範囲を決める
-    const areas = Array.from(document.querySelectorAll('.main-play-area, .play-area, .zone, #board-play, .dynamic-area'));
+    const areas = Array.from(document.querySelectorAll('.main-play-area, .play-area, .zone, #board-play, .dynamic-area, #board-layout, .zone-area'));
     if (areas.length === 0) return null;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    // フィールド上の相対座標を取得するヘルパー
+    const getRelativePos = (el) => {
+      const r = el.getBoundingClientRect();
+      return {
+        l: (r.left - fieldRect.left) / zoomVal,
+        t: (r.top - fieldRect.top) / zoomVal,
+        w: r.width / zoomVal,
+        h: r.height / zoomVal
+      };
+    };
+
     areas.forEach(el => {
-      const l = parseFloat(el.style.left) || 0;
-      const t = parseFloat(el.style.top) || 0;
-      const w = el.offsetWidth || 200;
-      const h = el.offsetHeight || 200;
-      minX = Math.min(minX, l); minY = Math.min(minY, t);
-      maxX = Math.max(maxX, l + w); maxY = Math.max(maxY, t + h);
+      const pos = getRelativePos(el);
+      if (pos.w === 0 || pos.h === 0) return;
+      minX = Math.min(minX, pos.l); minY = Math.min(minY, pos.t);
+      maxX = Math.max(maxX, pos.l + pos.w); maxY = Math.max(maxY, pos.t + pos.h);
     });
 
+    // 範囲が特定できない場合は終了
+    if (minX === Infinity) return null;
+
     // 余白を追加
-    const margin = 100;
+    const margin = 60;
     minX -= margin; minY -= margin; maxX += margin; maxY += margin;
     const width = maxX - minX;
     const height = maxY - minY;
@@ -3154,32 +3170,21 @@ async function generateBoardPreview() {
 
     // エリアの描画
     areas.forEach(el => {
-      const l = parseFloat(el.style.left) || 0;
-      const t = parseFloat(el.style.top) || 0;
-      const w = el.offsetWidth || 0;
-      const h = el.offsetHeight || 0;
-      
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.fillRect(l * scale + offsetX, t * scale + offsetY, w * scale, h * scale);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.strokeRect(l * scale + offsetX, t * scale + offsetY, w * scale, h * scale);
+      const pos = getRelativePos(el);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.fillRect(pos.l * scale + offsetX, pos.t * scale + offsetY, pos.w * scale, pos.h * scale);
     });
 
     // カードとトークンの描画
     const cards = Array.from(document.querySelectorAll('.card'));
-    // z-index順に並べる
     cards.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
 
     cards.forEach(el => {
-      const l = parseFloat(el.style.left) || 0;
-      const t = parseFloat(el.style.top) || 0;
-      const w = el.offsetWidth || (typeof CARD_W !== 'undefined' ? CARD_W : 80);
-      const h = el.offsetHeight || (typeof CARD_H !== 'undefined' ? CARD_H : 112);
-      
-      const drawX = l * scale + offsetX;
-      const drawY = t * scale + offsetY;
-      const drawW = w * scale;
-      const drawH = h * scale;
+      const pos = getRelativePos(el);
+      const drawX = pos.l * scale + offsetX;
+      const drawY = pos.t * scale + offsetY;
+      const drawW = pos.w * scale;
+      const drawH = pos.h * scale;
 
       if (drawX + drawW < 0 || drawX > canvas.width || drawY + drawH < 0 || drawY > canvas.height) return;
 
@@ -3197,30 +3202,29 @@ async function generateBoardPreview() {
       } else {
         ctx.fillStyle = '#1b5e20'; // 裏面
         ctx.fillRect(drawX, drawY, drawW, drawH);
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(drawX + 2, drawY + 2, drawW - 4, drawH - 4);
       }
 
+      // トークンのテキスト描画
       const input = el.querySelector('.token-input');
       if (input && input.value) {
         ctx.fillStyle = '#000';
-        ctx.font = `bold ${Math.max(5, 10 * scale)}px sans-serif`;
+        ctx.font = `bold ${Math.max(5, 8 * scale)}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(input.value.slice(0, 12), drawX + drawW/2, drawY + drawH/2, drawW * 0.9);
+        ctx.fillText(input.value.slice(0, 10), drawX + drawW/2, drawY + drawH/2, drawW * 0.9);
       }
       
+      // 数値カウンタ
       const num = el.querySelector('.num-val');
       if (num) {
         ctx.fillStyle = '#d32f2f';
-        ctx.font = `bold ${Math.max(8, 16 * scale)}px sans-serif`;
+        ctx.font = `bold ${Math.max(7, 14 * scale)}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText(num.textContent, drawX + drawW/2, drawY + drawH/2);
       }
     });
 
-    return canvas.toDataURL('image/jpeg', 0.7);
+    return canvas.toDataURL('image/jpeg', 0.6);
   } catch (e) {
     console.warn('generateBoardPreview failed', e);
     return null;
@@ -3228,7 +3232,7 @@ async function generateBoardPreview() {
 }
 
 let lastScreenshotTime = 0;
-const SCREENSHOT_INTERVAL_MS = 300000; // 5分ごと
+const SCREENSHOT_INTERVAL_MS = 60000; // 1分ごと（テストのため短縮）
 
 // [HB] host heartbeat
 
