@@ -3130,25 +3130,35 @@ async function generateBoardPreview() {
     const fieldRect = field.getBoundingClientRect();
     const zoomVal = typeof zoom !== 'undefined' ? zoom : 1;
 
-    // 実際のフィールド背景色を取得
-    const fieldStyle = window.getComputedStyle(field);
-    ctx.fillStyle = fieldStyle.backgroundColor || '#2e7d32'; 
+    // 色取得ヘルパー: 透明なら親を遡る
+    const getEffectiveBackgroundColor = (el) => {
+      let current = el;
+      while (current && current !== document.body) {
+        const style = window.getComputedStyle(current);
+        const bg = style.backgroundColor;
+        if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg;
+        current = current.parentElement;
+      }
+      return null;
+    };
+
+    // 1. フィールド背景
+    const actualFieldBg = getEffectiveBackgroundColor(field) || '#2ecc71'; // 明るい緑をデフォルトに
+    ctx.fillStyle = actualFieldBg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 範囲決定と描画対象の要素
+    // 2. 描画対象エリアの収集
     const selectors = [
-      '.player-area', '.shared-play-area', '.deck-area', '.discard-area', '.special-area', '.hand-area',
-      '.main-play-area', '.zone', '.zone-area', '.field-background'
+      '.player-area', '.shared-play-area', '.deck-area', '.discard-area', '.special-area', 
+      '.hand-area', '.main-play-area', '.zone', '.zone-area', '.field-background',
+      '[class*="hand-area"]', '[class*="play-area"]', '[class*="player-slot"]'
     ];
-    const areas = Array.from(document.querySelectorAll(selectors.join(',')));
+    const rawAreas = Array.from(document.querySelectorAll(selectors.join(',')));
+    // 重複除去
+    const areas = [...new Set(rawAreas)];
     
-    if (areas.length === 0) {
-      console.warn('[Preview] キャプチャ対象となるエリアが見つかりません');
-      return null;
-    }
+    console.log(`[Preview] 見つかったエリア候補数: ${areas.length}`);
 
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    
     const getRelativePos = (el) => {
       const r = el.getBoundingClientRect();
       return {
@@ -3159,9 +3169,22 @@ async function generateBoardPreview() {
       };
     };
 
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const validAreas = [];
+
     areas.forEach(el => {
       const pos = getRelativePos(el);
-      if (pos.w < 5 || pos.h < 5) return; 
+      if (pos.w < 1 || pos.h < 1) return; 
+      
+      validAreas.push({ el, pos });
+      minX = Math.min(minX, pos.l); minY = Math.min(minY, pos.t);
+      maxX = Math.max(maxX, pos.l + pos.w); maxY = Math.max(maxY, pos.t + pos.h);
+    });
+
+    // カードも含めて範囲決定（カードがエリア外にある場合のため）
+    const cardEls = Array.from(document.querySelectorAll('.card:not(.template)'));
+    cardEls.forEach(el => {
+      const pos = getRelativePos(el);
       minX = Math.min(minX, pos.l); minY = Math.min(minY, pos.t);
       maxX = Math.max(maxX, pos.l + pos.w); maxY = Math.max(maxY, pos.t + pos.h);
     });
@@ -3171,7 +3194,6 @@ async function generateBoardPreview() {
       return null;
     }
 
-    // 余白
     const margin = 40;
     minX -= margin; minY -= margin; maxX += margin; maxY += margin;
     const width = maxX - minX;
@@ -3181,51 +3203,40 @@ async function generateBoardPreview() {
     const offsetX = (canvas.width - width * scale) / 2 - minX * scale;
     const offsetY = (canvas.height - height * scale) / 2 - minY * scale;
 
-    // 1. エリア描画（実際のスタイルを反映）
-    areas.forEach(el => {
-      const pos = getRelativePos(el);
+    // エリア描画
+    validAreas.forEach(({ el, pos }) => {
       const style = window.getComputedStyle(el);
-      
       const drawX = pos.l * scale + offsetX;
       const drawY = pos.t * scale + offsetY;
       const drawW = pos.w * scale;
       const drawH = pos.h * scale;
 
-      // 背景色（透明でない場合のみ）
-      const bgColor = style.backgroundColor;
-      if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+      const bgColor = getEffectiveBackgroundColor(el);
+      if (bgColor) {
         ctx.fillStyle = bgColor;
         ctx.fillRect(drawX, drawY, drawW, drawH);
       }
 
-      // 枠線
       const border = style.borderStyle;
       if (border && border !== 'none') {
         ctx.strokeStyle = style.borderColor || 'rgba(255,255,255,0.2)';
         ctx.lineWidth = 1;
-        if (border === 'dashed' || border === 'dotted') {
-          ctx.setLineDash([2, 2]);
-        }
+        if (border === 'dashed' || border === 'dotted') ctx.setLineDash([2, 2]);
         ctx.strokeRect(drawX, drawY, drawW, drawH);
         ctx.setLineDash([]);
       }
     });
 
-    // 2. カードとトークン
-    const cards = Array.from(document.querySelectorAll('.card:not(.template)'));
-    cards.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
+    // カード描画
+    cardEls.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
 
-    let drawCount = 0;
-    cards.forEach(el => {
+    cardEls.forEach(el => {
       const pos = getRelativePos(el);
       const drawX = pos.l * scale + offsetX;
       const drawY = pos.t * scale + offsetY;
       const drawW = pos.w * scale;
       const drawH = pos.h * scale;
 
-      if (drawX + drawW < 0 || drawX > canvas.width || drawY + drawH < 0 || drawY > canvas.height) return;
-
-      // 影
       ctx.fillStyle = 'rgba(0,0,0,0.3)';
       ctx.fillRect(drawX + 1, drawY + 1, drawW, drawH);
 
@@ -3235,19 +3246,16 @@ async function generateBoardPreview() {
           try {
             ctx.drawImage(img, drawX, drawY, drawW, drawH);
           } catch (e) {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(drawX, drawY, drawW, drawH);
+            ctx.fillStyle = '#fff'; ctx.fillRect(drawX, drawY, drawW, drawH);
           }
         } else {
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(drawX, drawY, drawW, drawH);
+          ctx.fillStyle = '#fff'; ctx.fillRect(drawX, drawY, drawW, drawH);
         }
       } else {
-        ctx.fillStyle = '#1b5e20'; // 裏面
+        ctx.fillStyle = '#1b5e20';
         ctx.fillRect(drawX, drawY, drawW, drawH);
       }
 
-      // トークン等のテキスト
       const input = el.querySelector('.token-input');
       if (input && input.value) {
         ctx.fillStyle = '#000';
@@ -3264,10 +3272,9 @@ async function generateBoardPreview() {
         ctx.textAlign = 'center';
         ctx.fillText(num.textContent, drawX + drawW/2, drawY + drawH/2);
       }
-      drawCount++;
     });
 
-    console.log(`[Preview] 画像を生成しました（エリア数: ${areas.length}, カード数: ${drawCount}）`);
+    console.log(`[Preview] 生成完了 (エリア:${validAreas.length}, カード:${cardEls.length}, 色:${actualFieldBg})`);
     return canvas.toDataURL('image/jpeg', 0.6);
   } catch (e) {
     console.error('[Preview] プレビュー生成エラー:', e);
