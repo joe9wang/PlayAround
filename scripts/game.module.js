@@ -1927,6 +1927,15 @@ onAuthStateChanged(auth, (user) => {
 
     localStorage.setItem('pa:photoURL', user.photoURL || '');
 
+    if (CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === user.uid && CURRENT_ROOM_META.hostIsAnonymous) {
+      updateDoc(doc(db, `rooms/${CURRENT_ROOM}`), {
+        hostIsAnonymous: false,
+        hostDisplayName: user.displayName || CURRENT_ROOM_META.hostDisplayName,
+        hostPhotoURL: user.photoURL || null,
+        updatedAt: serverTimestamp()
+      }).catch(console.warn);
+    }
+
 
 
   }
@@ -3918,8 +3927,17 @@ function updateSessionIndicator() {
     } catch (e) { console.warn('Expiry calculation error', e); }
   }
 
+  let hostDisplay = '';
+  if (CURRENT_ROOM_META?.hostDisplayName) {
+    const isAnon = CURRENT_ROOM_META.hostIsAnonymous !== false;
+    // 認証済みの場合は緑色のバッジを表示
+    const badge = isAnon ? '' : '<span style="color:#00ff88; background:rgba(0,255,136,0.1); padding:0px 4px; border-radius:3px; font-size:10px; margin-left:5px; border: 1px solid rgba(0,255,136,0.2);">★認証済</span>';
+    hostDisplay = `<div>HOST: ${CURRENT_ROOM_META.hostDisplayName}${badge}</div>`;
+  }
+
   sessionIndicator.innerHTML = `
     <div>ROOM: ${CURRENT_ROOM}${expiryText}</div>
+    ${hostDisplay}
     <div>PLAYER: ${pName}</div>
     <div>SEAT: ${seatDisplay}</div>
   `;

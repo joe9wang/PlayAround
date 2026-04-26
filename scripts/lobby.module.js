@@ -254,6 +254,8 @@ async function executeRoomCreation(layoutType) {
       updatedAt: serverTimestamp(),
       hostUid: uid,
       hostDisplayName: creatorName,
+      hostPhotoURL: auth.currentUser.photoURL || null,
+      hostIsAnonymous: auth.currentUser.isAnonymous,
       roomClosed: false,
       fieldMode: CREATE_FIELD_MODE,
       fieldLayout: layoutType || 'standard',
