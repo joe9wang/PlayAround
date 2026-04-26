@@ -997,7 +997,7 @@ async function updateSlotPreviews() {
 
           if (!url) continue;
 
-          const img = document.createElement('img'); img.crossOrigin = 'anonymous';
+          const img = document.createElement('img');
 
           img.src = url;
 
@@ -3206,21 +3206,15 @@ async function generateBoardPreview() {
       ctx.fillRect(drawX + 1, drawY + 1, drawW, drawH);
 
       if (el.dataset.faceUp === 'true') {
-        const img = el.querySelector('img');
-        if (img && img.complete && img.naturalWidth > 0) {
-          try {
-            ctx.drawImage(img, drawX, drawY, drawW, drawH);
-          } catch (e) {
-            console.warn('[Preview] 画像の描画に失敗しました（CORS制限等）:', img.src);
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(drawX, drawY, drawW, drawH);
-          }
-        } else {
-          ctx.fillStyle = '#fff';
-          ctx.fillRect(drawX, drawY, drawW, drawH);
-        }
+        // 注: 外部サーバーの画像を canvas に描画すると toDataURL がセキュリティエラーになるため、
+        // プレビューでは画像を描画せず、枠と色だけで表現します。
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(drawX, drawY, drawW, drawH);
+        ctx.strokeStyle = '#cccccc';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(drawX, drawY, drawW, drawH);
       } else {
-        ctx.fillStyle = '#1b5e20';
+        ctx.fillStyle = '#1b5e20'; // 裏面
         ctx.fillRect(drawX, drawY, drawW, drawH);
       }
 
@@ -4775,7 +4769,7 @@ function createCardDom(cardId, imageSrc, state) {
 
     // ←← ここが重要：img を作って貼る
 
-    const img = document.createElement('img'); img.crossOrigin = 'anonymous';
+    const img = document.createElement('img');
 
     img.src = imageSrc;
 
@@ -4961,13 +4955,13 @@ function createCardDom(cardId, imageSrc, state) {
 
 
 
-  const img = document.createElement('img'); img.crossOrigin = 'anonymous';
+  const img = document.createElement('img');
 
   img.decoding = 'async';
 
   img.loading = 'lazy';
 
-  img.crossOrigin = 'anonymous';
+ 
 
   if (typeof imageSrc === 'string' && imageSrc.trim().length > 0) {
 
@@ -8389,7 +8383,7 @@ window.openMyCardsDialog = function () {
 
       item.title = id;
 
-      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
+      const img = document.createElement('img');
 
       img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
 
@@ -8573,7 +8567,7 @@ window.openMyDeckCardsDialog = function () {
 
       item.title = id;
 
-      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
+      const img = document.createElement('img');
 
       img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
 
@@ -8699,7 +8693,7 @@ window.openMyDiscardCardsDialog = function () {
 
       item.title = id;
 
-      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
+      const img = document.createElement('img');
 
       img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
 
