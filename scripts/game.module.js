@@ -997,7 +997,7 @@ async function updateSlotPreviews() {
 
           if (!url) continue;
 
-          const img = document.createElement('img');
+          const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
           img.src = url;
 
@@ -3123,11 +3123,11 @@ async function generateBoardPreview() {
     }
 
     const canvas = document.createElement('canvas');
-    canvas.width = 480;
-    canvas.height = 270;
+    canvas.width = 640;
+    canvas.height = 360;
     const ctx = canvas.getContext('2d');
 
-    // 背景色
+    // 背景色（フィールドの色に合わせる）
     ctx.fillStyle = '#2e7d32'; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -3202,17 +3202,23 @@ async function generateBoardPreview() {
 
       if (drawX + drawW < 0 || drawX > canvas.width || drawY + drawH < 0 || drawY > canvas.height) return;
 
+      // 影
       ctx.fillStyle = 'rgba(0,0,0,0.3)';
       ctx.fillRect(drawX + 1, drawY + 1, drawW, drawH);
 
       if (el.dataset.faceUp === 'true') {
-        // 注: 外部サーバーの画像を canvas に描画すると toDataURL がセキュリティエラーになるため、
-        // プレビューでは画像を描画せず、枠と色だけで表現します。
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(drawX, drawY, drawW, drawH);
-        ctx.strokeStyle = '#cccccc';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(drawX, drawY, drawW, drawH);
+        const img = el.querySelector('img');
+        if (img && img.complete && img.naturalWidth > 0) {
+          try {
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+          } catch (e) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(drawX, drawY, drawW, drawH);
+          }
+        } else {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(drawX, drawY, drawW, drawH);
+        }
       } else {
         ctx.fillStyle = '#1b5e20'; // 裏面
         ctx.fillRect(drawX, drawY, drawW, drawH);
@@ -3283,10 +3289,10 @@ function startHostHeartbeat(roomId) {
         if (dataUrl) {
           try {
             console.log('[Preview] 画像生成成功、アップロード中...');
-            const previewRef = ref(storage, `rooms/${roomId}/screenshot.jpg`);
+            const previewRef = ref(storage, `rooms/${roomId}/preview.jpg`);
             await uploadString(previewRef, dataUrl, 'data_url');
             const url = await getDownloadURL(previewRef);
-            updatePayload.screenshotUrl = url;
+            updatePayload.previewUrl = url;
             console.log('[Preview] アップロード完了:', url);
           } catch (err) {
             console.error('[Preview] アップロード失敗:', err);
@@ -4769,7 +4775,7 @@ function createCardDom(cardId, imageSrc, state) {
 
     // ←← ここが重要：img を作って貼る
 
-    const img = document.createElement('img');
+    const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
     img.src = imageSrc;
 
@@ -4955,7 +4961,7 @@ function createCardDom(cardId, imageSrc, state) {
 
 
 
-  const img = document.createElement('img');
+  const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
   img.decoding = 'async';
 
@@ -8383,7 +8389,7 @@ window.openMyCardsDialog = function () {
 
       item.title = id;
 
-      const img = document.createElement('img');
+      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
       img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
 
@@ -8567,7 +8573,7 @@ window.openMyDeckCardsDialog = function () {
 
       item.title = id;
 
-      const img = document.createElement('img');
+      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
       img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
 
@@ -8693,7 +8699,7 @@ window.openMyDiscardCardsDialog = function () {
 
       item.title = id;
 
-      const img = document.createElement('img');
+      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
 
       img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
 

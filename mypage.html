@@ -357,15 +357,19 @@
       box-shadow: 0 4px 12px rgba(0,0,0,.08);
     }
     .room-card-thumb {
-      height: 120px;
-      background: #eee;
+      aspect-ratio: 16 / 9;
+      background: #f3f4f6;
       position: relative;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .room-card-thumb img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain; /* 全体が見えるようにする */
+      background: #2e7d32; /* フィールドの色を背景に */
     }
     .room-card-body {
       padding: 14px;
@@ -740,12 +744,12 @@
           const pass = d.hasPassword ? 'あり' : 'なし';
           const cardsCount = d.cardsCount || 0;
           const chatCount = d.chatCount || 0;
-          const thumb = d.screenshotUrl || '';
+          const thumb = d.previewUrl || '';
           
           html += `
             <div class="room-card" data-id="${roomId}">
               <div class="room-card-thumb">
-                ${thumb ? `<img src="${thumb}" alt="Preview">` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-size:12px;">No Preview</div>'}
+                ${thumb ? `<img src="${thumb}" alt="Preview">` : '<div style="color:#ccc;font-size:12px;">No Preview</div>'}
               </div>
               <div class="room-card-body">
                 <div class="room-card-title">
