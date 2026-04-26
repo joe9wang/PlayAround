@@ -3110,6 +3110,126 @@ let heartbeatTimer = null;
 
 let hostHeartbeatTimer = null;
 
+
+/**
+ * 盤面の簡易プレビュー（スクリーンショット）を生成する
+ */
+async function generateBoardPreview() {
+  try {
+    const field = document.getElementById('field') || document.getElementById('game-field');
+    if (!field) return null;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 480;
+    canvas.height = 270;
+    const ctx = canvas.getContext('2d');
+
+    // 背景色（緑系）
+    ctx.fillStyle = '#2e7d32'; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 有効なエリア（プレイエリアなど）を特定して描画範囲を決める
+    const areas = Array.from(document.querySelectorAll('.main-play-area, .play-area, .zone, #board-play, .dynamic-area'));
+    if (areas.length === 0) return null;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    areas.forEach(el => {
+      const l = parseFloat(el.style.left) || 0;
+      const t = parseFloat(el.style.top) || 0;
+      const w = el.offsetWidth || 200;
+      const h = el.offsetHeight || 200;
+      minX = Math.min(minX, l); minY = Math.min(minY, t);
+      maxX = Math.max(maxX, l + w); maxY = Math.max(maxY, t + h);
+    });
+
+    // 余白を追加
+    const margin = 100;
+    minX -= margin; minY -= margin; maxX += margin; maxY += margin;
+    const width = maxX - minX;
+    const height = maxY - minY;
+
+    const scale = Math.min(canvas.width / width, canvas.height / height);
+    const offsetX = (canvas.width - width * scale) / 2 - minX * scale;
+    const offsetY = (canvas.height - height * scale) / 2 - minY * scale;
+
+    // エリアの描画
+    areas.forEach(el => {
+      const l = parseFloat(el.style.left) || 0;
+      const t = parseFloat(el.style.top) || 0;
+      const w = el.offsetWidth || 0;
+      const h = el.offsetHeight || 0;
+      
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.fillRect(l * scale + offsetX, t * scale + offsetY, w * scale, h * scale);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.strokeRect(l * scale + offsetX, t * scale + offsetY, w * scale, h * scale);
+    });
+
+    // カードとトークンの描画
+    const cards = Array.from(document.querySelectorAll('.card'));
+    // z-index順に並べる
+    cards.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
+
+    cards.forEach(el => {
+      const l = parseFloat(el.style.left) || 0;
+      const t = parseFloat(el.style.top) || 0;
+      const w = el.offsetWidth || (typeof CARD_W !== 'undefined' ? CARD_W : 80);
+      const h = el.offsetHeight || (typeof CARD_H !== 'undefined' ? CARD_H : 112);
+      
+      const drawX = l * scale + offsetX;
+      const drawY = t * scale + offsetY;
+      const drawW = w * scale;
+      const drawH = h * scale;
+
+      if (drawX + drawW < 0 || drawX > canvas.width || drawY + drawH < 0 || drawY > canvas.height) return;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fillRect(drawX + 1, drawY + 1, drawW, drawH);
+
+      if (el.dataset.faceUp === 'true') {
+        const img = el.querySelector('img');
+        if (img && img.complete && img.naturalWidth > 0) {
+          ctx.drawImage(img, drawX, drawY, drawW, drawH);
+        } else {
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(drawX, drawY, drawW, drawH);
+        }
+      } else {
+        ctx.fillStyle = '#1b5e20'; // 裏面
+        ctx.fillRect(drawX, drawY, drawW, drawH);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(drawX + 2, drawY + 2, drawW - 4, drawH - 4);
+      }
+
+      const input = el.querySelector('.token-input');
+      if (input && input.value) {
+        ctx.fillStyle = '#000';
+        ctx.font = `bold ${Math.max(5, 10 * scale)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(input.value.slice(0, 12), drawX + drawW/2, drawY + drawH/2, drawW * 0.9);
+      }
+      
+      const num = el.querySelector('.num-val');
+      if (num) {
+        ctx.fillStyle = '#d32f2f';
+        ctx.font = `bold ${Math.max(8, 16 * scale)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(num.textContent, drawX + drawW/2, drawY + drawH/2);
+      }
+    });
+
+    return canvas.toDataURL('image/jpeg', 0.7);
+  } catch (e) {
+    console.warn('generateBoardPreview failed', e);
+    return null;
+  }
+}
+
+let lastScreenshotTime = 0;
+const SCREENSHOT_INTERVAL_MS = 300000; // 5分ごと
+
 // [HB] host heartbeat
 
 function startHostHeartbeat(roomId) {
@@ -3135,16 +3255,21 @@ function startHostHeartbeat(roomId) {
       if (cardsCountSnap) updatePayload.cardsCount = cardsCountSnap.data().count;
       if (chatCountSnap) updatePayload.chatCount = chatCountSnap.data().count;
 
-      // 可能ならプレビュー画像（1枚目のカード等）を取得して更新
-      if (!CURRENT_ROOM_META?.screenshotUrl) {
-        try {
-          const firstCardSnap = await getDocs(query(collection(db, `rooms/${roomId}/cards`), limit(1)));
-          if (!firstCardSnap.empty) {
-            const cardData = firstCardSnap.docs[0].data();
-            const thumb = cardData.thumbUrl || cardData.imageUrl || cardData.fullUrl;
-            if (thumb) updatePayload.screenshotUrl = thumb;
+      // 定期的なプレビュー画像生成とアップロード（5分おき）
+      const now = Date.now();
+      if (now - lastScreenshotTime > SCREENSHOT_INTERVAL_MS) {
+        lastScreenshotTime = now;
+        const dataUrl = await generateBoardPreview();
+        if (dataUrl) {
+          try {
+            const previewRef = ref(storage, `rooms/${roomId}/screenshot.jpg`);
+            await uploadString(previewRef, dataUrl, 'data_url');
+            const url = await getDownloadURL(previewRef);
+            updatePayload.screenshotUrl = url;
+          } catch (err) {
+            console.warn('Upload screenshot failed', err);
           }
-        } catch (_) {}
+        }
       }
 
       await updateDoc(doc(db, `rooms/${roomId}`), updatePayload);
