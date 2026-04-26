@@ -2123,6 +2123,7 @@ function allowOperateOthers() { return !!(CURRENT_ROOM_META?.allowOthersMove); }
  * これにより同期の競合（引き戻し）を防ぎ、スムーズな操作を可能にする
  */
 function maybeTakeOwnership(cardEl) {
+  if (CURRENT_PLAYER === 'spectator') return; // 観戦者は操作権を奪えない
   if (allowOperateOthers() && !isMyCard(cardEl)) {
     const cardId = cardEl.dataset.cardId;
     if (!cardId) return;
@@ -2794,26 +2795,24 @@ function renderSeatAvailability() {
 
     const data = currentSeatMap[seat];
 
-    const alive = data && !isSeatStale(data) && !!data.claimedByUid;
+    const isMe = data && data.claimedByUid === CURRENT_UID;
+    const alive = data && !isSeatStale(data) && !!data.claimedByUid && !isMe;
 
-    if (alive) {
-
-      if (note) note.textContent = data.displayName || `SEAT${seat}`;
-
-      btn.disabled = true;
-
-      btn.classList.remove('free');
-
-    } else {
-
-      // 非ホスト参加を許可：ホスト不在でも空席なら座れる
-
-      note.textContent = '空席';
-
+    if (isMe) {
+      if (note) note.textContent = `(あなたの席)`;
       btn.disabled = false;
-
       btn.classList.add('free');
-
+      btn.classList.add('is-me');
+    } else if (alive) {
+      if (note) note.textContent = data.displayName || `SEAT${seat}`;
+      btn.disabled = true;
+      btn.classList.remove('free');
+      btn.classList.remove('is-me');
+    } else {
+      note.textContent = '空席';
+      btn.disabled = false;
+      btn.classList.add('free');
+      btn.classList.remove('is-me');
     }
 
   });
