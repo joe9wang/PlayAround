@@ -126,7 +126,7 @@ module.exports = async (req, res) => {
 
     if (isWithin24h && room.hostUid !== uid) {
       res.status(403).json({ 
-        error: 'このルームは作成から24時間が経過していないため、他のユーザーは使用できません。',
+        error: 'このルームIDは既に他のホストが使用済みのため、使用できません。',
         isProtected: true 
       });
       return;
