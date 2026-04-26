@@ -2123,15 +2123,19 @@ function allowOperateOthers() { return !!(CURRENT_ROOM_META?.allowOthersMove); }
  * これにより同期の競合（引き戻し）を防ぎ、スムーズな操作を可能にする
  */
 function maybeTakeOwnership(cardEl) {
-  if (CURRENT_PLAYER === 'spectator') return; // 観戦者は操作権を奪えない
-  if (allowOperateOthers() && !isMyCard(cardEl)) {
+  const isSpectator = (CURRENT_PLAYER === 'spectator');
+  const allowOthers = allowOperateOthers();
+  const myCard = isMyCard(cardEl);
+  
+  console.log(`[Karuta Debug] attempt: spectator=${isSpectator}, allowOthersMove=${allowOthers}, isMyCard=${myCard}`);
+
+  if (isSpectator) return;
+  if (allowOthers && !myCard) {
     const cardId = cardEl.dataset.cardId;
     if (!cardId) return;
 
-    // Firestoreを更新
     updateCardBatched(cardId, { ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER });
 
-    // DOMも即座に書き換えて、後続の権限チェックをパスさせる
     cardEl.dataset.ownerUid = CURRENT_UID;
     cardEl.dataset.ownerSeat = String(CURRENT_PLAYER);
     cardEl.setAttribute('data-owner', 'me');
@@ -2143,23 +2147,17 @@ function maybeTakeOwnership(cardEl) {
 // kind: 'move' | 'flip' | 'delete' | 'rotate'
 
 function canOperateCard(cardEl, kind) {
-
   if (CURRENT_PLAYER === 'spectator') return false;
-
   if (isMyCard(cardEl)) return true;
 
-  if (allowOperateOthers()) {
-
-    // 共有ONでも破壊的操作は不可のまま（必要なら広げられます）
-
+  const allowOthers = allowOperateOthers();
+  if (allowOthers) {
     if (kind === 'delete' || kind === 'rotate') return false;
-
-    return true; // move / flip を許可
-
+    return true;
   }
 
+  console.log(`[DEBUG] canOperateCard blocked: kind=${kind}, allowOthersMove=${allowOthers}, isMyCard=${isMyCard(cardEl)}`);
   return false;
-
 }
 
 
@@ -6401,6 +6399,8 @@ function makeDraggable(card) {
 
   card.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
+    
+    console.log(`[Drag Debug] mousedown start: cardId=${card.dataset.cardId}, CURRENT_PLAYER=${CURRENT_PLAYER}`);
 
     // かるた方式: 触れたカード（および選択中の全カード）の所有権を奪う
     if (card.classList.contains('selected')) {
