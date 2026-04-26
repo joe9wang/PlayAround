@@ -2453,7 +2453,7 @@ function startHostWatch() {
 
       const hostHere = isHostAlive(meta);
 
-      if (!iAmHost && (closed || !hostHere)) {
+      if (!iAmHost && closed) {
 
         try {
 
@@ -2481,7 +2481,7 @@ function startHostWatch() {
 
         if (lobby) lobby.style.display = 'flex';
 
-        alert('ホストが退室したため、このルームは終了しました。');
+        alert('ホストがルームを終了したため、このルームは終了しました。');
 
         return;
 
