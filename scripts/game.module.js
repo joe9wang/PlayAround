@@ -2704,7 +2704,13 @@ async function ensureAuthReady(timeoutMs = 8000) {
 
     const off = onAuthStateChanged(auth, (u) => {
 
-      if (u) { CURRENT_UID = u.uid; off(); resolve(); }
+      if (u) { 
+        CURRENT_UID = u.uid; 
+        console.log(`[Auth Debug] UID confirmed: ${CURRENT_UID}`);
+        renderSeatAvailability(); // UIDが決まったので座席表示を更新
+        off(); 
+        resolve(); 
+      }
 
     });
 
