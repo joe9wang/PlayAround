@@ -2121,19 +2121,15 @@ function allowOperateOthers() {
  * これにより同期の競合（引き戻し）を防ぎ、スムーズな操作を可能にする
  */
 function maybeTakeOwnership(cardEl) {
-  const isSpectator = (CURRENT_PLAYER === 'spectator');
-  const allowOthers = allowOperateOthers();
-  const myCard = isMyCard(cardEl);
-  
-  console.log(`[Karuta Debug] attempt: spectator=${isSpectator}, allowOthersMove=${allowOthers}, isMyCard=${myCard}`);
-
-  if (isSpectator) return;
-  if (allowOthers && !myCard) {
+  if (CURRENT_PLAYER === 'spectator') return; // 観戦者は操作権を奪えない
+  if (allowOperateOthers() && !isMyCard(cardEl)) {
     const cardId = cardEl.dataset.cardId;
     if (!cardId) return;
 
+    // Firestoreを更新
     updateCardBatched(cardId, { ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER });
 
+    // DOMも即座に書き換えて、後続の権限チェックをパスさせる
     cardEl.dataset.ownerUid = CURRENT_UID;
     cardEl.dataset.ownerSeat = String(CURRENT_PLAYER);
     cardEl.setAttribute('data-owner', 'me');
@@ -2148,13 +2144,12 @@ function canOperateCard(cardEl, kind) {
   if (CURRENT_PLAYER === 'spectator') return false;
   if (isMyCard(cardEl)) return true;
 
-  const allowOthers = allowOperateOthers();
-  if (allowOthers) {
+  if (allowOperateOthers()) {
+    // 共有ONでも破壊的操作は不可のまま
     if (kind === 'delete' || kind === 'rotate') return false;
-    return true;
+    return true; // move / flip を許可
   }
 
-  console.log(`[DEBUG] canOperateCard blocked: kind=${kind}, allowOthersMove=${allowOthers}, isMyCard=${isMyCard(cardEl)}`);
   return false;
 }
 
@@ -2706,7 +2701,6 @@ async function ensureAuthReady(timeoutMs = 8000) {
 
       if (u) { 
         CURRENT_UID = u.uid; 
-        console.log(`[Auth Debug] UID confirmed: ${CURRENT_UID}`);
         renderSeatAvailability(); // UIDが決まったので座席表示を更新
         off(); 
         resolve(); 
@@ -2798,10 +2792,6 @@ function renderSeatAvailability() {
     const data = currentSeatMap[seat];
     const isMe = data && data.claimedByUid === CURRENT_UID;
     const alive = data && !isSeatStale(data) && !!data.claimedByUid && !isMe;
-
-    if (data && data.claimedByUid) {
-      console.log(`[Seat Debug] seat=${seat}, claimedBy=${data.claimedByUid}, CURRENT_UID=${CURRENT_UID}, isMe=${isMe}, stale=${isSeatStale(data)}`);
-    }
 
     if (isMe) {
       if (note) note.textContent = `(あなたの席)`;
@@ -6407,8 +6397,6 @@ function makeDraggable(card) {
   card.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
     
-    console.log(`[Drag Debug] mousedown start: cardId=${card.dataset.cardId}, CURRENT_PLAYER=${CURRENT_PLAYER}`);
-
     // かるた方式: 触れたカード（および選択中の全カード）の所有権を奪う
     if (card.classList.contains('selected')) {
       Array.from(document.querySelectorAll('.card.selected')).forEach(c => maybeTakeOwnership(c));
@@ -12012,7 +12000,18 @@ if (sitSeatBtn) {
         
         const ok = await claimSeat(CURRENT_ROOM, i);
         if (!ok) { alert(`SEAT${i} はいま埋まりました。別の座席を選んでください。`); return; }
-        
+
+        // 新しい席の確保に成功
+        const oldSeat = Object.keys(currentSeatMap).find(s => 
+          currentSeatMap[s]?.claimedByUid === CURRENT_UID && parseInt(s, 10) !== i
+        );
+
+        if (oldSeat) {
+          try {
+            await releaseSeat(db, CURRENT_ROOM, parseInt(oldSeat, 10), CURRENT_UID, CURRENT_ROOM_META?.hostUid || null);
+          } catch(e) { console.warn('Old seat cleanup failed', e); }
+        }
+
         CURRENT_PLAYER = i;
         document.body.classList.remove('is-spectator');
         startHeartbeat(CURRENT_ROOM, i);
