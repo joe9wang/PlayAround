@@ -4,7 +4,7 @@
       --header-h: 60px;
       /* site-headerの高さに合わせる */
       --upload-h: 56px;
-      --footer-h: 40px;
+      --footer-h: 24px;
       --gheader-h: 0px;
       /* h1を削除したため0に */
       --special-w: 16.6%;
@@ -1787,9 +1787,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      /* 中央寄せから変更しても内側のinner次第 */
-      padding: 12px;
+      padding: 0 12px;
+      box-sizing: border-box;
       color: #555;
+      font-size: 12px;
       position: fixed;
       /* ← 常に下に固定 */
       left: 0;
