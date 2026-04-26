@@ -32,6 +32,25 @@ const mypageBtn = document.getElementById('btn-mypage');
 const whoamiSpan = document.getElementById('whoami');
 const authFormArea = document.getElementById('auth-form-area');
 const authLoggedinArea = document.getElementById('auth-loggedin-area');
+const authIndicator = document.getElementById('auth-indicator');
+
+function updateAuthIndicator(user) {
+  if (!authIndicator) return;
+  if (!user || user.isAnonymous) {
+    authIndicator.innerHTML = `
+      <a href="./login.html" class="login-btn">ログイン</a>
+    `;
+  } else {
+    const photo = user.photoURL;
+    const name = user.displayName || user.email || 'Player';
+    const initial = name.charAt(0).toUpperCase();
+    authIndicator.innerHTML = `
+      <a href="./mypage.html" class="avatar-btn" title="マイページへ">
+        ${photo ? `<img src="${photo}" alt="Avatar">` : initial}
+      </a>
+    `;
+  }
+}
 
 const newRoomIdInput = document.getElementById('new-room-id');
 const newRoomPassInput = document.getElementById('new-room-pass');
@@ -80,6 +99,7 @@ async function init() {
       // Auto anonymous sign-in if not logged in
       try { await signInAnonymously(auth); } catch (e) { console.error('Auth error', e); }
     }
+    updateAuthIndicator(user);
     updateStartButtonState();
   });
 
