@@ -333,10 +333,13 @@
 </head>
 
 <body>
-    <select class="lang-switch" id="lang-switch" aria-label="Language">
-        <option value="ja">日本語</option>
-        <option value="en">English</option>
-    </select>
+    <div style="position: absolute; top: 16px; right: 16px; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 12px; color: #ccc;">Language</span>
+        <select class="lang-switch" id="lang-switch" aria-label="Language" style="position: static;">
+            <option value="ja">日本語</option>
+            <option value="en">English</option>
+        </select>
+    </div>
 
     <div class="login-container">
         <!-- ロゴ -->

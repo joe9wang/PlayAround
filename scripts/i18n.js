@@ -306,17 +306,15 @@ export function getLang() { return LANG; }
 // 初期適用
 export function initI18n() {
     const langSelHeader = document.getElementById('lang-switch');
-    const langSelLobby = document.getElementById('lang-switch-lobby');
     function syncLangUI() {
         if (langSelHeader) langSelHeader.value = LANG;
-        if (langSelLobby) langSelLobby.value = LANG;
     }
-    [langSelHeader, langSelLobby].forEach(sel => {
-        sel && sel.addEventListener('change', () => {
-            setLang(sel.value);
+    if (langSelHeader) {
+        langSelHeader.addEventListener('change', () => {
+            setLang(langSelHeader.value);
             syncLangUI();
         });
-    });
+    }
     syncLangUI();
     applyI18n();
 }
