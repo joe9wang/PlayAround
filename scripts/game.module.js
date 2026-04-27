@@ -6543,7 +6543,10 @@ function makeDraggable(card) {
 
         const zIndex = parseInt(c.style.zIndex) || 1;
 
-        updateCardBatched(id, { x, y, zIndex });
+        const updateData = { x, y, zIndex };
+        if (c.style.width) updateData.width = Math.round(parseFloat(c.style.width));
+        if (c.style.height) updateData.height = Math.round(parseFloat(c.style.height));
+        updateCardBatched(id, updateData);
 
       });
 
@@ -6723,7 +6726,10 @@ function makeDraggable(card) {
 
         const zIndex = parseInt(c.style.zIndex) || 1;
 
-        updateCardBatched(id, { x, y, zIndex });
+        const updateData = { x, y, zIndex };
+        if (c.style.width) updateData.width = Math.round(parseFloat(c.style.width));
+        if (c.style.height) updateData.height = Math.round(parseFloat(c.style.height));
+        updateCardBatched(id, updateData);
 
       });
 
