@@ -5300,10 +5300,8 @@ function createCardDom(cardId, imageSrc, state) {
 
     const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
 
-    const isTextToken = (state?.type === 'token') || card.classList.contains('token');
-
+    const isTextToken = (state?.type === 'token') || card.classList.contains('token') || card.classList.contains('memo');
     const isImageToken = (state?.type === 'image-token') || card.classList.contains('image-token');
-
     const isToken = isTextToken || isImageToken;
 
     const isNumCtr = (state?.type === 'numcounter') || card.classList.contains('numcounter');
@@ -5460,6 +5458,8 @@ function createCardDom(cardId, imageSrc, state) {
     maybeTakeOwnership(card);
 
     
+
+    if (card.classList.contains('memo')) return;
 
     const isSelected = card.classList.contains('selected');
 
@@ -5762,7 +5762,8 @@ function applyCardState(card, data) {
         if (data.height) card.style.height = `${data.height}px`;
         if (data.fontSize) tokenInput.style.fontSize = `${data.fontSize}px`;
       }
-      if (data.faceUp) {
+      const isFaceUp = (data.type === 'memo') ? true : data.faceUp;
+      if (isFaceUp) {
         tokenInput.style.display = 'block';
         card.style.backgroundColor = '#fff';
         card.style.backgroundImage = '';
@@ -6365,6 +6366,13 @@ function makeDraggable(card) {
     }
 
     if (!canOperateCard(card, 'move')) return;
+
+    // メモのリサイズハンドルを操作している場合はドラッグを開始しない
+    if (card.classList.contains('memo')) {
+      const cardRect = card.getBoundingClientRect();
+      const isResizeArea = (e.clientX > cardRect.right - 25 && e.clientY > cardRect.bottom - 25);
+      if (isResizeArea) return;
+    }
 
     if (e.detail > 1) return;
 
