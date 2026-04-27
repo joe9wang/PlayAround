@@ -5096,7 +5096,8 @@ function createCardDom(cardId, imageSrc, state) {
       if (state.type === 'memo') {
         let rszTmr = null;
         const rszObserver = new ResizeObserver(entries => {
-          if (isLocalRecent(cardId)) return; // ドラッグ中などはスキップしたいが ResizeObserver はサイズ変化のみ
+          // ドラッグ開始時のisLocalRecentでスキップすると手動リサイズが保存されないためコメントアウト
+          // if (isLocalRecent(cardId)) return; 
           if (rszTmr) clearTimeout(rszTmr);
           rszTmr = setTimeout(() => {
             const entry = entries[0];
