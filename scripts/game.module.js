@@ -4937,8 +4937,9 @@ function createCardDom(cardId, imageSrc, state) {
 
       if (!canOperateCard(card, 'flip')) return;
 
-      const isFaceUp = card.dataset.faceUp === 'true';
+      if (state?.type === 'memo' || card.classList.contains('memo')) return;
 
+      const isFaceUp = card.dataset.faceUp === 'true';
       const nextFaceUp = !isFaceUp;
 
       card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
@@ -5631,10 +5632,19 @@ function applyCardState(card, data) {
 
 
   if (img) {
-
-    if (data.faceUp) { img.style.display = 'block'; card.style.backgroundColor = '#fff'; }
-
-    else { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
+    const isMemo = (data.type === 'memo');
+    if (isMemo) {
+      img.style.display = 'none';
+      card.style.backgroundColor = '#fff';
+    } else {
+      if (data.faceUp) {
+        img.style.display = 'block';
+        card.style.backgroundColor = '#fff';
+      } else {
+        img.style.display = 'none';
+        card.style.backgroundColor = '#000';
+      }
+    }
 
     
 
@@ -6921,6 +6931,7 @@ window.faceDownAll = async function () {
   for (const [id, el] of cardDomMap) {
 
     if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
+    if (el.classList.contains('memo')) continue;
 
     el.dataset.faceUp = 'false';
 
@@ -6951,9 +6962,8 @@ window.faceUpAll = async function () {
   let count = 0;
 
   for (const [id, el] of cardDomMap) {
-
     if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
-
+    if (el.classList.contains('memo')) continue;
     el.dataset.faceUp = 'true';
 
     const imgEl = el.querySelector('img'); if (imgEl) imgEl.style.display = 'block';
@@ -6983,9 +6993,8 @@ window.resetMyCardRotation = async function () {
   let count = 0;
 
   for (const [id, el] of cardDomMap) {
-
     if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
-
+    if (el.classList.contains('memo')) continue;
     el.style.transform = 'rotate(0deg)';
 
     batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { rotation: 0 });
