@@ -3098,6 +3098,18 @@ function applyFieldModeLayout() {
       }
     }
   }
+
+  // ホストの場合、ボードレイアウトの各エリアをリサイズ可能にする
+  if (mode === 'board') {
+    const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
+    if (isHost) {
+      const areaSelectors = ['#board-play', '.board-hand', '#board-center', '.center-deck', '.center-discard', '.dynamic-area'];
+      document.querySelectorAll(areaSelectors.join(',')).forEach(el => {
+        const id = el.id || el.dataset.areaId;
+        if (id) makeAreaResizable(el, id);
+      });
+    }
+  }
 }
 
 // ===============================
@@ -10439,69 +10451,43 @@ function subscribeAreas() {
 
 
       // Position & Scale sync
-
-      if (data.isAbsolute) {
-
+      if (data.isAbsolute || data.x !== undefined || data.width !== undefined) {
         el.dataset.areaId = id; 
-
-        if (el.parentElement !== field) {
-
+        
+        // 以前は field 直下へ移動させていたが、board-layout 内に留めても position:absolute ならOK。
+        // ただし座標計算が field 基準なので、親を field に統一する方が安全。
+        if (el.parentElement !== field && (data.isAbsolute || id.includes('dynamic'))) {
           el.style.width = el.offsetWidth + 'px';
-
           el.style.height = el.offsetHeight + 'px';
-
           field.appendChild(el);
-
         }
 
         el.style.position = 'absolute';
 
         // z-index を動的に設定（100: プレイエリア系 / 200: サブエリア系）。カード(300〜)より背面を維持。
-
         const isPlayType = (id.includes('main-play-area') || id.includes('board-play'));
-
         el.style.zIndex = isPlayType ? '100' : '200';
-
         
-
         if (data.x !== undefined) el.style.left = data.x + 'px';
-
         if (data.y !== undefined) el.style.top = data.y + 'px';
-
         
-
-        // isAbsoluteの場合、ベースサイズに縦横乗数をかけて実体面積のみを変える
-
+        // サイズ適用（倍率 multX/multY はリサイズ操作で width/height 自体に取り込まれる運用も可能だが、
+        // 既存の multX/multY も考慮して適用する）
         if (data.width !== undefined) el.style.width = (data.width * multX) + 'px';
-
         if (data.height !== undefined) el.style.height = (data.height * multY) + 'px';
 
       } else {
-
         // グリッド等に属している場合、実測のピクセル幅（ベース）を計り、正確に倍率を掛けます。
-
-        // 親コンテナ幅へのパーセント解決を避けるための処理
-
         el.style.width = '';
-
         el.style.height = '';
-
         
-
         const baseW = el.offsetWidth;
-
         const baseH = el.offsetHeight;
-
         
-
         if (multX !== 1) el.style.width = (baseW * multX) + 'px';
-
         if (multY !== 1) el.style.height = (baseH * multY) + 'px';
-
         
-
         el.classList.add('auto-scale-area');
-
       }
 
       
@@ -11563,6 +11549,100 @@ function stopAreaPlacement() {
 }
 
 
+
+
+/**
+ * エリアをドラッグでリサイズ可能にする（ホスト専用）
+ */
+function makeAreaResizable(el, areaId) {
+  if (!el || !areaId) return;
+  const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
+  if (!isHost) return;
+  if (el.dataset.resizableBound === 'true') return;
+  el.dataset.resizableBound = 'true';
+
+  const positions = ['n', 's', 'w', 'e', 'nw', 'ne', 'sw', 'se'];
+  positions.forEach(pos => {
+    const handle = document.createElement('div');
+    handle.className = `resize-handle ${pos}`;
+    el.appendChild(handle);
+
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startRect = el.getBoundingClientRect();
+      const fieldRect = field.getBoundingClientRect();
+      const z = typeof zoom !== 'undefined' ? zoom : 1;
+      
+      // ボードレイアウト全体に transform: scale(1.3) がかかっている場合の補正
+      const isBoardArea = !!el.closest('#board-layout');
+      const bScale = isBoardArea ? 1.3 : 1.0;
+      const totalScale = z * bScale;
+
+      // 倍率を考慮したベースの幅と高さ
+      const startW = startRect.width / totalScale;
+      const startH = startRect.height / totalScale;
+      const startL = (startRect.left - fieldRect.left) / totalScale;
+      const startT = (startRect.top - fieldRect.top) / totalScale;
+
+      el.classList.add('area-resizing');
+
+      const onMouseMove = (moveEvent) => {
+        const dx = (moveEvent.clientX - startX) / totalScale;
+        const dy = (moveEvent.clientY - startY) / totalScale;
+
+        let newL = startL;
+        let newT = startT;
+        let newW = startW;
+        let newH = startH;
+
+        if (pos.includes('e')) newW = Math.max(50, startW + dx);
+        if (pos.includes('s')) newH = Math.max(50, startH + dy);
+        if (pos.includes('w')) {
+          const delta = Math.min(dx, startW - 50);
+          newL = startL + delta;
+          newW = startW - delta;
+        }
+        if (pos.includes('n')) {
+          const delta = Math.min(dy, startH - 50);
+          newT = startT + delta;
+          newH = startH - delta;
+        }
+
+        el.style.left = newL + 'px';
+        el.style.top = newT + 'px';
+        el.style.width = newW + 'px';
+        el.style.height = newH + 'px';
+      };
+
+      const onMouseUp = async () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        el.classList.remove('area-resizing');
+
+        // 保存 (Firestore)
+        if (!CURRENT_ROOM) return;
+        try {
+          const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${areaId}`);
+          await setDoc(docRef, {
+            x: parseFloat(el.style.left),
+            y: parseFloat(el.style.top),
+            width: parseFloat(el.style.width),
+            height: parseFloat(el.style.height),
+            isAbsolute: true, // リサイズ後は絶対配置へ移行
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } catch (err) { console.warn('Area resize save failed', err); }
+      };
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+  });
+}
 
 function startAreaPlacement(areaEl, isNew, areaId, forceType) {
 

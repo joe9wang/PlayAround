@@ -1987,3 +1987,33 @@
     .area-context-menu .host-only {
       display: none;
     }
+    /* === Area Resizing Handles === */
+    .resize-handle {
+      position: absolute;
+      background: rgba(255, 0, 0, 0); /* 通常時は透明 */
+      z-index: 1000;
+      transition: background 0.2s;
+    }
+
+    /* ホストがホバーした時だけハンドルを少し見えるようにする（デバッグ・ガイド用） */
+    .mode-board .resize-handle:hover {
+      background: rgba(255, 0, 0, 0.2);
+    }
+
+    /* 辺ハンドル */
+    .resize-handle.n { top: -5px; left: 10px; right: 10px; height: 10px; cursor: n-resize; }
+    .resize-handle.s { bottom: -5px; left: 10px; right: 10px; height: 10px; cursor: s-resize; }
+    .resize-handle.w { left: -5px; top: 10px; bottom: 10px; width: 10px; cursor: w-resize; }
+    .resize-handle.e { right: -5px; top: 10px; bottom: 10px; width: 10px; cursor: e-resize; }
+
+    /* 角ハンドル */
+    .resize-handle.nw { top: -5px; left: -5px; width: 15px; height: 15px; cursor: nw-resize; }
+    .resize-handle.ne { top: -5px; right: -5px; width: 15px; height: 15px; cursor: ne-resize; }
+    .resize-handle.sw { bottom: -5px; left: -5px; width: 15px; height: 15px; cursor: sw-resize; }
+    .resize-handle.se { bottom: -5px; right: -5px; width: 15px; height: 15px; cursor: se-resize; }
+
+    /* リサイズ中のエリア強調 */
+    .area-resizing {
+      outline: 2px solid #ff0000 !important;
+      z-index: 10001 !important;
+    }
