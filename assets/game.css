@@ -2,11 +2,11 @@
       --sidebar-w: 300px;
       --preview-w: 300px;
       --header-h: 60px;
-      /* site-headerの高さに合わせる */
+      /* site-header縺ｮ鬮倥＆縺ｫ蜷医ｏ縺帙ｋ */
       --upload-h: 56px;
       --footer-h: 24px;
       --gheader-h: 0px;
-      /* h1を削除したため0に */
+      /* h1繧貞炎髯､縺励◆縺溘ａ0縺ｫ */
       --special-w: 16.6%;
       --stack-h: calc(var(--header-h) + var(--upload-h));
     }
@@ -18,10 +18,10 @@
       overflow: hidden;
     }
 
-    /* === 統合ヘッダー (game.html固有) === */
+    /* === 邨ｱ蜷医�繝�ム繝ｼ (game.html蝗ｺ譛�) === */
     .game-header {
       background: #444;
-      /* 既存のh1の色に合わせるか、site-headerの色を上書きするか */
+      /* 譌｢蟄倥�h1縺ｮ濶ｲ縺ｫ蜷医ｏ縺帙ｋ縺九《ite-header縺ｮ濶ｲ繧剃ｸ頑嶌縺阪☆繧九° */
     }
 
     .game-header .site-header__inner {
@@ -29,7 +29,7 @@
       align-items: center;
       justify-content: space-between;
       height: var(--header-h);
-      /* navのラップを防ぐため固定長 */
+      /* nav縺ｮ繝ｩ繝��繧帝亟縺舌◆繧∝崋螳夐聞 */
     }
 
     .game-header .site-nav {
@@ -140,7 +140,7 @@
       background: #f6f6f6 !important;
     }
 
-    /* トークン（原画サイズ）用のカードスタイル */
+    /* 繝医�繧ｯ繝ｳ�亥次逕ｻ繧ｵ繧､繧ｺ�臥畑縺ｮ繧ｫ繝ｼ繝峨せ繧ｿ繧､繝ｫ */
     .card.image-token {
       width: auto !important;
       height: auto !important;
@@ -166,7 +166,7 @@
       box-shadow: 2px 0 5px rgba(0, 0, 0, .2);
       position: relative;
       z-index: 10;
-      /* 前面に */
+      /* 蜑埼擇縺ｫ */
       padding: 10px;
       box-sizing: border-box;
       overflow: auto;
@@ -198,7 +198,7 @@
       cursor: not-allowed;
     }
 
-    /* 追加: すべてのサイドバーボタンの無効時スタイル */
+    /* 霑ｽ蜉�: 縺吶∋縺ｦ縺ｮ繧ｵ繧､繝峨ヰ繝ｼ繝懊ち繝ｳ縺ｮ辟｡蜉ｹ譎ゅせ繧ｿ繧､繝ｫ */
     #sidebar button:disabled {
       opacity: .6;
       cursor: not-allowed;
@@ -247,17 +247,17 @@
       border: 5px dashed #666;
       box-sizing: border-box;
       display: grid;
-      /* スタンダード（デフォルト）のグリッド構成 */
+      /* 繧ｹ繧ｿ繝ｳ繝繝ｼ繝会ｼ医ョ繝輔か繝ｫ繝茨ｼ峨�繧ｰ繝ｪ繝�ラ讒区� */
       grid-template-columns: var(--special-w) 10fr 2fr;
       grid-template-rows: 1.5fr 1.5fr 1fr;
       gap: 6px;
       min-width: 0;
     }
 
-    /* === シンプルレイアウト適用時 === */
+    /* === 繧ｷ繝ｳ繝励Ν繝ｬ繧､繧｢繧ｦ繝磯←逕ｨ譎� === */
     .player-area.layout-simple {
       grid-template-columns: 1fr;
-      grid-template-rows: 3fr 1fr; /* メイン 75% / 手札 25% */
+      grid-template-rows: 3fr 1fr; /* 繝｡繧､繝ｳ 75% / 謇区惆 25% */
     }
     .player-area.layout-simple .special-area,
     .player-area.layout-simple .discard-area,
@@ -273,7 +273,7 @@
       grid-row: 2 / 3;
     }
 
-    /* モーダル内リンク */
+    /* 繝｢繝ｼ繝繝ｫ蜀�Μ繝ｳ繧ｯ */
     .lobby-links {
       margin-top: 10px;
       text-align: center;
@@ -289,7 +289,7 @@
       margin: 0 5px;
     }
 
-    /* 左の縦帯：特殊エリア（全行貫通） */
+    /* 蟾ｦ縺ｮ邵ｦ蟶ｯ�夂音谿翫お繝ｪ繧｢�亥�陦瑚ｲｫ騾夲ｼ� */
     .special-area {
       grid-column: 1 / 2;
       grid-row: 1 / 4;
@@ -299,7 +299,7 @@
       z-index: 200;
     }
 
-    /* メインプレイエリア（上段2行分） */
+    /* 繝｡繧､繝ｳ繝励Ξ繧､繧ｨ繝ｪ繧｢�井ｸ頑ｮｵ2陦悟��� */
     .main-play-area {
       grid-column: 2 / 3;
       grid-row: 1 / 3;
@@ -310,7 +310,7 @@
       min-width: 0;
     }
 
-    /* 捨て札エリア（右側上段） */
+    /* 謐ｨ縺ｦ譛ｭ繧ｨ繝ｪ繧｢�亥承蛛ｴ荳頑ｮｵ�� */
     .discard-area {
       grid-column: 3 / 4;
       grid-row: 1 / 2;
@@ -321,7 +321,7 @@
       min-width: 0;
     }
 
-    /* デッキエリア（右側中段） */
+    /* 繝�ャ繧ｭ繧ｨ繝ｪ繧｢�亥承蛛ｴ荳ｭ谿ｵ�� */
     .deck-area {
       grid-column: 3 / 4;
       grid-row: 2 / 3;
@@ -332,9 +332,9 @@
       min-width: 0;
     }
 
-    /* デッキ */
+    /* 繝�ャ繧ｭ */
 
-    /* 右下：手札行（下段、2列分） */
+    /* 蜿ｳ荳具ｼ壽焔譛ｭ陦鯉ｼ井ｸ区ｮｵ縲�2蛻怜��� */
     .hand-area {
       grid-column: 2 / 4;
       grid-row: 3 / 4;
@@ -390,7 +390,7 @@
       display: none;
     }
 
-    /* 背面画像を敷くカード */
+    /* 閭碁擇逕ｻ蜒上ｒ謨ｷ縺上き繝ｼ繝� */
     .card.has-back {
       background-position: center;
       background-repeat: no-repeat;
@@ -411,7 +411,7 @@
       flex-direction: column;
       position: relative;
       z-index: 500;
-      /* 右サイドも前面に固定 */
+      /* 蜿ｳ繧ｵ繧､繝峨ｂ蜑埼擇縺ｫ蝗ｺ螳� */
     }
 
     #preview h2:not(.panel-title) {
@@ -497,7 +497,7 @@
       cursor: not-allowed;
     }
 
-    /* ▼ プレミアムバッジ */
+    /* 笆ｼ 繝励Ξ繝溘い繝�繝舌ャ繧ｸ */
     .premium-badge {
       display: inline-flex;
       align-items: center;
@@ -531,7 +531,7 @@
       position: relative;
     }
 
-    /* ロビー上部のログイン領域 */
+    /* 繝ｭ繝薙�荳企Κ縺ｮ繝ｭ繧ｰ繧､繝ｳ鬆伜沺 */
     .lobby-auth {
       margin: 8px 0 12px;
     }
@@ -653,7 +653,7 @@
       margin: 0 auto;
     }
 
-    /* --- ログイン済み表示 --- */
+    /* --- 繝ｭ繧ｰ繧､繝ｳ貂医∩陦ｨ遉ｺ --- */
     #auth-loggedin-area {
       text-align: center;
     }
@@ -686,7 +686,7 @@
     }
 
 
-    /* ロビー右上の言語切替 */
+    /* 繝ｭ繝薙�蜿ｳ荳翫�險隱槫�譖ｿ */
     .lobby-lang {
       position: absolute;
       top: 10px;
@@ -780,7 +780,7 @@
       border: 1px solid #ccc;
     }
 
-    /* ========== 座席ボタン ========== */
+    /* ========== 蠎ｧ蟶ｭ繝懊ち繝ｳ ========== */
     .seat-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -880,7 +880,7 @@
       z-index: 400;
     }
 
-    /* 追加（ボード / トランプ用：手札エリア左下に表示） */
+    /* 霑ｽ蜉��医�繝ｼ繝� / 繝医Λ繝ｳ繝礼畑�壽焔譛ｭ繧ｨ繝ｪ繧｢蟾ｦ荳九↓陦ｨ遉ｺ�� */
     .board-name {
       position: absolute;
       left: 6px;
@@ -931,17 +931,17 @@
     }
 
 
-    /* === ゾーンは常に通常カーソルにする === */
+    /* === 繧ｾ繝ｼ繝ｳ縺ｯ蟶ｸ縺ｫ騾壼ｸｸ繧ｫ繝ｼ繧ｽ繝ｫ縺ｫ縺吶ｋ === */
     .deck-area,
     .main-play-area,
     .hand-area,
     .special-area,
     .discard-area {
       cursor: default;
-      /* ← 指マークにしない */
+      /* 竊� 謖��繝ｼ繧ｯ縺ｫ縺励↑縺� */
     }
 
-    /* （任意）ドラッグ中は「つかむ」表示をより確実に */
+    /* �井ｻｻ諢擾ｼ峨ラ繝ｩ繝�げ荳ｭ縺ｯ縲後▽縺九�縲崎｡ｨ遉ｺ繧偵ｈ繧顔｢ｺ螳溘↓ */
     .card:active {
       cursor: grabbing;
     }
@@ -968,20 +968,20 @@
       border-radius: 8px;
       background: transparent;
       cursor: pointer;
-      /* クリックで消す */
+      /* 繧ｯ繝ｪ繝�け縺ｧ豸医☆ */
     }
 
     .card.dice.is-coin {
       border-radius: 50%;
       overflow: hidden;
-      /* 円形で切り抜く */
+      /* 蜀�ｽ｢縺ｧ蛻�ｊ謚懊￥ */
       background: transparent;
     }
 
     .card.dice.is-coin img {
       border-radius: 50%;
       object-fit: cover;
-      /* 余白なく円いっぱいに表示 */
+      /* 菴咏區縺ｪ縺丞�縺�▲縺ｱ縺�↓陦ｨ遉ｺ */
     }
 
 
@@ -990,7 +990,7 @@
       object-fit: contain;
     }
 
-    /* 数値カウンター（横長、±ボタン＋数値入力） */
+    /* 謨ｰ蛟､繧ｫ繧ｦ繝ｳ繧ｿ繝ｼ�域ｨｪ髟ｷ縲�ｱ繝懊ち繝ｳ�区焚蛟､蜈･蜉幢ｼ� */
     .card.numcounter {
       width: 100px;
       min-width: 100px;
@@ -999,7 +999,7 @@
       min-height: 100px;
       max-height: 100px;
       border-radius: 24px;
-      /* 半径も2倍に */
+      /* 蜊雁ｾ�ｂ2蛟阪↓ */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1055,7 +1055,7 @@
       box-sizing: border-box;
     }
 
-    /* メモ (Resizeable) */
+    /* 繝｡繝｢ (Resizeable) */
     .card.memo {
       background: #fff;
       display: flex !important;
@@ -1089,14 +1089,19 @@
       border-color: #999;
     }
 
+    /* 他人のメモ（disabled）をクリックした時に親要素（.card）へイベントを貫通させることでドラッグできるようにする */
+    .card .token-input:disabled {
+      pointer-events: none;
+    }
 
 
-    /* ==== 追加: ボードゲームレイアウト（四隅ハンド + 中央デッキ/捨て札） ==== */
+
+    /* ==== 霑ｽ蜉: 繝懊繝峨ご繝ｼ繝繝ｬ繧､繧｢繧ｦ繝茨ｼ亥屁髫ワ繝ｳ繝 + 荳ｭ螟ｮ繝ャ繧ｭ/謐ｨ縺ｦ譛ｭ ==== */
     #board-layout {
       position: absolute;
       inset: 0;
       display: none;
-      /* 初期は非表示（mode=board のとき表示） */
+      /* 蛻晄悄縺ｯ髱櫁｡ｨ遉ｺ��ode=board 縺ｮ縺ｨ縺崎｡ｨ遉ｺ�� */
     }
 
     #board-layout.layout-simple #board-center {
@@ -1104,32 +1109,32 @@
     }
 
 
-    /* 共有プレイエリア（角の手札と中央ブロック以外の全域） */
+    /* 蜈ｱ譛峨�繝ｬ繧､繧ｨ繝ｪ繧｢�郁ｧ偵�謇区惆縺ｨ荳ｭ螟ｮ繝悶Ο繝�け莉･螟悶�蜈ｨ蝓滂ｼ� */
     #board-play {
       position: absolute;
       inset: 0;
       background: #2d8;
-      /* 既存の main-play-area と同系色 */
+      /* 譌｢蟄倥� main-play-area 縺ｨ蜷檎ｳｻ濶ｲ */
       border: 4px dashed #666;
-      /* 見やすいように枠 */
+      /* 隕九ｄ縺吶＞繧医≧縺ｫ譫� */
       z-index: 100;
-      /* 下地 */
+      /* 荳句慍 */
     }
 
 
 
 
-    /* 四隅の手札（P1:左上, P2:右上, P3:左下, P4:右下） */
+    /* 蝗幃嚆縺ｮ謇区惆��1:蟾ｦ荳�, P2:蜿ｳ荳�, P3:蟾ｦ荳�, P4:蜿ｳ荳具ｼ� */
     .board-hand {
       position: absolute;
       width: 18%;
       height: 24%;
       background: #228be6;
-      /* 既存 hand と同色 */
+      /* 譌｢蟄� hand 縺ｨ蜷瑚牡 */
       border: 4px dashed #666;
       box-sizing: border-box;
       z-index: 200;
-      /* 下地(#board-play)より前面 */
+      /* 荳句慍(#board-play)繧医ｊ蜑埼擇 */
     }
 
     #board-hand-1 {
@@ -1152,7 +1157,7 @@
       right: 2%;
     }
 
-    /* 中央のデッキ＆捨て札（横並び） */
+    /* 荳ｭ螟ｮ縺ｮ繝�ャ繧ｭ��昏縺ｦ譛ｭ�域ｨｪ荳ｦ縺ｳ�� */
     #board-center {
       position: absolute;
       width: 30%;
@@ -1165,12 +1170,12 @@
       grid-template-columns: 1fr 1fr;
       gap: 10px;
       z-index: 200;
-      /* 下地(#board-play)より前面 */
+      /* 荳句慍(#board-play)繧医ｊ蜑埼擇 */
     }
 
     .center-deck {
       background: #f90;
-      /* 既存 deck と同色 */
+      /* 譌｢蟄� deck 縺ｨ蜷瑚牡 */
       position: relative;
       border: 4px dashed #666;
       grid-column: 1;
@@ -1178,29 +1183,29 @@
 
     .center-discard {
       background: #cc6666;
-      /* 既存 discard と同色 */
+      /* 譌｢蟄� discard 縺ｨ蜷瑚牡 */
       position: relative;
       border: 4px dashed #666;
       grid-column: 2;
     }
 
 
-    /* モード切替: mode-card ⇄ mode-board
-       ※カードゲーム（既存DOM）はデフォルト表示のまま触らない！
-       → mode-card では一切上書きしない。board のときだけ切り替える。 */
-    /* ボード/トランプ時はカード用 player-area を非表示 */
+    /* 繝｢繝ｼ繝牙�譖ｿ: mode-card 竍� mode-board
+       窶ｻ繧ｫ繝ｼ繝峨ご繝ｼ繝��域里蟄魯OM�峨�繝�ヵ繧ｩ繝ｫ繝郁｡ｨ遉ｺ縺ｮ縺ｾ縺ｾ隗ｦ繧峨↑縺�ｼ�
+       竊� mode-card 縺ｧ縺ｯ荳蛻�ｸ頑嶌縺阪＠縺ｪ縺�Ｃoard 縺ｮ縺ｨ縺阪□縺大�繧頑崛縺医ｋ縲� */
+    /* 繝懊�繝�/繝医Λ繝ｳ繝玲凾縺ｯ繧ｫ繝ｼ繝臥畑 player-area 繧帝撼陦ｨ遉ｺ */
     #field.mode-board .player-area {
       display: none;
     }
 
-    /* カード用4区画は隠す */
+    /* 繧ｫ繝ｼ繝臥畑4蛹ｺ逕ｻ縺ｯ髫�縺� */
 
-    /* ボード/トランプ時はプレイエリア内の P1～P4 タグを非表示 */
+    /* 繝懊�繝�/繝医Λ繝ｳ繝玲凾縺ｯ繝励Ξ繧､繧ｨ繝ｪ繧｢蜀�� P1�霸4 繧ｿ繧ｰ繧帝撼陦ｨ遉ｺ */
     #field.mode-board .player-area .player-label {
       display: none !important;
     }
 
-    /* ボード/トランプ時は特殊エリアの zone-label を非表示 */
+    /* 繝懊�繝�/繝医Λ繝ｳ繝玲凾縺ｯ迚ｹ谿翫お繝ｪ繧｢縺ｮ zone-label 繧帝撼陦ｨ遉ｺ */
     #field.mode-board .special-area .zone-label {
       display: none !important;
     }
@@ -1209,9 +1214,9 @@
       display: block;
     }
 
-    /* ボード用だけ出す */
+    /* 繝懊�繝臥畑縺�縺大�縺� */
 
-    /* ボードゲーム時だけ全体を1.3倍（カードモードは無影響） */
+    /* 繝懊�繝峨ご繝ｼ繝�譎ゅ□縺大�菴薙ｒ1.3蛟搾ｼ医き繝ｼ繝峨Δ繝ｼ繝峨�辟｡蠖ｱ髻ｿ�� */
     #field.mode-board #board-layout {
       transform: scale(1.3);
       transform-origin: center center;
@@ -1270,7 +1275,7 @@
     }
 
 
-    /* === パスワードエラーの視覚フィードバック === */
+    /* === 繝代せ繝ｯ繝ｼ繝峨お繝ｩ繝ｼ縺ｮ隕冶ｦ壹ヵ繧｣繝ｼ繝峨ヰ繝�け === */
     .field.is-error {
       border: 2px solid #e53935 !important;
       box-shadow: 0 0 0 3px rgba(229, 57, 53, .15) inset;
@@ -1354,7 +1359,7 @@
         padding: 0 12px;
       }
 
-      /* 横3カラム → 縦積み */
+      /* 讓ｪ3繧ｫ繝ｩ繝� 竊� 邵ｦ遨阪∩ */
       #sidebar,
       #container,
       #preview {
@@ -1362,7 +1367,7 @@
         height: auto !important;
         position: relative;
         z-index: 10;
-        /* 前面に */
+        /* 蜑埼擇縺ｫ */
         float: none;
         box-shadow: none;
       }
@@ -1404,7 +1409,7 @@
         right: 8px;
       }
 
-      /* フィールドは縦スクロール前提、横幅は画面に合わせる */
+      /* 繝輔ぅ繝ｼ繝ｫ繝峨�邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ蜑肴署縲∵ｨｪ蟷��逕ｻ髱｢縺ｫ蜷医ｏ縺帙ｋ */
       #container {
         min-height: 70vh;
       }
@@ -1414,7 +1419,7 @@
         min-height: 70vh;
       }
 
-      /* ブラウザのジェスチャを抑えてアプリ内ジェスチャを優先 */
+      /* 繝悶Λ繧ｦ繧ｶ縺ｮ繧ｸ繧ｧ繧ｹ繝√Ε繧呈椛縺医※繧｢繝励Μ蜀�ず繧ｧ繧ｹ繝√Ε繧貞━蜈� */
       #container,
       #field,
       .card {
@@ -1423,22 +1428,22 @@
     }
 
 
-    /* ==== スマホ対応: ロビーウィンドウの高さ制限とスクロール ==== */
+    /* ==== 繧ｹ繝槭�蟇ｾ蠢�: 繝ｭ繝薙�繧ｦ繧｣繝ｳ繝峨え縺ｮ鬮倥＆蛻ｶ髯舌→繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ ==== */
     @media (max-width: 768px) {
       .lobby-card {
         max-height: 90vh;
-        /* 画面の高さの90%までに制限 */
+        /* 逕ｻ髱｢縺ｮ鬮倥＆縺ｮ90%縺ｾ縺ｧ縺ｫ蛻ｶ髯� */
         overflow-y: auto;
-        /* 縦スクロールを許可 */
+        /* 邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧定ｨｱ蜿ｯ */
         -webkit-overflow-scrolling: touch;
-        /* iOSでのスムーズスクロール */
+        /* iOS縺ｧ縺ｮ繧ｹ繝�繝ｼ繧ｺ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ */
         padding-bottom: 80px;
-        /* 下部ボタンが隠れない余白 */
+        /* 荳矩Κ繝懊ち繝ｳ縺碁國繧後↑縺�ｽ咏區 */
       }
     }
 
 
-    /* ===== サイドバー折り畳み（CSS変数で幅を0に） ===== */
+    /* ===== 繧ｵ繧､繝峨ヰ繝ｼ謚倥ｊ逡ｳ縺ｿ��SS螟画焚縺ｧ蟷�ｒ0縺ｫ�� ===== */
     body.collapse-left {
       --sidebar-w: 0px;
     }
@@ -1447,14 +1452,14 @@
       --preview-w: 0px;
     }
 
-    /* 幅トランジションで気持ちよく */
+    /* 蟷�ヨ繝ｩ繝ｳ繧ｸ繧ｷ繝ｧ繝ｳ縺ｧ豌玲戟縺｡繧医￥ */
     #sidebar,
     #container,
     #preview {
       transition: width .2s ease, max-width .2s ease, min-width .2s ease;
     }
 
-    /* 幅0のとき中身を隠す（描画コスト削減） */
+    /* 蟷�0縺ｮ縺ｨ縺堺ｸｭ霄ｫ繧帝國縺呻ｼ域緒逕ｻ繧ｳ繧ｹ繝亥炎貂幢ｼ� */
     body.collapse-left #sidebar,
     body.collapse-right #preview {
       overflow: hidden;
@@ -1463,7 +1468,7 @@
       padding: 0 !important;
     }
 
-    /* 折り畳みハンドル（左右に常時表示） */
+    /* 謚倥ｊ逡ｳ縺ｿ繝上Φ繝峨Ν�亥ｷｦ蜿ｳ縺ｫ蟶ｸ譎り｡ｨ遉ｺ�� */
     .collapse-handle {
       display: inline-flex;
       align-items: center;
@@ -1484,7 +1489,7 @@
     }
 
 
-    /* モバイル縦積み時は控えめな位置に */
+    /* 繝｢繝舌う繝ｫ邵ｦ遨阪∩譎ゅ�謗ｧ縺医ａ縺ｪ菴咲ｽｮ縺ｫ */
     @media (max-width: 768px) {
       .collapse-handle {
         top: calc(var(--header-h) + 6px);
@@ -1494,14 +1499,14 @@
     }
 
 
-    /* ===== 折り畳み時だけ出る外付けハンドル ===== */
+    /* ===== 謚倥ｊ逡ｳ縺ｿ譎ゅ□縺大�繧句､紋ｻ倥￠繝上Φ繝峨Ν ===== */
     .edge-handle {
       position: fixed;
-      /* ヘッダー高さ + 画像読み込みエリア高さ の少し下 */
+      /* 繝倥ャ繝繝ｼ鬮倥＆ + 逕ｻ蜒剰ｪｭ縺ｿ霎ｼ縺ｿ繧ｨ繝ｪ繧｢鬮倥＆ 縺ｮ蟆代＠荳� */
       top: calc(var(--gheader-h) + var(--header-h) + var(--upload-h) + 8px);
       z-index: 2000;
       display: none;
-      /* デフォルト非表示 */
+      /* 繝�ヵ繧ｩ繝ｫ繝磯撼陦ｨ遉ｺ */
       width: 28px;
       height: 48px;
       border: 1px solid #ccc;
@@ -1527,7 +1532,7 @@
       right: 8px;
     }
 
-    /* 折り畳み中だけ表示 */
+    /* 謚倥ｊ逡ｳ縺ｿ荳ｭ縺�縺題｡ｨ遉ｺ */
     body.collapse-left .edge-left {
       display: inline-flex;
     }
@@ -1536,10 +1541,10 @@
       display: inline-flex;
     }
 
-    /* モバイル時は少し小さく */
+    /* 繝｢繝舌う繝ｫ譎ゅ�蟆代＠蟆上＆縺� */
     @media (max-width: 768px) {
       .edge-handle {
-        /* モバイルは #upload-area が 48px なので、それを加味 */
+        /* 繝｢繝舌う繝ｫ縺ｯ #upload-area 縺� 48px 縺ｪ縺ｮ縺ｧ縲√◎繧後ｒ蜉�蜻ｳ */
         top: calc(var(--gheader-h) + var(--header-h) + 48px + 6px);
         width: 26px;
         height: 40px;
@@ -1547,27 +1552,27 @@
     }
 
 
-    /* ===== Save/Load を横2分割＆省スペースに ===== */
+    /* ===== Save/Load 繧呈ｨｪ2蛻�牡��怐繧ｹ繝壹�繧ｹ縺ｫ ===== */
     #sidebar .sl-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      /* 半分ずつ */
+      /* 蜊雁�縺壹▽ */
       gap: 6px;
       margin: 4px 0 8px;
     }
 
     #sidebar .sl-row>.sl-btn {
       width: 100% !important;
-      /* 既存の100%幅前提を維持 */
+      /* 譌｢蟄倥�100%蟷�燕謠舌ｒ邯ｭ謖� */
       padding: 6px 8px !important;
-      /* 高さを控えめに */
+      /* 鬮倥＆繧呈而縺医ａ縺ｫ */
       font-size: 0.9rem;
       line-height: 1.2;
       min-height: 30px;
     }
 
 
-    /* 単独ボタンでも省スペース化（行に包まなくても効く） */
+    /* 蜊倡峡繝懊ち繝ｳ縺ｧ繧ら怐繧ｹ繝壹�繧ｹ蛹厄ｼ郁｡後↓蛹�∪縺ｪ縺上※繧ょ柑縺擾ｼ� */
     #sidebar .sl-btn {
       width: 100% !important;
       padding: 6px 8px !important;
@@ -1577,7 +1582,7 @@
     }
 
 
-    /* ===== セクション見出し（左寄せ・省スペース） ===== */
+    /* ===== 繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ隕句�縺暦ｼ亥ｷｦ蟇�○繝ｻ逵√せ繝壹�繧ｹ�� ===== */
     #sidebar .section-label {
       margin: 2px 0 6px;
       font-weight: 600;
@@ -1589,9 +1594,9 @@
     @media (max-width: 768px) {
       #sidebar .sl-row>.sl-btn {
         padding: 6px 8px;
-        /* モバイルでも高さ控えめ */
+        /* 繝｢繝舌う繝ｫ縺ｧ繧るｫ倥＆謗ｧ縺医ａ */
         font-size: 12px;
-        /* 既存のモバイル調整に馴染ませる */
+        /* 譌｢蟄倥�繝｢繝舌う繝ｫ隱ｿ謨ｴ縺ｫ鬥ｴ譟薙∪縺帙ｋ */
       }
 
       #sidebar .sl-btn {
@@ -1601,7 +1606,7 @@
     }
 
 
-    /* 左右のトグルボタンの縦位置を統一 */
+    /* 蟾ｦ蜿ｳ縺ｮ繝医げ繝ｫ繝懊ち繝ｳ縺ｮ邵ｦ菴咲ｽｮ繧堤ｵｱ荳 */
     .inline-toggle {
       width: 28px !important;
       height: 28px !important;
@@ -1615,21 +1620,21 @@
       line-height: 1;
       display: flex;
       align-items: center;
-      /* 垂直中央 */
+      /* 蝙ら峩荳ｭ螟ｮ */
       justify-content: center;
-      /* 水平中央 */
+      /* 豌ｴ蟷ｳ荳ｭ螟ｮ */
     }
 
-    /* ===== 見出しの高さと中央揃えを揃える ===== */
+    /* ===== 隕句�縺励�鬮倥＆縺ｨ荳ｭ螟ｮ謠�∴繧呈純縺医ｋ ===== */
     :root {
       --panel-title-h: 32px;
     }
 
-    /* 左右の見出しを同じボックスにする */
+    /* 蟾ｦ蜿ｳ縺ｮ隕句�縺励ｒ蜷後§繝懊ャ繧ｯ繧ｹ縺ｫ縺吶ｋ */
     #sidebar h2.panel-title,
     #preview h2.panel-title {
       margin: 0 0 10px 0 !important;
-      /* 下余白だけ取る */
+      /* 荳倶ｽ咏區縺�縺大叙繧� */
       padding: 0 4px !important;
       height: var(--panel-title-h);
       min-height: var(--panel-title-h);
@@ -1641,7 +1646,7 @@
       box-sizing: border-box;
     }
 
-    /* 左（操作パネル）は右寄せ、右（選択肢のカード）は左寄せ */
+    /* 蟾ｦ�域桃菴懊ヱ繝阪Ν�峨�蜿ｳ蟇�○縲∝承�磯∈謚櫁い縺ｮ繧ｫ繝ｼ繝会ｼ峨�蟾ｦ蟇�○ */
     .panel-title--left {
       justify-content: flex-end;
     }
@@ -1650,19 +1655,19 @@
       justify-content: flex-start;
     }
 
-    /* 見出しテキストを意図的に少し（3px）下げて、ボタンに対して「下側揃え」に見せる */
+    /* 隕句�縺励ユ繧ｭ繧ｹ繝医ｒ諢丞峙逧�↓蟆代＠��3px�我ｸ九￡縺ｦ縲√�繧ｿ繝ｳ縺ｫ蟇ｾ縺励※縲御ｸ句�謠�∴縲阪↓隕九○繧� */
     .panel-title__text {
       transform: translateY(3px);
     }
 
-    /* 見出し内の正方形トグルボタン（100%幅を打ち消す） */
+    /* 隕句�縺怜�縺ｮ豁｣譁ｹ蠖｢繝医げ繝ｫ繝懊ち繝ｳ��100%蟷�ｒ謇薙■豸医☆�� */
     .inline-toggle {
       display: inline-flex;
       align-items: center;
-      /* ボタン内の矢印も縦中央 */
+      /* 繝懊ち繝ｳ蜀��遏｢蜊ｰ繧らｸｦ荳ｭ螟ｮ */
       justify-content: center;
       width: 28px !important;
-      /* #sidebar button {width:100%} を無効化 */
+      /* #sidebar button {width:100%} 繧堤┌蜉ｹ蛹� */
       height: 28px !important;
       min-width: 28px;
       padding: 0 !important;
@@ -1676,7 +1681,7 @@
     }
 
 
-    /* === ▼▼ 重なり枚数バッジ ▼▼ === */
+    /* === 笆ｼ笆ｼ 驥阪↑繧頑椢謨ｰ繝舌ャ繧ｸ 笆ｼ笆ｼ === */
     .overlap-badge {
       position: absolute;
       left: 50%;
@@ -1684,17 +1689,17 @@
       transform: translate(-50%, -50%);
       font-weight: 700;
       color: #e53935;
-      /* 赤字 */
+      /* 襍､蟄� */
       font-size: 44px;
       line-height: 1;
       text-shadow: 0 0 6px rgba(255, 255, 255, .95), 0 0 12px rgba(255, 255, 255, .75);
       pointer-events: none;
-      /* ドラッグを邪魔しない */
+      /* 繝峨Λ繝�げ繧帝が鬲斐＠縺ｪ縺� */
       user-select: none;
     }
 
-    /* （カードに対して中央絶対配置するので .card は position:absolute のままでOK） */
-    /* === ▲▲ 重なり枚数バッジ ▲▲ === */
+    /* �医き繝ｼ繝峨↓蟇ｾ縺励※荳ｭ螟ｮ邨ｶ蟇ｾ驟咲ｽｮ縺吶ｋ縺ｮ縺ｧ .card 縺ｯ position:absolute 縺ｮ縺ｾ縺ｾ縺ｧOK�� */
+    /* === 笆ｲ笆ｲ 驥阪↑繧頑椢謨ｰ繝舌ャ繧ｸ 笆ｲ笆ｲ === */
 
     /* --- Footer affiliate --- */
     .affiliate-box {
@@ -1826,12 +1831,12 @@
       color: #555;
       font-size: 15px;
       position: fixed;
-      /* ← 常に下に固定 */
+      /* 竊� 蟶ｸ縺ｫ荳九↓蝗ｺ螳� */
       left: 0;
       right: 0;
       bottom: 0;
       z-index: 1;
-      /* ← サイドバーやプレビュー(10)より低く */
+      /* 竊� 繧ｵ繧､繝峨ヰ繝ｼ繧��繝ｬ繝薙Η繝ｼ(10)繧医ｊ菴弱￥ */
     }
 
     .site-footer__inner {
@@ -1844,7 +1849,7 @@
       position: relative;
     }
 
-    /* コンテンツがフッターに隠れないよう余白を確保 */
+    /* 繧ｳ繝ｳ繝�Φ繝�′繝輔ャ繧ｿ繝ｼ縺ｫ髫�繧後↑縺�ｈ縺�ｽ咏區繧堤｢ｺ菫� */
     body {
       padding-bottom: var(--footer-h);
     }
@@ -1858,7 +1863,7 @@
       background: #f5f5f5;
     }
 
-    /* ▼プレビューの見た目 */
+    /* 笆ｼ繝励Ξ繝薙Η繝ｼ縺ｮ隕九◆逶ｮ */
     #save-load-modal .sl-preview {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -1891,7 +1896,7 @@
       font-size: 12px;
     }
 
-    /* === 観戦モード用 UI制御 === */
+    /* === 隕ｳ謌ｦ繝｢繝ｼ繝臥畑 UI蛻ｶ蠕｡ === */
     body.is-spectator #ops-scroll .sl-btn:not(#leave-room-btn):not(#end-room-btn):not(#sit-seat-btn):not(#host-save-room-btn):not(#host-load-room-btn),
     body.is-spectator #ops-scroll .sl-row,
     body.is-spectator #ops-scroll .section-label,
@@ -1914,14 +1919,14 @@
       font-size: 14px;
       z-index: 1000;
       box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-      pointer-events: none; /* 下の要素を操作できるように */
+      pointer-events: none; /* 荳九�隕∫ｴ�繧呈桃菴懊〒縺阪ｋ繧医≧縺ｫ */
     }
 
     body.is-spectator #spectator-banner {
       display: block;
     }
 
-    /* 座席ボタンの強調用アニメーション */
+    /* 蠎ｧ蟶ｭ繝懊ち繝ｳ縺ｮ蠑ｷ隱ｿ逕ｨ繧｢繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ */
     @keyframes pulse-yellow {
       0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); }
       70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); }
@@ -1990,29 +1995,29 @@
     /* === Area Resizing Handles === */
     .resize-handle {
       position: absolute;
-      background: rgba(255, 0, 0, 0); /* �ʏ펞�͓��� */
+      background: rgba(255, 0, 0, 0); /* 通常時は透明 */
       z-index: 1000;
       transition: background 0.2s;
     }
 
-    /* �z�X�g���z�o�[�����������n���h��������������悤�ɂ���i�f�o�b�O�E�K�C�h�p�j */
+    /* ホストがホバーした時だけハンドルを少し見えるようにする（デバッグ・ガイド用） */
     .mode-board .resize-handle:hover {
       background: rgba(255, 0, 0, 0.2);
     }
 
-    /* �Ӄn���h�� */
+    /* 辺ハンドル */
     .resize-handle.n { top: -5px; left: 10px; right: 10px; height: 10px; cursor: n-resize; }
     .resize-handle.s { bottom: -5px; left: 10px; right: 10px; height: 10px; cursor: s-resize; }
     .resize-handle.w { left: -5px; top: 10px; bottom: 10px; width: 10px; cursor: w-resize; }
     .resize-handle.e { right: -5px; top: 10px; bottom: 10px; width: 10px; cursor: e-resize; }
 
-    /* �p�n���h�� */
+    /* 角ハンドル */
     .resize-handle.nw { top: -5px; left: -5px; width: 15px; height: 15px; cursor: nw-resize; }
     .resize-handle.ne { top: -5px; right: -5px; width: 15px; height: 15px; cursor: ne-resize; }
     .resize-handle.sw { bottom: -5px; left: -5px; width: 15px; height: 15px; cursor: sw-resize; }
     .resize-handle.se { bottom: -5px; right: -5px; width: 15px; height: 15px; cursor: se-resize; }
 
-    /* ���T�C�Y���̃G���A���� */
+    /* リサイズ中のエリア強調 */
     .area-resizing {
       outline: 2px solid #ff0000 !important;
       z-index: 10001 !important;
