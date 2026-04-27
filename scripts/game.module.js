@@ -10522,6 +10522,8 @@ function bindTokenContextMenuOnce() {
 
   const btnFontPlus = document.getElementById('token-ctx-font-plus');
   const btnFontMinus = document.getElementById('token-ctx-font-minus');
+  const btnToFront = document.getElementById('token-ctx-to-front');
+  const btnToBack = document.getElementById('token-ctx-to-back');
 
   if (!ctxMenu || !btnEnlarge || !btnShrink || !btnDelete || !btnToFront || !btnToBack || !btnFontPlus || !btnFontMinus) return;
 
