@@ -5331,15 +5331,11 @@ function createCardDom(cardId, imageSrc, state) {
       if (!canOperateCard(card, 'delete')) return;
 
       try {
-
         const id = card.dataset.cardId;
-
         await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
-
         markLocal(id);
-
         markLocalDelete(id);
-
+      } catch (err) {
         console.warn('delete token/counter failed', err);
       }
 
