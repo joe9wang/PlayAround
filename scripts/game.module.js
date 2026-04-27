@@ -3777,6 +3777,12 @@ function getSeatBackUrl(seat) {
 
 
 function applyCardBackStyle(card) {
+  if (card.classList.contains('memo')) {
+    card.style.backgroundColor = '#fff';
+    card.style.backgroundImage = '';
+    card.classList.remove('has-back');
+    return;
+  }
 
   // 裏面の背景を適用（席の設定がなければ黒）
 
@@ -3809,6 +3815,7 @@ function refreshCardBacksForSeat(seat) {
   cardDomMap.forEach((el) => {
 
     if (parseInt(el.dataset.ownerSeat || '0', 10) !== seat) return;
+    if (el.classList.contains('memo')) return;
 
     const img = el.querySelector('img');
 
