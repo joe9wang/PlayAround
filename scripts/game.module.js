@@ -5350,10 +5350,8 @@ function createCardDom(cardId, imageSrc, state) {
     const isSelected = card.classList.contains('selected');
 
     const cardsToFlip = isSelected 
-
-      ? Array.from(document.querySelectorAll('.card.selected')) 
-
-      : [card];
+      ? Array.from(document.querySelectorAll('.card.selected')).filter(el => !el.classList.contains('memo'))
+      : (card.classList.contains('memo') ? [] : [card]);
 
 
 
@@ -5802,7 +5800,7 @@ function applyCardState(card, data) {
 
     }
 
-    if (insideSeat && String(viewerSeat) !== String(insideSeat)) {
+    if (insideSeat && String(viewerSeat) !== String(insideSeat) && data.type !== 'memo') {
 
       const img = card.querySelector('img');
 
