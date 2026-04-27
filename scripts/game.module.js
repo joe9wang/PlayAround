@@ -9729,7 +9729,7 @@ Object.assign(window, {
 
   spawnCounter,
 
-  spawnToken,
+  spawnMemo,
 
 
 
