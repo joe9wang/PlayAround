@@ -189,7 +189,7 @@
         <button class="sl-btn" onclick="spawnCounter('-50')" data-i18n="side.minus50">➖50</button>
         <button class="sl-btn" onclick="spawnCounter('-100')" data-i18n="side.minus100">➖100</button>
       </div>
-      <button class="sl-btn" onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
+      <button class="sl-btn" onclick="spawnMemo()" data-i18n="side.memo">📝 メモ作成</button>
 
       <button class="sl-btn" onclick="openBackImagePicker()" data-i18n="side.BackImage">🖼 カード背景画像</button>
       <!-- 非表示のファイル入力（画像選択ダイアログ用） -->
@@ -662,6 +662,8 @@
         </div>
       </div>
 
+
+
       <div style="display:flex; justify-content:center; gap:20px;">
         <button id="field-layout-cancel" class="btn secondary" style="padding:12px 32px; font-weight:700;">キャンセル</button>
         <button id="field-layout-ok" class="btn" style="padding:12px 48px; font-weight:800; font-size:18px;">OK</button>
@@ -730,6 +732,8 @@
       <li id="token-ctx-to-back">⬇ 最背面に移動</li>
       <li id="token-ctx-enlarge">🔍 拡大</li>
       <li id="token-ctx-shrink">🔍 縮小</li>
+      <li id="token-ctx-font-plus">🔤 文字サイズ +</li>
+      <li id="token-ctx-font-minus">🔤 文字サイズ -</li>
       <li id="token-ctx-delete" style="color: #ff4444;">❌ 削除</li>
     </ul>
   </div>

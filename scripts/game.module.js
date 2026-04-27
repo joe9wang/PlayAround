@@ -5049,52 +5049,47 @@ function createCardDom(cardId, imageSrc, state) {
 
 
 
-  // token UI
-
+  // token / memo UI
   let tokenInput = null;
-
-  if (state?.type === 'token') {
-
-    card.classList.add('token');
-
+  if (state?.type === 'token' || state?.type === 'memo') {
+    card.classList.add(state.type);
     tokenInput = document.createElement('textarea');
-
     tokenInput.className = 'token-input';
-
     tokenInput.value = typeof state.tokenText === 'string' ? state.tokenText : '';
-
     img.style.display = 'none';
 
     const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
-
     tokenInput.readOnly = !editable;
-
     tokenInput.disabled = !editable;
 
     if (editable) {
-
       let tmr = null;
-
       const commit = () => {
-
         tmr = null;
-
         const id = card.dataset.cardId;
-
         const text = tokenInput.value.slice(0, 2000);
-
         updateCardBatched(id, { tokenText: text });
-
       };
-
-      tokenInput.addEventListener('input', () => { if (tmr) clearTimeout(tmr); tmr = setTimeout(commit, 500); }); // ← 500ms
-
+      tokenInput.addEventListener('input', () => { if (tmr) clearTimeout(tmr); tmr = setTimeout(commit, 500); });
       tokenInput.addEventListener('blur', commit);
 
+      if (state.type === 'memo') {
+        let rszTmr = null;
+        const rszObserver = new ResizeObserver(entries => {
+          if (isLocalRecent(cardId)) return; // ドラッグ中などはスキップしたいが ResizeObserver はサイズ変化のみ
+          if (rszTmr) clearTimeout(rszTmr);
+          rszTmr = setTimeout(() => {
+            const entry = entries[0];
+            if (entry) {
+              const { width, height } = entry.contentRect;
+              updateCardBatched(cardId, { width: Math.round(width), height: Math.round(height) });
+            }
+          }, 1000);
+        });
+        rszObserver.observe(card);
+      }
     }
-
     card.appendChild(tokenInput);
-
   }
 
 
@@ -5345,10 +5340,7 @@ function createCardDom(cardId, imageSrc, state) {
 
         markLocalDelete(id);
 
-      } catch (err) {
-
         console.warn('delete token/counter failed', err);
-
       }
 
       return;
@@ -5524,7 +5516,7 @@ function createCardDom(cardId, imageSrc, state) {
 
 
 
-  // === 長押し（0.5s）で右クリック相当（モバイル）
+// === 長押し（0.5s）で右クリック相当（モバイル）
 
   {
 
@@ -5762,54 +5754,33 @@ function applyCardState(card, data) {
 
 
 
-  if (data.type === 'token') {
-
-    card.classList.add('token');
-
+  if (data.type === 'token' || data.type === 'memo') {
+    card.classList.add(data.type);
     const tokenInput = card.querySelector('.token-input');
-
     if (tokenInput) {
-
       if (typeof data.tokenText === 'string' && tokenInput.value !== data.tokenText) {
-
         tokenInput.value = data.tokenText;
-
       }
-
-      // トークンはテキスト入力の表示/非表示だけを切り替える（通常カードの表裏処理は入れない）
-
+      if (data.type === 'memo') {
+        if (data.width) card.style.width = `${data.width}px`;
+        if (data.height) card.style.height = `${data.height}px`;
+        if (data.fontSize) tokenInput.style.fontSize = `${data.fontSize}px`;
+      }
       if (data.faceUp) {
-
         tokenInput.style.display = 'block';
-
         card.style.backgroundColor = '#fff';
-
         card.style.backgroundImage = '';
-
         card.classList.remove('has-back');
-
       } else {
-
         tokenInput.style.display = 'none';
-
-        // 背面画像を適用したい場合は次行を有効化。黒で良ければ消してOK。
-
         applyCardBackStyle(card);
-
       }
-
       const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
-
       tokenInput.readOnly = !editable;
-
       tokenInput.disabled = !editable;
-
     }
-
     const img2 = card.querySelector('img');
-
     if (img2) img2.style.display = 'none';
-
   }
 
 
@@ -6143,6 +6114,8 @@ async function fileToThumbAndFull(file) {
   ctx.drawImage(bmp, 0, 0, tw, th);
 
   const thumbDataUrl = canvas.toDataURL('image/jpeg', 0.6); // ← 0.6 に
+
+
 
   const fullDataUrl = await new Promise((res, rej) => {
 
@@ -6834,11 +6807,9 @@ window.updateOverlapBadges = function () {
     el.classList.contains('image-token') ||
 
     el.classList.contains('dice') ||
-
     el.classList.contains('counter') ||
-
-    el.classList.contains('numcounter')
-
+    el.classList.contains('numcounter') ||
+    el.classList.contains('memo')
   );
 
 
@@ -7938,30 +7909,25 @@ function blankTokenThumb() {
 
 
 
-window.spawnToken = async function () {
-
+window.spawnMemo = async function () {
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
-
     alert('ルームに参加してから実行してください'); return;
-
   }
-
   try {
-
     const { x, y } = randomPointInMainPlay(CURRENT_PLAYER);
-
     const z = getMaxZIndex() + 20;
-
     const imgUrl = blankTokenThumb();
-
     const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
 
     const payload = {
-      type: 'token',
+      type: 'memo',
       tokenText: '',
       imageUrl: imgUrl,
       fullUrl: imgUrl,
       x, y, zIndex: z,
+      width: 200,
+      height: 150,
+      fontSize: 20,
       faceUp: true,
       ownerUid: CURRENT_UID,
       ownerSeat: CURRENT_PLAYER,
@@ -7975,13 +7941,9 @@ window.spawnToken = async function () {
     await addDoc(baseCol, payload);
 
   } catch (e) {
-
     console.error(e);
-
-    alert('トークン作成に失敗しました。');
-
+    alert('メモ作成に失敗しました。');
   }
-
 };
 
 
@@ -10562,13 +10524,10 @@ function bindTokenContextMenuOnce() {
 
   const btnDelete = document.getElementById('token-ctx-delete');
 
-  const btnToFront = document.getElementById('token-ctx-to-front');
+  const btnFontPlus = document.getElementById('token-ctx-font-plus');
+  const btnFontMinus = document.getElementById('token-ctx-font-minus');
 
-  const btnToBack = document.getElementById('token-ctx-to-back');
-
-
-
-  if (!ctxMenu || !btnEnlarge || !btnShrink || !btnDelete || !btnToFront || !btnToBack) return;
+  if (!ctxMenu || !btnEnlarge || !btnShrink || !btnDelete || !btnToFront || !btnToBack || !btnFontPlus || !btnFontMinus) return;
 
 
 
@@ -10695,23 +10654,47 @@ function bindTokenContextMenuOnce() {
 
 
   btnDelete.addEventListener('click', async (e) => {
-
     e.stopPropagation();
-
     ctxMenu.style.display = 'none';
-
     if (!CURRENT_ROOM || !currentTokenId) return;
-
+    const confirmDel = confirm('このメモ/トークンを削除しますか？');
+    if (!confirmDel) return;
     try {
+      const id = currentTokenId;
+      await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+      if (typeof markLocal === 'function') markLocal(id);
+      if (typeof markLocalDelete === 'function') markLocalDelete(id);
+    } catch (err) { console.warn('delete token failed', err); }
+  });
 
-      await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`));
-
-      if (typeof markLocal === 'function') markLocal(currentTokenId);
-
-      if (typeof markLocalDelete === 'function') markLocalDelete(currentTokenId);
-
+  btnFontPlus.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    ctxMenu.style.display = 'none';
+    if (!CURRENT_ROOM || !currentTokenId) return;
+    try {
+      const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        const currentSize = typeof d.fontSize === 'number' ? d.fontSize : 20;
+        await updateDoc(docRef, { fontSize: Math.min(currentSize + 4, 120), updatedAt: serverTimestamp() });
+      }
     } catch (err) { console.warn(err); }
+  });
 
+  btnFontMinus.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    ctxMenu.style.display = 'none';
+    if (!CURRENT_ROOM || !currentTokenId) return;
+    try {
+      const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        const currentSize = typeof d.fontSize === 'number' ? d.fontSize : 20;
+        await updateDoc(docRef, { fontSize: Math.max(currentSize - 4, 8), updatedAt: serverTimestamp() });
+      }
+    } catch (err) { console.warn(err); }
   });
 
 }
