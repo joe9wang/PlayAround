@@ -342,6 +342,48 @@
       border-radius: 6px;
       display: block;
     }
+
+    /* ▼ タブ */
+    .tabs {
+      display: flex;
+      gap: 12px;
+      border-bottom: 2px solid #eee;
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 10px 16px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #888;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s;
+    }
+    .tab-btn:hover {
+      color: #444;
+    }
+    .tab-btn.active {
+      color: #222;
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: #444;
+      border-radius: 3px 3px 0 0;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
     /* ▼ マイルームカード */
     .room-card {
       border: 1px solid #e5e7eb;
@@ -464,24 +506,29 @@
       </div>
     </section>
 
-    <!-- マイルーム -->
-    <section aria-labelledby="sec-my-rooms">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-        <h2 id="sec-my-rooms">マイルーム</h2>
-        <span class="muted" id="my-room-count">0件</span>
+    <!-- タブエリア（マイルーム＆マイセット） -->
+    <section>
+      <div class="tabs" id="myTabs">
+        <button class="tab-btn active" data-target="tab-my-rooms">マイルーム</button>
+        <button class="tab-btn" data-target="tab-my-sets">マイセット</button>
       </div>
-      <div id="myRoomList" class="grid cols-2">
-        <!-- 動的に生成 -->
-      </div>
-      <div id="myRoomEmpty" style="display:none; padding: 40px; text-align: center; color: #999;">
-        作成したルームはありません。
-      </div>
-    </section>
 
-    <!-- セーブデータ一覧（後でFirestore連携する想定） -->
-    <section aria-labelledby="sec-saves">
-      <h2 id="sec-saves" data-i18n="mypage.saves">セーブデータ</h2>
-      <ul class="plain" id="saveList">
+      <!-- ▼ マイルーム タブ -->
+      <div id="tab-my-rooms" class="tab-content active">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+          <span class="muted" id="my-room-count">0件</span>
+        </div>
+        <div id="myRoomList" class="grid cols-2">
+          <!-- 動的に生成 -->
+        </div>
+        <div id="myRoomEmpty" style="display:none; padding: 40px; text-align: center; color: #999;">
+          作成したルームはありません。
+        </div>
+      </div>
+
+      <!-- ▼ マイセット タブ（旧：セーブデータ） -->
+      <div id="tab-my-sets" class="tab-content">
+        <ul class="plain" id="saveList">
         <!-- ▼スロット1 -->
         <li class="item">
           <div>
@@ -643,6 +690,7 @@
           </div>
         </li>
       </ul>
+      </div>
     </section>
 
   </main>
@@ -1210,6 +1258,25 @@
       }
     });
 
+    // ===== タブ切り替え =====
+    document.getElementById('myTabs')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.tab-btn');
+      if (!btn) return;
+      
+      // ボタンのアクティブ状態を更新
+      document.querySelectorAll('#myTabs .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // コンテンツの表示・非表示を切り替え
+      const targetId = btn.dataset.target;
+      document.querySelectorAll('.tab-content').forEach(c => {
+        if (c.id === targetId) {
+          c.classList.add('active');
+        } else {
+          c.classList.remove('active');
+        }
+      });
+    });
 
   </script>
 
