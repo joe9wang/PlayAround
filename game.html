@@ -134,7 +134,7 @@
         <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
         <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
       </div>
-      <details open class="ops-section">
+      <details class="ops-section">
       <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">自分のカード<br>
         <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで裏表)</span>
       </summary>
@@ -155,7 +155,7 @@
       <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
       <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
       </details>
-      <details open class="ops-section">
+      <details class="ops-section">
       <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">コイン・ダイス<br>
         <span style="font-size:12px;color:#666;font-weight:normal;">(左クリックか右クリックで削除)</span>
       </summary>
@@ -172,7 +172,7 @@
         <button class="sl-btn" id="roll-d100-btn" onclick="rollD100()" data-i18n="side.rollD100">🎲 100面ダイス</button>
       </div>
       </details>
-      <details open class="ops-section">
+      <details class="ops-section">
       <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">カウンター・トークン<br>
         <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで削除)</span>
       </summary>
@@ -209,7 +209,7 @@
       </div>
 
       <div aria-live="polite" class="host-toggle" id="host-otherops">
-        <details open class="ops-section">
+        <details class="ops-section">
         <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">ホスト専用</summary>
         <div class="sl-row" role="group" aria-label="Save Room">
           <button class="sl-btn" id="host-otherops-save-btn" onclick="openRoomSaveDialog('save')">💾 ルームをセーブ</button>
