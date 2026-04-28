@@ -134,9 +134,10 @@
         <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
         <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
       </div>
-      <div class="section-label">自分のカード<br>
-        <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで裏表)</span>
-      </div>
+      <details open class="ops-section">
+      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">自分のカード<br>
+        <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで裏表)</span>
+      </summary>
       <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 全カード一覧</button>
       <div class="sl-row" role="group" aria-label="Face up/down">
         <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
@@ -153,9 +154,11 @@
       <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
       <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
       <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
-      <div class="section-label">コイン・ダイス<br>
-        <span style="font-size:12px;color:#666;">(左クリックか右クリックで削除)</span>
-      </div>
+      </details>
+      <details open class="ops-section">
+      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">コイン・ダイス<br>
+        <span style="font-size:12px;color:#666;font-weight:normal;">(左クリックか右クリックで削除)</span>
+      </summary>
       <div class="sl-row" role="group" aria-label="dice-coin-row1">
         <button class="sl-btn" id="flip-coin-btn" onclick="flipCoin()" data-i18n="side.flipCoin">🪙 コイントス</button>
         <button class="sl-btn" id="roll-d4-btn" onclick="rollD4()" data-i18n="side.rollD4">🎲 4面ダイス</button>
@@ -168,9 +171,11 @@
         <button class="sl-btn" id="roll-d20-btn" onclick="rollD20()" data-i18n="side.rollD20">🎲 20面ダイス</button>
         <button class="sl-btn" id="roll-d100-btn" onclick="rollD100()" data-i18n="side.rollD100">🎲 100面ダイス</button>
       </div>
-      <div class="section-label">カウンター・トークン<br>
-        <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで削除)</span>
-      </div>
+      </details>
+      <details open class="ops-section">
+      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">カウンター・トークン<br>
+        <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで削除)</span>
+      </summary>
       <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
 
       <div class="sl-row" role="group" aria-label="plus1/plus10">
@@ -190,6 +195,7 @@
         <button class="sl-btn" onclick="spawnCounter('-100')" data-i18n="side.minus100">➖100</button>
       </div>
       <button class="sl-btn" onclick="spawnMemo()" data-i18n="side.memo">📝 メモ作成</button>
+      </details>
 
       <button class="sl-btn" onclick="openBackImagePicker()" data-i18n="side.BackImage">🖼 カード背景画像</button>
       <!-- 非表示のファイル入力（画像選択ダイアログ用） -->
@@ -203,7 +209,8 @@
       </div>
 
       <div aria-live="polite" class="host-toggle" id="host-otherops">
-        <div class="section-label">ホスト専用</div>
+        <details open class="ops-section">
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">ホスト専用</summary>
         <div class="sl-row" role="group" aria-label="Save Room">
           <button class="sl-btn" id="host-otherops-save-btn" onclick="openRoomSaveDialog('save')">💾 ルームをセーブ</button>
           <button class="sl-btn" onclick="openRoomSaveDialog('load')">📂 ルームをロード</button>
@@ -223,6 +230,7 @@
             </span>
           </div>
         </div>
+        </details>
       </div>
 
       <!-- ★ 座席操作 -->

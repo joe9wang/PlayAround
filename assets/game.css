@@ -1582,13 +1582,22 @@
     }
 
 
-    /* ===== 繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ隕句�縺暦ｼ亥ｷｦ蟇�○繝ｻ逵√せ繝壹�繧ｹ�� ===== */
+    /* ===== 繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ隕句縺暦ｼ亥ｷｦ蟇○繝ｻ逵√せ繝壹繧ｹ ===== */
     #sidebar .section-label {
       margin: 2px 0 6px;
       font-weight: 600;
       font-size: 0.95rem;
       text-align: left;
       color: #555;
+    }
+
+    details.ops-section > summary {
+      list-style-position: inside;
+      transition: color 0.2s;
+    }
+
+    details.ops-section > summary:hover {
+      color: #111;
     }
 
     @media (max-width: 768px) {
