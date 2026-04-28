@@ -717,7 +717,7 @@
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
     import {
       getFirestore, doc, getDoc, collection, getDocs, query, limit, updateDoc, writeBatch,
-      where, orderBy, deleteDoc, serverTimestamp
+      where, orderBy, deleteDoc, serverTimestamp, setDoc
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
     import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
 
@@ -885,7 +885,8 @@
       const d = snap.exists() ? (snap.data() || {}) : {};
       return {
         count: d.count || 0,
-        updatedAt: d.updatedAt?.toDate?.() || null
+        updatedAt: d.updatedAt?.toDate?.() || null,
+        name: d.name || ''
       };
     }
 
@@ -931,9 +932,12 @@
     async function refreshSaveSlots() {
       const SLOTS = Array.from({ length: 10 }, (_, i) => i + 1);
       for (const slot of SLOTS) {
-        const { count, updatedAt } = await fetchSlotMeta(slot);
+        const { count, updatedAt, name } = await fetchSlotMeta(slot);
         const itemEl = document.querySelector(`#saveList li:nth-child(${slot})`);
         if (!itemEl) continue;
+
+        const nEl = document.getElementById(`slot${slot}-name`);
+        if (nEl) nEl.value = name || '';
 
         const cEl = document.getElementById(`slot${slot}-count`);
         const uEl = document.getElementById(`slot${slot}-updated`);
@@ -1010,6 +1014,26 @@
       });
     }
 
+    // マイセット名変更のイベント委譲
+    document.getElementById('saveList')?.addEventListener('change', async (e) => {
+      if (e.target.classList.contains('slot-name-edit')) {
+        const slot = parseInt(e.target.dataset.slot, 10);
+        const newName = e.target.value.trim();
+        if (!slot) return;
+        try {
+          // ドキュメントが存在しない場合はsetDocが必要なので { merge: true } を使う
+          await setDoc(doc(db, slPath(slot)), {
+            name: newName,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+          console.log(`Slot ${slot} name updated`);
+        } catch (err) {
+          console.warn('Update slot name failed', err);
+          alert('セット名の更新に失敗しました');
+        }
+      }
+    });
+
     // 「一覧」ボタン「削除する」ボタンのイベント委譲 → モーダルを開く・削除する
     document.getElementById('saveList')?.addEventListener('click', async (e) => {
       // 一覧
@@ -1031,7 +1055,7 @@
     });
 
     async function deleteSlot(slot, btnElement) {
-      if (!confirm(`スロット${slot}のセーブデータを削除しますか？`)) return;
+      if (!confirm(`マイセット${slot}のデータを削除しますか？`)) return;
 
       if (btnElement) {
         btnElement.disabled = true;
@@ -1055,7 +1079,7 @@
         finalBatch.delete(baseRef);
         await finalBatch.commit();
 
-        alert(`スロット${slot}のデータを削除しました。`);
+        alert(`マイセット${slot}のデータを削除しました。`);
         await refreshSaveSlots();
       } catch (err) {
         console.error('Delete error', err);
@@ -1207,7 +1231,7 @@
       const grid = document.getElementById('card-list-grid');
       const title = document.getElementById('card-list-title');
       if (!modal || !grid || !title) return;
-      title.textContent = `スロット${slot}のカード一覧`;
+      title.textContent = `マイセット${slot}のカード一覧`;
       modal.style.display = 'flex';
       grid.innerHTML = '<div class="muted">読み込み中…</div>';
       try {
