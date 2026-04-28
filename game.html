@@ -130,10 +130,13 @@
     <div id="ops-scroll" style="flex: 1 1 0%; overflow:auto; min-height:0; padding-right:4px;">
 
       <!-- Save/Load: compact two-up row -->
+      <details class="ops-section">
+      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">マイセット</summary>
       <div class="sl-row" role="group" aria-label="Save/Load">
         <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
         <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
       </div>
+      </details>
       <details class="ops-section">
       <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">自分のカード<br>
         <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで裏表)</span>
