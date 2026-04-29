@@ -1101,20 +1101,27 @@
       position: absolute;
       inset: 0;
       display: none;
-      /* 蛻晄悄縺ｯ髱櫁｡ｨ遉ｺ��ode=board 縺ｮ縺ｨ縺崎｡ｨ遉ｺ�� */
+      /* 蛻晄悄縺ｯ髱櫁｡ｨ遉ｺode=board 縺ｮ縺ｨ縺崎｡ｨ遉ｺ */
     }
 
     #board-layout.layout-simple #board-center {
       display: none !important;
     }
 
+    #board-layout.layout-playonly .board-hand {
+      display: none !important;
+    }
 
-    /* 蜈ｱ譛峨�繝ｬ繧､繧ｨ繝ｪ繧｢�郁ｧ偵�謇区惆縺ｨ荳ｭ螟ｮ繝悶Ο繝�け莉･螟悶�蜈ｨ蝓滂ｼ� */
+    #board-layout.layout-playonly #board-center {
+      display: none !important;
+    }
+
+
+    /* 共有のプレイエリア（四隅の手札と中央ブロック以外の全域） */
     #board-play {
       position: absolute;
       inset: 0;
       background: #2d8;
-      /* 譌｢蟄倥� main-play-area 縺ｨ蜷檎ｳｻ濶ｲ */
       border: 4px dashed #666;
       /* 隕九ｄ縺吶＞繧医≧縺ｫ譫� */
       z-index: 100;

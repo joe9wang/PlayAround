@@ -149,6 +149,8 @@
               type="button">カードゲーム</button>
             <button aria-pressed="false" class="btn secondary" data-i18n="create.mode.board" id="pick-mode-board"
               type="button">ボードゲーム</button>
+            <button aria-pressed="false" class="btn secondary" id="pick-mode-official"
+              type="button">公式ゲーム</button>
           </div>
           <div class="row" id="create-btn-row" style="margin-top:auto; padding-top:16px; justify-content:flex-end;">
             <button class="btn" data-i18n="create.createBtn" id="create-room-btn">作成</button>
@@ -186,6 +188,35 @@
         <button id="field-layout-cancel" class="btn secondary" style="padding:12px 32px; font-weight:700;">キャンセル</button>
         <button id="field-layout-ok" class="btn" style="padding:12px 48px; font-weight:800; font-size:18px;">OK</button>
       </div>
+  
+  <!-- 公式ゲーム選択モーダル -->
+  <div id="official-game-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:20500; align-items:center; justify-content:center;">
+    <div class="layout-modal-card"
+      style="background:#fff; padding:32px; border-radius:24px; width:720px; max-width:95%; box-shadow:0 12px 48px rgba(0,0,0,0.4); text-align:center;">
+      <div style="font-weight:800; font-size:24px; margin-bottom:24px; letter-spacing:1px; color:#333;">公式ゲームを選択</div>
+      <div style="display:flex; gap:24px; justify-content:center; margin-bottom:32px;">
+        <div class="official-option" id="official-opt-trump" style="flex:1; cursor:pointer;" onclick="selectOfficialOption('trump')">
+          <div class="layout-preview-wrap" style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
+            <img src="image/Trump_Field.png" alt="Trump" style="width:100%; display:block;" />
+            <div class="selection-overlay" style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
+          </div>
+          <div class="layout-label" style="margin-top:12px; font-weight:800; font-size:20px; color:#555; transition:0.3s;">トランプ</div>
+        </div>
+        <div class="official-option" id="official-opt-chess" style="flex:1; cursor:pointer;" onclick="selectOfficialOption('chess')">
+          <div class="layout-preview-wrap" style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
+            <img src="image/Chess_Field.png" alt="Chess" style="width:100%; display:block;" />
+            <div class="selection-overlay" style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
+          </div>
+          <div class="layout-label" style="margin-top:12px; font-weight:800; font-size:20px; color:#555; transition:0.3s;">チェス</div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:center; gap:20px;">
+        <button id="official-game-cancel" class="btn secondary" style="padding:12px 32px; font-weight:700;">キャンセル</button>
+        <button id="official-game-ok" class="btn" style="padding:12px 48px; font-weight:800; font-size:18px;">OK</button>
+      </div>
+    </div>
+  </div>
     </div>
   </div>
 

@@ -24,6 +24,7 @@ let CREATE_FIELD_MODE = 'card';
 let TEMP_CREATE_ROOM_ID = '';
 let TEMP_CREATE_CREATOR_NAME = '';
 let CURRENT_LAYOUT_SELECTION = 'standard';
+let CURRENT_OFFICIAL_SELECTION = 'trump';
 
 // === DOM Elements ===
 const loginGoBtn = document.getElementById('login-go-btn');
@@ -110,6 +111,10 @@ async function init() {
   // Event Listeners
   pickModeCardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'card'; updateModePickButtons(); });
   pickModeBoardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'board'; updateModePickButtons(); });
+  document.getElementById('pick-mode-official')?.addEventListener('click', () => {
+    document.getElementById('official-game-modal').style.display = 'flex';
+    window.selectOfficialOption('trump');
+  });
   
   createRoomBtn?.addEventListener('click', handleCreateRoom);
   startBtn?.addEventListener('click', handleJoinRoom);
@@ -125,6 +130,15 @@ async function init() {
   });
   document.getElementById('field-layout-cancel')?.addEventListener('click', () => {
     document.getElementById('field-layout-modal').style.display = 'none';
+  });
+
+  document.getElementById('official-game-ok')?.addEventListener('click', () => {
+    CREATE_FIELD_MODE = CURRENT_OFFICIAL_SELECTION;
+    document.getElementById('official-game-modal').style.display = 'none';
+    updateModePickButtons();
+  });
+  document.getElementById('official-game-cancel')?.addEventListener('click', () => {
+    document.getElementById('official-game-modal').style.display = 'none';
   });
 
   document.getElementById('anon-warning-ok')?.addEventListener('click', () => {
@@ -153,7 +167,32 @@ function updateModePickButtons() {
   };
   set(pickModeCardBtn, CREATE_FIELD_MODE === 'card');
   set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
+  set(document.getElementById('pick-mode-official'), CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess');
 }
+
+window.selectOfficialOption = function(type) {
+  CURRENT_OFFICIAL_SELECTION = type;
+  const opts = document.querySelectorAll('.official-option');
+  opts.forEach(opt => {
+    const isActive = opt.id === `official-opt-${type}`;
+    opt.classList.toggle('active', isActive);
+    
+    const wrap = opt.querySelector('.layout-preview-wrap');
+    if (wrap) {
+      wrap.style.borderColor = isActive ? '#2d8' : '#eee';
+    }
+    
+    const label = opt.querySelector('.layout-label');
+    if (label) {
+      label.style.color = isActive ? '#2d8' : '#555';
+    }
+    
+    const overlay = opt.querySelector('.selection-overlay');
+    if (overlay) {
+      overlay.style.opacity = isActive ? '1' : '0';
+    }
+  });
+};
 
 window.selectLayoutOption = function(type) {
   CURRENT_LAYOUT_SELECTION = type;
@@ -209,6 +248,8 @@ function showLayoutModal() {
     }
     window.selectLayoutOption('standard');
     document.getElementById('field-layout-modal').style.display = 'flex';
+  } else if (CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess') {
+    executeRoomCreation(CREATE_FIELD_MODE === 'trump' ? 'simple' : 'playonly');
   } else {
     executeRoomCreation('standard');
   }
@@ -289,6 +330,7 @@ async function executeRoomCreation(layoutType) {
       roomClosed: false,
       fieldMode: CREATE_FIELD_MODE,
       fieldLayout: layoutType || 'standard',
+      needsInitialization: (CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess'),
       joinPassHash: joinPassHash,
       hasPassword: !!joinPassHash,
       playerCount: parseInt(newPlayerCountSelect?.value || '4', 10),

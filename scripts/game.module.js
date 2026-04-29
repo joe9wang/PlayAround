@@ -2637,8 +2637,8 @@ function renderFieldLabels() {
 
 function applyFieldModeLayout() {
   const m = CURRENT_ROOM_META?.fieldMode;
-  // 'board' と 'trump' をボード系DOMにマップ
-  const mode = (m === 'board' || m === 'trump') ? 'board' : 'card';
+  // 'board', 'trump', 'chess' をボード系DOMにマップ
+  const mode = (m === 'board' || m === 'trump' || m === 'chess') ? 'board' : 'card';
   const fieldRoot = document.getElementById('field');
   if (!fieldRoot) return;
 
@@ -2653,6 +2653,21 @@ function applyFieldModeLayout() {
   if (boardLayoutEl) {
     boardLayoutEl.classList.toggle('layout-simple', layout === 'simple');
     boardLayoutEl.classList.toggle('layout-standard', layout === 'standard');
+    boardLayoutEl.classList.toggle('layout-playonly', layout === 'playonly');
+    
+    // Chess などのプレイエリア背景画像の設定
+    const boardPlayEl = document.getElementById('board-play');
+    if (boardPlayEl) {
+      if (m === 'chess') {
+        boardPlayEl.style.backgroundImage = "url('image/Chess/ChessBoard.png')";
+        boardPlayEl.style.backgroundSize = "contain";
+        boardPlayEl.style.backgroundRepeat = "no-repeat";
+        boardPlayEl.style.backgroundPosition = "center";
+        // チェス盤は正方形なので、アスペクト比を維持するためのスタイルが必要かもしれません
+      } else {
+        boardPlayEl.style.backgroundImage = "";
+      }
+    }
   }
 
   // Hide or show `.player-area` nodes dynamically
@@ -2663,6 +2678,17 @@ function applyFieldModeLayout() {
       if (mode === 'card') {
         el.classList.toggle('layout-simple', layout === 'simple');
         el.classList.toggle('layout-standard', layout === 'standard');
+      }
+    }
+  }
+
+  // ボードモードでの手札表示制御 (playonly の場合は非表示)
+  if (mode === 'board') {
+    const isPlayOnly = (layout === 'playonly');
+    for (let i = 1; i <= 8; i++) {
+      const handEl = document.getElementById(`board-hand-${i}`);
+      if (handEl) {
+        handEl.style.display = (isPlayOnly || i > pc) ? 'none' : 'block';
       }
     }
   }
@@ -3086,13 +3112,13 @@ function loadSeatStatus(rid) {
 
     applyOtherOpsUI();
 
-    applyFieldModeLayout();
-
-
-
-
-
     IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+
+    if (IS_ROOM_CREATOR && CURRENT_ROOM_META?.needsInitialization) {
+      // Clear flag first to avoid multiple triggers
+      updateDoc(doc(db, `rooms/${roomId}`), { needsInitialization: false });
+      initializeOfficialGame(CURRENT_ROOM_META.fieldMode, roomId);
+    }
 
     if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
 
@@ -7278,144 +7304,153 @@ function svgCounterDataUrl(label) {
 
 // ===============================
 
-const TRUMP_IMG_BASE = 'TrumpPicture';                 // ← ルートフォルダ（バックスラッシュではなくスラッシュで参照）
-
-const TRUMP_BACK_URL = `${TRUMP_IMG_BASE}/back.png`;   // ← 今回は表裏トグル時の裏表示は背景黒を使用するため未使用
-
+const TRUMP_IMG_BASE = 'image/Trump';
+const TRUMP_BACK_URL = `${TRUMP_IMG_BASE}/back.png`;
 const JOKER_URL = `${TRUMP_IMG_BASE}/joker.png`;
 
-
+async function initializeOfficialGame(mode, roomId) {
+  if (mode === 'trump') {
+    await spawnTrumpDeck(roomId);
+  } else if (mode === 'chess') {
+    await spawnChessSet(roomId);
+  }
+}
 
 function centerOfBoardDeck(w, h) {
-
-  const r = getDeckBoundsForSeat(1); // boardモード時は共有デッキ（seatはダミー）
-
+  const r = getDeckBoundsForSeat(1); 
   if (!r) return { x: 0, y: 0 };
-
   const x = Math.round(r.minX + (r.width - w) / 2);
-
   const y = Math.round(r.minY + (r.height - h) / 2);
-
   return { x, y };
-
 }
-
-
 
 function buildTrumpFrontUrl(suit, rank) {
-
-  // ファイル命名: spade_A.png / heart_10.png / diamond_Q.png / club_K.png
-
   return `${TRUMP_IMG_BASE}/${suit}_${rank}.png`;
-
 }
 
-
-
 async function spawnTrumpDeck(roomId) {
-
-  // 52枚（spade/heart/diamond/club × A,2..10,J,Q,K）を生成。全て裏向き（faceUp:false）
-
   const SUITS = ['spade', 'heart', 'diamond', 'club'];
-
   const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-
-
-  // レイアウト確定を待ってから中心を測る（ズレ防止）
-
   await waitForBoardDeckRect();
-
   const { x, y } = centerOfBoardDeck(CARD_W, CARD_H);
-
   let z = getMaxZIndex() + 1;
 
-
-
   const col = collection(db, `rooms/${roomId}/cards`);
-
   let batch = writeBatch(db);
-
   let count = 0;
 
-
-
+  // 52 cards
   for (const s of SUITS) {
-
     for (const r of RANKS) {
-
       const url = buildTrumpFrontUrl(s, r);
-
       const ref = doc(col);
-
       batch.set(ref, {
-
-        imageUrl: url,      // 表面画像（裏向き開始なので最初は非表示）
-
+        imageUrl: url,
         fullUrl: url,
-
+        backImageUrl: TRUMP_BACK_URL,
         x, y, zIndex: z++,
-
-        faceUp: false,      // ← 裏向きで開始（既存実装では img を隠し、背景を黒で表現）
-
-        ownerUid: null,     // 共有物
-
-        ownerSeat: null,    // 共有物
-
+        faceUp: false,
+        ownerUid: null,
+        ownerSeat: null,
         rotation: 0,
-
         visibleToAll: true,
-
         createdAt: serverTimestamp(),
-
         updatedAt: serverTimestamp()
-
       });
-
       if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
-
     }
-
   }
 
-
-
-  // Joker を2枚、山の一番上として追加（同じバッチで）
-
+  // 2 Jokers
   for (let j = 0; j < 2; j++) {
-
     const ref = doc(col);
-
     batch.set(ref, {
-
       imageUrl: JOKER_URL,
-
       fullUrl: JOKER_URL,
-
-      x, y, zIndex: z++,   // 既存の z の続き＝最前面
-
+      backImageUrl: TRUMP_BACK_URL,
+      x, y, zIndex: z++,
       faceUp: false,
-
       ownerUid: null,
-
       ownerSeat: null,
-
       rotation: 0,
-
       visibleToAll: true,
-
       createdAt: serverTimestamp(),
-
       updatedAt: serverTimestamp()
-
     });
-
     if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
-
   }
+  if (count > 0) await batch.commit();
+}
+
+async function spawnChessSet(roomId) {
+  const col = collection(db, `rooms/${roomId}/cards`);
+  let batch = writeBatch(db);
+  let count = 0;
+  let z = getMaxZIndex() + 1;
+
+  // Wait for board to be layouted
+  await new Promise(resolve => setTimeout(resolve, 500)); 
+
+  const boardEl = document.getElementById('board-play');
+  const rect = boardEl?.getBoundingClientRect();
+  const fieldRoot = document.getElementById('field');
+  const fieldRect = fieldRoot?.getBoundingClientRect() || { left: 0, top: 0 };
+  const zVal = typeof zoom !== 'undefined' ? zoom : 1;
+  const bScale = 1.3; 
+  const totalScale = zVal * bScale;
+
+  const w = (rect?.width || 800) / totalScale;
+  const h = (rect?.height || 800) / totalScale;
+  const boardSize = Math.min(w, h);
+  const tileSize = boardSize / 8;
+  const offsetX = (w - boardSize) / 2 + (rect ? (rect.left - fieldRect.left) / totalScale : 0);
+  const offsetY = (h - boardSize) / 2 + (rect ? (rect.top - fieldRect.top) / totalScale : 0);
+
+  const PIECES = [
+    { type: 'rook', files: [0, 7] },
+    { type: 'knight', files: [1, 6] },
+    { type: 'bishop', files: [2, 5] },
+    { type: 'queen', files: [3] },
+    { type: 'king', files: [4] }
+  ];
+
+  const spawnPiece = (type, color, file, rank) => {
+    const fileName = `${color}_${type}.png`; 
+    const url = `image/Chess/${fileName}`;
+    const x = offsetX + file * tileSize;
+    const y = offsetY + (7 - rank) * tileSize;
+    
+    const ref = doc(col);
+    batch.set(ref, {
+      type: 'token',
+      imageUrl: url,
+      fullUrl: url,
+      x, y, zIndex: z++,
+      width: tileSize,
+      height: tileSize,
+      faceUp: true,
+      ownerUid: null,
+      ownerSeat: null,
+      rotation: 0,
+      visibleToAll: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    if (++count >= 450) { 
+      // Note: We can't await inside a non-async callback, but forEach is fine if we manage batches.
+    }
+  };
+
+  // Black pieces (rank 7, 6)
+  PIECES.forEach(p => p.files.forEach(f => spawnPiece(p.type, 'Black', f, 7)));
+  for (let f = 0; f < 8; f++) spawnPiece('pawn', 'Black', f, 6);
+
+  // White pieces (rank 0, 1)
+  PIECES.forEach(p => p.files.forEach(f => spawnPiece(p.type, 'White', f, 0)));
+  for (let f = 0; f < 8; f++) spawnPiece('pawn', 'White', f, 1);
 
   if (count > 0) await batch.commit();
-
 }
 
 
