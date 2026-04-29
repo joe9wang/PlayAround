@@ -301,7 +301,8 @@ const toggleOtherOpsInput = document.getElementById('toggle-other-ops');
 
 const toggleOtherOpsText = document.getElementById('toggle-other-ops-text');
 
-const hostModeSelect = document.getElementById('host-mode-select');
+const btnModeCard = document.getElementById('btn-mode-card');
+const btnModeBoard = document.getElementById('btn-mode-board');
 
 
 
@@ -309,14 +310,6 @@ function applyOtherOpsUI() {
   const on = !!(CURRENT_ROOM_META?.allowOthersMove || CURRENT_ROOM_META?.allowOtherOps);
   if (toggleOtherOpsInput) toggleOtherOpsInput.checked = on;
   if (toggleOtherOpsText) toggleOtherOpsText.textContent = on ? 'ON' : 'OFF';
-
-  if (hostModeSelect && CURRENT_ROOM_META) {
-    const mode = CURRENT_ROOM_META.fieldMode || 'card';
-    const layout = CURRENT_ROOM_META.fieldLayout || 'standard';
-    if (mode === 'board') hostModeSelect.value = 'board';
-    else if (mode === 'card' && layout === 'simple') hostModeSelect.value = 'card-simple';
-    else hostModeSelect.value = 'card-standard';
-  }
 }
 
 
@@ -341,23 +334,72 @@ toggleOtherOpsInput?.addEventListener('change', async () => {
 
 });
 
-hostModeSelect?.addEventListener('change', async () => {
-  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
-  if (!isHost) { applyOtherOpsUI(); return; }
+let CURRENT_LAYOUT_SELECTION = 'standard';
+window.selectLayoutOption = function(type) {
+  CURRENT_LAYOUT_SELECTION = type;
+  const opts = document.querySelectorAll('#field-layout-modal .layout-option');
+  opts.forEach(opt => {
+    const isActive = opt.id === `layout-opt-${type}`;
+    opt.classList.toggle('active', isActive);
+    const overlay = opt.querySelector('.selection-overlay');
+    if (overlay) overlay.style.opacity = isActive ? '1' : '0';
+  });
+};
 
-  const val = hostModeSelect.value;
-  let fieldMode = 'card';
-  let fieldLayout = 'standard';
-
-  if (val === 'board') {
-    fieldMode = 'board';
-  } else if (val === 'card-simple') {
-    fieldMode = 'card';
-    fieldLayout = 'simple';
-  }
-
+async function clearAreas() {
+  if (!CURRENT_ROOM) return;
   try {
-    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { fieldMode, fieldLayout, updatedAt: serverTimestamp() }, { merge: true });
+    const areasRef = collection(db, `rooms/${CURRENT_ROOM}/areas`);
+    const snap = await getDocs(areasRef);
+    if (!snap.empty) {
+      const batch = writeBatch(db);
+      snap.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
+  } catch (e) {
+    console.warn('Failed to clear areas:', e);
+  }
+}
+
+btnModeCard?.addEventListener('click', () => {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (!isHost) { alert('ホスト専用機能です。'); return; }
+  
+  const currentLayout = CURRENT_ROOM_META?.fieldLayout || 'standard';
+  window.selectLayoutOption(currentLayout);
+  const modal = document.getElementById('field-layout-modal');
+  if (modal) modal.style.display = 'flex';
+});
+
+btnModeBoard?.addEventListener('click', async () => {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (!isHost) { alert('ホスト専用機能です。'); return; }
+  
+  if (!confirm('ボードゲームモードに変更します。よろしいですか？\n（追加されたエリアはすべて削除されます）')) return;
+  
+  try {
+    await clearAreas();
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { fieldMode: 'board', fieldLayout: 'standard', updatedAt: serverTimestamp() }, { merge: true });
+  } catch (e) {
+    console.error(e);
+  }
+});
+
+document.getElementById('field-layout-cancel')?.addEventListener('click', () => {
+  const modal = document.getElementById('field-layout-modal');
+  if (modal) modal.style.display = 'none';
+});
+
+document.getElementById('field-layout-ok')?.addEventListener('click', async () => {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (!isHost) return;
+  
+  const modal = document.getElementById('field-layout-modal');
+  if (modal) modal.style.display = 'none';
+  
+  try {
+    await clearAreas();
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { fieldMode: 'card', fieldLayout: CURRENT_LAYOUT_SELECTION, updatedAt: serverTimestamp() }, { merge: true });
   } catch (e) {
     console.error(e);
   }
