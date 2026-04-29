@@ -482,7 +482,10 @@ body {
   flex: 1 1 0;
   border-top: 1px solid #eee;
   padding: 8px 6px;
-  overflow-y: auto;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 #hp-grid {
@@ -1091,13 +1094,8 @@ body.is-spectator #spectator-banner { display: block; }
 .disclosure { font-size: 12px; color: #6b7280; }
 
 /* === Player Points Panel === */
-#hp-panel {
-  padding: 12px;
-  border-top: 1px solid #eee;
-  background: #fff;
-}
 #hp-grid {
-  max-height: 300px;
+  flex: 1;
   overflow-y: auto;
   padding-right: 4px;
 }
