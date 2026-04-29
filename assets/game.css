@@ -140,10 +140,10 @@
       background: #f6f6f6 !important;
     }
 
-    /* 繝医�繧ｯ繝ｳ�亥次逕ｻ繧ｵ繧､繧ｺ�臥畑縺ｮ繧ｫ繝ｼ繝峨せ繧ｿ繧､繝ｫ */
+    /* トークン（画像サイズ）用のカードスタイル */
     .card.image-token {
-      width: auto !important;
-      height: auto !important;
+      width: auto;
+      height: auto;
       max-width: none !important;
       max-height: none !important;
       background: transparent !important;
@@ -151,8 +151,8 @@
       box-shadow: 2px 2px 6px rgba(0,0,0,0.3) !important;
     }
     .card.image-token img {
-      width: auto !important;
-      height: auto !important;
+      width: 100% !important;
+      height: 100% !important;
       object-fit: contain !important;
       border-radius: 4px !important;
     }

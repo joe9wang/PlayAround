@@ -5273,8 +5273,8 @@ function applyCardState(card, data) {
 
     // Apply width/height for image-token (e.g. chess pieces)
     if (data.type === 'image-token' && data.width) {
-      card.style.width = `${data.width}px`;
-      card.style.height = `${data.height || data.width}px`;
+      card.style.setProperty('width', `${data.width}px`, 'important');
+      card.style.setProperty('height', `${data.height || data.width}px`, 'important');
     }
 
     const targetSrc = isHighResNeeded ? data.fullUrl : data.imageUrl;
