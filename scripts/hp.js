@@ -86,7 +86,7 @@ export function renderHPPanel(){
       wrap.className = 'hp-row';
       wrap.dataset.seat = String(seat);
       wrap.innerHTML = `
-        <div class="hp-seat">SEAT ${seat}</div>
+        <div class="hp-seat"><span class="hp-seat-tag">SEAT</span> ${seat}</div>
         <div class="hp-name"></div>
         <div class="hp-ctrls">
           <button class="hp-minus" type="button">-</button>

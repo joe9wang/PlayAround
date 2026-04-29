@@ -9192,6 +9192,7 @@ endRoomBtn?.addEventListener('click', async () => {
     if (lobby) lobby.style.display = 'flex';
 
     alert('ルームを終了しました。');
+    location.href = 'lobby.html';
 
   } catch (e) {
 

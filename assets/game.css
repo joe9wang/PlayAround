@@ -249,6 +249,10 @@ body {
   background: #c62828;
   color: #fff;
 }
+#sidebar button.danger:hover {
+  background: #b71c1c;
+  color: #fff;
+}
 
 #sidebar button:disabled {
   opacity: .6;
@@ -1118,6 +1122,13 @@ body.is-spectator #spectator-banner { display: block; }
 .hp-seat {
   font-size: 11px;
   color: #888;
+  white-space: nowrap;
+}
+.hp-seat-tag {
+  font-size: 8px;
+  font-weight: normal;
+  margin-right: 2px;
+  color: #aaa;
 }
 .hp-name {
   font-size: 13px;
