@@ -113,10 +113,7 @@ async function init() {
   pickModeCardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'card'; updateModePickButtons(); });
   pickModeBoardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'board'; updateModePickButtons(); });
   pickModeOfficialBtn?.addEventListener('click', () => {
-    document.getElementById('official-game-modal').style.display = 'flex';
-    window.selectOfficialOption(CURRENT_OFFICIAL_SELECTION || 'trump');
-    // Set mode to official immediately to reflect selection in UI
-    CREATE_FIELD_MODE = CURRENT_OFFICIAL_SELECTION || 'trump';
+    CREATE_FIELD_MODE = 'official';
     updateModePickButtons();
   });
   
@@ -139,7 +136,7 @@ async function init() {
   document.getElementById('official-game-ok')?.addEventListener('click', () => {
     CREATE_FIELD_MODE = CURRENT_OFFICIAL_SELECTION;
     document.getElementById('official-game-modal').style.display = 'none';
-    updateModePickButtons();
+    executeRoomCreation();
   });
   document.getElementById('official-game-cancel')?.addEventListener('click', () => {
     document.getElementById('official-game-modal').style.display = 'none';
@@ -171,7 +168,7 @@ function updateModePickButtons() {
   };
   set(pickModeCardBtn, CREATE_FIELD_MODE === 'card');
   set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
-  set(pickModeOfficialBtn, CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess');
+  set(pickModeOfficialBtn, CREATE_FIELD_MODE === 'official' || CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess');
 }
 
 window.selectOfficialOption = function(type) {
@@ -238,6 +235,11 @@ async function handleCreateRoom() {
 }
 
 function showLayoutModal() {
+  if (CREATE_FIELD_MODE === 'official' || CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess') {
+    document.getElementById('official-game-modal').style.display = 'flex';
+    window.selectOfficialOption(CURRENT_OFFICIAL_SELECTION || 'trump');
+    return;
+  }
   if (CREATE_FIELD_MODE === 'card' || CREATE_FIELD_MODE === 'board') {
     const simpleImg = document.getElementById('layout-img-simple');
     const standardImg = document.getElementById('layout-img-standard');
