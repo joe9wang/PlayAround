@@ -161,8 +161,18 @@ window.selectLayoutOption = function(type) {
   opts.forEach(opt => {
     const isActive = opt.id === `layout-opt-${type}`;
     opt.classList.toggle('active', isActive);
+    
+    // 枠線の色を更新
     const wrap = opt.querySelector('.layout-preview-wrap');
-    if (wrap) wrap.style.borderColor = isActive ? '#2d8' : '#eee';
+    if (wrap) {
+      wrap.style.borderColor = isActive ? '#2d8' : '#eee';
+    }
+    
+    // 文字の色を更新
+    const label = opt.querySelector('.layout-label');
+    if (label) {
+      label.style.color = isActive ? '#2d8' : '#555';
+    }
   });
 };
 
