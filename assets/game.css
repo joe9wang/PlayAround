@@ -1096,11 +1096,10 @@ body.is-spectator #spectator-banner { display: block; }
   border-top: 1px solid #eee;
   background: #fff;
 }
-#hp-title {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 8px;
-  font-weight: bold;
+#hp-grid {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 .hp-row {
   display: grid;

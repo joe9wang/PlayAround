@@ -76,9 +76,10 @@ export function renderHPPanel(){
   const grid = document.getElementById('hp-grid');
   if (!grid) return;
 
-  // 初回：行が無ければ生成（ルームの人数分）
-  if (!grid.querySelector('.hp-row')) {
-    hpDbg('renderHPPanel: initial UI build', { playerCount });  
+  // 行数が現在の人数と合わない場合に再生成
+  const existingRows = grid.querySelectorAll('.hp-row');
+  if (existingRows.length !== playerCount) {
+    hpDbg('renderHPPanel: rebuild UI', { playerCount, existing: existingRows.length });  
     const frag = document.createDocumentFragment();
     for (let seat = 1; seat <= playerCount; seat++) {
       const wrap = document.createElement('div');
@@ -97,67 +98,43 @@ export function renderHPPanel(){
     grid.innerHTML = '';
     grid.appendChild(frag);
 
-    // イベントは一度だけバインド（※座席判定は都度 getState() で最新を見る）
+    // イベントバインド
     grid.querySelectorAll('.hp-row').forEach(row => {
       const seat  = parseInt(row.dataset.seat, 10);
       const input = row.querySelector('.hp-input');
       const minus = row.querySelector('.hp-minus');
       const plus  = row.querySelector('.hp-plus');
       const commit = async (nextVal) => {
-        // ★ 毎回、最新状態を取得して判定（キャプチャしない）
         const { CURRENT_PLAYER, CURRENT_ROOM, CURRENT_UID, currentSeatMap } = ctx.getState();
-        hpDbg('commit called', { seat, nextVal, CURRENT_PLAYER, CURRENT_ROOM, CURRENT_UID });
-        if (CURRENT_PLAYER !== seat) { hpDbg('commit blocked: not my seat'); return; }
+        if (CURRENT_PLAYER !== seat) return;
         const n = Number.isFinite(nextVal) ? Math.trunc(nextVal) : 0;
-        if (seat !== CURRENT_PLAYER) return; // 念のための二重ガード
         await ensureAuthReady();
         const myUid = CURRENT_UID;
         const owner = currentSeatMap[seat]?.claimedByUid || null;
         if (!myUid || myUid !== owner) {
-          hpDbg('commit blocked: not the seat owner', { myUid, owner });
           renderHPPanel();
           alert?.('このHPはあなたの席ではないため変更できません。');
           return;
         }
         if (input) input.value = n;
-        // 本人マスター：hp コレクションへ書く（楽観更新 + 失敗時は巻き戻し）
         localHpEditAt[seat] = Date.now();
         hpValues[seat] = n;
         try {
           const path = hpDocPath(CURRENT_ROOM, seat);
-          const payload = {
-            seat: seat,                // 将来のルール突き合わせ用に明示
+          await setDoc(doc(db, path), {
+            seat: seat,
             value: n,
             updatedAt: serverTimestamp(),
             updatedBy: myUid
-          };
-          hpDbg('setDoc start', { path, payload });
-          await setDoc(doc(db, path), payload, { merge: true });
-          hpDbg('setDoc ok', { path, value: n });
+          }, { merge: true });
         } catch (e) {
-          console.warn('hp write failed', e?.code || e);
-          hpDbg('setDoc failed', { code: e?.code, message: e?.message });
-          // 失敗したらリモート最新で描き直し（0に戻って見える問題の見える化）
           renderHPPanel();
         }
       };
       
-      input?.addEventListener('change', () => {
-        const v = parseInt(input.value, 10);
-        hpDbg('UI event: input change', { seat, v });
-        commit(v);
-      });
-      minus?.addEventListener('click', () => {
-        const v = parseInt(input?.value, 10) - 1;
-        hpDbg('UI event: minus click', { seat, v });
-        commit(v);
-      });
-      plus ?.addEventListener('click', () => {
-        const v = parseInt(input?.value, 10) + 1;
-        hpDbg('UI event: plus click', { seat, v });
-        commit(v);
-      });      
-      
+      input?.addEventListener('change', () => commit(parseInt(input.value, 10)));
+      minus?.addEventListener('click', () => commit(parseInt(input?.value, 10) - 1));
+      plus ?.addEventListener('click', () => commit(parseInt(input?.value, 10) + 1));      
     });
   }
 
