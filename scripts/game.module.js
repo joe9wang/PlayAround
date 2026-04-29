@@ -5271,6 +5271,12 @@ function applyCardState(card, data) {
 
     const isHighResNeeded = (scaleLevel >= 1) && data.fullUrl;
 
+    // Apply width/height for image-token (e.g. chess pieces)
+    if (data.type === 'image-token' && data.width) {
+      card.style.width = `${data.width}px`;
+      card.style.height = `${data.height || data.width}px`;
+    }
+
     const targetSrc = isHighResNeeded ? data.fullUrl : data.imageUrl;
 
     if (targetSrc && img.src !== targetSrc) { 
@@ -7406,12 +7412,21 @@ async function spawnChessSet(roomId) {
   const fieldRect = fieldRoot.getBoundingClientRect();
   const zVal = typeof zoom !== 'undefined' ? zoom : 1;
 
-  // Convert screen-space rect to field CSS coordinates (only divide by zoom,
-  // because getBoundingClientRect already includes board-layout's scale transform)
-  const boardInFieldX = (boardRect.left - fieldRect.left) / zVal;
-  const boardInFieldY = (boardRect.top - fieldRect.top) / zVal;
-  const boardW = boardRect.width / zVal;
-  const boardH = boardRect.height / zVal;
+  // Account for board-play's CSS border (background paints inside the border)
+  const scaleX = boardRect.width / boardEl.offsetWidth;
+  const scaleY = boardRect.height / boardEl.offsetHeight;
+  const borderL = boardEl.clientLeft * scaleX;
+  const borderT = boardEl.clientTop * scaleY;
+  const paddingBoxLeft = boardRect.left + borderL;
+  const paddingBoxTop = boardRect.top + borderT;
+  const paddingBoxW = boardEl.clientWidth * scaleX;
+  const paddingBoxH = boardEl.clientHeight * scaleY;
+
+  // Convert to field CSS coordinates
+  const boardInFieldX = (paddingBoxLeft - fieldRect.left) / zVal;
+  const boardInFieldY = (paddingBoxTop - fieldRect.top) / zVal;
+  const boardW = paddingBoxW / zVal;
+  const boardH = paddingBoxH / zVal;
 
   // Chess board image uses background-size:contain + center → fits to smaller dimension
   const boardSize = Math.min(boardW, boardH);
