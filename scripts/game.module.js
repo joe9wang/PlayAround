@@ -7394,23 +7394,30 @@ async function spawnChessSet(roomId) {
   let count = 0;
   let z = getMaxZIndex() + 1;
 
-  // Wait for board to be layouted
-  await new Promise(resolve => setTimeout(resolve, 500)); 
+  // Wait for board layout to settle
+  await new Promise(resolve => setTimeout(resolve, 800)); 
 
   const boardEl = document.getElementById('board-play');
-  const rect = boardEl?.getBoundingClientRect();
+  if (!boardEl) { console.error('board-play not found'); return; }
   const fieldRoot = document.getElementById('field');
-  const fieldRect = fieldRoot?.getBoundingClientRect() || { left: 0, top: 0 };
-  const zVal = typeof zoom !== 'undefined' ? zoom : 1;
-  const bScale = 1.3; 
-  const totalScale = zVal * bScale;
+  if (!fieldRoot) { console.error('field not found'); return; }
 
-  const w = (rect?.width || 800) / totalScale;
-  const h = (rect?.height || 800) / totalScale;
-  const boardSize = Math.min(w, h);
+  const boardRect = boardEl.getBoundingClientRect();
+  const fieldRect = fieldRoot.getBoundingClientRect();
+  const zVal = typeof zoom !== 'undefined' ? zoom : 1;
+
+  // Convert screen-space rect to field CSS coordinates (only divide by zoom,
+  // because getBoundingClientRect already includes board-layout's scale transform)
+  const boardInFieldX = (boardRect.left - fieldRect.left) / zVal;
+  const boardInFieldY = (boardRect.top - fieldRect.top) / zVal;
+  const boardW = boardRect.width / zVal;
+  const boardH = boardRect.height / zVal;
+
+  // Chess board image uses background-size:contain + center → fits to smaller dimension
+  const boardSize = Math.min(boardW, boardH);
   const tileSize = boardSize / 8;
-  const offsetX = (w - boardSize) / 2 + (rect ? (rect.left - fieldRect.left) / totalScale : 0);
-  const offsetY = (h - boardSize) / 2 + (rect ? (rect.top - fieldRect.top) / totalScale : 0);
+  const offsetX = boardInFieldX + (boardW - boardSize) / 2;
+  const offsetY = boardInFieldY + (boardH - boardSize) / 2;
 
   const PIECES = [
     { type: 'rook', files: [0, 7] },
