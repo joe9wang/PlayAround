@@ -7428,7 +7428,7 @@ async function spawnChessSet(roomId) {
     
     const ref = doc(col);
     batch.set(ref, {
-      type: 'token',
+      type: 'image-token',
       imageUrl: url,
       fullUrl: url,
       x, y, zIndex: z++,
