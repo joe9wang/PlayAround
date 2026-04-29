@@ -1103,7 +1103,7 @@ body.is-spectator #spectator-banner { display: block; }
 }
 .hp-row {
   display: grid;
-  grid-template-columns: 60px 1fr 110px;
+  grid-template-columns: 50px 1fr 105px;
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
@@ -1126,6 +1126,9 @@ body.is-spectator #spectator-banner { display: block; }
   overflow: hidden;
   text-overflow: ellipsis;
   color: #333;
+}
+.hp-row.header .hp-name {
+  font-size: 11px;
 }
 .hp-points-header {
   font-size: 11px;

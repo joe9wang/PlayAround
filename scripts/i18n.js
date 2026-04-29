@@ -102,6 +102,9 @@ const I18N = {
         "preview.title": "選択中のカード",
         "preview.toggle": "選択中のカードの表示/非表示",
         "hp.title": "プレイヤーHP",
+        "hp.header.seat": "座席",
+        "hp.header.name": "プレイヤー名",
+        "hp.header.points": "ポイント",
 
         // alerts
         "err.roomId": "ルームIDを入力してください",
@@ -235,6 +238,9 @@ const I18N = {
         "preview.title": "Selected card",
         "preview.toggle": "Show/Hide selected card",
         "hp.title": "Players' HP",
+        "hp.header.seat": "Seat",
+        "hp.header.name": "Player",
+        "hp.header.points": "Points",
 
         // alerts
         "err.roomId": "Please enter a Room ID.",
