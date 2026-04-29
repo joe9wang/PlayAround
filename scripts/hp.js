@@ -69,20 +69,23 @@ export function subscribeHP(roomId){
 }
 
 export function renderHPPanel(){
-  const { document, ensureAuthReady, db, doc, setDoc, serverTimestamp, alert } = ctx;
-  // ここでは CURRENT_* をキャプチャしない（都度 getState で取得する）
+  const { document, ensureAuthReady, db, doc, setDoc, serverTimestamp, alert, getState } = ctx;
+  const state = getState();
+  const playerCount = state.CURRENT_ROOM_META?.playerCount || 4;
+
   const grid = document.getElementById('hp-grid');
   if (!grid) return;
 
-  // 初回：行が無ければ生成（4席ぶん）
+  // 初回：行が無ければ生成（ルームの人数分）
   if (!grid.querySelector('.hp-row')) {
-    hpDbg('renderHPPanel: initial UI build');  
+    hpDbg('renderHPPanel: initial UI build', { playerCount });  
     const frag = document.createDocumentFragment();
-    for (const seat of [1,2,3,4,5,6,7,8,9,10]) {
+    for (let seat = 1; seat <= playerCount; seat++) {
       const wrap = document.createElement('div');
       wrap.className = 'hp-row';
       wrap.dataset.seat = String(seat);
       wrap.innerHTML = `
+        <div class="hp-seat">SEAT ${seat}</div>
         <div class="hp-name"></div>
         <div class="hp-ctrls">
           <button class="hp-minus" type="button">-</button>
@@ -160,7 +163,7 @@ export function renderHPPanel(){
 
   // 差分更新：名前/活性/値のみ更新（入力中は値を上書きしない）
   const { CURRENT_PLAYER, currentSeatMap } = ctx.getState();
-  for (const seat of [1,2,3,4,5,6,7,8,9,10]) {
+  for (let seat = 1; seat <= playerCount; seat++) {
     const row   = grid.querySelector(`.hp-row[data-seat="${seat}"]`);
     const input = row?.querySelector('.hp-input');
     const name  = row?.querySelector('.hp-name');

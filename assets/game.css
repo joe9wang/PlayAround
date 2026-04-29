@@ -1089,3 +1089,83 @@ body.is-spectator #spectator-banner { display: block; }
 .affiliate-box { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; }
 .affiliate-logo { display: inline-grid; place-items: center; width: 72px; height: 28px; background: #111; color: #fff; border-radius: 6px; font-weight: 800; }
 .disclosure { font-size: 12px; color: #6b7280; }
+
+/* === Player Points Panel === */
+#hp-panel {
+  padding: 12px;
+  border-top: 1px solid #eee;
+  background: #fff;
+}
+#hp-title {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+.hp-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 110px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.hp-row.header {
+  font-size: 11px;
+  color: #999;
+  font-weight: bold;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+.hp-seat {
+  font-size: 11px;
+  color: #888;
+}
+.hp-name {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #333;
+}
+.hp-points-header {
+  font-size: 11px;
+  text-align: center;
+}
+.hp-ctrls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.hp-input {
+  width: 50px !important;
+  text-align: center;
+  padding: 4px !important;
+  font-size: 14px !important;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.hp-minus, .hp-plus {
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  color: #555;
+  margin-bottom: 0 !important;
+}
+.hp-minus:hover, .hp-plus:hover {
+  background: #eee;
+}
+.hp-minus:disabled, .hp-plus:disabled, .hp-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
