@@ -301,12 +301,22 @@ const toggleOtherOpsInput = document.getElementById('toggle-other-ops');
 
 const toggleOtherOpsText = document.getElementById('toggle-other-ops-text');
 
+const hostModeSelect = document.getElementById('host-mode-select');
+
 
 
 function applyOtherOpsUI() {
   const on = !!(CURRENT_ROOM_META?.allowOthersMove || CURRENT_ROOM_META?.allowOtherOps);
   if (toggleOtherOpsInput) toggleOtherOpsInput.checked = on;
   if (toggleOtherOpsText) toggleOtherOpsText.textContent = on ? 'ON' : 'OFF';
+
+  if (hostModeSelect && CURRENT_ROOM_META) {
+    const mode = CURRENT_ROOM_META.fieldMode || 'card';
+    const layout = CURRENT_ROOM_META.fieldLayout || 'standard';
+    if (mode === 'board') hostModeSelect.value = 'board';
+    else if (mode === 'card' && layout === 'simple') hostModeSelect.value = 'card-simple';
+    else hostModeSelect.value = 'card-standard';
+  }
 }
 
 
@@ -329,6 +339,28 @@ toggleOtherOpsInput?.addEventListener('change', async () => {
 
   } catch (e) { console.warn('toggle allowOthersMove failed', e); }
 
+});
+
+hostModeSelect?.addEventListener('change', async () => {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (!isHost) { applyOtherOpsUI(); return; }
+
+  const val = hostModeSelect.value;
+  let fieldMode = 'card';
+  let fieldLayout = 'standard';
+
+  if (val === 'board') {
+    fieldMode = 'board';
+  } else if (val === 'card-simple') {
+    fieldMode = 'card';
+    fieldLayout = 'simple';
+  }
+
+  try {
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { fieldMode, fieldLayout, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (e) {
+    console.error(e);
+  }
 });
 
 
