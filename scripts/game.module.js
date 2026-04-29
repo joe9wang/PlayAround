@@ -7445,7 +7445,7 @@ async function spawnChessSet(roomId) {
   const spawnPiece = (type, color, file, rank) => {
     const fileName = `${color}_${type}.png`; 
     const url = `image/Chess/${fileName}`;
-    const pieceSize = tileSize * 1.5;
+    const pieceSize = tileSize * 0.8;
     const centerOffset = (tileSize - pieceSize) / 2;
     const x = offsetX + file * tileSize + centerOffset;
     const y = offsetY + (7 - rank) * tileSize + centerOffset;
