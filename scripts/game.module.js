@@ -5608,7 +5608,7 @@ async function fileToThumbAndFull(file) {
 
   canvas.width = tw; canvas.height = th;
 
-  const ctx = canvas.getContext('2d', { alpha: false });
+  const ctx = canvas.getContext('2d');
 
   ctx.imageSmoothingEnabled = true;
 
@@ -5616,8 +5616,7 @@ async function fileToThumbAndFull(file) {
 
   ctx.drawImage(bmp, 0, 0, tw, th);
 
-  const thumbDataUrl = canvas.toDataURL('image/jpeg', 0.6); // ← 0.6 に
-
+  const thumbDataUrl = canvas.toDataURL('image/webp', 0.8);
 
 
   const fullDataUrl = await new Promise((res, rej) => {
