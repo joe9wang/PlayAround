@@ -1101,7 +1101,7 @@ body.is-spectator #spectator-banner { display: block; }
 }
 .hp-row {
   display: grid;
-  grid-template-columns: 50px 1fr 105px;
+  grid-template-columns: 65px 1fr 110px;
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
@@ -1113,6 +1113,7 @@ body.is-spectator #spectator-banner { display: block; }
   border-bottom: 1px solid #f0f0f0;
   padding-bottom: 4px;
   margin-bottom: 8px;
+  padding-right: 20px; /* スクロールバー分を確保して位置を合わせる */
 }
 .hp-seat {
   font-size: 11px;
