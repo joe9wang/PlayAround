@@ -59,172 +59,51 @@
 
       <nav class="site-nav" aria-label="Global">
         <a href="/index.html">ホーム</a>
+        <a href="/lobby.html">ロビー</a>
         <a href="/howto.html">遊び方</a>
         <a href="/about.html">運営者情報</a>
         <a href="/privacy.html">プライバシー</a>
         <a href="/terms.html">利用規約</a>
         <a href="/contact.html">お問い合わせ</a>
-      </nav>
-
-      <div class="header-right">
         <!-- 言語切替 -->
         <select aria-label="Language" class="lang-switch-header" id="lang-switch">
           <option value="ja">日本語</option>
           <option value="en">English</option>
         </select>
-        <span id="session-indicator" class="session-indicator-header">
-          ROOM: - / PLAYER: -
-        </span>
+      </nav>
+
+      <div class="header-right">
+        <div id="auth-indicator" class="auth-indicator-header"></div>
+        <div id="session-indicator" class="session-indicator-header">
+          <div>ROOM: -</div>
+          <div>PLAYER: -</div>
+          <div>SEAT: -</div>
+        </div>
       </div>
     </div>
   </header>
-  <div aria-modal="true" id="lobby" role="dialog">
-    <div class="lobby-card">
-      <!-- ロビー右上：言語切替 -->
-      <div aria-label="Language Selector" class="lobby-lang" role="group">
-        <span class="lobby-lang-label">
-          Language
-        </span>
-        <select aria-label="Language" class="lang-switch-inline" id="lang-switch-lobby">
-          <option value="ja">
-            日本語
-          </option>
-          <option value="en">
-            English
-          </option>
-        </select>
+  <!-- ルーム入室時のパスワード/名前入力用モーダル（直接リンク用） -->
+  <div id="direct-join-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:30000; align-items:center; justify-content:center;">
+    <div class="lobby-card" style="max-width:400px; padding:24px; background:#fff; border-radius:16px;">
+      <h3 style="margin-top:0;">ルームに入室</h3>
+      <div id="dj-room-info" style="font-size:14px; color:#666; margin-bottom:16px;"></div>
+      
+      <label class="lobby-label">プレイヤー名</label>
+      <input class="field" id="dj-player-name" maxlength="24" placeholder="例: SOLVENTER" type="text" style="margin-bottom:12px;" />
+      
+      <div id="dj-password-area" style="display:none;">
+        <label class="lobby-label">入室パスワード</label>
+        <input class="field" id="dj-room-pass" placeholder="ホストが設定した場合は必須" type="password" style="margin-bottom:16px;" />
       </div>
-      <div class="lobby-title" data-i18n="lobby.welcome">
-        バトライテーブルへようこそ！
+      
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn secondary" onclick="location.href='lobby.html'">ロビーへ戻る</button>
+        <button class="btn" id="dj-start-btn">入室</button>
       </div>
-      <!-- ロビー上部のログインUI（リンクの直下） -->
-      <div class="lobby-auth" id="lobby-auth-area">
-
-        <!-- ===== 未ログイン時：ログインボタンだけ表示 ===== -->
-        <div id="auth-form-area" class="auth-buttons" style="text-align:center;">
-          <button class="btn secondary" id="login-go-btn" style="padding:8px 16px;"
-            onclick="location.href='./login.html'" data-i18n="auth.loginBtn">
-            ログインする
-          </button>
-        </div>
-
-        <!-- ===== ログイン済みユーザー情報（ログイン時のみ表示） ===== -->
-        <div id="auth-loggedin-area" style="display:none;">
-          <div class="auth-user-info">
-            <span id="whoami" style="color:#555; font-size:13px;"></span>
-            <span id="lobby-premium-badge" style="display:none;"></span>
-          </div>
-          <div class="auth-buttons">
-            <button class="btn secondary" id="logout-google" style="padding:8px 12px;" data-i18n="auth.logout">
-              ログアウト
-            </button>
-            <button class="btn secondary" id="btn-mypage" style="padding:8px 12px;" data-i18n="app.mypage"
-              onclick="location.href='./mypage.html'">
-              マイページ
-            </button>
-          </div>
-        </div>
-
-      </div>
-      <div class="lobby-grid">
-        <!-- Join (left column) -->
-        <section aria-labelledby="join-title" class="lobby-section">
-          <div class="lobby-subtitle" data-i18n="join.section" id="join-title">
-            既存ルームに参加（非ホスト）
-          </div>
-          <label class="lobby-label" data-i18n="join.roomId">
-            参加するルームID
-          </label>
-          <div class="row" style="margin-bottom:8px;">
-            <input class="field" data-i18n-placeholder="join.roomId.ph" id="join-room-id"
-              placeholder="例: room-abc / 1234" type="text" />
-          </div>
-          <label class="lobby-label" data-i18n="join.password">
-            入室パスワード
-          </label>
-          <div class="row" style="margin-bottom:12px;">
-            <input class="field" data-i18n-placeholder="join.password.ph" id="join-room-pass"
-              placeholder="ホストが設定した場合は必須" type="password" />
-          </div>
-          <label class="lobby-label" data-i18n="join.name">
-            プレイヤー名
-          </label>
-          <div class="row" style="margin-bottom:12px;">
-            <input class="field" data-i18n-placeholder="join.name.ph" id="player-name" maxlength="24"
-              placeholder="例: SOLVENTER" type="text" />
-          </div>
-
-          <div class="row" style="margin-top:auto; padding-top:16px; justify-content:flex-end; gap:8px;">
-            <button class="btn" data-i18n="join.start" disabled="" id="start-btn" type="button">
-              開始
-            </button>
-          </div>
-        </section>
-        <!-- Create (right column) -->
-        <section aria-labelledby="create-title" class="lobby-section">
-          <div class="lobby-subtitle" data-i18n="create.section" id="create-title">
-            新しいルームを作成（ホスト）
-          </div>
-          <label class="lobby-label" data-i18n="create.roomId">
-            新しいルームID
-          </label>
-          <div class="row" style="margin-bottom:8px;">
-            <input class="field" data-i18n-placeholder="create.roomId.ph" id="new-room-id"
-              placeholder="例: room-abc / 1234" type="text" />
-          </div>
-          <label class="lobby-label" data-i18n="create.password">
-            入室パスワード（任意）
-          </label>
-          <div class="row" style="margin-bottom:12px;">
-            <input class="field" data-i18n-placeholder="create.password.ph" id="new-room-pass" placeholder="設定すると参加時に必須"
-              type="password" />
-          </div>
-          <label class="lobby-label" data-i18n="create.name">
-            プレイヤー名
-          </label>
-          <div class="row" style="margin-bottom:12px;">
-            <input class="field" data-i18n-placeholder="create.name.ph" id="new-player-name" maxlength="24"
-              placeholder="例: SOLVENTER" type="text" />
-          </div>
-          <label class="lobby-label" data-i18n="create.playerCount">
-            プレイ人数
-          </label>
-          <div class="row" style="margin-bottom:12px;">
-            <select class="field" id="new-player-count">
-              <option value="1">1人</option>
-              <option value="2">2人</option>
-              <option value="3">3人</option>
-              <option value="4" selected>4人</option>
-              <option value="5">5人</option>
-              <option value="6">6人</option>
-              <option value="7">7人</option>
-              <option value="8">8人</option>
-            </select>
-          </div>
-
-          <label class="lobby-label" data-i18n="create.chooseMode" style="margin-top:10px;">
-            ゲームの種類
-          </label>
-          <div class="row" id="create-mode-row" style="gap:8px;">
-            <button aria-pressed="true" class="btn secondary" data-i18n="create.mode.card" id="pick-mode-card"
-              type="button">
-              カードゲーム
-            </button>
-            <button aria-pressed="false" class="btn secondary" data-i18n="create.mode.board" id="pick-mode-board"
-              type="button">
-              ボードゲーム
-            </button>
-          </div>
-          <div class="row" id="create-btn-row" style="margin-top:auto; padding-top:16px; justify-content:flex-end;">
-            <button class="btn" data-i18n="create.createBtn" id="create-room-btn">
-              作成
-            </button>
-          </div>
-        </section>
-      </div>
-      <div class="lobby-credit">BatriTable — © 2025 SOLVENTER</div>
     </div>
   </div>
+
   <div id="upload-areas"
     style="height: var(--upload-h); display: flex; align-items: stretch; border-bottom: 2px solid #ccc; user-select: none; margin: 0; padding: 0;">
     <div id="upload-card" class="upload-box"
@@ -251,13 +130,17 @@
     <div id="ops-scroll" style="flex: 1 1 0%; overflow:auto; min-height:0; padding-right:4px;">
 
       <!-- Save/Load: compact two-up row -->
+      <details class="ops-section">
+      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">マイセット</summary>
       <div class="sl-row" role="group" aria-label="Save/Load">
         <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
         <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
       </div>
-      <div class="section-label">自分のカード<br>
-        <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで裏表)</span>
-      </div>
+      </details>
+      <details class="ops-section">
+      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">自分のカード<br>
+        <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで裏表)</span>
+      </summary>
       <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 全カード一覧</button>
       <div class="sl-row" role="group" aria-label="Face up/down">
         <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
@@ -274,9 +157,11 @@
       <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
       <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
       <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
-      <div class="section-label">コイン・ダイス<br>
-        <span style="font-size:12px;color:#666;">(左クリックか右クリックで削除)</span>
-      </div>
+      </details>
+      <details class="ops-section">
+      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">コイン・ダイス<br>
+        <span style="font-size:12px;color:#666;font-weight:normal;">(左クリックか右クリックで削除)</span>
+      </summary>
       <div class="sl-row" role="group" aria-label="dice-coin-row1">
         <button class="sl-btn" id="flip-coin-btn" onclick="flipCoin()" data-i18n="side.flipCoin">🪙 コイントス</button>
         <button class="sl-btn" id="roll-d4-btn" onclick="rollD4()" data-i18n="side.rollD4">🎲 4面ダイス</button>
@@ -289,9 +174,11 @@
         <button class="sl-btn" id="roll-d20-btn" onclick="rollD20()" data-i18n="side.rollD20">🎲 20面ダイス</button>
         <button class="sl-btn" id="roll-d100-btn" onclick="rollD100()" data-i18n="side.rollD100">🎲 100面ダイス</button>
       </div>
-      <div class="section-label">カウンター・トークン<br>
-        <span style="font-size:12px;color:#666;">(ダブルクリックで回転、右クリックで削除)</span>
-      </div>
+      </details>
+      <details class="ops-section">
+      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">カウンター・トークン<br>
+        <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで削除)</span>
+      </summary>
       <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
 
       <div class="sl-row" role="group" aria-label="plus1/plus10">
@@ -310,7 +197,8 @@
         <button class="sl-btn" onclick="spawnCounter('-50')" data-i18n="side.minus50">➖50</button>
         <button class="sl-btn" onclick="spawnCounter('-100')" data-i18n="side.minus100">➖100</button>
       </div>
-      <button class="sl-btn" onclick="spawnToken()" data-i18n="side.token">📝 トークン作成</button>
+      <button class="sl-btn" onclick="spawnMemo()" data-i18n="side.memo">📝 メモ作成</button>
+      </details>
 
       <button class="sl-btn" onclick="openBackImagePicker()" data-i18n="side.BackImage">🖼 カード背景画像</button>
       <!-- 非表示のファイル入力（画像選択ダイアログ用） -->
@@ -324,11 +212,8 @@
       </div>
 
       <div aria-live="polite" class="host-toggle" id="host-otherops">
-        <div class="section-label">ホスト専用</div>
-        <div class="sl-row" role="group" aria-label="Save Room">
-          <button class="sl-btn" id="host-otherops-save-btn" onclick="openRoomSaveDialog('save')">💾 ルームをセーブ</button>
-          <button class="sl-btn" onclick="openRoomSaveDialog('load')">📂 ルームをロード</button>
-        </div>
+        <details class="ops-section">
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">ホスト専用</summary>
         <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
           <div style="font-size:12px;color:#555;">
             他プレイヤーのカード操作
@@ -344,6 +229,14 @@
             </span>
           </div>
         </div>
+        <div style="margin-top:16px;">
+          <div style="font-size:12px;color:#555;margin-bottom:4px;">モード変更</div>
+          <div class="row" style="gap:8px;">
+            <button class="sl-btn" id="btn-mode-card" style="flex:1;">カードゲーム</button>
+            <button class="sl-btn" id="btn-mode-board" style="flex:1;">ボードゲーム</button>
+          </div>
+        </div>
+        </details>
       </div>
 
       <!-- ★ 座席操作 -->
@@ -357,15 +250,6 @@
       <!-- ★ 参加中のみ表示：退室/終了ボタン -->
       <button class="sl-btn" id="leave-room-btn" style="display:none">
         🚪 退室する
-      </button>
-
-      <button class="sl-btn" id="host-save-room-btn" style="display:none; margin-top:20px;"
-        onclick="openRoomSaveDialog('save')">
-        💾 ルームをセーブ
-      </button>
-      <button class="sl-btn" id="host-load-room-btn" style="display:none; margin-top:4px;"
-        onclick="openRoomSaveDialog('load')">
-        📂 ルームをロード
       </button>
 
       <button class="danger sl-btn" id="end-room-btn" style="display:none">
@@ -404,6 +288,7 @@
 
   </div>
   <div id="container">
+    <div id="spectator-banner" data-i18n="spectator.warning">現在は【観戦者】です（『座席に座る』ボタンから参加できます）</div>
     <div id="marquee"></div>
     <div id="field">
       <div class="player-area player-1">
@@ -694,51 +579,7 @@
     </div>
   </div>
 
-  <!-- ルーム保存用 3スロット選択モーダル -->
-  <div id="room-save-modal"
-    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
-    <div
-      style="background:#fff; padding:16px; border-radius:12px; width:280px; max-width:90%; box-shadow:0 6px 24px rgba(0,0,0,.2);">
-      <div id="room-sl-title" style="font-weight:700; margin-bottom:12px;">ルーム保存先スロットを選択</div>
-      <div class="row" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
-        <button class="room-slot-btn" data-slot="1" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 1</button>
-        <button class="room-slot-btn" data-slot="2" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 2</button>
-        <button class="room-slot-btn" data-slot="3" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 3</button>
-        <button class="room-slot-btn" data-slot="4" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 4</button>
-        <button class="room-slot-btn" data-slot="5" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 5</button>
-        <button class="room-slot-btn" data-slot="6" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 6</button>
-        <button class="room-slot-btn" data-slot="7" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 7</button>
-        <button class="room-slot-btn" data-slot="8" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 8</button>
-        <button class="room-slot-btn" data-slot="9" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 9</button>
-        <button class="room-slot-btn" data-slot="10" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT
-          10</button>
-      </div>
 
-      <!-- ▼スロットごとのプレビュー -->
-      <div class="room-sl-preview" aria-live="polite" style="margin-bottom:12px;">
-        <div class="room-slot-preview" data-slot="1"><span class="empty">データなし</span></div>
-        <div class="room-slot-preview" data-slot="2"><span class="empty">データなし</span></div>
-        <div class="room-slot-preview" data-slot="3"><span class="empty">データなし</span></div>
-        <div class="room-slot-preview" data-slot="4"><span class="empty">データなし</span></div>
-        <div class="room-slot-preview" data-slot="5"><span class="empty">データなし</span></div>
-        <div class="room-slot-preview" data-slot="6"><span class="empty">データなし</span></div>
-        <div class="room-slot-preview" data-slot="7"><span class="empty">データなし</span></div>
-        <div class="room-slot-preview" data-slot="8"><span class="empty">データなし</span></div>
-        <div class="room-slot-preview" data-slot="9"><span class="empty">データなし</span></div>
-        <div class="room-slot-preview" data-slot="10"><span class="empty">データなし</span></div>
-      </div>
-
-      <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button id="room-sl-cancel">キャンセル</button>
-      </div>
-    </div>
-  </div>
-
-  <div style="display:flex; justify-content:flex-end; gap:8px;">
-    <button id="sl-cancel">キャンセル</button>
-  </div>
-  </div>
-  </div>
 
   <!-- 座席選択モーダル -->
   <div id="seat-select-modal"
@@ -752,6 +593,41 @@
       </div>
       <div style="display:flex; justify-content:flex-end;">
         <button id="seat-select-cancel" class="btn secondary">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- フィールド構成選択モーダル -->
+  <div id="field-layout-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:20000; align-items:center; justify-content:center;">
+    <div class="layout-modal-card"
+      style="background:#fff; padding:32px; border-radius:24px; width:720px; max-width:95%; box-shadow:0 12px 48px rgba(0,0,0,0.4); text-align:center;">
+      <div style="font-weight:800; font-size:24px; margin-bottom:24px; letter-spacing:1px; color:#333;">フィールド構成を選択</div>
+      
+      <div style="display:flex; gap:24px; justify-content:center; margin-bottom:32px;">
+        <!-- シンプル -->
+        <div class="layout-option" id="layout-opt-simple" style="flex:1; cursor:pointer;" onclick="selectLayoutOption('simple')">
+          <div class="layout-preview-wrap" style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
+            <img id="layout-img-simple" src="image/Field_simple_type.png" alt="Simple" style="width:100%; display:block;" />
+            <div class="selection-overlay" style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
+          </div>
+          <div class="layout-label" style="margin-top:12px; font-weight:800; font-size:20px; color:#555; transition:0.3s;">シンプル</div>
+        </div>
+        <!-- スタンダード -->
+        <div class="layout-option active" id="layout-opt-standard" style="flex:1; cursor:pointer;" onclick="selectLayoutOption('standard')">
+          <div class="layout-preview-wrap" style="border:4px solid #2d8; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
+            <img id="layout-img-standard" src="image/Field_standard_type.png" alt="Standard" style="width:100%; display:block;" />
+            <div class="selection-overlay" style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:1; transition:0.3s;"></div>
+          </div>
+          <div class="layout-label" style="margin-top:12px; font-weight:800; font-size:20px; color:#2d8; transition:0.3s;">スタンダード</div>
+        </div>
+      </div>
+
+
+
+      <div style="display:flex; justify-content:center; gap:20px;">
+        <button id="field-layout-cancel" class="btn secondary" style="padding:12px 32px; font-weight:700;">キャンセル</button>
+        <button id="field-layout-ok" class="btn" style="padding:12px 48px; font-weight:800; font-size:18px;">OK</button>
       </div>
     </div>
   </div>
@@ -782,7 +658,7 @@
       </div>
       -->
 
-      <small>© 2025 SOLVENTER / BatriTable</small>
+      <small>© 2026 SOLVENTER / BatriTable</small>
     </div>
   </footer>
   <!-- === Area Background Selection Context Menu === -->
@@ -817,6 +693,8 @@
       <li id="token-ctx-to-back">⬇ 最背面に移動</li>
       <li id="token-ctx-enlarge">🔍 拡大</li>
       <li id="token-ctx-shrink">🔍 縮小</li>
+      <li id="token-ctx-font-plus">🔤 文字サイズ +</li>
+      <li id="token-ctx-font-minus">🔤 文字サイズ -</li>
       <li id="token-ctx-delete" style="color: #ff4444;">❌ 削除</li>
     </ul>
   </div>

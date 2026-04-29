@@ -66,6 +66,7 @@ const startBtn = document.getElementById('start-btn');
 
 const pickModeCardBtn = document.getElementById('pick-mode-card');
 const pickModeBoardBtn = document.getElementById('pick-mode-board');
+const pickModeOfficialBtn = document.getElementById('pick-mode-official');
 
 // === Initialization ===
 async function init() {
@@ -111,9 +112,12 @@ async function init() {
   // Event Listeners
   pickModeCardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'card'; updateModePickButtons(); });
   pickModeBoardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'board'; updateModePickButtons(); });
-  document.getElementById('pick-mode-official')?.addEventListener('click', () => {
+  pickModeOfficialBtn?.addEventListener('click', () => {
     document.getElementById('official-game-modal').style.display = 'flex';
-    window.selectOfficialOption('trump');
+    window.selectOfficialOption(CURRENT_OFFICIAL_SELECTION || 'trump');
+    // Set mode to official immediately to reflect selection in UI
+    CREATE_FIELD_MODE = CURRENT_OFFICIAL_SELECTION || 'trump';
+    updateModePickButtons();
   });
   
   createRoomBtn?.addEventListener('click', handleCreateRoom);
@@ -167,7 +171,7 @@ function updateModePickButtons() {
   };
   set(pickModeCardBtn, CREATE_FIELD_MODE === 'card');
   set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
-  set(document.getElementById('pick-mode-official'), CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess');
+  set(pickModeOfficialBtn, CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess');
 }
 
 window.selectOfficialOption = function(type) {
