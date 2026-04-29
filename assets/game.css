@@ -178,6 +178,73 @@ body {
   cursor: pointer;
 }
 
+#sidebar .sl-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+#sidebar .sl-btn {
+  width: 100% !important;
+  padding: 6px 8px !important;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  min-height: 30px;
+  background: #eee;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#sidebar .sl-btn:hover {
+  background: #f5f5f5;
+}
+
+#sidebar .section-label {
+  margin: 2px 0 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-align: left;
+  color: #555;
+}
+
+.ops-section {
+  margin-bottom: 8px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 4px;
+}
+
+.panel-title {
+  margin: 0 0 10px 0 !important;
+  padding: 0 4px !important;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.panel-title__text {
+  transform: translateY(2px);
+}
+
+.inline-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  line-height: 1;
+}
+
 #sidebar button.danger {
   background: #c62828;
   color: #fff;
@@ -894,6 +961,42 @@ body {
 body.collapse-left { --sidebar-w: 0px; }
 body.collapse-right { --preview-w: 0px; }
 body.collapse-left #sidebar, body.collapse-right #preview { overflow: hidden; border-width: 0 !important; padding: 0 !important; }
+
+/* === Collapsible Handles === */
+.collapse-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.edge-handle {
+  position: fixed;
+  top: 120px;
+  z-index: 2000;
+  display: none;
+  width: 28px;
+  height: 48px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
+}
+
+.edge-left { left: 8px; }
+.edge-right { right: 8px; }
+body.collapse-left .edge-left { display: inline-flex; }
+body.collapse-right .edge-right { display: inline-flex; }
 
 /* === overlap badge === */
 .overlap-badge {
