@@ -7430,8 +7430,10 @@ async function spawnChessSet(roomId) {
   const spawnPiece = (type, color, file, rank) => {
     const fileName = `${color}_${type}.png`; 
     const url = `image/Chess/${fileName}`;
-    const x = offsetX + file * tileSize;
-    const y = offsetY + (7 - rank) * tileSize;
+    const pieceSize = tileSize * 1.5;
+    const centerOffset = (tileSize - pieceSize) / 2;
+    const x = offsetX + file * tileSize + centerOffset;
+    const y = offsetY + (7 - rank) * tileSize + centerOffset;
     
     const ref = doc(col);
     batch.set(ref, {
@@ -7439,8 +7441,8 @@ async function spawnChessSet(roomId) {
       imageUrl: url,
       fullUrl: url,
       x, y, zIndex: z++,
-      width: tileSize,
-      height: tileSize,
+      width: pieceSize,
+      height: pieceSize,
       faceUp: true,
       ownerUid: null,
       ownerSeat: null,
