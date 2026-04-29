@@ -346,6 +346,8 @@ window.selectLayoutOption = function(type) {
   });
 };
 
+let PENDING_FIELD_MODE = 'card';
+
 async function clearAreas() {
   if (!CURRENT_ROOM) return;
   try {
@@ -365,24 +367,22 @@ btnModeCard?.addEventListener('click', () => {
   const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
   if (!isHost) { alert('ホスト専用機能です。'); return; }
   
+  PENDING_FIELD_MODE = 'card';
   const currentLayout = CURRENT_ROOM_META?.fieldLayout || 'standard';
   window.selectLayoutOption(currentLayout);
   const modal = document.getElementById('field-layout-modal');
   if (modal) modal.style.display = 'flex';
 });
 
-btnModeBoard?.addEventListener('click', async () => {
+btnModeBoard?.addEventListener('click', () => {
   const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
   if (!isHost) { alert('ホスト専用機能です。'); return; }
   
-  if (!confirm('ボードゲームモードに変更します。よろしいですか？\n（追加されたエリアはすべて削除されます）')) return;
-  
-  try {
-    await clearAreas();
-    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { fieldMode: 'board', fieldLayout: 'standard', updatedAt: serverTimestamp() }, { merge: true });
-  } catch (e) {
-    console.error(e);
-  }
+  PENDING_FIELD_MODE = 'board';
+  const currentLayout = CURRENT_ROOM_META?.fieldLayout || 'standard';
+  window.selectLayoutOption(currentLayout);
+  const modal = document.getElementById('field-layout-modal');
+  if (modal) modal.style.display = 'flex';
 });
 
 document.getElementById('field-layout-cancel')?.addEventListener('click', () => {
@@ -397,9 +397,12 @@ document.getElementById('field-layout-ok')?.addEventListener('click', async () =
   const modal = document.getElementById('field-layout-modal');
   if (modal) modal.style.display = 'none';
   
+  const msg = PENDING_FIELD_MODE === 'board' ? 'ボードゲームモードに変更します。よろしいですか？\n（追加されたエリアはすべて削除されます）' : 'カードゲームモードに変更します。よろしいですか？\n（追加されたエリアはすべて削除されます）';
+  if (!confirm(msg)) return;
+
   try {
     await clearAreas();
-    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { fieldMode: 'card', fieldLayout: CURRENT_LAYOUT_SELECTION, updatedAt: serverTimestamp() }, { merge: true });
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { fieldMode: PENDING_FIELD_MODE, fieldLayout: CURRENT_LAYOUT_SELECTION, updatedAt: serverTimestamp() }, { merge: true });
   } catch (e) {
     console.error(e);
   }
