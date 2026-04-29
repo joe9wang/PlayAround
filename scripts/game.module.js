@@ -3112,6 +3112,8 @@ function loadSeatStatus(rid) {
 
     applyOtherOpsUI();
 
+    applyFieldModeLayout();
+
     IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
 
     if (IS_ROOM_CREATOR && CURRENT_ROOM_META?.needsInitialization) {
@@ -3390,11 +3392,11 @@ function applyCardBackStyle(card) {
     return;
   }
 
-  // 裏面の背景を適用（席の設定がなければ黒）
+  // 裏面の背景を適用（カード固有の背面画像 > 席の設定 > 黒）
 
+  const cardBackUrl = card.dataset.backImageUrl || null;
   const seat = parseInt(card.dataset.ownerSeat || '0', 10);
-
-  const url = seatBackUrl(seat);
+  const url = cardBackUrl || seatBackUrl(seat);
 
   card.style.backgroundColor = '#000';
 
@@ -5236,6 +5238,7 @@ function applyCardState(card, data) {
 
 
   card.dataset.faceUp = data.faceUp ? 'true' : 'false';
+  if (data.backImageUrl) { card.dataset.backImageUrl = data.backImageUrl; }
 
   const img = card.querySelector('img');
 
@@ -5254,9 +5257,11 @@ function applyCardState(card, data) {
       if (data.faceUp) {
         img.style.display = 'block';
         card.style.backgroundColor = '#fff';
+        card.classList.remove('has-back');
+        card.style.backgroundImage = '';
       } else {
         img.style.display = 'none';
-        card.style.backgroundColor = '#000';
+        applyCardBackStyle(card);
       }
     }
 

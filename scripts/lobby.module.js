@@ -136,7 +136,9 @@ async function init() {
   document.getElementById('official-game-ok')?.addEventListener('click', () => {
     CREATE_FIELD_MODE = CURRENT_OFFICIAL_SELECTION;
     document.getElementById('official-game-modal').style.display = 'none';
-    executeRoomCreation();
+    // Trump uses standard layout (deck/discard areas), Chess uses playonly (board only)
+    const layout = (CURRENT_OFFICIAL_SELECTION === 'chess') ? 'playonly' : 'standard';
+    executeRoomCreation(layout);
   });
   document.getElementById('official-game-cancel')?.addEventListener('click', () => {
     document.getElementById('official-game-modal').style.display = 'none';
