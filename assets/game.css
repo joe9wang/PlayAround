@@ -498,51 +498,7 @@ body {
   gap: 8px;
 }
 
-.hp-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 
-.hp-seat {
-  width: 36px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.hp-name {
-  flex: 1;
-  min-width: 0;
-  color: #555;
-  font-size: 12px;
-}
-
-.hp-value {
-  width: 72px;
-  text-align: right;
-}
-
-.hp-input {
-  width: 80px;
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  text-align: right;
-}
-
-.hp-btn {
-  padding: 6px 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #f6f6f6;
-  cursor: pointer;
-}
-
-.hp-btn:disabled,
-.hp-input:disabled {
-  opacity: .6;
-  cursor: not-allowed;
-}
 
 .premium-badge {
   display: inline-flex;
@@ -1117,12 +1073,14 @@ body.is-spectator #spectator-banner { display: block; }
   border-bottom: 1px solid #f0f0f0;
   padding-bottom: 4px;
   margin-bottom: 8px;
-  padding-right: 20px; /* スクロールバー分を確保して位置を合わせる */
+  padding-right: 20px;
+  text-align: center; /* ヘッダー全体をセンター揃えのベースに */
 }
 .hp-seat {
   font-size: 11px;
   color: #888;
   white-space: nowrap;
+  text-align: center;
 }
 .hp-seat-tag {
   font-size: 8px;
@@ -1136,6 +1094,7 @@ body.is-spectator #spectator-banner { display: block; }
   overflow: hidden;
   text-overflow: ellipsis;
   color: #333;
+  text-align: center; /* プレイヤー名もセンター揃えにする */
 }
 .hp-row.header .hp-name {
   font-size: 11px;

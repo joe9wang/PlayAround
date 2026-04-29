@@ -79,6 +79,19 @@ export async function cleanupAndCloseRoom(db, roomId) {
     if (count > 0) await batch.commit();
   }
 
+  // areas
+  {
+    const areasCol = collection(db, `rooms/${roomId}/areas`);
+    const areasSnap = await getDocs(areasCol);
+    let batch = writeBatch(db);
+    let count = 0;
+    for (const docSnap of areasSnap.docs) {
+      batch.delete(doc(db, `rooms/${roomId}/areas/${docSnap.id}`));
+      if (++count >= 450) { await batch.commit(); batch = writeBatch(db); count = 0; }
+    }
+    if (count > 0) await batch.commit();
+  }
+
   // roomClosed を立てる
   await setDoc(doc(db, `rooms/${roomId}`), { roomClosed: true, updatedAt: serverTimestamp() }, { merge: true });
 }
