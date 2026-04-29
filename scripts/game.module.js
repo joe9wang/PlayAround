@@ -1369,7 +1369,7 @@ function isHostAlive(roomMeta) {
 
   }
 
-  const pc = roomMeta?.playerCount || 8;
+  const pc = roomMeta?.playerCount || 10;
 
   const seats = Array.from({ length: pc }, (_, i) => i + 1);
 
@@ -2333,7 +2333,7 @@ function isSeatStale(data) {
 function isRoomEmpty() {
   if (IS_ROOM_CREATOR) return false;
 
-  return [1, 2, 3, 4, 5, 6, 7, 8].every(s => {
+  return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].every(s => {
     const d = currentSeatMap[s];
     return !d || isSeatStale(d) || !d.claimedByUid;
   });
@@ -2425,7 +2425,7 @@ function renderAreaColors() {
 
   const currentSeats = Object.keys(currentSeatMap).map(Number);
 
-  const seatsToCheck = currentSeats.length > 0 ? currentSeats : [1, 2, 3, 4, 5, 6, 7, 8];
+  const seatsToCheck = currentSeats.length > 0 ? currentSeats : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   for (const seat of seatsToCheck) {
 
@@ -2513,7 +2513,7 @@ function bindAreaColorHandlers() {
 
   const currentSeats = Object.keys(currentSeatMap).map(Number);
 
-  const seatsToCheck = currentSeats.length > 0 ? currentSeats : [1, 2, 3, 4, 5, 6, 7, 8];
+  const seatsToCheck = currentSeats.length > 0 ? currentSeats : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   for (const seat of seatsToCheck) {
 
@@ -2671,7 +2671,7 @@ function applyFieldModeLayout() {
   }
 
   // Hide or show `.player-area` nodes dynamically
-  for (let i = 1; i <= 8; i++) {
+  for (let i = 1; i <= 10; i++) {
     const el = document.querySelector(`.player-${i}`);
     if (el) {
       el.style.display = (mode === 'card' && i <= pc) ? '' : 'none';
@@ -2685,7 +2685,7 @@ function applyFieldModeLayout() {
   // ボードモードでの手札表示制御 (playonly の場合は非表示)
   if (mode === 'board') {
     const isPlayOnly = (layout === 'playonly');
-    for (let i = 1; i <= 8; i++) {
+    for (let i = 1; i <= 10; i++) {
       const handEl = document.getElementById(`board-hand-${i}`);
       if (handEl) {
         handEl.style.display = (isPlayOnly || i > pc) ? 'none' : 'block';
@@ -3140,7 +3140,7 @@ function loadSeatStatus(rid) {
 
   // seat docs listen
 
-  const seatDocs = [1, 2, 3, 4, 5, 6, 7, 8].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
+  const seatDocs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => doc(db, `rooms/${roomId}/seats/${n}`));
 
   const unsubs = seatDocs.map((ref, idx) => onSnapshot(ref, snap => {
 
@@ -3212,7 +3212,7 @@ function loadSeatStatus(rid) {
 
       // 現在の全席の状態から、誰かが“生存”しているかを判定
 
-      const someoneFresh = [1, 2, 3, 4, 5, 6, 7, 8].some(n => isFresh(currentSeatMap[n]));
+      const someoneFresh = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].some(n => isFresh(currentSeatMap[n]));
 
       if (someoneFresh) {
 
@@ -5427,7 +5427,7 @@ function applyCardState(card, data) {
 
     let insideSeat = null;
 
-    for (const s of [1, 2, 3, 4, 5, 6, 7, 8]) {
+    for (const s of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
 
       const hb = getHandBoundsForSeat(s);
 
@@ -11678,7 +11678,7 @@ const seatSelectCancel = document.getElementById('seat-select-cancel');
 if (sitSeatBtn) {
   sitSeatBtn.addEventListener('click', () => {
     if (!CURRENT_ROOM_META) return;
-    const maxSeats = parseInt(CURRENT_ROOM_META.playerCount || 4, 10);
+    const maxSeats = parseInt(CURRENT_ROOM_META.playerCount || 10, 10);
     seatSelectGrid.innerHTML = '';
     
     for (let i = 1; i <= maxSeats; i++) {

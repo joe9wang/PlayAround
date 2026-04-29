@@ -5,8 +5,8 @@
 let ctx;
 
 // 共有状態（UI差分反映と巻き戻り防止に必要）
-export const hpValues      = {1:0,2:0,3:0,4:0};
-export const localHpEditAt = {1:0,2:0,3:0,4:0};
+export const hpValues      = {1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0};
+export const localHpEditAt = {1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0};
 let unsubscribeHP = null;
 
 export const hpDocPath = (roomId, seat) => `rooms/${roomId}/hp/p${seat}`;
@@ -34,7 +34,7 @@ export function detachHPListener(){
 export function subscribeHP(roomId){
   detachHPListener();
   const { db, doc, onSnapshot } = ctx;
-  const refs = [1,2,3,4].map(seat => doc(db, hpDocPath(roomId, seat)));
+  const refs = [1,2,3,4,5,6,7,8,9,10].map(seat => doc(db, hpDocPath(roomId, seat)));
   const unsubs = refs.map((ref, idx) => onSnapshot(ref, snap => {
     const seat = idx + 1;
     // ドキュメントが無い時に即0へ“戻す”のをやめる。
@@ -78,7 +78,7 @@ export function renderHPPanel(){
   if (!grid.querySelector('.hp-row')) {
     hpDbg('renderHPPanel: initial UI build');  
     const frag = document.createDocumentFragment();
-    for (const seat of [1,2,3,4]) {
+    for (const seat of [1,2,3,4,5,6,7,8,9,10]) {
       const wrap = document.createElement('div');
       wrap.className = 'hp-row';
       wrap.dataset.seat = String(seat);
@@ -160,7 +160,7 @@ export function renderHPPanel(){
 
   // 差分更新：名前/活性/値のみ更新（入力中は値を上書きしない）
   const { CURRENT_PLAYER, currentSeatMap } = ctx.getState();
-  for (const seat of [1,2,3,4]) {
+  for (const seat of [1,2,3,4,5,6,7,8,9,10]) {
     const row   = grid.querySelector(`.hp-row[data-seat="${seat}"]`);
     const input = row?.querySelector('.hp-input');
     const name  = row?.querySelector('.hp-name');
