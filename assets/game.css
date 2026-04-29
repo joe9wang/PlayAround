@@ -880,6 +880,9 @@ body {
 
 .site-header { position: sticky; top: 0; z-index: 10000; background: #111; color: #fff; }
 .site-header__inner { max-width: 1200px; margin: 0 auto; padding: 10px 12px; display: flex; align-items: center; gap: 16px; }
+.site-nav { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.site-nav a { color: #fff !important; text-decoration: none; font-size: 14px; }
+.site-nav a:hover { text-decoration: underline; }
 .site-footer { background: #fff; border-top: 1px solid #e5e7eb; height: var(--footer-h); display: flex; align-items: center; justify-content: center; padding: 0 12px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 1; }
 
 @media (max-width: 768px) {
