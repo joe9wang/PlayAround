@@ -1144,9 +1144,9 @@ async function showOfficialConfirmation(type) {
   // 候補のパス（複数試す）
   const candidates = (type === 'trump') 
     ? ['spade_A.png', 'heart_A.png', 'diamond_A.png', 'club_A.png']
-    : ['w_king.png', 'w_queen.png', 'b_king.png', 'b_queen.png'];
+    : ['White_king.png', 'White_queen.png', 'Black_king.png', 'Black_queen.png'];
 
-  const baseFolders = (type === 'trump') ? ['image/Trump', 'TrumpPicture'] : ['chess'];
+  const baseFolders = (type === 'trump') ? ['image/Trump', 'TrumpPicture'] : ['image/Chess', 'Chess'];
 
   for (const file of candidates) {
     let url = null;
@@ -1197,11 +1197,11 @@ async function loadOfficialSet(type) {
       cardList.push({ path: JOKER_URL, back: TRUMP_BACK_URL });
       cardList.push({ path: JOKER_URL, back: TRUMP_BACK_URL });
     } else if (type === 'chess') {
-      const colors = ['w', 'b'];
+      const colors = ['White', 'Black'];
       const pieces = ['king', 'queen', 'rook', 'rook', 'bishop', 'bishop', 'knight', 'knight', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn'];
       for (const c of colors) {
         for (const p of pieces) {
-          cardList.push({ path: `chess/${c}_${p}.png`, type: 'image-token' });
+          cardList.push({ path: `image/Chess/${c}_${p}.png`, type: 'image-token' });
         }
       }
     }
