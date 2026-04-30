@@ -853,11 +853,11 @@ body {
 
 #board-layout {
   position: absolute;
-  width: 4200px;
-  height: 3000px;
+  width: 3360px;
+  height: 2400px;
   display: none;
   background: #2d8;
-  border: 12px dashed #666; /* 境界線も太くする */
+  border: 10px dashed #666;
 }
 
 #board-play {
@@ -869,27 +869,27 @@ body {
 
 .board-hand {
   position: absolute;
-  width: 840px;
-  height: 600px;
+  width: 672px;
+  height: 480px;
   background: #228be6;
-  border: 12px dashed #666;
+  border: 10px dashed #666;
   box-sizing: border-box;
   z-index: 200;
-  padding: 30px;
+  padding: 24px;
 }
 
-#board-hand-1 { top: 168px; left: 168px; }
-#board-hand-2 { top: 168px; left: 1176px; }
-#board-hand-3 { top: 168px; left: 2184px; }
-#board-hand-4 { top: 168px; left: 3192px; }
+#board-hand-1 { top: 134px; left: 134px; }
+#board-hand-2 { top: 134px; left: 940px; }
+#board-hand-3 { top: 134px; left: 1746px; }
+#board-hand-4 { top: 134px; left: 2552px; }
 
-#board-hand-5 { top: 1200px; left: 168px; }
-#board-hand-6 { top: 1200px; right: 168px; }
+#board-hand-5 { top: 960px; left: 134px; }
+#board-hand-6 { top: 960px; right: 134px; }
 
-#board-hand-7 { bottom: 168px; left: 168px; }
-#board-hand-8 { bottom: 168px; left: 1176px; }
-#board-hand-9 { bottom: 168px; left: 2184px; }
-#board-hand-10 { bottom: 168px; left: 3192px; }
+#board-hand-7 { bottom: 134px; left: 134px; }
+#board-hand-8 { bottom: 134px; left: 940px; }
+#board-hand-9 { bottom: 134px; left: 1746px; }
+#board-hand-10 { bottom: 134px; left: 2552px; }
 
 #board-center {
   position: absolute;
