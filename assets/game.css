@@ -853,38 +853,43 @@ body {
 
 #board-layout {
   position: absolute;
-  inset: 0;
+  width: 1400px;
+  height: 1000px;
   display: none;
+  background: #2d8;
+  border: 4px dashed #666;
 }
 
 #board-play {
   position: absolute;
   inset: 0;
-  background: #2d8;
-  border: 4px dashed #666;
+  pointer-events: none; /* 背景として扱う */
   z-index: 100;
 }
 
 .board-hand {
   position: absolute;
-  width: 18%;
-  height: 24%;
+  width: 280px; /* 1400 * 20% */
+  height: 200px; /* 1000 * 20% */
   background: #228be6;
   border: 4px dashed #666;
   box-sizing: border-box;
   z-index: 200;
+  padding: 10px;
 }
 
-#board-hand-1 { top: 2%; left: 2%; }
-#board-hand-2 { top: 2%; right: 2%; }
-#board-hand-3 { bottom: 2%; left: 2%; }
-#board-hand-4 { bottom: 2%; right: 2%; }
-#board-hand-5 { top: 2%; left: 50%; transform: translateX(-50%); }
-#board-hand-6 { bottom: 2%; left: 50%; transform: translateX(-50%); }
-#board-hand-7 { left: 2%; top: 50%; transform: translateY(-50%); }
-#board-hand-8 { right: 2%; top: 50%; transform: translateY(-50%); }
-#board-hand-9 { top: 2%; left: 25%; transform: translateX(-50%); }
-#board-hand-10 { top: 2%; right: 25%; transform: translateX(50%); }
+#board-hand-1 { top: 20px; left: 20px; }
+#board-hand-2 { top: 20px; left: 373px; } /* (1400 - 280*4) / 5 = 56px gap. 20+280+56=356... no let's use fixed offsets */
+#board-hand-3 { top: 20px; left: 726px; }
+#board-hand-4 { top: 20px; left: 1080px; }
+
+#board-hand-5 { top: 400px; left: 20px; }
+#board-hand-6 { top: 400px; right: 20px; }
+
+#board-hand-7 { bottom: 20px; left: 20px; }
+#board-hand-8 { bottom: 20px; left: 373px; }
+#board-hand-9 { bottom: 20px; left: 726px; }
+#board-hand-10 { bottom: 20px; left: 1080px; }
 
 #board-center {
   position: absolute;
@@ -904,7 +909,7 @@ body {
 .center-discard { background: #cc6666; border: 4px dashed #666; grid-column: 2; position: relative; }
 
 #field.mode-board .player-area { display: none; }
-#field.mode-board #board-layout { display: block; transform: scale(1.3); transform-origin: center center; }
+#field.mode-board #board-layout { display: block; }
 
 .host-toggle { display: none; margin-top: 12px; padding: 10px 8px; border-top: 1px solid #eee; }
 
