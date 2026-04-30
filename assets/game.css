@@ -904,6 +904,9 @@ body {
   gap: 10px;
   z-index: 200;
 }
+#board-layout.layout-simple #board-center {
+  display: none;
+}
 
 .center-deck { background: #f90; border: 4px dashed #666; grid-column: 1; position: relative; }
 .center-discard { background: #cc6666; border: 4px dashed #666; grid-column: 2; position: relative; }
