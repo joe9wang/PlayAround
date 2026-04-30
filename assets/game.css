@@ -916,6 +916,7 @@ input:checked + .slider:before {
   display: none;
   background: #2d8;
   border: 10px dashed #666;
+  box-sizing: border-box;
 }
 
 #board-play {

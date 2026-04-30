@@ -327,10 +327,14 @@ function applyCardSizeUI() {
 function applyBoardSizeUI() {
   const w = CURRENT_ROOM_META?.boardWidth;
   const h = CURRENT_ROOM_META?.boardHeight;
+  const x = CURRENT_ROOM_META?.boardX;
+  const y = CURRENT_ROOM_META?.boardY;
   const layout = document.getElementById('board-layout');
-  if (layout && w && h) {
-    layout.style.width = w + 'px';
-    layout.style.height = h + 'px';
+  if (layout) {
+    if (w !== undefined) layout.style.width = w + 'px';
+    if (h !== undefined) layout.style.height = h + 'px';
+    if (x !== undefined) layout.style.left = x + 'px';
+    if (y !== undefined) layout.style.top = y + 'px';
   }
 }
 
@@ -10175,6 +10179,8 @@ function subscribeAreas() {
           if (layout && layout.id === 'board-layout') {
             if (data.width !== undefined) layout.style.width = data.width + 'px';
             if (data.height !== undefined) layout.style.height = data.height + 'px';
+            if (data.x !== undefined) layout.style.left = data.x + 'px';
+            if (data.y !== undefined) layout.style.top = data.y + 'px';
           }
         }
 
@@ -11317,10 +11323,26 @@ function makeAreaResizable(el, areaId) {
           newH = startH - delta;
         }
 
+        if (areaId === 'board-play') {
+          const layout = el.parentElement;
+          if (layout && layout.id === 'board-layout') {
+            layout.style.width = newW + 'px';
+            layout.style.height = newH + 'px';
+            layout.style.left = newL + 'px';
+            layout.style.top = newT + 'px';
+            console.log(`[ResizeDebug] board-play move: w=${newW}, h=${newH}, l=${newL}, t=${newT}`);
+          }
+          return;
+        }
+
         el.style.left = newL + 'px';
         el.style.top = newT + 'px';
         el.style.width = newW + 'px';
         el.style.height = newH + 'px';
+
+        if (Math.random() < 0.1) { 
+           console.log(`[ResizeDebug] ${areaId} move: w=${newW}, h=${newH}, l=${newL}, t=${newT}`);
+        }
       };
 
       const onMouseUp = async () => {
@@ -11331,22 +11353,31 @@ function makeAreaResizable(el, areaId) {
         // 保存 (Firestore)
         if (!CURRENT_ROOM) return;
         try {
-          const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${areaId}`);
+          const data = {
+            x: parseFloat(el.style.left) || 0,
+            y: parseFloat(el.style.top) || 0,
+            width: parseFloat(el.style.width) || el.offsetWidth,
+            height: parseFloat(el.style.height) || el.offsetHeight,
+            updatedAt: serverTimestamp()
+          };
+
           if (areaId === 'board-play') {
+            const layout = el.parentElement;
             await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), {
-              boardWidth: parseFloat(el.style.width),
-              boardHeight: parseFloat(el.style.height),
+              boardWidth: parseFloat(layout.style.width) || layout.offsetWidth,
+              boardHeight: parseFloat(layout.style.height) || layout.offsetHeight,
+              boardX: parseFloat(layout.style.left) || 0,
+              boardY: parseFloat(layout.style.top) || 0,
               updatedAt: serverTimestamp()
             }, { merge: true });
+            console.log('[ResizeDebug] Saved board-play to room doc');
           } else {
+            const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${areaId}`);
             await setDoc(docRef, {
-              x: parseFloat(el.style.left),
-              y: parseFloat(el.style.top),
-              width: parseFloat(el.style.width),
-              height: parseFloat(el.style.height),
-              isAbsolute: true, // リサイズ後は絶対配置へ移行
-              updatedAt: serverTimestamp()
+              ...data,
+              isAbsolute: true // リサイズ後は絶対配置へ移行
             }, { merge: true });
+            console.log(`[ResizeDebug] Saved area ${areaId} to areas collection`);
           }
         } catch (err) { console.warn('Area resize save failed', err); }
       };
