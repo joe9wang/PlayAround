@@ -1135,9 +1135,9 @@ async function showOfficialConfirmation(type) {
   if (selectionView) selectionView.style.display = 'none';
   confirmView.style.display = 'block';
 
-  // 簡易プレビュー
+  // 簡易プレビュー（既存のパスにあわせる）
   const previews = (type === 'trump') 
-    ? ['playing-cards/card_spades_A.png', 'playing-cards/card_hearts_A.png', 'playing-cards/card_diamonds_A.png', 'playing-cards/card_clubs_A.png']
+    ? [`${TRUMP_IMG_BASE}/spade_A.png`, `${TRUMP_IMG_BASE}/heart_A.png`, `${TRUMP_IMG_BASE}/diamond_A.png`, `${TRUMP_IMG_BASE}/club_A.png`]
     : ['chess/w_king.png', 'chess/w_queen.png', 'chess/b_king.png', 'chess/b_queen.png'];
 
   detailsList.innerHTML = '';
@@ -1168,15 +1168,15 @@ async function loadOfficialSet(type) {
 
     const cardList = [];
     if (type === 'trump') {
-      const suits = ['spades', 'hearts', 'diamonds', 'clubs'];
-      const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-      for (const s of suits) {
-        for (const r of ranks) {
-          cardList.push({ path: `playing-cards/card_${s}_${r}.png` });
+      const SUITS = ['spade', 'heart', 'diamond', 'club'];
+      const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+      for (const s of SUITS) {
+        for (const r of RANKS) {
+          cardList.push({ path: `${TRUMP_IMG_BASE}/${s}_${r}.png`, back: TRUMP_BACK_URL });
         }
       }
-      cardList.push({ path: 'playing-cards/card_joker_black.png' });
-      cardList.push({ path: 'playing-cards/card_joker_red.png' });
+      cardList.push({ path: JOKER_URL, back: TRUMP_BACK_URL });
+      cardList.push({ path: JOKER_URL, back: TRUMP_BACK_URL });
     } else if (type === 'chess') {
       const colors = ['w', 'b'];
       const pieces = ['king', 'queen', 'rook', 'rook', 'bishop', 'bishop', 'knight', 'knight', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn'];
@@ -1194,6 +1194,8 @@ async function loadOfficialSet(type) {
         zIndex: 1000 + i + z0,
         faceUp: (type === 'trump' ? false : true),
         imageUrl: c.path,
+        fullUrl: c.path,
+        backImageUrl: c.back || '',
         type: c.type || 'normal',
         ownerUid: CURRENT_UID,
         ownerSeat: CURRENT_PLAYER,
@@ -4642,11 +4644,10 @@ function upsertCardFromRemote(id, data) {
 
       cardDomMap.set(id, el);
 
-      // ボードモードなら board-play、そうでなければ field に追加
-      const target = document.getElementById('board-play') || field;
-      target.appendChild(el);
+      // z-index問題を回避するため常に field に追加
+      field.appendChild(el);
 
-      console.log(`[LoadDebug] Card appended to ${target.id}:`, id, "at", data.x, data.y);
+      console.log(`[LoadDebug] Card appended to field:`, id, "at", data.x, data.y);
 
     } else {
 
