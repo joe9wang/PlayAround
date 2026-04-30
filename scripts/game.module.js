@@ -939,29 +939,29 @@ async function loadFromSlot(slot) {
 // ==== 3スロット選択モーダル制御 ====
 
 let SL_MODE = null; // 'save' | 'load'
+let SL_TARGET_SLOT = null;
 
 function openSaveLoadDialog(mode) {
-
   SL_MODE = mode;
-
+  SL_TARGET_SLOT = null;
   const modal = document.getElementById('save-load-modal');
+  if (!modal) return;
+
+  // ビューの初期化
+  const selectionView = document.getElementById('sl-selection-view');
+  const confirmView = document.getElementById('sl-confirm-view');
+  if (selectionView) selectionView.style.display = 'block';
+  if (confirmView) confirmView.style.display = 'none';
 
   const title = document.getElementById('sl-title');
+  if (title) {
+    title.textContent = (mode === 'save') ? '保存先を選択' : 'ロードするマイセットを選択';
+  }
 
-  if (!modal || !title) return;
-
-  title.textContent = (mode === 'save') ? '保存先スロットを選択' : 'ロード元スロットを選択';
-
-
-
-  //▼ロード時にプレビューを更新（非同期）
-
-  if (mode === 'load') updateSlotPreviews();
-
-
+  // プレビューの更新
+  updateSlotPreviews();
 
   modal.style.display = 'flex';
-
 }
 
 // HTMLのonclickから呼べるように window に公開
@@ -973,46 +973,96 @@ window.openSaveLoadDialog = openSaveLoadDialog;
 // 起動時にイベントを束ねる
 
 (function bindSLModal() {
-
   const modal = document.getElementById('save-load-modal');
-
   if (!modal) return;
 
   // 背景クリックで閉じる
-
   modal.addEventListener('click', (e) => {
-
     if (e.target === modal) modal.style.display = 'none';
-
   });
 
   // キャンセル
-
   document.getElementById('sl-cancel')?.addEventListener('click', () => {
-
     modal.style.display = 'none';
-
   });
 
-  // スロット選択
-
-  modal.querySelectorAll('.slot-btn').forEach(btn => {
-
+  // スロット選択（統合ボタン）
+  modal.querySelectorAll('.slot-item-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-
       const slot = parseInt(btn.dataset.slot, 10);
+      SL_TARGET_SLOT = slot;
 
-      modal.style.display = 'none';
-
-      if (SL_MODE === 'save') await saveToSlot(slot);
-
-      else if (SL_MODE === 'load') await loadFromSlot(slot);
-
+      if (SL_MODE === 'save') {
+        // 保存時は今のところ即実行（またはシンプルな確認のみ）
+        modal.style.display = 'none';
+        await saveToSlot(slot);
+      } else {
+        // ロード時は確認画面へ
+        showLoadConfirmation(slot);
+      }
     });
-
   });
 
+  // 確認画面の「いいえ」
+  document.getElementById('sl-confirm-no')?.addEventListener('click', () => {
+    const selectionView = document.getElementById('sl-selection-view');
+    const confirmView = document.getElementById('sl-confirm-view');
+    if (selectionView) selectionView.style.display = 'block';
+    if (confirmView) confirmView.style.display = 'none';
+  });
+
+  // 確認画面の「はい」
+  document.getElementById('sl-confirm-yes')?.addEventListener('click', async () => {
+    if (SL_TARGET_SLOT) {
+      modal.style.display = 'none';
+      await loadFromSlot(SL_TARGET_SLOT);
+    }
+  });
 })();
+
+async function showLoadConfirmation(slot) {
+  const selectionView = document.getElementById('sl-selection-view');
+  const confirmView = document.getElementById('sl-confirm-view');
+  const confirmTitle = document.getElementById('sl-confirm-title');
+  const detailsList = document.getElementById('sl-confirm-details');
+
+  if (!confirmView || !confirmTitle || !detailsList) return;
+
+  confirmTitle.textContent = `マイセット${slot} をロードしますか？`;
+  detailsList.innerHTML = '<div style="padding:20px; color:#666; text-align:center;">読み込み中...</div>';
+  
+  if (selectionView) selectionView.style.display = 'none';
+  confirmView.style.display = 'block';
+
+  try {
+    const cardsRef = collection(db, `${slDocPath(slot)}/cards`);
+    const snap = await getDocs(cardsRef);
+    
+    if (snap.empty) {
+      detailsList.innerHTML = '<div style="padding:20px; color:#aaa; text-align:center;">カードが含まれていません。</div>';
+      return;
+    }
+
+    detailsList.innerHTML = '';
+    for (const d of snap.docs) {
+      const s = d.data() || {};
+      let url = s.fullUrl;
+      if (!url && s.imageUrl) url = await storageDownloadURL(s.imageUrl);
+      if (!url) continue;
+
+      const item = document.createElement('div');
+      item.className = 'sl-detail-item';
+      const img = document.createElement('img');
+      img.src = url;
+      img.crossOrigin = 'anonymous';
+      item.appendChild(img);
+      detailsList.appendChild(item);
+    }
+  } catch (e) {
+    console.error('Failed to load confirmation details', e);
+    detailsList.innerHTML = '<div style="padding:20px; color:red; text-align:center;">データの取得に失敗しました。</div>';
+  }
+}
 
 
 
@@ -1026,7 +1076,7 @@ async function updateSlotPreviews() {
 
     await ensureAuthReady();
 
-    const wrap = document.querySelector('#save-load-modal .sl-preview');
+    const wrap = document.querySelector('#save-load-modal .sl-grid');
 
     if (!wrap) return;
 

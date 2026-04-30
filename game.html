@@ -628,42 +628,74 @@
     </div>
   </div>
 
-  <!-- Save/Load 3スロット選択モーダル -->
+  <!-- Save/Load モーダル -->
   <div id="save-load-modal"
-    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
-    <div
-      style="background:#fff; padding:16px; border-radius:12px; width:420px; max-width:90%; box-shadow:0 6px 24px rgba(0,0,0,.2);">
-      <div id="sl-title" style="font-weight:700; margin-bottom:12px;">スロットを選択</div>
-      <div class="row" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
-        <button class="slot-btn" data-slot="1" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 1</button>
-        <button class="slot-btn" data-slot="2" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 2</button>
-        <button class="slot-btn" data-slot="3" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 3</button>
-        <button class="slot-btn" data-slot="4" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 4</button>
-        <button class="slot-btn" data-slot="5" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 5</button>
-        <button class="slot-btn" data-slot="6" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 6</button>
-        <button class="slot-btn" data-slot="7" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 7</button>
-        <button class="slot-btn" data-slot="8" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 8</button>
-        <button class="slot-btn" data-slot="9" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 9</button>
-        <button class="slot-btn" data-slot="10" style="flex:1 1 auto; min-width:60px; padding:10px;">SLOT 10</button>
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div class="sl-modal-container">
+      
+      <!-- スロット選択ビュー -->
+      <div id="sl-selection-view">
+        <div id="sl-title" style="font-weight:700; margin-bottom:12px; font-size:16px;">ロードするマイセットを選択</div>
+        <div class="sl-grid" id="sl-grid">
+          <!-- 1〜10のスロットを統合ボタンとして配置 -->
+          <button class="slot-item-btn" data-slot="1">
+            <span class="slot-label">マイセット1</span>
+            <div class="slot-preview" data-slot="1"></div>
+          </button>
+          <button class="slot-item-btn" data-slot="2">
+            <span class="slot-label">マイセット2</span>
+            <div class="slot-preview" data-slot="2"></div>
+          </button>
+          <button class="slot-item-btn" data-slot="3">
+            <span class="slot-label">マイセット3</span>
+            <div class="slot-preview" data-slot="3"></div>
+          </button>
+          <button class="slot-item-btn" data-slot="4">
+            <span class="slot-label">マイセット4</span>
+            <div class="slot-preview" data-slot="4"></div>
+          </button>
+          <button class="slot-item-btn" data-slot="5">
+            <span class="slot-label">マイセット5</span>
+            <div class="slot-preview" data-slot="5"></div>
+          </button>
+          <button class="slot-item-btn" data-slot="6">
+            <span class="slot-label">マイセット6</span>
+            <div class="slot-preview" data-slot="6"></div>
+          </button>
+          <button class="slot-item-btn" data-slot="7">
+            <span class="slot-label">マイセット7</span>
+            <div class="slot-preview" data-slot="7"></div>
+          </button>
+          <button class="slot-item-btn" data-slot="8">
+            <span class="slot-label">マイセット8</span>
+            <div class="slot-preview" data-slot="8"></div>
+          </button>
+          <button class="slot-item-btn" data-slot="9">
+            <span class="slot-label">マイセット9</span>
+            <div class="slot-preview" data-slot="9"></div>
+          </button>
+          <button class="slot-item-btn" data-slot="10">
+            <span class="slot-label">マイセット10</span>
+            <div class="slot-preview" data-slot="10"></div>
+          </button>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+          <button id="sl-cancel">キャンセル</button>
+        </div>
       </div>
 
-      <!-- ▼スロットごとのプレビュー（各5枚） -->
-      <div class="sl-preview" aria-live="polite" style="margin-bottom:12px;">
-        <div class="slot-preview" data-slot="1"><span class="empty">空き</span></div>
-        <div class="slot-preview" data-slot="2"><span class="empty">空き</span></div>
-        <div class="slot-preview" data-slot="3"><span class="empty">空き</span></div>
-        <div class="slot-preview" data-slot="4"><span class="empty">空き</span></div>
-        <div class="slot-preview" data-slot="5"><span class="empty">空き</span></div>
-        <div class="slot-preview" data-slot="6"><span class="empty">空き</span></div>
-        <div class="slot-preview" data-slot="7"><span class="empty">空き</span></div>
-        <div class="slot-preview" data-slot="8"><span class="empty">空き</span></div>
-        <div class="slot-preview" data-slot="9"><span class="empty">空き</span></div>
-        <div class="slot-preview" data-slot="10"><span class="empty">空き</span></div>
+      <!-- ロード確認ビュー -->
+      <div id="sl-confirm-view" style="display:none;">
+        <div id="sl-confirm-title" style="font-weight:700; margin-bottom:12px; font-size:16px;">[マイセット名] をロードしますか？</div>
+        <div id="sl-confirm-details" class="sl-details-list">
+          <!-- ここに全カードの詳細（画像等）を並べる -->
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+          <button id="sl-confirm-no">いいえ</button>
+          <button id="sl-confirm-yes" style="background:#007bff; color:#fff; font-weight:700;">はい (ロード実行)</button>
+        </div>
       </div>
 
-      <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button id="sl-cancel">キャンセル</button>
-      </div>
     </div>
   </div>
 
