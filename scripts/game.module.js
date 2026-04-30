@@ -1146,7 +1146,9 @@ async function showOfficialConfirmation(type) {
     ? ['spade_A.png', 'heart_A.png', 'diamond_A.png', 'club_A.png']
     : ['White_king.png', 'White_queen.png', 'Black_king.png', 'Black_queen.png'];
 
-  const baseFolders = (type === 'trump') ? ['image/Trump', 'TrumpPicture'] : ['image/Chess', 'Chess'];
+  const baseFolders = (type === 'trump') 
+    ? ['image/Trump', 'TrumpPicture', 'trump', 'Trump', 'images/Trump'] 
+    : ['image/Chess', 'Chess', 'chess', 'ChessSet'];
 
   for (const file of candidates) {
     let url = null;
