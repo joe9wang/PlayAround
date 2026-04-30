@@ -1870,24 +1870,23 @@ function getHandBoundsForSeat(seat) {
 
 function getDeckBoundsForSeat(seat) {
 
-  // board と trump のときは「中央の共有デッキ（#board-center .center-deck）」を使う
-
   const mode = CURRENT_ROOM_META?.fieldMode;
 
   if (mode === 'board' || mode === 'trump') {
-
-    const el = document.querySelector('#board-center .center-deck');
-
-    return rectFromEl(el);
-
+    // ボードモード時は .board-hand-N を探す
+    const el = document.querySelector(`#board-hand-${seat}`);
+    if (el) return rectFromEl(el);
+    
+    // なければ共有エリアの中央
+    const shared = document.querySelector('#board-play');
+    if (shared) return rectFromEl(shared);
   }
 
-  // それ以外（通常のカードモード）は各プレイヤーのデッキエリア
-
+  // 通常モードは .player-N .deck-area
   const deck = document.querySelector(`.player-${seat} .deck-area`);
+  if (deck) return rectFromEl(deck);
 
-  return rectFromEl(deck);
-
+  return null;
 }
 
 
@@ -2037,6 +2036,22 @@ function centerOfMainPlay(seat, w, h) {
 }
 
 
+
+
+
+function centerOfDeck(seat, w, h) {
+  const b = getDeckBoundsForSeat(seat);
+  
+  // 取得できない、または非表示要素の場合は安全なデフォルト位置を返す
+  if (!b || (b.width === 0 && b.height === 0)) {
+    console.warn("[LoadDebug] Could not get bounds for seat:", seat, "using fallback.");
+    return { x: 400, y: 300 }; // 画面中央付近に出す
+  }
+
+  const x = Math.round(b.minX + (b.width - (w || 0)) / 2);
+  const y = Math.round(b.minY + (b.height - (h || 0)) / 2);
+  return { x, y };
+}
 
 
 
@@ -3256,7 +3271,7 @@ function loadSeatStatus(rid) {
 
 
 
-  // ※ ここで updatedAt を書かない（以前は軽く触るだけで1書き込み発生していた）
+// ※ ここで updatedAt を書かない（以前は軽く触るだけで1書き込み発生していた）
 
 
 
@@ -4487,15 +4502,23 @@ function upsertCardFromRemote(id, data) {
   if (!exists && !isLocalRecent(id)) {
     console.log("[LoadDebug] Creating new card DOM for:", id);
     el = createCardDom(id, data.imageUrl, data);
+
     if (el) {
+
       cardDomMap.set(id, el);
+
       // ボードモードなら board-play、そうでなければ field に追加
       const target = document.getElementById('board-play') || field;
       target.appendChild(el);
+
       console.log(`[LoadDebug] Card appended to ${target.id}:`, id, "at", data.x, data.y);
+
     } else {
+
       console.error("[LoadDebug] Failed to create card DOM for:", id);
+
     }
+
   }
 
   if (el) applyCardState(el, data);
@@ -7918,8 +7941,6 @@ window.collectMyCardsToDeck = async function () {
 
 
 
-
-
 //集める前に確認ダイアログを出す（削除と同じ体験）
 
 window.confirmCollectMyCardsToDeck = async function () {
@@ -9443,26 +9464,6 @@ function initializePlayField() {
 const rollBtn = document.getElementById('roll-d6-btn');
 
 rollBtn?.addEventListener('click', () => window.rollD6());
-
-
-
-
-
-//▼デッキ中央（w,h考慮）を返す
-
-function centerOfDeck(seat, w, h) {
-
-  const b = getDeckBoundsForSeat(seat); // board/trumpなら共有デッキ、通常は自席デッキ
-
-  if (!b) return { x: 0, y: 0 };
-
-  const x = Math.round(b.minX + (b.width - (w || 0)) / 2);
-
-  const y = Math.round(b.minY + (b.height - (h || 0)) / 2);
-
-  return { x, y };
-
-}
 
 
 
