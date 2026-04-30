@@ -304,12 +304,36 @@ const toggleOtherOpsText = document.getElementById('toggle-other-ops-text');
 const btnModeCard = document.getElementById('btn-mode-card');
 const btnModeBoard = document.getElementById('btn-mode-board');
 
+const hostCardWInput = document.getElementById('host-card-w');
+const hostCardHInput = document.getElementById('host-card-h');
+
 
 
 function applyOtherOpsUI() {
   const on = !!(CURRENT_ROOM_META?.allowOthersMove || CURRENT_ROOM_META?.allowOtherOps);
   if (toggleOtherOpsInput) toggleOtherOpsInput.checked = on;
   if (toggleOtherOpsText) toggleOtherOpsText.textContent = on ? 'ON' : 'OFF';
+}
+
+function applyCardSizeUI() {
+  const w = CURRENT_ROOM_META?.cardWidth || 120;
+  const h = CURRENT_ROOM_META?.cardHeight || 160;
+  if (hostCardWInput) hostCardWInput.value = w;
+  if (hostCardHInput) hostCardHInput.value = h;
+  document.documentElement.style.setProperty('--card-w', `${w}px`);
+  document.documentElement.style.setProperty('--card-h', `${h}px`);
+}
+
+async function updateCardSize(w, h) {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (!isHost) return;
+  try {
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { 
+      cardWidth: parseInt(w, 10), 
+      cardHeight: parseInt(h, 10),
+      updatedAt: serverTimestamp() 
+    }, { merge: true });
+  } catch (e) { console.warn('Update card size failed', e); }
 }
 
 
@@ -333,6 +357,9 @@ toggleOtherOpsInput?.addEventListener('change', async () => {
   } catch (e) { console.warn('toggle allowOthersMove failed', e); }
 
 });
+
+hostCardWInput?.addEventListener('change', () => updateCardSize(hostCardWInput.value, hostCardHInput.value));
+hostCardHInput?.addEventListener('change', () => updateCardSize(hostCardWInput.value, hostCardHInput.value));
 
 let CURRENT_LAYOUT_SELECTION = 'standard';
 window.selectLayoutOption = function(type) {
@@ -3123,6 +3150,7 @@ function loadSeatStatus(rid) {
     // UI反映
 
     applyOtherOpsUI();
+    applyCardSizeUI();
 
     applyFieldModeLayout();
 
@@ -11744,6 +11772,7 @@ if (sitSeatBtn) {
         updateEndRoomButtonVisibility();
         updateLeaveRoomButtonVisibility();
         applyOtherOpsUI();
+        applyCardSizeUI();
         
         // Host takes seat, we might want to update room doc if they are host
         const isHost = CURRENT_ROOM_META?.hostUid === CURRENT_UID;
@@ -11780,6 +11809,7 @@ if (leaveSeatBtn) {
     updateEndRoomButtonVisibility();
     updateLeaveRoomButtonVisibility();
     applyOtherOpsUI();
+    applyCardSizeUI();
     renderHPPanel();
     
     try { stopHeartbeat(); } catch (_) { }
