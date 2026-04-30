@@ -842,13 +842,22 @@ async function loadFromSlot(slot) {
 
   try {
 
-    const cardsCol = collection(db, `${slDocPath(slot)}/cards`);
+    console.log("[LoadDebug] Starting loadFromSlot", { slot, CURRENT_ROOM, CURRENT_PLAYER });
+    
+    // 現在の描画コンテナを特定
+    const fieldContainer = document.getElementById('board-play') || document.getElementById('field');
+    console.log("[LoadDebug] Target container:", fieldContainer?.id);
 
+    const cardsCol = collection(db, `${slDocPath(slot)}/cards`);
     const snap = await getDocs(cardsCol);
 
-    if (snap.empty) { alert(`SLOT ${slot} は空です。`); return; }
+    if (snap.empty) { 
+      console.warn("[LoadDebug] Slot is empty", slot);
+      alert(`SLOT ${slot} は空です。`); 
+      return; 
+    }
 
-
+    console.log("[LoadDebug] Found cards:", snap.size);
 
     // 現在ルームに生成（追加）。所有者は現在の自分。
 
@@ -860,9 +869,13 @@ async function loadFromSlot(slot) {
 
 
 
-    //▼この座席のデッキ中央を基準にする（少しずつズラして重なり回避）
-
+    //▼この座席のデッキ中央を基準にする
     const basePos = centerOfDeck(CURRENT_PLAYER, CARD_W, CARD_H);
+    console.log("[LoadDebug] Calculated basePos:", basePos);
+
+    // デバッグ用: 座標が極端な場合は 0,0 にリセットして見えるようにする
+    if (basePos.x < -5000 || basePos.x > 5000) basePos.x = 100;
+    if (basePos.y < -5000 || basePos.y > 5000) basePos.y = 100;
 
 
 
@@ -1014,6 +1027,7 @@ window.openSaveLoadDialog = openSaveLoadDialog;
   // 確認画面の「はい」
   document.getElementById('sl-confirm-yes')?.addEventListener('click', async () => {
     if (SL_TARGET_SLOT) {
+      console.log("[LoadDebug] User confirmed load for slot:", SL_TARGET_SLOT);
       modal.style.display = 'none';
       await loadFromSlot(SL_TARGET_SLOT);
     }
@@ -4471,13 +4485,17 @@ function upsertCardFromRemote(id, data) {
   }
 
   if (!exists && !isLocalRecent(id)) {
-
+    console.log("[LoadDebug] Creating new card DOM for:", id);
     el = createCardDom(id, data.imageUrl, data);
-
-    cardDomMap.set(id, el);
-
-    field.appendChild(el);
-
+    if (el) {
+      cardDomMap.set(id, el);
+      // ボードモードなら board-play、そうでなければ field に追加
+      const target = document.getElementById('board-play') || field;
+      target.appendChild(el);
+      console.log(`[LoadDebug] Card appended to ${target.id}:`, id, "at", data.x, data.y);
+    } else {
+      console.error("[LoadDebug] Failed to create card DOM for:", id);
+    }
   }
 
   if (el) applyCardState(el, data);
