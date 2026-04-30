@@ -245,6 +245,45 @@ body {
   line-height: 1;
 }
 
+/* Toggle Switch (Slide bar) */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #ccc;
+  transition: .3s;
+  border-radius: 22px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+input:checked + .slider {
+  background-color: #2e7d32; /* 緑色 */
+}
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
 #sidebar button.danger {
   background: #c62828;
   color: #fff;
