@@ -2735,9 +2735,12 @@ function applyFieldModeLayout() {
   // ホストの場合、ボードレイアウトの各エリアをリサイズ可能にする
   if (mode === 'board') {
     const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
+    console.log('[ResizeDebug] applyFieldModeLayout - mode:board, isHost:', isHost);
     if (isHost) {
       const areaSelectors = ['#board-play', '.board-hand', '#board-center', '.center-deck', '.center-discard', '.dynamic-area'];
-      document.querySelectorAll(areaSelectors.join(',')).forEach(el => {
+      const targets = document.querySelectorAll(areaSelectors.join(','));
+      console.log(`[ResizeDebug] Found ${targets.length} target elements for resizing`);
+      targets.forEach(el => {
         const id = el.id || el.dataset.areaId;
         if (id) makeAreaResizable(el, id);
       });
@@ -11240,6 +11243,8 @@ function makeAreaResizable(el, areaId) {
   if (el.dataset.resizableBound === 'true') return;
   el.dataset.resizableBound = 'true';
 
+  console.log(`[ResizeDebug] Initializing handles for: ${areaId}`);
+
   const positions = ['n', 's', 'w', 'e', 'nw', 'ne', 'sw', 'se'];
   positions.forEach(pos => {
     const handle = document.createElement('div');
@@ -11247,6 +11252,7 @@ function makeAreaResizable(el, areaId) {
     el.appendChild(handle);
 
     handle.addEventListener('mousedown', (e) => {
+      console.log(`[ResizeDebug] Handle clicked: ${pos} on ${areaId}`);
       e.preventDefault();
       e.stopPropagation();
 
@@ -11352,8 +11358,7 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
   if (!isNew) {
 
     const isBoardArea = !!areaEl.closest('#board-layout');
-
-    const boardScale = isBoardArea ? 1.3 : 1.0;
+    const boardScale = 1.0; // scale(1.3)廃止に伴い 1.0 固定
 
 
 

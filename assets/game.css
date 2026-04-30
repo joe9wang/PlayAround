@@ -1060,19 +1060,19 @@ body.collapse-right .edge-right { display: inline-flex; }
 /* === Area Resizing Handles === */
 .resize-handle {
   position: absolute;
-  background: rgba(255, 0, 0, 0);
-  z-index: 1000;
+  background: rgba(0, 0, 0, 0.05); /* わずかに色をつけて場所をわかりやすくする */
+  z-index: 10000;
   transition: background 0.2s;
 }
-.mode-board .resize-handle:hover { background: rgba(255, 0, 0, 0.2); }
-.resize-handle.n { top: -5px; left: 10px; right: 10px; height: 10px; cursor: n-resize; }
-.resize-handle.s { bottom: -5px; left: 10px; right: 10px; height: 10px; cursor: s-resize; }
-.resize-handle.w { left: -5px; top: 10px; bottom: 10px; width: 10px; cursor: w-resize; }
-.resize-handle.e { right: -5px; top: 10px; bottom: 10px; width: 10px; cursor: e-resize; }
-.resize-handle.nw { top: -5px; left: -5px; width: 15px; height: 15px; cursor: nw-resize; }
-.resize-handle.ne { top: -5px; right: -5px; width: 15px; height: 15px; cursor: ne-resize; }
-.resize-handle.sw { bottom: -5px; left: -5px; width: 15px; height: 15px; cursor: sw-resize; }
-.resize-handle.se { bottom: -5px; right: -5px; width: 15px; height: 15px; cursor: se-resize; }
+.resize-handle:hover { background: rgba(255, 0, 0, 0.3) !important; }
+.resize-handle.n { top: -8px; left: 0; right: 0; height: 16px; cursor: n-resize; }
+.resize-handle.s { bottom: -8px; left: 0; right: 0; height: 16px; cursor: s-resize; }
+.resize-handle.w { left: -8px; top: 0; bottom: 0; width: 16px; cursor: w-resize; }
+.resize-handle.e { right: -8px; top: 0; bottom: 0; width: 16px; cursor: e-resize; }
+.resize-handle.nw { top: -8px; left: -8px; width: 20px; height: 20px; cursor: nw-resize; z-index: 10001; }
+.resize-handle.ne { top: -8px; right: -8px; width: 20px; height: 20px; cursor: ne-resize; z-index: 10001; }
+.resize-handle.sw { bottom: -8px; left: -8px; width: 20px; height: 20px; cursor: sw-resize; z-index: 10001; }
+.resize-handle.se { bottom: -8px; right: -8px; width: 20px; height: 20px; cursor: se-resize; z-index: 10001; }
 .area-resizing { outline: 2px solid #ff0000 !important; z-index: 10001 !important; }
 
 /* === Animations === */
