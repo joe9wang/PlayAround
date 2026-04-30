@@ -383,6 +383,12 @@ btnModeCard?.addEventListener('click', () => {
   PENDING_FIELD_MODE = 'card';
   const currentLayout = CURRENT_ROOM_META?.fieldLayout || 'standard';
   window.selectLayoutOption(currentLayout);
+
+  const simpleImg = document.getElementById('layout-img-simple');
+  const standardImg = document.getElementById('layout-img-standard');
+  if (simpleImg) simpleImg.src = 'image/Field_simple_type.png';
+  if (standardImg) standardImg.src = 'image/Field_standard_type.png';
+
   const modal = document.getElementById('field-layout-modal');
   if (modal) modal.style.display = 'flex';
 });
@@ -394,6 +400,12 @@ btnModeBoard?.addEventListener('click', () => {
   PENDING_FIELD_MODE = 'board';
   const currentLayout = CURRENT_ROOM_META?.fieldLayout || 'standard';
   window.selectLayoutOption(currentLayout);
+
+  const simpleImg = document.getElementById('layout-img-simple');
+  const standardImg = document.getElementById('layout-img-standard');
+  if (simpleImg) simpleImg.src = 'image/board simple.png';
+  if (standardImg) standardImg.src = 'image/board standard.png';
+
   const modal = document.getElementById('field-layout-modal');
   if (modal) modal.style.display = 'flex';
 });
