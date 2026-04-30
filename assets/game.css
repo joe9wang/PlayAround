@@ -921,7 +921,6 @@ input:checked + .slider:before {
 #board-play {
   position: absolute;
   inset: 0;
-  pointer-events: none; /* 背景として扱う */
   z-index: 100;
 }
 

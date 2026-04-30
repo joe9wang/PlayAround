@@ -11256,9 +11256,9 @@ function makeAreaResizable(el, areaId) {
       const fieldRect = field.getBoundingClientRect();
       const z = typeof zoom !== 'undefined' ? zoom : 1;
       
-      // ボードレイアウト全体に transform: scale(1.3) がかかっている場合の補正
+      // ボードレイアウト全体のスケーリング補正 (現在は 1.0)
       const isBoardArea = !!el.closest('#board-layout');
-      const bScale = isBoardArea ? 1.3 : 1.0;
+      const bScale = 1.0; 
       const totalScale = z * bScale;
 
       // 倍率を考慮したベースの幅と高さ
