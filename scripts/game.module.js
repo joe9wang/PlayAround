@@ -324,6 +324,16 @@ function applyCardSizeUI() {
   document.documentElement.style.setProperty('--card-h', `${h}px`);
 }
 
+function applyBoardSizeUI() {
+  const w = CURRENT_ROOM_META?.boardWidth;
+  const h = CURRENT_ROOM_META?.boardHeight;
+  const layout = document.getElementById('board-layout');
+  if (layout && w && h) {
+    layout.style.width = w + 'px';
+    layout.style.height = h + 'px';
+  }
+}
+
 async function updateCardSize(w, h) {
   const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
   if (!isHost) return;
@@ -3154,6 +3164,7 @@ function loadSeatStatus(rid) {
 
     applyOtherOpsUI();
     applyCardSizeUI();
+    applyBoardSizeUI();
 
     applyFieldModeLayout();
 
@@ -10158,6 +10169,15 @@ function subscribeAreas() {
         if (data.width !== undefined) el.style.width = (data.width * multX) + 'px';
         if (data.height !== undefined) el.style.height = (data.height * multY) + 'px';
 
+        // board-play の場合は親の #board-layout も同期する
+        if (id === 'board-play') {
+          const layout = el.parentElement;
+          if (layout && layout.id === 'board-layout') {
+            if (data.width !== undefined) layout.style.width = data.width + 'px';
+            if (data.height !== undefined) layout.style.height = data.height + 'px';
+          }
+        }
+
       } else {
         // グリッド等に属している場合、実測のピクセル幅（ベース）を計り、正確に倍率を掛けます。
         el.style.width = '';
@@ -11312,14 +11332,22 @@ function makeAreaResizable(el, areaId) {
         if (!CURRENT_ROOM) return;
         try {
           const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${areaId}`);
-          await setDoc(docRef, {
-            x: parseFloat(el.style.left),
-            y: parseFloat(el.style.top),
-            width: parseFloat(el.style.width),
-            height: parseFloat(el.style.height),
-            isAbsolute: true, // リサイズ後は絶対配置へ移行
-            updatedAt: serverTimestamp()
-          }, { merge: true });
+          if (areaId === 'board-play') {
+            await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), {
+              boardWidth: parseFloat(el.style.width),
+              boardHeight: parseFloat(el.style.height),
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+          } else {
+            await setDoc(docRef, {
+              x: parseFloat(el.style.left),
+              y: parseFloat(el.style.top),
+              width: parseFloat(el.style.width),
+              height: parseFloat(el.style.height),
+              isAbsolute: true, // リサイズ後は絶対配置へ移行
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+          }
         } catch (err) { console.warn('Area resize save failed', err); }
       };
 
@@ -11778,6 +11806,7 @@ if (sitSeatBtn) {
         updateLeaveRoomButtonVisibility();
         applyOtherOpsUI();
         applyCardSizeUI();
+        applyBoardSizeUI();
         
         // Host takes seat, we might want to update room doc if they are host
         const isHost = CURRENT_ROOM_META?.hostUid === CURRENT_UID;
@@ -11815,6 +11844,7 @@ if (leaveSeatBtn) {
     updateLeaveRoomButtonVisibility();
     applyOtherOpsUI();
     applyCardSizeUI();
+    applyBoardSizeUI();
     renderHPPanel();
     
     try { stopHeartbeat(); } catch (_) { }

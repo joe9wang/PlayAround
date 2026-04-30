@@ -1060,7 +1060,7 @@ body.collapse-right .edge-right { display: inline-flex; }
 /* === Area Resizing Handles === */
 .resize-handle {
   position: absolute;
-  background: rgba(0, 0, 0, 0.05); /* わずかに色をつけて場所をわかりやすくする */
+  background: transparent !important;
   z-index: 10000;
   transition: background 0.2s;
 }
