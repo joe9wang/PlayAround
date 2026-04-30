@@ -1135,44 +1135,20 @@ async function showOfficialConfirmation(type) {
   if (selectionView) selectionView.style.display = 'none';
   confirmView.style.display = 'block';
 
-  // 簡易プレビュー（既存のパスにあわせる）
-  const previews = (type === 'trump') 
-    ? [`${TRUMP_IMG_BASE}/spade_A.png`, `${TRUMP_IMG_BASE}/heart_A.png`, `${TRUMP_IMG_BASE}/diamond_A.png`, `${TRUMP_IMG_BASE}/club_A.png`]
-    : ['chess/w_king.png', 'chess/w_queen.png', 'chess/b_king.png', 'chess/b_queen.png'];
-
   detailsList.innerHTML = '';
-  // 候補のパス（複数試す）
+  // 公式セットはサーバー上のローカルファイルなので直接パスを指定する
   const candidates = (type === 'trump') 
-    ? ['spade_A.png', 'heart_A.png', 'diamond_A.png', 'club_A.png']
-    : ['White_king.png', 'White_queen.png', 'Black_king.png', 'Black_queen.png'];
+    ? [`${TRUMP_IMG_BASE}/spade_A.png`, `${TRUMP_IMG_BASE}/heart_A.png`, `${TRUMP_IMG_BASE}/diamond_A.png`, `${TRUMP_IMG_BASE}/club_A.png`]
+    : [`image/Chess/White_king.png`, `image/Chess/White_queen.png`, `image/Chess/Black_king.png`, `image/Chess/Black_queen.png` ];
 
-  const baseFolders = (type === 'trump') 
-    ? ['image/Trump', 'TrumpPicture', 'trump', 'Trump', 'images/Trump'] 
-    : ['image/Chess', 'Chess', 'chess', 'ChessSet'];
-
-  for (const file of candidates) {
-    let url = null;
-    for (const folder of baseFolders) {
-      try {
-        const fullPath = `${folder}/${file}`;
-        console.log("[PreviewDebug] Trying path:", fullPath);
-        url = await storageDownloadURL(fullPath);
-        if (url) {
-          console.log("[PreviewDebug] SUCCESS! Found URL for:", fullPath);
-          break;
-        }
-      } catch(e) {}
-    }
-    
-    if (url) {
-      const item = document.createElement('div');
-      item.className = 'sl-detail-item';
-      const img = document.createElement('img');
-      img.src = url;
-      img.crossOrigin = 'anonymous';
-      item.appendChild(img);
-      detailsList.appendChild(item);
-    }
+  for (const fullPath of candidates) {
+    const item = document.createElement('div');
+    item.className = 'sl-detail-item';
+    const img = document.createElement('img');
+    img.src = fullPath; // 直接サーバー上のパスを指定
+    img.crossOrigin = 'anonymous';
+    item.appendChild(img);
+    detailsList.appendChild(item);
   }
   const msg = document.createElement('div');
   msg.style.cssText = "grid-column: 1/-1; text-align:center; padding:10px; color:#888; font-size:12px;";
@@ -1498,7 +1474,6 @@ async function storageDownloadURL(path) {
 
   try {
 
-    console.log("[StorageDebug] Requesting:", path, "Bucket:", storage.app.options.storageBucket);
     return await getDownloadURL(ref(storage, path));
 
   } catch (e) {
@@ -5510,11 +5485,6 @@ function createCardDom(cardId, imageSrc, state) {
 
 function applyCardState(card, data) {
   if (!card || !data) return;
-  // デバッグ：実際にセットされているURLを確認
-  if (data.imageUrl && !card.dataset.debugLogged) {
-     console.log("[CardDebug] Applying state for card:", data.imageUrl, "current src:", card.querySelector('img')?.src);
-     card.dataset.debugLogged = "true";
-  }
 
   card.dataset.ownerUid = data.ownerUid || '';
 
@@ -7649,9 +7619,7 @@ function centerOfBoardDeck(w, h) {
 }
 
 function buildTrumpFrontUrl(suit, rank) {
-  const url = `${TRUMP_IMG_BASE}/${suit}_${rank}.png`;
-  console.log("[TrumpDebug] Generated front URL:", url);
-  return url;
+  return `${TRUMP_IMG_BASE}/${suit}_${rank}.png`;
 }
 
 async function spawnTrumpDeck(roomId) {
