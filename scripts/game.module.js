@@ -1152,8 +1152,13 @@ async function showOfficialConfirmation(type) {
     let url = null;
     for (const folder of baseFolders) {
       try {
-        url = await storageDownloadURL(`${folder}/${file}`);
-        if (url) break;
+        const fullPath = `${folder}/${file}`;
+        console.log("[PreviewDebug] Trying path:", fullPath);
+        url = await storageDownloadURL(fullPath);
+        if (url) {
+          console.log("[PreviewDebug] SUCCESS! Found URL for:", fullPath);
+          break;
+        }
       } catch(e) {}
     }
     
@@ -1491,6 +1496,7 @@ async function storageDownloadURL(path) {
 
   try {
 
+    console.log("[StorageDebug] Requesting:", path);
     return await getDownloadURL(ref(storage, path));
 
   } catch (e) {
@@ -7635,7 +7641,9 @@ function centerOfBoardDeck(w, h) {
 }
 
 function buildTrumpFrontUrl(suit, rank) {
-  return `${TRUMP_IMG_BASE}/${suit}_${rank}.png`;
+  const url = `${TRUMP_IMG_BASE}/${suit}_${rank}.png`;
+  console.log("[TrumpDebug] Generated front URL:", url);
+  return url;
 }
 
 async function spawnTrumpDeck(roomId) {
