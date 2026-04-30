@@ -1141,9 +1141,23 @@ async function showOfficialConfirmation(type) {
     : ['chess/w_king.png', 'chess/w_queen.png', 'chess/b_king.png', 'chess/b_queen.png'];
 
   detailsList.innerHTML = '';
-  for (const path of previews) {
-    try {
-      const url = await storageDownloadURL(path);
+  // 候補のパス（複数試す）
+  const candidates = (type === 'trump') 
+    ? ['spade_A.png', 'heart_A.png', 'diamond_A.png', 'club_A.png']
+    : ['w_king.png', 'w_queen.png', 'b_king.png', 'b_queen.png'];
+
+  const baseFolders = (type === 'trump') ? ['image/Trump', 'TrumpPicture'] : ['chess'];
+
+  for (const file of candidates) {
+    let url = null;
+    for (const folder of baseFolders) {
+      try {
+        url = await storageDownloadURL(`${folder}/${file}`);
+        if (url) break;
+      } catch(e) {}
+    }
+    
+    if (url) {
       const item = document.createElement('div');
       item.className = 'sl-detail-item';
       const img = document.createElement('img');
@@ -1151,7 +1165,7 @@ async function showOfficialConfirmation(type) {
       img.crossOrigin = 'anonymous';
       item.appendChild(img);
       detailsList.appendChild(item);
-    } catch(e) {}
+    }
   }
   const msg = document.createElement('div');
   msg.style.cssText = "grid-column: 1/-1; text-align:center; padding:10px; color:#888; font-size:12px;";
