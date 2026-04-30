@@ -635,50 +635,42 @@
       
       <!-- スロット選択ビュー -->
       <div id="sl-selection-view">
-        <div id="sl-title" style="font-weight:700; margin-bottom:12px; font-size:16px;">ロードするマイセットを選択</div>
-        <div class="sl-grid" id="sl-grid">
-          <!-- 1〜10のスロットを統合ボタンとして配置 -->
-          <button class="slot-item-btn" data-slot="1">
-            <span class="slot-label">マイセット1</span>
-            <div class="slot-preview" data-slot="1"></div>
-          </button>
-          <button class="slot-item-btn" data-slot="2">
-            <span class="slot-label">マイセット2</span>
-            <div class="slot-preview" data-slot="2"></div>
-          </button>
-          <button class="slot-item-btn" data-slot="3">
-            <span class="slot-label">マイセット3</span>
-            <div class="slot-preview" data-slot="3"></div>
-          </button>
-          <button class="slot-item-btn" data-slot="4">
-            <span class="slot-label">マイセット4</span>
-            <div class="slot-preview" data-slot="4"></div>
-          </button>
-          <button class="slot-item-btn" data-slot="5">
-            <span class="slot-label">マイセット5</span>
-            <div class="slot-preview" data-slot="5"></div>
-          </button>
-          <button class="slot-item-btn" data-slot="6">
-            <span class="slot-label">マイセット6</span>
-            <div class="slot-preview" data-slot="6"></div>
-          </button>
-          <button class="slot-item-btn" data-slot="7">
-            <span class="slot-label">マイセット7</span>
-            <div class="slot-preview" data-slot="7"></div>
-          </button>
-          <button class="slot-item-btn" data-slot="8">
-            <span class="slot-label">マイセット8</span>
-            <div class="slot-preview" data-slot="8"></div>
-          </button>
-          <button class="slot-item-btn" data-slot="9">
-            <span class="slot-label">マイセット9</span>
-            <div class="slot-preview" data-slot="9"></div>
-          </button>
-          <button class="slot-item-btn" data-slot="10">
-            <span class="slot-label">マイセット10</span>
-            <div class="slot-preview" data-slot="10"></div>
-          </button>
+        <div class="sl-modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div id="sl-title" style="font-weight:700; font-size:16px;">ロードするマイセットを選択</div>
+          <div class="sl-tabs" id="sl-tabs" style="display:flex; gap:4px; background:#f1f3f5; padding:4px; border-radius:8px;">
+            <button class="sl-tab active" data-target="myset" style="padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.05);">マイセット</button>
+            <button class="sl-tab" data-target="official" style="padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; background:none; color:#666;">公式セット</button>
+          </div>
         </div>
+
+        <div id="sl-tab-content-myset" class="sl-tab-pane active">
+          <div class="sl-grid" id="sl-grid">
+            <button class="slot-item-btn" data-slot="1"><span class="slot-label">マイセット1</span><div class="slot-preview" data-slot="1"></div></button>
+            <button class="slot-item-btn" data-slot="2"><span class="slot-label">マイセット2</span><div class="slot-preview" data-slot="2"></div></button>
+            <button class="slot-item-btn" data-slot="3"><span class="slot-label">マイセット3</span><div class="slot-preview" data-slot="3"></div></button>
+            <button class="slot-item-btn" data-slot="4"><span class="slot-label">マイセット4</span><div class="slot-preview" data-slot="4"></div></button>
+            <button class="slot-item-btn" data-slot="5"><span class="slot-label">マイセット5</span><div class="slot-preview" data-slot="5"></div></button>
+            <button class="slot-item-btn" data-slot="6"><span class="slot-label">マイセット6</span><div class="slot-preview" data-slot="6"></div></button>
+            <button class="slot-item-btn" data-slot="7"><span class="slot-label">マイセット7</span><div class="slot-preview" data-slot="7"></div></button>
+            <button class="slot-item-btn" data-slot="8"><span class="slot-label">マイセット8</span><div class="slot-preview" data-slot="8"></div></button>
+            <button class="slot-item-btn" data-slot="9"><span class="slot-label">マイセット9</span><div class="slot-preview" data-slot="9"></div></button>
+            <button class="slot-item-btn" data-slot="10"><span class="slot-label">マイセット10</span><div class="slot-preview" data-slot="10"></div></button>
+          </div>
+        </div>
+
+        <div id="sl-tab-content-official" class="sl-tab-pane" style="display:none;">
+          <div class="sl-grid">
+            <button class="slot-item-btn official-btn" data-official="trump">
+              <span class="slot-label">トランプ (54枚)</span>
+              <div class="slot-preview"><span class="empty">52枚 + ジョーカー2枚</span></div>
+            </button>
+            <button class="slot-item-btn official-btn" data-official="chess">
+              <span class="slot-label">チェス (32枚)</span>
+              <div class="slot-preview"><span class="empty">各色16枚セット</span></div>
+            </button>
+          </div>
+        </div>
+
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
           <button id="sl-cancel">キャンセル</button>
         </div>

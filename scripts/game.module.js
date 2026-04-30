@@ -953,10 +953,12 @@ async function loadFromSlot(slot) {
 
 let SL_MODE = null; // 'save' | 'load'
 let SL_TARGET_SLOT = null;
+let SL_OFFICIAL_TYPE = null; // 'trump' | 'chess'
 
 function openSaveLoadDialog(mode) {
   SL_MODE = mode;
   SL_TARGET_SLOT = null;
+  SL_OFFICIAL_TYPE = null;
   const modal = document.getElementById('save-load-modal');
   if (!modal) return;
 
@@ -966,9 +968,17 @@ function openSaveLoadDialog(mode) {
   if (selectionView) selectionView.style.display = 'block';
   if (confirmView) confirmView.style.display = 'none';
 
+  // タブの初期化
+  const tabs = document.getElementById('sl-tabs');
+  if (tabs) {
+    // 保存時はマイセットのみにするためタブを隠す
+    tabs.style.display = (mode === 'save') ? 'none' : 'flex';
+    switchSLTab('myset');
+  }
+
   const title = document.getElementById('sl-title');
   if (title) {
-    title.textContent = (mode === 'save') ? '保存先を選択' : 'ロードするマイセットを選択';
+    title.textContent = (mode === 'save') ? '保存先を選択' : 'ロードするセットを選択';
   }
 
   // プレビューの更新
@@ -977,7 +987,24 @@ function openSaveLoadDialog(mode) {
   modal.style.display = 'flex';
 }
 
-// HTMLのonclickから呼べるように window に公開
+function switchSLTab(target) {
+  const modal = document.getElementById('save-load-modal');
+  if (!modal) return;
+
+  // ボタンのスタイル更新
+  modal.querySelectorAll('.sl-tab').forEach(btn => {
+    const active = btn.dataset.target === target;
+    btn.classList.toggle('active', active);
+    btn.style.background = active ? '#fff' : 'none';
+    btn.style.boxShadow = active ? '0 2px 4px rgba(0,0,0,0.05)' : 'none';
+    btn.style.color = active ? '#000' : '#666';
+  });
+
+  // コンテンツの表示更新
+  modal.querySelectorAll('.sl-tab-pane').forEach(pane => {
+    pane.style.display = (pane.id === `sl-tab-content-${target}`) ? 'block' : 'none';
+  });
+}
 
 window.openSaveLoadDialog = openSaveLoadDialog;
 
@@ -999,20 +1026,34 @@ window.openSaveLoadDialog = openSaveLoadDialog;
     modal.style.display = 'none';
   });
 
-  // スロット選択（統合ボタン）
-  modal.querySelectorAll('.slot-item-btn').forEach(btn => {
+  // タブ切り替え
+  modal.querySelectorAll('.sl-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchSLTab(btn.dataset.target));
+  });
+
+  // スロット選択（マイセット統合ボタン）
+  modal.querySelectorAll('.slot-item-btn:not(.official-btn)').forEach(btn => {
     btn.addEventListener('click', async () => {
       const slot = parseInt(btn.dataset.slot, 10);
       SL_TARGET_SLOT = slot;
+      SL_OFFICIAL_TYPE = null;
 
       if (SL_MODE === 'save') {
-        // 保存時は今のところ即実行（またはシンプルな確認のみ）
         modal.style.display = 'none';
         await saveToSlot(slot);
       } else {
-        // ロード時は確認画面へ
         showLoadConfirmation(slot);
       }
+    });
+  });
+
+  // 公式セット選択
+  modal.querySelectorAll('.official-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.dataset.official;
+      SL_OFFICIAL_TYPE = type;
+      SL_TARGET_SLOT = null;
+      showOfficialConfirmation(type);
     });
   });
 
@@ -1026,10 +1067,11 @@ window.openSaveLoadDialog = openSaveLoadDialog;
 
   // 確認画面の「はい」
   document.getElementById('sl-confirm-yes')?.addEventListener('click', async () => {
+    modal.style.display = 'none';
     if (SL_TARGET_SLOT) {
-      console.log("[LoadDebug] User confirmed load for slot:", SL_TARGET_SLOT);
-      modal.style.display = 'none';
       await loadFromSlot(SL_TARGET_SLOT);
+    } else if (SL_OFFICIAL_TYPE) {
+      await loadOfficialSet(SL_OFFICIAL_TYPE);
     }
   });
 })();
@@ -1075,6 +1117,99 @@ async function showLoadConfirmation(slot) {
   } catch (e) {
     console.error('Failed to load confirmation details', e);
     detailsList.innerHTML = '<div style="padding:20px; color:red; text-align:center;">データの取得に失敗しました。</div>';
+  }
+}
+
+async function showOfficialConfirmation(type) {
+  const selectionView = document.getElementById('sl-selection-view');
+  const confirmView = document.getElementById('sl-confirm-view');
+  const confirmTitle = document.getElementById('sl-confirm-title');
+  const detailsList = document.getElementById('sl-confirm-details');
+
+  if (!confirmView || !confirmTitle || !detailsList) return;
+
+  const label = (type === 'trump') ? 'トランプ (54枚)' : 'チェス (32枚)';
+  confirmTitle.textContent = `${label} をロードしますか？`;
+  detailsList.innerHTML = '<div style="padding:20px; color:#666; text-align:center;">セット内容を準備中...</div>';
+  
+  if (selectionView) selectionView.style.display = 'none';
+  confirmView.style.display = 'block';
+
+  // 簡易プレビュー
+  const previews = (type === 'trump') 
+    ? ['playing-cards/card_spades_A.png', 'playing-cards/card_hearts_A.png', 'playing-cards/card_diamonds_A.png', 'playing-cards/card_clubs_A.png']
+    : ['chess/w_king.png', 'chess/w_queen.png', 'chess/b_king.png', 'chess/b_queen.png'];
+
+  detailsList.innerHTML = '';
+  for (const path of previews) {
+    try {
+      const url = await storageDownloadURL(path);
+      const item = document.createElement('div');
+      item.className = 'sl-detail-item';
+      const img = document.createElement('img');
+      img.src = url;
+      img.crossOrigin = 'anonymous';
+      item.appendChild(img);
+      detailsList.appendChild(item);
+    } catch(e) {}
+  }
+  const msg = document.createElement('div');
+  msg.style.cssText = "grid-column: 1/-1; text-align:center; padding:10px; color:#888; font-size:12px;";
+  msg.textContent = (type === 'trump') ? "全54枚のカードがロードされます" : "白黒各16枚、計32枚の駒がロードされます";
+  detailsList.appendChild(msg);
+}
+
+async function loadOfficialSet(type) {
+  try {
+    const baseCards = collection(db, `rooms/${CURRENT_ROOM}/cards`);
+    let batch = writeBatch(db), n = 0, i = 0;
+    const z0 = Date.now() % 10000;
+    const basePos = centerOfDeck(CURRENT_PLAYER, CARD_W, CARD_H);
+
+    const cardList = [];
+    if (type === 'trump') {
+      const suits = ['spades', 'hearts', 'diamonds', 'clubs'];
+      const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+      for (const s of suits) {
+        for (const r of ranks) {
+          cardList.push({ path: `playing-cards/card_${s}_${r}.png` });
+        }
+      }
+      cardList.push({ path: 'playing-cards/card_joker_black.png' });
+      cardList.push({ path: 'playing-cards/card_joker_red.png' });
+    } else if (type === 'chess') {
+      const colors = ['w', 'b'];
+      const pieces = ['king', 'queen', 'rook', 'rook', 'bishop', 'bishop', 'knight', 'knight', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn'];
+      for (const c of colors) {
+        for (const p of pieces) {
+          cardList.push({ path: `chess/${c}_${p}.png`, type: 'image-token' });
+        }
+      }
+    }
+
+    for (const c of cardList) {
+      const payload = {
+        x: basePos.x + (i % 10) * 2,
+        y: basePos.y + Math.floor(i / 10) * 2,
+        zIndex: 1000 + i + z0,
+        faceUp: (type === 'trump' ? false : true),
+        imageUrl: c.path,
+        type: c.type || 'normal',
+        ownerUid: CURRENT_UID,
+        ownerSeat: CURRENT_PLAYER,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      batch.set(doc(baseCards), payload);
+      if (++n >= 450) { await batch.commit(); batch = writeBatch(db); n = 0; }
+      i++;
+    }
+
+    if (n > 0) await batch.commit();
+    postLog(`公式セット「${type}」をロードしました`);
+  } catch (e) {
+    console.error(e);
+    alert('公式セットのロードに失敗しました');
   }
 }
 
