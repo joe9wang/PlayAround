@@ -853,11 +853,11 @@ body {
 
 #board-layout {
   position: absolute;
-  width: 1400px;
-  height: 1000px;
+  width: 4200px;
+  height: 3000px;
   display: none;
   background: #2d8;
-  border: 4px dashed #666;
+  border: 12px dashed #666; /* 境界線も太くする */
 }
 
 #board-play {
@@ -869,27 +869,27 @@ body {
 
 .board-hand {
   position: absolute;
-  width: 280px; /* 1400 * 20% */
-  height: 200px; /* 1000 * 20% */
+  width: 840px;
+  height: 600px;
   background: #228be6;
-  border: 4px dashed #666;
+  border: 12px dashed #666;
   box-sizing: border-box;
   z-index: 200;
-  padding: 10px;
+  padding: 30px;
 }
 
-#board-hand-1 { top: 20px; left: 20px; }
-#board-hand-2 { top: 20px; left: 373px; } /* (1400 - 280*4) / 5 = 56px gap. 20+280+56=356... no let's use fixed offsets */
-#board-hand-3 { top: 20px; left: 726px; }
-#board-hand-4 { top: 20px; left: 1080px; }
+#board-hand-1 { top: 168px; left: 168px; }
+#board-hand-2 { top: 168px; left: 1176px; }
+#board-hand-3 { top: 168px; left: 2184px; }
+#board-hand-4 { top: 168px; left: 3192px; }
 
-#board-hand-5 { top: 400px; left: 20px; }
-#board-hand-6 { top: 400px; right: 20px; }
+#board-hand-5 { top: 1200px; left: 168px; }
+#board-hand-6 { top: 1200px; right: 168px; }
 
-#board-hand-7 { bottom: 20px; left: 20px; }
-#board-hand-8 { bottom: 20px; left: 373px; }
-#board-hand-9 { bottom: 20px; left: 726px; }
-#board-hand-10 { bottom: 20px; left: 1080px; }
+#board-hand-7 { bottom: 168px; left: 168px; }
+#board-hand-8 { bottom: 168px; left: 1176px; }
+#board-hand-9 { bottom: 168px; left: 2184px; }
+#board-hand-10 { bottom: 168px; left: 3192px; }
 
 #board-center {
   position: absolute;
