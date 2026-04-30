@@ -1498,7 +1498,7 @@ async function storageDownloadURL(path) {
 
   try {
 
-    console.log("[StorageDebug] Requesting:", path);
+    console.log("[StorageDebug] Requesting:", path, "Bucket:", storage.app.options.storageBucket);
     return await getDownloadURL(ref(storage, path));
 
   } catch (e) {
@@ -5509,6 +5509,12 @@ function createCardDom(cardId, imageSrc, state) {
 
 
 function applyCardState(card, data) {
+  if (!card || !data) return;
+  // デバッグ：実際にセットされているURLを確認
+  if (data.imageUrl && !card.dataset.debugLogged) {
+     console.log("[CardDebug] Applying state for card:", data.imageUrl, "current src:", card.querySelector('img')?.src);
+     card.dataset.debugLogged = "true";
+  }
 
   card.dataset.ownerUid = data.ownerUid || '';
 
