@@ -11622,6 +11622,8 @@ function makeBoardResizable(card, cardId) {
 
     handle.addEventListener('mousedown', (e) => {
       if (!canOperateCard(card, 'move')) return;
+      if (!card.classList.contains('selected')) return; // 選択中のみリサイズ可能
+
       e.preventDefault();
       e.stopPropagation();
 

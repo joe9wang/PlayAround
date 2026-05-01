@@ -1064,6 +1064,8 @@ body.collapse-right .edge-right { display: inline-flex; }
   background: transparent !important;
   z-index: 10000;
   transition: background 0.2s;
+  pointer-events: none; /* 非選択時は反応させない */
+  display: none;        /* 非選択時は消す */
 }
 .resize-handle:hover { background: rgba(255, 0, 0, 0.3) !important; }
 .resize-handle.n { top: -8px; left: 0; right: 0; height: 16px; cursor: n-resize; }
@@ -1080,6 +1082,8 @@ body.collapse-right .edge-right { display: inline-flex; }
 .card.is-board.selected .resize-handle {
   background: rgba(0, 123, 255, 0.2) !important;
   border: 1px solid #007bff;
+  pointer-events: auto; /* 選択中のみ反応させる */
+  display: block;        /* 選択中のみ表示する */
 }
 .card.is-board.selected .resize-handle:hover {
   background: rgba(0, 123, 255, 0.6) !important;
