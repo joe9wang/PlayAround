@@ -3111,12 +3111,16 @@ async function generateBoardPreview() {
       const drawH = pos.h * scale;
 
       const bgColor = style.backgroundColor;
+      const border = style.borderStyle;
+
+      // デバッグログ
+      console.log(`[PreviewDebug] Drawing Area: ${el.id || el.className}, bg=${bgColor}, border=${border}, rect=`, pos);
+
       if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
         ctx.fillStyle = bgColor;
         ctx.fillRect(drawX, drawY, drawW, drawH);
       }
 
-      const border = style.borderStyle;
       if (border && border !== 'none') {
         ctx.strokeStyle = style.borderColor || 'rgba(255,255,255,0.2)';
         ctx.lineWidth = Math.max(1, 1 * scale);
