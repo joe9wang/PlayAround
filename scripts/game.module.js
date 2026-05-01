@@ -11543,14 +11543,12 @@ function makeAreaResizable(el, areaId) {
               boardY: data.y,
               updatedAt: serverTimestamp()
             }, { merge: true });
-            console.log('[ResizeDebug] Saved board-layout to room doc');
           } else {
             const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${areaId}`);
             await setDoc(docRef, {
               ...data,
               isAbsolute: true
             }, { merge: true });
-            console.log(`[ResizeDebug] Saved area ${areaId} to areas collection`);
           }
         } catch (err) { console.warn('Area resize save failed', err); }
       };
