@@ -2957,12 +2957,9 @@ function applyFieldModeLayout() {
 
   // ホストの場合、ボードレイアウトの各エリアをリサイズ可能にする
   if (mode === 'board') {
-    const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
-    console.log('[ResizeDebug] applyFieldModeLayout - mode:board, isHost:', isHost);
     if (isHost) {
       const areaSelectors = ['#board-layout', '.board-hand', '#board-center', '.center-deck', '.center-discard', '.dynamic-area'];
       const targets = document.querySelectorAll(areaSelectors.join(','));
-      console.log(`[ResizeDebug] Found ${targets.length} target elements for resizing`);
       targets.forEach(el => {
         const id = el.id || el.dataset.areaId;
         if (id) makeAreaResizable(el, id);
@@ -11467,8 +11464,6 @@ function makeAreaResizable(el, areaId) {
   if (el.dataset.resizableBound === 'true') return;
   el.dataset.resizableBound = 'true';
 
-  console.log(`[ResizeDebug] Initializing handles for: ${areaId}`);
-
   const positions = ['n', 's', 'w', 'e', 'nw', 'ne', 'sw', 'se'];
   positions.forEach(pos => {
     const handle = document.createElement('div');
@@ -11476,7 +11471,6 @@ function makeAreaResizable(el, areaId) {
     el.appendChild(handle);
 
     handle.addEventListener('mousedown', (e) => {
-      console.log(`[ResizeDebug] Handle clicked: ${pos} on ${areaId}`);
       e.preventDefault();
       e.stopPropagation();
 
@@ -11493,8 +11487,6 @@ function makeAreaResizable(el, areaId) {
       const startH = startRect.height / totalScale;
       const startL = (startRect.left - fieldRect.left) / totalScale;
       const startT = (startRect.top - fieldRect.top) / totalScale;
-
-      console.log(`[ResizeDebug] Start ${areaId}: startL=${startL}, startT=${startT}, startW=${startW}, startH=${startH}, zoom=${z}`);
 
       el.classList.add('area-resizing');
 
@@ -11524,10 +11516,6 @@ function makeAreaResizable(el, areaId) {
         el.style.top = newT + 'px';
         el.style.width = newW + 'px';
         el.style.height = newH + 'px';
-
-        if (Math.random() < 0.1) { 
-           console.log(`[ResizeDebug] ${areaId} move: w=${newW}, h=${newH}, l=${newL}, t=${newT}, z=${z}`);
-        }
       };
 
       const onMouseUp = async () => {
