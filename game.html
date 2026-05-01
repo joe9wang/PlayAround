@@ -108,14 +108,14 @@
     style="height: var(--upload-h); display: flex; align-items: stretch; border-bottom: 2px solid #ccc; user-select: none; margin: 0; padding: 0;">
     <div id="upload-card" class="upload-box"
       style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-right: 1px solid #ccc; background: #fff; cursor: pointer;">
-      <div style="font-weight:bold;">🃏 カードを追加</div>
-      <div style="font-size:10px; color:#666; margin-top:2px;">（タップまたはD&D）</div>
+      <div style="font-weight:bold;" data-i18n="game.addCard">🃏 カードを追加</div>
+      <div style="font-size:10px; color:#666; margin-top:2px;" data-i18n="game.addCard.sub">（画像をカードサイズにして生成）</div>
       <input accept="image/*" id="file-input-card" multiple="" type="file" style="display:none;" />
     </div>
     <div id="upload-token" class="upload-box"
       style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-left: 1px solid #ccc; background: #fff; cursor: pointer;">
-      <div style="font-weight:bold;">🪙 トークンを追加</div>
-      <div style="font-size:10px; color:#666; margin-top:2px;">（原画サイズ）</div>
+      <div style="font-weight:bold;" data-i18n="game.addToken">🪙 コマ・ボードを追加</div>
+      <div style="font-size:10px; color:#666; margin-top:2px;" data-i18n="game.addToken.sub">（画像のサイズを変えずに生成）</div>
       <input accept="image/*" id="file-input-token" multiple="" type="file" style="display:none;" />
     </div>
   </div>
