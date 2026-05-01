@@ -1094,7 +1094,7 @@ body.collapse-right .edge-right { display: inline-flex; }
 
 /* === Board Mode Area Resizing (Host Only) === */
 /* ボードモードのエリア用リサイズハンドルを表示・操作可能にする */
-#board-play > .resize-handle,
+#board-layout > .resize-handle,
 .board-hand > .resize-handle,
 #board-center > .resize-handle,
 .center-deck > .resize-handle,
@@ -1105,7 +1105,7 @@ body.collapse-right .edge-right { display: inline-flex; }
   background: rgba(0, 0, 0, 0.05);
 }
 
-#board-play > .resize-handle:hover,
+#board-layout > .resize-handle:hover,
 .board-hand > .resize-handle:hover,
 #board-center > .resize-handle:hover,
 .center-deck > .resize-handle:hover,

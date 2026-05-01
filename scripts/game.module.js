@@ -2960,7 +2960,7 @@ function applyFieldModeLayout() {
     const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
     console.log('[ResizeDebug] applyFieldModeLayout - mode:board, isHost:', isHost);
     if (isHost) {
-      const areaSelectors = ['#board-play', '.board-hand', '#board-center', '.center-deck', '.center-discard', '.dynamic-area'];
+      const areaSelectors = ['#board-layout', '.board-hand', '#board-center', '.center-deck', '.center-discard', '.dynamic-area'];
       const targets = document.querySelectorAll(areaSelectors.join(','));
       console.log(`[ResizeDebug] Found ${targets.length} target elements for resizing`);
       targets.forEach(el => {
@@ -11467,11 +11467,7 @@ function makeAreaResizable(el, areaId) {
   if (el.dataset.resizableBound === 'true') return;
   el.dataset.resizableBound = 'true';
 
-  // #board-play の場合は親の #board-layout をリサイズ対象にする
-  const isBoardPlay = (areaId === 'board-play' && el.parentElement?.id === 'board-layout');
-  const resizeTarget = isBoardPlay ? el.parentElement : el;
-
-  console.log(`[ResizeDebug] Initializing handles for: ${areaId} (Target: ${resizeTarget.id || 'unknown'})`);
+  console.log(`[ResizeDebug] Initializing handles for: ${areaId}`);
 
   const positions = ['n', 's', 'w', 'e', 'nw', 'ne', 'sw', 'se'];
   positions.forEach(pos => {
@@ -11486,22 +11482,19 @@ function makeAreaResizable(el, areaId) {
 
       const startX = e.clientX;
       const startY = e.clientY;
-      // 基準座標はリサイズ対象（layout等）から取得
-      const startRect = resizeTarget.getBoundingClientRect();
+      const startRect = el.getBoundingClientRect();
       const fieldRect = field.getBoundingClientRect();
       const z = typeof zoom !== 'undefined' ? zoom : 1;
       
-      // ボードレイアウト全体のスケーリング補正 (現在は 1.0)
       const bScale = 1.0; 
       const totalScale = z * bScale;
 
-      // 倍率を考慮したベースの幅と高さ
       const startW = startRect.width / totalScale;
       const startH = startRect.height / totalScale;
       const startL = (startRect.left - fieldRect.left) / totalScale;
       const startT = (startRect.top - fieldRect.top) / totalScale;
 
-      console.log(`[ResizeDebug] Start ${areaId}: target=${resizeTarget.id}, startL=${startL}, startT=${startT}, startW=${startW}, startH=${startH}, zoom=${z}`);
+      console.log(`[ResizeDebug] Start ${areaId}: startL=${startL}, startT=${startT}, startW=${startW}, startH=${startH}, zoom=${z}`);
 
       el.classList.add('area-resizing');
 
@@ -11527,21 +11520,12 @@ function makeAreaResizable(el, areaId) {
           newH = startH - delta;
         }
 
-        // 対象要素のスタイルを更新
-        resizeTarget.style.left = newL + 'px';
-        resizeTarget.style.top = newT + 'px';
-        resizeTarget.style.width = newW + 'px';
-        resizeTarget.style.height = newH + 'px';
+        el.style.left = newL + 'px';
+        el.style.top = newT + 'px';
+        el.style.width = newW + 'px';
+        el.style.height = newH + 'px';
 
-        // #board-play 自身にスタイルが残っていると親の変更を妨げる可能性があるためクリア
-        if (isBoardPlay) {
-          el.style.left = '';
-          el.style.top = '';
-          el.style.width = '';
-          el.style.height = '';
-        }
-
-        if (Math.random() < 0.1 || true) { // デバッグのため頻度を上げる
+        if (Math.random() < 0.1) { 
            console.log(`[ResizeDebug] ${areaId} move: w=${newW}, h=${newH}, l=${newL}, t=${newT}, z=${z}`);
         }
       };
@@ -11551,18 +11535,17 @@ function makeAreaResizable(el, areaId) {
         document.removeEventListener('mouseup', onMouseUp);
         el.classList.remove('area-resizing');
 
-        // 保存 (Firestore)
         if (!CURRENT_ROOM) return;
         try {
           const data = {
-            x: parseFloat(resizeTarget.style.left) || 0,
-            y: parseFloat(resizeTarget.style.top) || 0,
-            width: parseFloat(resizeTarget.style.width) || resizeTarget.offsetWidth,
-            height: parseFloat(resizeTarget.style.height) || resizeTarget.offsetHeight,
+            x: parseFloat(el.style.left) || 0,
+            y: parseFloat(el.style.top) || 0,
+            width: parseFloat(el.style.width) || el.offsetWidth,
+            height: parseFloat(el.style.height) || el.offsetHeight,
             updatedAt: serverTimestamp()
           };
 
-          if (areaId === 'board-play') {
+          if (areaId === 'board-layout' || areaId === 'board-play') {
             await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), {
               boardWidth: data.width,
               boardHeight: data.height,
@@ -11570,12 +11553,12 @@ function makeAreaResizable(el, areaId) {
               boardY: data.y,
               updatedAt: serverTimestamp()
             }, { merge: true });
-            console.log('[ResizeDebug] Saved board-play to room doc');
+            console.log('[ResizeDebug] Saved board-layout to room doc');
           } else {
             const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${areaId}`);
             await setDoc(docRef, {
               ...data,
-              isAbsolute: true // リサイズ後は絶対配置へ移行
+              isAbsolute: true
             }, { merge: true });
             console.log(`[ResizeDebug] Saved area ${areaId} to areas collection`);
           }
