@@ -11501,6 +11501,8 @@ function makeAreaResizable(el, areaId) {
       const startL = (startRect.left - fieldRect.left) / totalScale;
       const startT = (startRect.top - fieldRect.top) / totalScale;
 
+      console.log(`[ResizeDebug] Start ${areaId}: target=${resizeTarget.id}, startL=${startL}, startT=${startT}, startW=${startW}, startH=${startH}, zoom=${z}`);
+
       el.classList.add('area-resizing');
 
       const onMouseMove = (moveEvent) => {
@@ -11531,8 +11533,16 @@ function makeAreaResizable(el, areaId) {
         resizeTarget.style.width = newW + 'px';
         resizeTarget.style.height = newH + 'px';
 
-        if (Math.random() < 0.1) { 
-           console.log(`[ResizeDebug] ${areaId} move: w=${newW}, h=${newH}, l=${newL}, t=${newT}`);
+        // #board-play 自身にスタイルが残っていると親の変更を妨げる可能性があるためクリア
+        if (isBoardPlay) {
+          el.style.left = '';
+          el.style.top = '';
+          el.style.width = '';
+          el.style.height = '';
+        }
+
+        if (Math.random() < 0.1 || true) { // デバッグのため頻度を上げる
+           console.log(`[ResizeDebug] ${areaId} move: w=${newW}, h=${newH}, l=${newL}, t=${newT}, z=${z}`);
         }
       };
 
