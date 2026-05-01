@@ -3052,9 +3052,11 @@ async function generateBoardPreview() {
     ];
     const rawAreas = Array.from(field.querySelectorAll(selectors.join(',')));
     const areas = [...new Set(rawAreas)].filter(el => {
-      // 非表示の要素は除外
+      // 非表示の要素、またはリサイズハンドルは除外
       const s = window.getComputedStyle(el);
-      return s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
+      if (s.display === 'none' || s.visibility === 'hidden' || s.opacity === '0') return false;
+      if (el.classList.contains('resize-handle')) return false;
+      return true;
     });
     
     console.log(`[Preview] 有効なエリア候補数: ${areas.length}`);
@@ -3111,16 +3113,12 @@ async function generateBoardPreview() {
       const drawH = pos.h * scale;
 
       const bgColor = style.backgroundColor;
-      const border = style.borderStyle;
-
-      // デバッグログ
-      console.log(`[PreviewDebug] Drawing Area: ${el.id || el.className}, bg=${bgColor}, border=${border}, rect=`, pos);
-
       if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
         ctx.fillStyle = bgColor;
         ctx.fillRect(drawX, drawY, drawW, drawH);
       }
 
+      const border = style.borderStyle;
       if (border && border !== 'none') {
         ctx.strokeStyle = style.borderColor || 'rgba(255,255,255,0.2)';
         ctx.lineWidth = Math.max(1, 1 * scale);
