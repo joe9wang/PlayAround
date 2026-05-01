@@ -5270,33 +5270,30 @@ function createCardDom(cardId, imageSrc, state) {
 
 
       if (imgEl) {
-
         if (nextFaceUp) {
-
           imgEl.style.display = 'block';
-
           c.style.backgroundColor = '#fff';
-
+          c.classList.remove('has-back');
+          c.style.backgroundImage = '';
         } else {
-
           imgEl.style.display = 'none';
-
           applyCardBackStyle(c);
-
         }
-
       }
 
 
 
-      const tokenEl = c.querySelector('.token-input');
-
       if (tokenEl) {
-
-        if (nextFaceUp) { tokenEl.style.display = 'block'; c.style.backgroundColor = '#fff'; }
-
-        else { tokenEl.style.display = 'none'; c.style.backgroundColor = '#000'; }
-
+        if (nextFaceUp) {
+          tokenEl.style.display = 'block';
+          c.style.backgroundColor = '#fff';
+          c.classList.remove('has-back');
+          c.style.backgroundImage = '';
+        } else {
+          tokenEl.style.display = 'none';
+          c.style.backgroundColor = '#000';
+          applyCardBackStyle(c); // トークンでも背面画像があれば表示可能に
+        }
       }
 
 
@@ -5539,6 +5536,14 @@ function applyCardState(card, data) {
         card.style.backgroundColor = '#fff';
         card.classList.remove('has-back');
         card.style.backgroundImage = '';
+        // 裏面画像をあらかじめセット（プリロード）しておく。
+        // background-imageをセットしても、表の<img>タグやbackgroundColorが白なので隠れる。
+        const seat = parseInt(card.dataset.ownerSeat || '0', 10);
+        const backUrl = card.dataset.backImageUrl || seatBackUrl(seat);
+        if (backUrl) {
+          const tempImg = new Image();
+          tempImg.src = backUrl;
+        }
       } else {
         img.style.display = 'none';
         applyCardBackStyle(card);
@@ -6855,63 +6860,40 @@ window.updateOverlapBadges = function () {
 
 
 window.faceDownAll = async function () {
-
   const batch = writeBatch(db);
-
   let count = 0;
-
   for (const [id, el] of cardDomMap) {
-
     if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
     if (el.classList.contains('memo')) continue;
-
     el.dataset.faceUp = 'false';
-
     const imgEl = el.querySelector('img'); if (imgEl) imgEl.style.display = 'none';
-
-    el.style.backgroundColor = '#000';
-
+    const tokenEl = el.querySelector('.token-input'); if (tokenEl) tokenEl.style.display = 'none';
+    applyCardBackStyle(el);
     batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { faceUp: false });
-
     if (++count >= 450) { await batch.commit(); count = 0; }
-
   }
-
   if (count > 0) await batch.commit();
-
   setPreview();
-
-  //postLog('自分のカードをすべて裏にしました');
-
 }
 
 
 
 window.faceUpAll = async function () {
-
   const batch = writeBatch(db);
-
   let count = 0;
-
   for (const [id, el] of cardDomMap) {
     if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
     if (el.classList.contains('memo')) continue;
     el.dataset.faceUp = 'true';
-
     const imgEl = el.querySelector('img'); if (imgEl) imgEl.style.display = 'block';
-
+    const tokenEl = el.querySelector('.token-input'); if (tokenEl) tokenEl.style.display = 'block';
     el.style.backgroundColor = '#fff';
-
+    el.classList.remove('has-back');
+    el.style.backgroundImage = '';
     batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { faceUp: true });
-
     if (++count >= 450) { await batch.commit(); count = 0; }
-
   }
-
   if (count > 0) await batch.commit();
-
-  //postLog('自分のカードをすべて表にしました');
-
 }
 
 
