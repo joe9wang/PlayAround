@@ -66,3 +66,8 @@ export const ROOM_EMPTY_GRACE_MS = 15 * 60 * 1000; // 15分
 
 export const ACTIVE_WINDOW_MS = 30_000;
 export const IDLE_KEEPALIVE_MS = 300_000;
+
+// --- Layer ranges (z-index) ---
+export const Z_BACK_BASE = 0;
+export const Z_CENTER_BASE = 10000;
+export const Z_FRONT_BASE = 20000;

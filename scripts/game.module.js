@@ -96,7 +96,9 @@ import {
 
   ROOM_PING_MS, WRITE_FLUSH_MS, MAX_BATCH_OPS, ROOM_EMPTY_GRACE_MS,
 
-  ACTIVE_WINDOW_MS, IDLE_KEEPALIVE_MS
+  ACTIVE_WINDOW_MS, IDLE_KEEPALIVE_MS,
+
+  Z_BACK_BASE, Z_CENTER_BASE, Z_FRONT_BASE
 
 } from './state.js';
 
@@ -3426,21 +3428,13 @@ function loadSeatStatus(rid) {
       // 互換重視なら Object.assign を使う（spreadが苦手な環境でもOK）
 
       currentSeatMap[idx + 1] = Object.assign(
-
         {},
-
         currentSeatMap[idx + 1] || {},
-
         {
-
           displayName: d.displayName || '',
-
           claimedByUid: d.claimedByUid || null,
-
           heartbeatAt: d.heartbeatAt || null,
-
           areaColors: d.areaColors || {},
-
           // 追加: 背面画像URL（オーナーが選択したもの）
 
           backImageUrl: d.backImageUrl || null,
@@ -3905,12 +3899,11 @@ if (previewTop) {
 }
 
 const uploadCard = document.getElementById("upload-card");
-
 const fileInputCard = document.getElementById("file-input-card");
-
-const uploadToken = document.getElementById("upload-token");
-
-const fileInputToken = document.getElementById("file-input-token");
+const uploadPiece = document.getElementById("upload-piece");
+const fileInputPiece = document.getElementById("file-input-piece");
+const uploadBoard = document.getElementById("upload-board");
+const fileInputBoard = document.getElementById("file-input-board");
 
 const fieldSizeOptions = document.getElementById("field-size-options");
 
@@ -4697,9 +4690,10 @@ function createCardDom(cardId, imageSrc, state) {
 
 
   if (state?.type === 'image-token') {
-
     card.classList.add('image-token');
-
+  }
+  if (state?.type === 'board') {
+    card.classList.add('image-token', 'is-board');
   }
 
 
@@ -5099,7 +5093,7 @@ function createCardDom(cardId, imageSrc, state) {
 
     // 表示上だけ最前面へ（サーバーへzIndexは書かない：無駄書き減）
 
-    const newZ = getMaxZIndex() + 1;
+    const newZ = getMaxZIndex(Z_FRONT_BASE) + 1;
 
     card.style.zIndex = newZ;
 
@@ -5503,8 +5497,7 @@ function applyCardState(card, data) {
     // 互換性確保：古いデータ(z-index < 300)は300以上のレイヤーに底上げする
 
     const z = parseInt(data.zIndex, 10);
-
-    card.style.zIndex = (z < 300) ? (z + 300) : z;
+    card.style.zIndex = (z < Z_CENTER_BASE) ? (z + Z_FRONT_BASE) : z;
 
   }
 
@@ -5554,8 +5547,8 @@ function applyCardState(card, data) {
 
     const isHighResNeeded = (scaleLevel >= 1) && data.fullUrl;
 
-    // Apply width/height for image-token (e.g. chess pieces)
-    if (data.type === 'image-token' && data.width) {
+    // Apply width/height for image-token (e.g. chess pieces) or board
+    if ((data.type === 'image-token' || data.type === 'board') && data.width) {
       card.style.setProperty('width', `${data.width}px`, 'important');
       card.style.setProperty('height', `${data.height || data.width}px`, 'important');
     }
@@ -5927,9 +5920,8 @@ function bindUploadHandlers() {
   };
 
   bindBox(uploadCard, fileInputCard, 'card');
-
-  bindBox(uploadToken, fileInputToken, 'image-token');
-
+  bindBox(uploadPiece, fileInputPiece, 'piece');
+  bindBox(uploadBoard, fileInputBoard, 'board');
 }
 
 
@@ -5996,6 +5988,30 @@ function handleFiles(files, kind = 'card') {
 
   if (!processing && fileQueue.length > 0) processQueue();
 
+}
+
+
+
+function getMaxZIndex(base = Z_FRONT_BASE) {
+  let max = base;
+  document.querySelectorAll(".card").forEach(c => {
+    const z = parseInt(c.style.zIndex) || 0;
+    if (z >= base && z < base + 10000 && z > max) max = z;
+  });
+  return max;
+}
+
+function getMinZIndex(base = Z_FRONT_BASE) {
+  let min = base + 10000;
+  let found = false;
+  document.querySelectorAll(".card").forEach(c => {
+    const z = parseInt(c.style.zIndex) || 0;
+    if (z >= base && z < base + 10000) {
+      if (z < min) min = z;
+      found = true;
+    }
+  });
+  return found ? min : base + 300;
 }
 
 
@@ -6078,35 +6094,25 @@ async function processQueue() {
 
 
           const isSimple = CURRENT_ROOM_META?.fieldLayout === 'simple';
-
-          const isToken = kind === 'image-token';
+          const isPiece = (kind === 'piece');
+          const isBoard = (kind === 'board');
+          const isToken = isPiece || isBoard;
+          const zBase = isBoard ? Z_CENTER_BASE : Z_FRONT_BASE;
 
           const pos = (isSimple || isToken) ? randomPointInMainPlay(CURRENT_PLAYER) : randomPointInDeck(CURRENT_PLAYER);
-
           const { x, y } = pos;
 
-
-
-          const typeData = kind === 'image-token' ? { type: 'image-token' } : {};
-
-
+          const typeData = isBoard ? { type: 'board' } : (isPiece ? { type: 'image-token' } : {});
+          const zIndex = getMaxZIndex(zBase) + 1;
 
           // 1) まず Firestore にメタだけ作る（URLはあとで埋める）
-
           const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
-
           const refDoc = await addDoc(baseCol, {
-
             ...typeData,
-
-            x, y, zIndex: 1, faceUp: true,
-
+            x, y, zIndex, faceUp: true,
             ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0,
-
             visibleToAll: true,
-
             createdAt: serverTimestamp(), updatedAt: serverTimestamp()
-
           });
 
           const cardId = refDoc.id;
@@ -6367,7 +6373,7 @@ function makeDraggable(card) {
 
         
 
-        const newZBase = getMaxZIndex() + 1;
+        const newZBase = getMaxZIndex(Z_FRONT_BASE) + 1;
 
         selectedCards.forEach((c, idx) => {
 
@@ -6550,7 +6556,7 @@ function makeDraggable(card) {
 
         isDragging = true;
 
-        const newZBase = getMaxZIndex() + 1;
+        const newZBase = getMaxZIndex(Z_FRONT_BASE) + 1;
 
         selectedCards.forEach((c, idx) => {
 
@@ -6637,9 +6643,6 @@ function makeDraggable(card) {
 
 
 
-function getMaxZIndex() { let max = 300; document.querySelectorAll(".card").forEach(c => { const z = parseInt(c.style.zIndex) || 0; if (z > max) max = z; }); return max; }
-
-function getMinZIndex() { let min = 1000000; let found = false; document.querySelectorAll(".card").forEach(c => { const z = parseInt(c.style.zIndex); if (!isNaN(z)) { if (z < min) min = z; found = true; } }); return found ? min : 300; }
 
 
 
@@ -6962,7 +6965,7 @@ window.spawnNumberCounter = async function () {
 
     const { x, y } = centerOfMainPlay(CURRENT_PLAYER, W, H);
 
-    const z = getMaxZIndex() + 50;
+    const z = getMaxZIndex(Z_FRONT_BASE) + 50;
 
     const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
 
@@ -7098,7 +7101,7 @@ window.rollD6 = async function () {
 
     // 4) 一番手前（既存カード群より十分高いz）
 
-    const z = getMaxZIndex() + 100;
+    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
 
 
 
@@ -7276,7 +7279,7 @@ window.rollD10 = async function () {
 
     const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
 
-    const z = getMaxZIndex() + 100;
+    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
 
 
 
@@ -7332,7 +7335,7 @@ window.rollD20 = async function () {
 
     const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
 
-    const z = getMaxZIndex() + 100;
+    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
 
 
 
@@ -7386,7 +7389,7 @@ window.rollD4 = async function () {
 
     const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
 
-    const z = getMaxZIndex() + 100;
+    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
 
     const payload = {
       type: 'dice',
@@ -7438,7 +7441,7 @@ window.rollD100 = async function () {
 
     const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
 
-    const z = getMaxZIndex() + 100;
+    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
 
     const payload = {
       type: 'dice',
@@ -7497,7 +7500,7 @@ window.flipCoin = async function () {
 
     const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
 
-    const z = getMaxZIndex() + 100;
+    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
 
 
 
@@ -7628,7 +7631,7 @@ async function spawnTrumpDeck(roomId) {
 
   await waitForBoardDeckRect();
   const { x, y } = centerOfBoardDeck(CARD_W, CARD_H);
-  let z = getMaxZIndex() + 1;
+  let z = getMaxZIndex(Z_FRONT_BASE) + 1;
 
   const col = collection(db, `rooms/${roomId}/cards`);
   let batch = writeBatch(db);
@@ -7681,7 +7684,7 @@ async function spawnChessSet(roomId) {
   const col = collection(db, `rooms/${roomId}/cards`);
   let batch = writeBatch(db);
   let count = 0;
-  let z = getMaxZIndex() + 1;
+  let z = getMaxZIndex(Z_FRONT_BASE) + 1;
 
   // Wait for board layout to settle
   await new Promise(resolve => setTimeout(resolve, 800)); 
@@ -7785,7 +7788,7 @@ window.spawnCounter = async function (label) {
 
     const { x, y } = centerOfMainPlay(CURRENT_PLAYER, 60, 60); // 自エリア中央付近
 
-    const z = getMaxZIndex() + 50;
+    const z = getMaxZIndex(Z_FRONT_BASE) + 50;
 
     const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
 
@@ -7866,7 +7869,7 @@ window.spawnMemo = async function () {
   }
   try {
     const { x, y } = randomPointInMainPlay(CURRENT_PLAYER);
-    const z = getMaxZIndex() + 20;
+    const z = getMaxZIndex(Z_FRONT_BASE) + 20;
     const imgUrl = blankTokenThumb();
     const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
 
@@ -8043,7 +8046,7 @@ window.collectMyCardsToDeck = async function () {
 
     // 既存の最大Zより上に順番に積む
 
-    const baseZ = getMaxZIndex() + 1;
+    const baseZ = getMaxZIndex(Z_FRONT_BASE) + 1;
 
     let i = 0;
 
@@ -8423,9 +8426,11 @@ async function focusCardById(cardId, additive = false, skipPreview = false) {
 
   if (!el) return;
 
-  const newZ = getMaxZIndex() + 1;
+  const isBoard = el.classList.contains('is-board') || el.dataset.type === 'board';
+  const zBase = isBoard ? Z_CENTER_BASE : Z_FRONT_BASE;
+  const newZ = getMaxZIndex(zBase) + 1;
 
-  el.style.zIndex = newZ; 
+  el.style.zIndex = newZ;
 
   if (!additive) {
 
@@ -8783,7 +8788,7 @@ window.shuffleDecks = async function () {
 
   const centerY = Math.round(dstBounds.minY + (dstBounds.height - CARD_H) / 2);
 
-  const baseZ = getMaxZIndex() + 1;
+  const baseZ = getMaxZIndex(Z_FRONT_BASE) + 1;
 
   let z = baseZ;
 
@@ -8855,7 +8860,7 @@ window.collectSelectedCards = async function () {
 
 
 
-  const baseZ = getMaxZIndex() + 1;
+  const baseZ = getMaxZIndex(Z_FRONT_BASE) + 1;
 
   let z = baseZ;
 
@@ -10364,9 +10369,9 @@ function subscribeAreas() {
 
         el.style.position = 'absolute';
 
-        // z-index を動的に設定（100: プレイエリア系 / 200: サブエリア系）。カード(300〜)より背面を維持。
+        // z-index を動的に設定（100: プレイエリア系 / 200: サブエリア系）。ボード(10000〜)やカード(20000〜)より背面を維持。
         const isPlayType = (id.includes('main-play-area') || id.includes('board-play'));
-        el.style.zIndex = isPlayType ? '100' : '200';
+        el.style.zIndex = isPlayType ? (Z_BACK_BASE + 100) : (Z_BACK_BASE + 200);
         
         if (data.x !== undefined) el.style.left = data.x + 'px';
         if (data.y !== undefined) el.style.top = data.y + 'px';
@@ -10538,7 +10543,7 @@ function bindTokenContextMenuOnce() {
 
       const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
 
-      const zIndex = getMaxZIndex() + 1;
+      const zIndex = getMaxZIndex(Z_FRONT_BASE) + 1;
 
       await updateDoc(docRef, { zIndex, updatedAt: serverTimestamp() });
 
@@ -11609,7 +11614,7 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
 
   areaEl.style.pointerEvents = 'none'; 
 
-  areaEl.style.zIndex = '10000';
+  areaEl.style.zIndex = Z_BACK_BASE + 9000; // 配置中は他のエリアより手前、ボードよりは奥
 
 
 

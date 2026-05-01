@@ -112,11 +112,17 @@
       <div style="font-size:10px; color:#666; margin-top:2px;" data-i18n="game.addCard.sub">（画像をカードサイズにして生成）</div>
       <input accept="image/*" id="file-input-card" multiple="" type="file" style="display:none;" />
     </div>
-    <div id="upload-token" class="upload-box"
+    <div id="upload-piece" class="upload-box"
+      style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-left: 1px solid #ccc; border-right: 1px solid #ccc; background: #fff; cursor: pointer;">
+      <div style="font-weight:bold;" data-i18n="game.addPiece">♟ コマを追加</div>
+      <div style="font-size:10px; color:#666; margin-top:2px;" data-i18n="game.addPiece.sub">（画像サイズ維持）</div>
+      <input accept="image/*" id="file-input-piece" multiple="" type="file" style="display:none;" />
+    </div>
+    <div id="upload-board" class="upload-box"
       style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border-left: 1px solid #ccc; background: #fff; cursor: pointer;">
-      <div style="font-weight:bold;" data-i18n="game.addToken">🪙 コマ・ボードを追加</div>
-      <div style="font-size:10px; color:#666; margin-top:2px;" data-i18n="game.addToken.sub">（画像のサイズを変えずに生成）</div>
-      <input accept="image/*" id="file-input-token" multiple="" type="file" style="display:none;" />
+      <div style="font-weight:bold;" data-i18n="game.addBoard">🗺️ ボードを追加</div>
+      <div style="font-size:10px; color:#666; margin-top:2px;" data-i18n="game.addBoard.sub">（画像サイズ維持・最背面）</div>
+      <input accept="image/*" id="file-input-board" multiple="" type="file" style="display:none;" />
     </div>
   </div>
   <div id="sidebar" style="display:flex; flex-direction:column; overflow:hidden;">
