@@ -1427,6 +1427,8 @@ async function flushWrites() {
 
     const slice = entries.slice(i, i + MAX_BATCH_OPS);
 
+    
+
     for (const [path, patch] of slice) {
 
       batch.update(doc(db, path), patch);
@@ -1658,8 +1660,11 @@ onAuthStateChanged(auth, (user) => {
   if (!user) return; // ここに来るのは稀だが安全のため
 
   CURRENT_UID = user.uid;
-
-
+  
+  // 認証完了時にホスト判定を再実行（リサイズハンドル生成のため）
+  if (CURRENT_ROOM_META) {
+    applyFieldModeLayout();
+  }
 
   // ロビーのボタン表示を更新（元のロジックを踏襲）
 

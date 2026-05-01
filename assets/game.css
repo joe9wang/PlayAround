@@ -1092,6 +1092,28 @@ body.collapse-right .edge-right { display: inline-flex; }
   outline: 2px solid #007bff !important;
 }
 
+/* === Board Mode Area Resizing (Host Only) === */
+/* ボードモードのエリア用リサイズハンドルを表示・操作可能にする */
+#board-play > .resize-handle,
+.board-hand > .resize-handle,
+#board-center > .resize-handle,
+.center-deck > .resize-handle,
+.center-discard > .resize-handle,
+.dynamic-area > .resize-handle {
+  display: block;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+#board-play > .resize-handle:hover,
+.board-hand > .resize-handle:hover,
+#board-center > .resize-handle:hover,
+.center-deck > .resize-handle:hover,
+.center-discard > .resize-handle:hover,
+.dynamic-area > .resize-handle:hover {
+  background: rgba(255, 0, 0, 0.3) !important;
+}
+
 /* === Animations === */
 .shake { animation: shake-h 0.35s ease; }
 @keyframes shake-h {
