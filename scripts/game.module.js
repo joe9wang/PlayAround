@@ -5788,7 +5788,6 @@ async function resetRoomState(roomId) {
 
 
     const seatsCol = collection(db, `rooms/${roomId}/seats`);
-
     const seatsSnap = await getDocs(seatsCol);
 
     batch = writeBatch(db); n = 0;
@@ -6371,17 +6370,23 @@ function makeDraggable(card) {
 
         isDragging = true;
 
-        
+        const boards = selectedCards.filter(c => c.classList.contains('is-board') || c.dataset.type === 'board');
+        const others = selectedCards.filter(c => !boards.includes(c));
 
-        const newZBase = getMaxZIndex(Z_FRONT_BASE) + 1;
-
-        selectedCards.forEach((c, idx) => {
-
-          c.style.cursor = "grabbing";
-
-          c.style.zIndex = newZBase + idx;
-
-        });
+        if (boards.length > 0) {
+          const zBase = getMaxZIndex(Z_CENTER_BASE) + 1;
+          boards.forEach((c, idx) => {
+            c.style.cursor = "grabbing";
+            c.style.zIndex = zBase + idx;
+          });
+        }
+        if (others.length > 0) {
+          const zBase = getMaxZIndex(Z_FRONT_BASE) + 1;
+          others.forEach((c, idx) => {
+            c.style.cursor = "grabbing";
+            c.style.zIndex = zBase + idx;
+          });
+        }
 
       }
 
@@ -6556,15 +6561,21 @@ function makeDraggable(card) {
 
         isDragging = true;
 
-        const newZBase = getMaxZIndex(Z_FRONT_BASE) + 1;
+        const boards = selectedCards.filter(c => c.classList.contains('is-board') || c.dataset.type === 'board');
+        const others = selectedCards.filter(c => !boards.includes(c));
 
-        selectedCards.forEach((c, idx) => {
-
-          c.style.cursor = "grabbing";
-
-          c.style.zIndex = newZBase + idx;
-
-        });
+        if (boards.length > 0) {
+          const zBase = getMaxZIndex(Z_CENTER_BASE) + 1;
+          boards.forEach((c, idx) => {
+            c.style.zIndex = zBase + idx;
+          });
+        }
+        if (others.length > 0) {
+          const zBase = getMaxZIndex(Z_FRONT_BASE) + 1;
+          others.forEach((c, idx) => {
+            c.style.zIndex = zBase + idx;
+          });
+        }
 
       }
 
