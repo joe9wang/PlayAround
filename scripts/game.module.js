@@ -5544,9 +5544,9 @@ function applyCardState(card, data) {
 
     
 
-    // 拡大時(scaleLevel >= 1)は高画質版(fullUrl)を使用する
-
-    const isHighResNeeded = (scaleLevel >= 1) && data.fullUrl;
+    // 拡大時(scaleLevel >= 1) またはボードの場合は高画質版(fullUrl)を使用する
+    const isBoard = (data.type === 'board');
+    const isHighResNeeded = ((scaleLevel >= 1) || isBoard) && data.fullUrl;
 
     // Apply width/height for image-token (e.g. chess pieces) or board
     if ((data.type === 'image-token' || data.type === 'board') && data.width) {
