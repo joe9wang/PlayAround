@@ -206,7 +206,8 @@
       <button class="sl-btn" onclick="spawnMemo()" data-i18n="side.memo">📝 メモ作成</button>
       </details>
 
-      <button class="sl-btn" onclick="openBackImagePicker()" data-i18n="side.BackImage">🖼 カード背景画像</button>
+      <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全マイカードウラ画像設定</button>
+      <button class="sl-btn" onclick="openBackImagePicker(true)" data-i18n="side.BackImageSelected">🖼 選択中カードのウラ画像設定</button>
       <!-- 非表示のファイル入力（画像選択ダイアログ用） -->
       <input id="card-back-input" type="file" accept="image/*" style="display:none">
 

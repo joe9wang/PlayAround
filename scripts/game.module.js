@@ -9783,7 +9783,13 @@ async function deleteMyCardsSilently() {
 
 // === 背面画像のアップロード／保存 ===
 
-function openBackImagePicker() {
+let backImageOnlySelected = false;
+window.openBackImagePicker = (onlySelected = false) => {
+  if (onlySelected && !selectedCard) {
+    alert('対象のカードを1枚選択してください。');
+    return;
+  }
+  backImageOnlySelected = onlySelected;
 
   // ===== カード裏面デザイン: プレミアム限定 =====
 
@@ -9829,31 +9835,32 @@ function openBackImagePicker() {
 
     try {
 
-      // Storage: rooms/{room}/seats/{seat}/card-back.jpg
+      if (backImageOnlySelected) {
+        if (!selectedCard) throw new Error('No card selected');
+        const cardId = selectedCard.dataset.cardId;
+        // 個別カード用パス
+        const path = `rooms/${CURRENT_ROOM}/cards/${cardId}/back.jpg`;
+        const sref = ref(storage, path);
+        await uploadBytes(sref, file);
+        const url = await getDownloadURL(sref);
 
-      const path = `rooms/${CURRENT_ROOM}/seats/${CURRENT_PLAYER}/card-back.jpg`;
+        await updateCardBatched(cardId, {
+          backImageUrl: url,
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        // 全マイカード用パス
+        const path = `rooms/${CURRENT_ROOM}/seats/${CURRENT_PLAYER}/card-back.jpg`;
+        const sref = ref(storage, path);
+        await uploadBytes(sref, file);
+        const url = await getDownloadURL(sref);
 
-      const sref = ref(storage, path);
-
-      // 圧縮が不要ならそのまま、必要ならここで canvas リサイズしてから uploadBytes
-
-      await uploadBytes(sref, file);
-
-      const url = await getDownloadURL(sref);
-
-      // Firestore: 席ドキュメントへ保存 → 全クライアントへ配信
-
-      await updateSeatBatched(CURRENT_PLAYER, {
-
-        backImageUrl: url,
-
-        updatedAt: serverTimestamp()
-
-      });
-
-      // 自分の画面は即時反映
-
-      refreshCardBacksForSeat(CURRENT_PLAYER);
+        await updateSeatBatched(CURRENT_PLAYER, {
+          backImageUrl: url,
+          updatedAt: serverTimestamp()
+        });
+        refreshCardBacksForSeat(CURRENT_PLAYER);
+      }
 
     } catch (err) {
 
