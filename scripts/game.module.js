@@ -3663,20 +3663,13 @@ function applyCardBackStyle(card) {
   const seat = parseInt(card.dataset.ownerSeat || '0', 10);
   const url = cardBackUrl || seatBackUrl(seat);
 
-  card.style.backgroundColor = '#000';
-
   if (url) {
-
     card.classList.add('has-back');
-
     card.style.backgroundImage = `url("${url}")`;
-
   } else {
-
+    card.style.backgroundColor = '#000';
     card.classList.remove('has-back');
-
     card.style.backgroundImage = '';
-
   }
 
 }
@@ -5276,8 +5269,8 @@ function createCardDom(cardId, imageSrc, state) {
           c.classList.remove('has-back');
           c.style.backgroundImage = '';
         } else {
-          imgEl.style.display = 'none';
           applyCardBackStyle(c);
+          imgEl.style.display = 'none';
         }
       }
 
@@ -5291,9 +5284,9 @@ function createCardDom(cardId, imageSrc, state) {
           c.classList.remove('has-back');
           c.style.backgroundImage = '';
         } else {
+          applyCardBackStyle(c);
           tokenEl.style.display = 'none';
           c.style.backgroundColor = '#000';
-          applyCardBackStyle(c); // トークンでも背面画像があれば表示可能に
         }
       }
 
@@ -5546,8 +5539,8 @@ function applyCardState(card, data) {
           tempImg.src = backUrl;
         }
       } else {
-        img.style.display = 'none';
         applyCardBackStyle(card);
+        img.style.display = 'none';
       }
     }
 
@@ -6867,9 +6860,9 @@ window.faceDownAll = async function () {
     if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
     if (el.classList.contains('memo')) continue;
     el.dataset.faceUp = 'false';
+    applyCardBackStyle(el);
     const imgEl = el.querySelector('img'); if (imgEl) imgEl.style.display = 'none';
     const tokenEl = el.querySelector('.token-input'); if (tokenEl) tokenEl.style.display = 'none';
-    applyCardBackStyle(el);
     batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { faceUp: false });
     if (++count >= 450) { await batch.commit(); count = 0; }
   }
