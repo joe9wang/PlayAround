@@ -3045,14 +3045,14 @@ async function generateBoardPreview() {
     ctx.fillStyle = actualFieldBg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 2. 描画対象エリアの収集（ボードレイアウト用セレクターを追加）
+    // 2. 描画対象エリアの収集（フィールド内の要素に限定）
     const selectors = [
       '.player-area', '.shared-play-area', '.deck-area', '.discard-area', '.special-area', 
       '.hand-area', '.main-play-area', '.zone', '.zone-area', '.field-background',
-      '#board-play', '.board-hand', '.center-deck', '.center-discard', '#board-center',
-      '[class*="hand-area"]', '[class*="play-area"]', '[class*="player-slot"]', '[id*="board"]'
+      '#board-play', '#board-layout', '.board-hand', '.center-deck', '.center-discard', '#board-center',
+      '[class*="hand-area"]', '[class*="play-area"]', '[class*="player-slot"]'
     ];
-    const rawAreas = Array.from(document.querySelectorAll(selectors.join(',')));
+    const rawAreas = Array.from(field.querySelectorAll(selectors.join(',')));
     const areas = [...new Set(rawAreas)].filter(el => {
       // 非表示の要素は除外
       const s = window.getComputedStyle(el);
