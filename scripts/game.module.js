@@ -2957,6 +2957,7 @@ function applyFieldModeLayout() {
 
   // ホストの場合、ボードレイアウトの各エリアをリサイズ可能にする
   if (mode === 'board') {
+    const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
     if (isHost) {
       const areaSelectors = ['#board-layout', '.board-hand', '#board-center', '.center-deck', '.center-discard', '.dynamic-area'];
       const targets = document.querySelectorAll(areaSelectors.join(','));
