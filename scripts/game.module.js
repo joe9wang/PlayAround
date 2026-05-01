@@ -9784,7 +9784,7 @@ async function deleteMyCardsSilently() {
 // === 背面画像のアップロード／保存 ===
 
 let backImageOnlySelected = false;
-window.openBackImagePicker = (onlySelected = false) => {
+function openBackImagePicker(onlySelected = false) {
   if (onlySelected && !selectedCard) {
     alert('対象のカードを1枚選択してください。');
     return;
