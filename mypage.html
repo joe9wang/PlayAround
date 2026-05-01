@@ -348,12 +348,24 @@
       background: #fff;
       cursor: pointer;
       position: relative;
-      transition: transform 0.1s;
+      transition: transform 0.1s, background-color 0.1s;
     }
 
     #card-list-grid .cl-item:hover {
       transform: scale(1.03);
       border-color: #aaa;
+    }
+
+    /* 背面表示 */
+    #card-list-grid .cl-item.is-back {
+      background: #000;
+      border-color: #444;
+    }
+    #card-list-grid .cl-item.is-back img {
+      visibility: hidden;
+    }
+    #card-list-grid .cl-item.is-back.has-back-img img {
+      visibility: visible;
     }
 
     #card-list-grid .cl-item.flippable:hover::after {
@@ -367,6 +379,11 @@
       background: rgba(255,255,255,0.8);
       color: #333;
       font-weight: 700;
+    }
+
+    #card-list-grid .cl-item.is-back.flippable:hover::after {
+      background: rgba(0,0,0,0.6);
+      color: #fff;
     }
 
     #card-list-grid img {
@@ -1298,11 +1315,21 @@
             if (d.type === 'card' || !d.type) {
               item.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const current = img.src;
                 const front = d.imageUrl || d.fullUrl || '';
                 const back = d.backImageUrl || '';
-                if (!back) return;
-                img.src = (current === front) ? back : front;
+
+                if (item.classList.toggle('is-back')) {
+                  // 裏にする
+                  if (back) {
+                    img.src = back;
+                    item.classList.add('has-back-img');
+                  } else {
+                    item.classList.remove('has-back-img');
+                  }
+                } else {
+                  // 表にする
+                  img.src = front;
+                }
               });
             }
             grid.appendChild(item);
