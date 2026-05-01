@@ -328,11 +328,45 @@
       /* 余白時の左寄せ */
     }
 
+    .ms-section-title {
+      grid-column: 1 / -1;
+      font-size: 16px;
+      font-weight: 800;
+      padding: 14px 4px 6px;
+      border-bottom: 2px solid #eee;
+      margin-top: 8px;
+      color: #444;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     #card-list-grid .cl-item {
       border: 1px solid #ddd;
       border-radius: 10px;
       padding: 6px;
       background: #fff;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.1s;
+    }
+
+    #card-list-grid .cl-item:hover {
+      transform: scale(1.03);
+      border-color: #aaa;
+    }
+
+    #card-list-grid .cl-item.flippable:hover::after {
+      content: '🔄 Flip';
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 10px;
+      background: rgba(255,255,255,0.8);
+      color: #333;
+      font-weight: 700;
     }
 
     #card-list-grid img {
@@ -890,22 +924,15 @@
       };
     }
 
-    async function fetchSlotThumbs(slot, max = 5) {
-      const col = collection(db, `${slPath(slot)}/cards`);
-      const snap = await getDocs(query(col, limit(max)));
-      return snap.docs.map(d => {
-        const s = d.data() || {};
-        return s.fullUrl || s.imageUrl || ''; // 保存時のURLをそのまま使う
-      }).filter(Boolean);
-    }
-
-    async function fetchSlotAllUrls(slot) {
+    async function fetchSlotData(slot) {
       const col = collection(db, `${slPath(slot)}/cards`);
       const snap = await getDocs(col);
-      return snap.docs.map(d => {
-        const s = d.data() || {};
-        return s.fullUrl || s.imageUrl || '';
-      }).filter(Boolean);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    async function fetchSlotThumbs(slot, max = 5) {
+      const items = await fetchSlotData(slot);
+      return items.map(d => d.imageUrl || d.fullUrl || '').filter(Boolean).slice(0, max);
     }
 
     function renderThumbs(el, urls, total) {
@@ -1000,12 +1027,14 @@
       if (!willOpen) return;
       wrap.style.display = 'block';
       grid.innerHTML = '';
-      const urls = await fetchSlotAllUrls(slot);
-      if (urls.length === 0) {
-        grid.innerHTML = '<div class="muted">画像はありません</div>';
+      const items = await fetchSlotData(slot);
+      if (items.length === 0) {
+        grid.innerHTML = '<div class="muted">アイテムはありません</div>';
         return;
       }
-      urls.forEach(u => {
+      items.forEach(d => {
+        const u = d.imageUrl || d.fullUrl || '';
+        if (!u) return;
         const img = document.createElement('img');
         img.loading = 'lazy';
         img.decoding = 'async';
@@ -1231,36 +1260,66 @@
       const grid = document.getElementById('card-list-grid');
       const title = document.getElementById('card-list-title');
       if (!modal || !grid || !title) return;
-      title.textContent = `マイセット${slot}のカード一覧`;
+      title.textContent = `マイセット${slot}の構成アイテム`;
       modal.style.display = 'flex';
       grid.innerHTML = '<div class="muted">読み込み中…</div>';
       try {
-        const urls = await fetchSlotAllUrls(slot);
+        const items = await fetchSlotData(slot);
         grid.innerHTML = '';
-        if (urls.length === 0) {
-          grid.innerHTML = '<div class="muted">画像はありません</div>';
+        if (items.length === 0) {
+          grid.innerHTML = '<div class="muted">アイテムはありません</div>';
           return;
         }
-        urls.forEach((u) => {
-          const item = document.createElement('div');
-          item.className = 'cl-item';
-          const img = document.createElement('img');
-          img.loading = 'lazy';
-          img.decoding = 'async';
-          img.alt = 'カード';
-          img.src = u;
-          item.appendChild(img);
-          grid.appendChild(item);
-        });
 
-        // delete btn setup
+        // カテゴライズ
+        const boards = items.filter(d => d.type === 'board');
+        const cards = items.filter(d => !d.type || d.type === 'card');
+        const tokens = items.filter(d => d.type === 'image-token' || d.type === 'token');
+
+        const addSection = (label, list) => {
+          if (list.length === 0) return;
+          const sec = document.createElement('div');
+          sec.className = 'ms-section-title';
+          sec.textContent = `${label} (${list.length})`;
+          grid.appendChild(sec);
+
+          list.forEach(d => {
+            const item = document.createElement('div');
+            item.className = 'cl-item';
+            if (d.type === 'card' || !d.type) item.classList.add('flippable');
+            
+            const img = document.createElement('img');
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            img.alt = 'アイテム';
+            img.src = d.imageUrl || d.fullUrl || '';
+            item.appendChild(img);
+
+            if (d.type === 'card' || !d.type) {
+              item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const current = img.src;
+                const front = d.imageUrl || d.fullUrl || '';
+                const back = d.backImageUrl || '';
+                if (!back) return;
+                img.src = (current === front) ? back : front;
+              });
+            }
+            grid.appendChild(item);
+          });
+        };
+
+        addSection('🗺️ ボード', boards);
+        addSection('🎴 カード', cards);
+        addSection('♟️ コマ・トークン', tokens);
+
         const delBtn = document.getElementById('card-list-delete');
         if (delBtn) {
           delBtn.style.display = 'block';
           delBtn.dataset.slot = slot;
         }
-
       } catch (_e) {
+        console.error(_e);
         grid.innerHTML = '<div class="muted">取得に失敗しました</div>';
         const delBtn = document.getElementById('card-list-delete');
         if (delBtn) delBtn.style.display = 'none';

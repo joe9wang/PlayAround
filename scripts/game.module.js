@@ -701,29 +701,18 @@ async function fetchMyCardsFromFirestore() {
 
 
 function stripSavableFields(src) {
-
   // 保存対象フィールドを限定
-
   const fields = [
-
     'type', 'count', 'tokenText', 'scaleLevel',
-
     'x', 'y', 'zIndex', 'faceUp', 'rotation',
-
-    'visibleToAll', 'imageUrl', 'fullUrl'
-
+    'visibleToAll', 'imageUrl', 'fullUrl', 'backImageUrl',
+    'width', 'height'
   ];
-
   const out = {};
-
   for (const k of fields) {
-
     if (src[k] !== undefined) out[k] = src[k];
-
   }
-
   return out;
-
 }
 
 
