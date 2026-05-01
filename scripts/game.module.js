@@ -5283,6 +5283,7 @@ function createCardDom(cardId, imageSrc, state) {
 
 
 
+      const tokenEl = c.querySelector('.token-input');
       if (tokenEl) {
         if (nextFaceUp) {
           tokenEl.style.display = 'block';
