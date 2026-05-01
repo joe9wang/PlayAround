@@ -5092,9 +5092,9 @@ function createCardDom(cardId, imageSrc, state) {
     e.stopPropagation();
 
     // 表示上だけ最前面へ（サーバーへzIndexは書かない：無駄書き減）
-
-    const newZ = getMaxZIndex(Z_FRONT_BASE) + 1;
-
+    const isBoard = card.classList.contains('is-board') || card.dataset.type === 'board';
+    const zBase = isBoard ? Z_CENTER_BASE : Z_FRONT_BASE;
+    const newZ = getMaxZIndex(zBase) + 1;
     card.style.zIndex = newZ;
 
     updateOverlapBadges(); //Z順変更で最新化
@@ -10551,13 +10551,12 @@ function bindTokenContextMenuOnce() {
     if (!CURRENT_ROOM || !currentTokenId) return;
 
     try {
-
+      const el = cardDomMap.get(currentTokenId);
+      const isBoard = el?.classList.contains('is-board') || el?.dataset.type === 'board';
+      const zBase = isBoard ? Z_CENTER_BASE : Z_FRONT_BASE;
       const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
-
-      const zIndex = getMaxZIndex(Z_FRONT_BASE) + 1;
-
+      const zIndex = getMaxZIndex(zBase) + 1;
       await updateDoc(docRef, { zIndex, updatedAt: serverTimestamp() });
-
     } catch (err) { console.warn(err); }
 
   });
@@ -10573,13 +10572,12 @@ function bindTokenContextMenuOnce() {
     if (!CURRENT_ROOM || !currentTokenId) return;
 
     try {
-
+      const el = cardDomMap.get(currentTokenId);
+      const isBoard = el?.classList.contains('is-board') || el?.dataset.type === 'board';
+      const zBase = isBoard ? Z_CENTER_BASE : Z_FRONT_BASE;
       const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
-
-      const zIndex = getMinZIndex() - 1;
-
+      const zIndex = getMinZIndex(zBase) - 1;
       await updateDoc(docRef, { zIndex, updatedAt: serverTimestamp() });
-
     } catch (err) { console.warn(err); }
 
   });
