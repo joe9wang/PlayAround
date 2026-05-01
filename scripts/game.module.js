@@ -4988,9 +4988,10 @@ function createCardDom(cardId, imageSrc, state) {
 
 
   if (state?.type !== 'dice') {
-
     makeDraggable(card);
-
+    if (state?.type === 'board') {
+      makeBoardResizable(card, cardId);
+    }
   }
 
 
@@ -11597,6 +11598,84 @@ function makeAreaResizable(el, areaId) {
             console.log(`[ResizeDebug] Saved area ${areaId} to areas collection`);
           }
         } catch (err) { console.warn('Area resize save failed', err); }
+      };
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+  });
+}
+
+/**
+ * ボードをドラッグでリサイズ可能にする（縦横比維持）
+ */
+function makeBoardResizable(card, cardId) {
+  if (!card || !cardId) return;
+  if (card.dataset.resizableBound === 'true') return;
+  card.dataset.resizableBound = 'true';
+
+  const positions = ['n', 's', 'w', 'e', 'nw', 'ne', 'sw', 'se'];
+  positions.forEach(pos => {
+    const handle = document.createElement('div');
+    handle.className = `resize-handle ${pos}`;
+    card.appendChild(handle);
+
+    handle.addEventListener('mousedown', (e) => {
+      if (!canOperateCard(card, 'move')) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startRect = card.getBoundingClientRect();
+      const fieldRect = field.getBoundingClientRect();
+      const z = typeof zoom !== 'undefined' ? zoom : 1;
+      
+      const startW = startRect.width / z;
+      const startH = startRect.height / z;
+      const startL = (startRect.left - fieldRect.left) / z;
+      const startT = (startRect.top - fieldRect.top) / z;
+
+      card.classList.add('resizing');
+
+      const onMouseMove = (me) => {
+        const dx = (me.clientX - startX) / z;
+        const dy = (me.clientY - startY) / z;
+
+        let scale = 1.0;
+        if (pos.includes('e')) scale = Math.max(0.1, (startW + dx) / startW);
+        else if (pos.includes('w')) scale = Math.max(0.1, (startW - dx) / startW);
+        else if (pos.includes('s')) scale = Math.max(0.1, (startH + dy) / startH);
+        else if (pos.includes('n')) scale = Math.max(0.1, (startH - dy) / startH);
+
+        const newW = startW * scale;
+        const newH = startH * scale;
+        let newL = startL;
+        let newT = startT;
+
+        if (pos.includes('w')) newL = startL + (startW - newW);
+        if (pos.includes('n')) newT = startT + (startH - newH);
+
+        card.style.setProperty('width', `${newW}px`, 'important');
+        card.style.setProperty('height', `${newH}px`, 'important');
+        card.style.left = `${newL}px`;
+        card.style.top = `${newT}px`;
+      };
+
+      const onMouseUp = async () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        card.classList.remove('resizing');
+
+        const width = Math.round(parseFloat(card.style.width));
+        const height = Math.round(parseFloat(card.style.height));
+        const x = parseFloat(card.style.left);
+        const y = parseFloat(card.style.top);
+        
+        const id = card.dataset.cardId;
+        if (id) {
+            updateCardBatched(id, { width, height, x, y });
+        }
       };
 
       document.addEventListener('mousemove', onMouseMove);

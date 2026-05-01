@@ -1076,6 +1076,18 @@ body.collapse-right .edge-right { display: inline-flex; }
 .resize-handle.se { bottom: -8px; right: -8px; width: 20px; height: 20px; cursor: se-resize; z-index: 10001; }
 .area-resizing { outline: 2px solid #ff0000 !important; z-index: 10001 !important; }
 
+/* === Board Resizing === */
+.card.is-board.selected .resize-handle {
+  background: rgba(0, 123, 255, 0.2) !important;
+  border: 1px solid #007bff;
+}
+.card.is-board.selected .resize-handle:hover {
+  background: rgba(0, 123, 255, 0.6) !important;
+}
+.card.is-board.resizing {
+  outline: 2px solid #007bff !important;
+}
+
 /* === Animations === */
 .shake { animation: shake-h 0.35s ease; }
 @keyframes shake-h {
