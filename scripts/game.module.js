@@ -4680,6 +4680,7 @@ function createCardDom(cardId, imageSrc, state) {
   const card = document.createElement("div");
 
   card.className = "card";
+  card.dataset.type = state?.type || 'card';
 
   if (state?.type === 'counter') card.classList.add('counter');
 
@@ -5152,7 +5153,8 @@ function createCardDom(cardId, imageSrc, state) {
 
       const seatBack = getSeatBackUrl(ownerSeat) || TRUMP_BACK_URL;    // ★ 席の裏→無ければ黒
 
-      const previewSrc = (!isFaceUp || otherHand) ? seatBack : frontSrc;
+      const isActuallyCard = !card.dataset.type || card.dataset.type === 'card';
+      const previewSrc = (isActuallyCard && (!isFaceUp || otherHand)) ? seatBack : frontSrc;
 
       setPreview(previewSrc);
 
@@ -5531,7 +5533,8 @@ function applyCardState(card, data) {
       img.style.display = 'none';
       card.style.backgroundColor = '#fff';
     } else {
-      if (data.faceUp) {
+      const isActuallyCard = !data.type || data.type === 'card';
+      if (data.faceUp || !isActuallyCard) {
         img.style.display = 'block';
         card.style.backgroundColor = '#fff';
         card.classList.remove('has-back');
@@ -5712,7 +5715,8 @@ function applyCardState(card, data) {
 
     }
 
-    if (insideSeat && String(viewerSeat) !== String(insideSeat) && data.type !== 'memo') {
+    const isActuallyCard = !data.type || data.type === 'card';
+    if (insideSeat && String(viewerSeat) !== String(insideSeat) && isActuallyCard) {
 
       const img = card.querySelector('img');
 
@@ -8466,10 +8470,9 @@ async function focusCardById(cardId, additive = false, skipPreview = false) {
 
   const frontSrc = full || (thumbEl && thumbEl.src) || '';
 
-  const previewSrc = (!isFaceUp || otherHand)
-
+  const isActuallyCard = !el.dataset.type || el.dataset.type === 'card';
+  const previewSrc = (isActuallyCard && (!isFaceUp || otherHand))
     ? getSeatBackUrl(ownerSeatValue)
-
     : frontSrc;
 
   if (!skipPreview) {
