@@ -3645,7 +3645,7 @@ function getSeatBackUrl(seat) {
 
 
 function applyCardBackStyle(card) {
-  if (card.classList.contains('memo')) {
+  if (card.classList.contains('memo') || card.classList.contains('note-icon')) {
     card.style.backgroundColor = '#fff';
     card.style.backgroundImage = '';
     card.classList.remove('has-back');
@@ -5536,9 +5536,11 @@ function applyCardState(card, data) {
 
   if (img) {
     const isMemo = (data.type === 'memo');
-    if (isMemo) {
+    const isNote = (data.type === 'note');
+    if (isMemo || isNote) {
       img.style.display = 'none';
-      card.style.backgroundColor = '#fff';
+      if (isMemo) card.style.backgroundColor = '#fff';
+      // ノートの場合はCSSのグラデーションを優先するため背景色固定を避ける
     } else {
       const isActuallyCard = !data.type || data.type === 'card';
       if (data.faceUp || !isActuallyCard) {
