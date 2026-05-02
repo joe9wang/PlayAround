@@ -1692,12 +1692,23 @@ body.is-spectator #spectator-banner { display: block; }
 }
 
 
-#note-modal .note-modal-title-input,
-#note-view-modal .modal-title {
+#note-modal .note-modal-title-input {
   flex: 1;
   background: transparent !important;
   border: none !important;
   border-bottom: 2px solid rgba(59, 48, 39, 0.2) !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: #3b3027 !important;
+  padding: 4px 0 !important;
+  outline: none !important;
+  font-family: inherit !important;
+}
+
+#note-view-modal .modal-title {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
   font-size: 20px !important;
   font-weight: 800 !important;
   color: #3b3027 !important;
