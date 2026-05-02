@@ -12322,7 +12322,14 @@ async function renderNoteContent() {
       if (item.type === 'text') {
         const textarea = document.createElement('textarea');
         textarea.value = item.value;
-        textarea.addEventListener('change', () => updateNoteItem(index, textarea.value));
+        let tmr = null;
+        textarea.addEventListener('input', () => {
+          if (tmr) clearTimeout(tmr);
+          tmr = setTimeout(() => {
+            console.log('Auto-saving note item:', index);
+            updateNoteItem(index, textarea.value);
+          }, 1000);
+        });
         div.appendChild(textarea);
       } else if (item.type === 'image') {
         const img = document.createElement('img');
