@@ -1688,6 +1688,24 @@ body.is-spectator #spectator-banner { display: block; }
   background: #f4f1ea;
 }
 
+
+#note-modal .note-modal-title-input {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid rgba(59, 48, 39, 0.2) !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: #3b3027 !important;
+  padding: 4px 0 !important;
+  outline: none !important;
+  font-family: inherit !important;
+}
+
+#note-modal .note-modal-title-input:focus {
+  border-bottom-color: #3b3027 !important;
+}
+
 /* Context Menu Overhaul */
 .area-context-menu {
   background: #fffaf0 !important;

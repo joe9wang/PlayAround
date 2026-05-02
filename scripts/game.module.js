@@ -12297,11 +12297,33 @@ globalThis.openNoteModal = async function(cardId) {
   const modal = document.getElementById('note-modal');
   if (modal) {
     modal.style.display = 'flex';
+    
+    // タイトルの初期化
+    const titleInput = document.getElementById('note-modal-title-input');
+    if (titleInput) {
+      const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        titleInput.value = snap.data().noteTitle || '';
+      }
+    }
+    
     renderNoteContent();
   } else {
     console.warn('note-modal element not found');
   }
 };
+
+// タイトル保存ロジックの追加
+document.getElementById('note-modal-title-input')?.addEventListener('input', (e) => {
+  if (!currentNoteId) return;
+  const newTitle = e.target.value;
+  if (globalThis.noteTitleTmr) clearTimeout(globalThis.noteTitleTmr);
+  globalThis.noteTitleTmr = setTimeout(async () => {
+    const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
+    await updateDoc(docRef, { noteTitle: newTitle, updatedAt: serverTimestamp() });
+  }, 1000);
+});
 
 globalThis.closeNoteModal = function() {
   const modal = document.getElementById('note-modal');
