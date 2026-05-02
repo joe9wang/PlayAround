@@ -5467,19 +5467,6 @@ function createCardDom(cardId, imageSrc, state) {
 function applyCardState(card, data) {
   if (!card || !data) return;
 
-  // === DEBUG: ボードサイズ追跡 ===
-  if (data.type === 'board') {
-    console.log('[DEBUG-BOARD applyCardState]', {
-      cardId: card.dataset.cardId,
-      dataWidth: data.width, dataHeight: data.height,
-      inlineWidth: card.style.width, inlineHeight: card.style.height,
-      computedWidth: card.offsetWidth, computedHeight: card.offsetHeight,
-      imgSrc: card.querySelector('img')?.src?.slice(-40),
-      transform: card.style.transform,
-      classList: Array.from(card.classList).join(' '),
-    });
-  }
-
   card.dataset.ownerUid = data.ownerUid || '';
 
   card.dataset.ownerSeat = (data.ownerSeat != null) ? String(data.ownerSeat) : '';
@@ -5557,18 +5544,9 @@ function applyCardState(card, data) {
     const isHighResNeeded = ((scaleLevel >= 1) || isBoard) && data.fullUrl;
 
     // Apply width/height for image-token (e.g. chess pieces) or board
-    if ((data.type === 'image-token' || data.type === 'board') && data.width) {
+    if (data.width) {
       card.style.setProperty('width', `${data.width}px`, 'important');
       card.style.setProperty('height', `${data.height || data.width}px`, 'important');
-    }
-    // === DEBUG: ボードサイズ適用後 ===
-    if (data.type === 'board') {
-      console.log('[DEBUG-BOARD after-size-apply]', {
-        hadWidth: !!data.width,
-        resultWidth: card.style.width,
-        resultHeight: card.style.height,
-        offsetW: card.offsetWidth, offsetH: card.offsetHeight,
-      });
     }
 
     const targetSrc = isHighResNeeded ? data.fullUrl : data.imageUrl;
@@ -6130,6 +6108,8 @@ async function processQueue() {
             x, y, zIndex, faceUp: true,
             ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER, rotation: 0,
             visibleToAll: true,
+            width: isBoard ? sw : null,
+            height: isBoard ? sh : null,
             createdAt: serverTimestamp(), updatedAt: serverTimestamp()
           });
 
@@ -6462,22 +6442,21 @@ function makeDraggable(card) {
         const zIndex = parseInt(c.style.zIndex) || 1;
 
         const updateData = { x, y, zIndex };
-        if (c.style.width) updateData.width = Math.round(parseFloat(c.style.width));
-        if (c.style.height) updateData.height = Math.round(parseFloat(c.style.height));
-        // === DEBUG: ドラッグ完了時のボード状態 ===
-        const isBoard = c.classList.contains('is-board') || c.dataset.type === 'board';
-        if (isBoard) {
-          console.log('[DEBUG-BOARD drag-end]', {
-            id,
-            x, y, zIndex,
-            inlineWidth: c.style.width,
-            inlineHeight: c.style.height,
-            offsetW: c.offsetWidth,
-            offsetH: c.offsetHeight,
-            willSaveWidth: !!c.style.width,
-            updateData,
-          });
+        
+        // サイズ保存（ボードやトークン用）
+        // inline style が無い場合は offsetWidth/Height (実寸) を使用する
+        if (c.style.width) {
+          updateData.width = Math.round(parseFloat(c.style.width));
+        } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
+          updateData.width = Math.round(c.offsetWidth);
         }
+
+        if (c.style.height) {
+          updateData.height = Math.round(parseFloat(c.style.height));
+        } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
+          updateData.height = Math.round(c.offsetHeight);
+        }
+
         updateCardBatched(id, updateData);
 
       });
