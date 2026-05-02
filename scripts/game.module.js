@@ -12279,6 +12279,7 @@ globalThis.showNoteContextMenu = function(e, cardId) {
 
   currentNoteId = cardId;
   ctxMenu.style.display = 'block';
+  ctxMenu.style.zIndex = 20001;
   ctxMenu.style.left = `${e.clientX}px`;
   ctxMenu.style.top = `${e.clientY}px`;
 };
@@ -12309,12 +12310,23 @@ async function renderNoteContent() {
   contentArea.innerHTML = '読み込み中...';
   
   try {
-    const snap = await getDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`));
-    if (!snap.exists()) return;
+    const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
+    console.log('Fetching note data:', currentNoteId);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) {
+      console.warn('Note doc not found');
+      contentArea.innerHTML = 'ノートが見つかりません';
+      return;
+    }
     const data = snap.data();
+    console.log('Note data loaded:', data);
     const items = data.items || [];
     
     contentArea.innerHTML = '';
+    if (items.length === 0) {
+      contentArea.innerHTML = '<div style="text-align:center;color:#999;margin-top:20px;">コンテンツがありません。「＋」から追加してください。</div>';
+    }
+
     items.forEach((item, index) => {
       const div = document.createElement('div');
       div.className = 'note-item';
@@ -12376,10 +12388,11 @@ async function removeNoteItem(index) {
 document.getElementById('note-add-content-btn')?.addEventListener('click', (e) => {
   const menu = document.getElementById('note-plus-menu');
   if (!menu) return;
-  const btnRect = e.target.getBoundingClientRect();
   menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-  menu.style.left = `${btnRect.left - 100}px`;
-  menu.style.top = `${btnRect.bottom + 8}px`;
+  // ウィンドウ内の相対位置で表示
+  menu.style.right = '40px';
+  menu.style.top = '40px';
+  menu.style.left = 'auto';
 });
 
 globalThis.addNoteText = async function() {
