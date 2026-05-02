@@ -4172,13 +4172,14 @@ function startSession(roomId, playerId) {
 
   bindChatUIOnce();         // ←追加：送信ボタン/Enter送信を有効化
 
-  subscribeHP(roomId);      // HPの購読開始
+  subscribeHP(roomId);      // HP的購読開始
 
   subscribeAreas();         // エリア背景画像の同期
 
   bindAreaContextMenuOnce(); // エリア右クリックメニューの初期化
 
   bindTokenContextMenuOnce(); // トークン用右クリックメニューの初期化
+  bindNoteContextMenuOnce();  // ノート用右クリックメニューの初期化
 
 
 
@@ -4957,8 +4958,6 @@ function createCardDom(cardId, imageSrc, state) {
       if (state.type === 'memo') {
         let rszTmr = null;
         const rszObserver = new ResizeObserver(entries => {
-          // ドラッグ開始時のisLocalRecentでスキップすると手動リサイズが保存されないためコメントアウト
-          // if (isLocalRecent(cardId)) return; 
           if (rszTmr) clearTimeout(rszTmr);
           rszTmr = setTimeout(() => {
             const entry = entries[0];
@@ -4972,6 +4971,23 @@ function createCardDom(cardId, imageSrc, state) {
       }
     }
     card.appendChild(tokenInput);
+  }
+
+  if (state?.type === 'note') {
+    card.classList.add('note');
+    card.innerHTML = '📒';
+    img.style.display = 'none';
+
+    card.addEventListener('click', (e) => {
+      if (e.detail > 1) return;
+      if (typeof openNoteModal === 'function') openNoteModal(cardId);
+    });
+
+    card.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof showNoteContextMenu === 'function') showNoteContextMenu(e, cardId);
+    });
   }
 
 
@@ -6646,8 +6662,21 @@ function makeDraggable(card) {
         const zIndex = parseInt(c.style.zIndex) || 1;
 
         const updateData = { x, y, zIndex };
-        if (c.style.width) updateData.width = Math.round(parseFloat(c.style.width));
-        if (c.style.height) updateData.height = Math.round(parseFloat(c.style.height));
+        
+        // サイズ保存（ボードやトークン用）
+        // inline style が無い場合は offsetWidth/Height (実寸) を使用する
+        if (c.style.width) {
+          updateData.width = Math.round(parseFloat(c.style.width));
+        } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
+          updateData.width = Math.round(c.offsetWidth);
+        }
+
+        if (c.style.height) {
+          updateData.height = Math.round(parseFloat(c.style.height));
+        } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
+          updateData.height = Math.round(c.offsetHeight);
+        }
+
         updateCardBatched(id, updateData);
 
       });
@@ -7899,6 +7928,36 @@ window.spawnMemo = async function () {
   } catch (e) {
     console.error(e);
     alert('メモ作成に失敗しました。');
+  }
+};
+
+window.spawnNote = async function () {
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください'); return;
+  }
+  try {
+    const { x, y } = randomPointInMainPlay(CURRENT_PLAYER);
+    const z = getMaxZIndex(Z_FRONT_BASE) + 20;
+    const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
+
+    const payload = {
+      type: 'note',
+      x, y, zIndex: z,
+      items: [], // [{ type: 'text', value: '...' }, { type: 'image', value: 'url' }]
+      faceUp: true,
+      ownerUid: CURRENT_UID,
+      ownerSeat: CURRENT_PLAYER,
+      rotation: 0,
+      visibleToAll: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
+
+    await addDoc(baseCol, payload);
+
+  } catch (e) {
+    console.error(e);
   }
 };
 
@@ -12163,3 +12222,193 @@ if (leaveSeatBtn) {
     
   });
 }
+
+// ===============================
+// ノート機能
+// ===============================
+
+let currentNoteId = null;
+
+function bindNoteContextMenuOnce() {
+  const ctxMenu = document.getElementById('note-context-menu');
+  if (!ctxMenu) return;
+
+  ctxMenu.addEventListener('click', (e) => e.stopPropagation());
+
+  document.getElementById('note-ctx-move')?.addEventListener('click', (e) => {
+    const menu = document.getElementById('note-context-menu');
+    if (menu) menu.style.display = 'none';
+  });
+
+  document.getElementById('note-ctx-edit')?.addEventListener('click', (e) => {
+    const menu = document.getElementById('note-context-menu');
+    if (menu) menu.style.display = 'none';
+    openNoteModal(currentNoteId);
+  });
+
+  document.getElementById('note-ctx-to-front')?.addEventListener('click', async (e) => {
+    const menu = document.getElementById('note-context-menu');
+    if (menu) menu.style.display = 'none';
+    if (!CURRENT_ROOM || !currentNoteId) return;
+    const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
+    const zIndex = getMaxZIndex(Z_FRONT_BASE) + 1;
+    await updateDoc(docRef, { zIndex, updatedAt: serverTimestamp() });
+  });
+
+  document.getElementById('note-ctx-delete')?.addEventListener('click', async (e) => {
+    const menu = document.getElementById('note-context-menu');
+    if (menu) menu.style.display = 'none';
+    if (!CURRENT_ROOM || !currentNoteId) return;
+    if (!confirm('このノートを削除しますか？')) return;
+    await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`));
+    markLocalDelete(currentNoteId);
+  });
+}
+
+globalThis.showNoteContextMenu = function(e, cardId) {
+  const ctxMenu = document.getElementById('note-context-menu');
+  if (!ctxMenu) return;
+  e.preventDefault();
+  e.stopPropagation();
+  
+  // 他のメニューを閉じる
+  const tokenMenu = document.getElementById('token-context-menu');
+  if (tokenMenu) tokenMenu.style.display = 'none';
+  const areaMenu = document.getElementById('area-context-menu');
+  if (areaMenu) areaMenu.style.display = 'none';
+
+  currentNoteId = cardId;
+  ctxMenu.style.display = 'block';
+  ctxMenu.style.left = `${e.clientX}px`;
+  ctxMenu.style.top = `${e.clientY}px`;
+};
+
+// Modal functions
+globalThis.openNoteModal = async function(cardId) {
+  currentNoteId = cardId;
+  const modal = document.getElementById('note-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    renderNoteContent();
+  }
+};
+
+globalThis.closeNoteModal = function() {
+  const modal = document.getElementById('note-modal');
+  if (modal) modal.style.display = 'none';
+  const plusMenu = document.getElementById('note-plus-menu');
+  if (plusMenu) plusMenu.style.display = 'none';
+};
+
+async function renderNoteContent() {
+  const contentArea = document.getElementById('note-content-area');
+  if (!contentArea) return;
+  contentArea.innerHTML = '読み込み中...';
+  
+  try {
+    const snap = await getDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`));
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const items = data.items || [];
+    
+    contentArea.innerHTML = '';
+    items.forEach((item, index) => {
+      const div = document.createElement('div');
+      div.className = 'note-item';
+      
+      if (item.type === 'text') {
+        const textarea = document.createElement('textarea');
+        textarea.value = item.value;
+        textarea.addEventListener('change', () => updateNoteItem(index, textarea.value));
+        div.appendChild(textarea);
+      } else if (item.type === 'image') {
+        const img = document.createElement('img');
+        img.src = item.value;
+        div.appendChild(img);
+      }
+      
+      const del = document.createElement('div');
+      del.className = 'delete-btn';
+      del.innerHTML = '&times;';
+      del.onclick = () => removeNoteItem(index);
+      div.appendChild(del);
+      
+      contentArea.appendChild(div);
+    });
+  } catch (err) {
+    console.error('Note render failed', err);
+    contentArea.innerHTML = '読み込みに失敗しました';
+  }
+}
+
+async function updateNoteItem(index, newValue) {
+  if (!currentNoteId) return;
+  const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
+  const snap = await getDoc(docRef);
+  const items = snap.data().items || [];
+  if (items[index]) {
+    items[index].value = newValue;
+    await updateDoc(docRef, { items, updatedAt: serverTimestamp() });
+  }
+}
+
+async function removeNoteItem(index) {
+  if (!currentNoteId) return;
+  const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
+  const snap = await getDoc(docRef);
+  const items = snap.data().items || [];
+  items.splice(index, 1);
+  await updateDoc(docRef, { items, updatedAt: serverTimestamp() });
+  renderNoteContent();
+}
+
+// Plus menu logic
+document.getElementById('note-add-content-btn')?.addEventListener('click', (e) => {
+  const menu = document.getElementById('note-plus-menu');
+  if (!menu) return;
+  const btnRect = e.target.getBoundingClientRect();
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  menu.style.left = `${btnRect.left - 100}px`;
+  menu.style.top = `${btnRect.bottom + 8}px`;
+});
+
+globalThis.addNoteText = async function() {
+  if (!currentNoteId) return;
+  const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
+  const snap = await getDoc(docRef);
+  const items = snap.data().items || [];
+  items.push({ type: 'text', value: '' });
+  await updateDoc(docRef, { items, updatedAt: serverTimestamp() });
+  const menu = document.getElementById('note-plus-menu');
+  if (menu) menu.style.display = 'none';
+  renderNoteContent();
+};
+
+globalThis.addNoteImage = function() {
+  document.getElementById('note-image-input')?.click();
+  const menu = document.getElementById('note-plus-menu');
+  if (menu) menu.style.display = 'none';
+};
+
+document.getElementById('note-image-input')?.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const cardId = currentNoteId;
+  if (!cardId) return;
+  
+  try {
+    const storageRef = ref(storage, `rooms/${CURRENT_ROOM}/notes/${cardId}/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+    
+    const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`);
+    const snap = await getDoc(docRef);
+    const items = snap.data().items || [];
+    items.push({ type: 'image', value: url });
+    await updateDoc(docRef, { items, updatedAt: serverTimestamp() });
+    renderNoteContent();
+  } catch (err) {
+    console.error('Note image upload failed', err);
+    alert('画像のアップロードに失敗しました');
+  }
+});

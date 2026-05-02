@@ -203,7 +203,14 @@
         <button class="sl-btn" onclick="spawnCounter('-50')" data-i18n="side.minus50">➖50</button>
         <button class="sl-btn" onclick="spawnCounter('-100')" data-i18n="side.minus100">➖100</button>
       </div>
+      </details>
+
+      <details class="ops-section">
+      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">メモ・ノート<br>
+        <span style="font-size:12px;color:#666;font-weight:normal;">(左クリックで表示、右クリックで操作)</span>
+      </summary>
       <button class="sl-btn" onclick="spawnMemo()" data-i18n="side.memo">📝 メモ作成</button>
+      <button class="sl-btn" onclick="spawnNote()" data-i18n="side.note">📒 ノート作成</button>
       </details>
 
       <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全マイカードウラ画像設定</button>
@@ -804,6 +811,39 @@
   </div>
   <!-- Hidden file input for area background -->
   <input type="file" id="area-bg-file" accept="image/*" style="display: none;" />
+
+  <!-- === Note Context Menu === -->
+  <div id="note-context-menu" class="area-context-menu" style="display: none; position: absolute; z-index: 10002;">
+    <ul>
+      <li id="note-ctx-move">🤚 移動</li>
+      <li id="note-ctx-edit">📝 編集</li>
+      <li id="note-ctx-to-front">⬆ 最前面に移動</li>
+      <li id="note-ctx-delete" style="color: #ff4444;">❌ 削除</li>
+    </ul>
+  </div>
+
+  <!-- === Note Modal === -->
+  <div id="note-modal" class="sl-modal-container" style="display: none;">
+    <div class="sl-modal-content" style="max-width: 600px; width: 90%; min-height: 400px; display: flex; flex-direction: column;">
+      <div class="sl-modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 id="note-modal-title" data-i18n="note.title">ノート</h3>
+        <div style="display: flex; gap: 8px;">
+          <button id="note-add-content-btn" class="inline-toggle" title="コンテンツを追加" style="font-size: 20px;">＋</button>
+          <button onclick="closeNoteModal()" class="inline-toggle" style="font-size: 20px;">&times;</button>
+        </div>
+      </div>
+      <div id="note-content-area" style="flex: 1; padding: 16px; overflow-y: auto; background: #fffdf0; border-radius: 8px; margin-top: 12px; border: 1px solid #eee;">
+        <!-- 内容がここに表示される -->
+      </div>
+      <div id="note-plus-menu" style="display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 8px; z-index: 11000;">
+        <button onclick="addNoteText()" class="sl-btn" style="margin-bottom: 4px;">📝 テキストを追加</button>
+        <button onclick="addNoteImage()" class="sl-btn">🖼 画像を追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden file input for Note images -->
+  <input type="file" id="note-image-input" accept="image/*" style="display: none;" />
 
   <!-- === Token Context Menu === -->
   <div id="token-context-menu" class="area-context-menu" style="display: none; position: absolute; z-index: 10001;">

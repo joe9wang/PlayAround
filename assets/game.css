@@ -880,6 +880,70 @@ input:checked + .slider:before {
   resize: none;
 }
 
+.card.note {
+  width: 60px !important;
+  height: 60px !important;
+  background: #fffdf0 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 32px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+  border: 2px solid #f1c40f !important;
+  cursor: pointer !important;
+  transition: transform 0.2s, box-shadow 0.2s;
+  overflow: visible !important;
+}
+.card.note:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+.card.note img {
+  display: none !important;
+}
+
+#note-content-area .note-item {
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  position: relative;
+}
+#note-content-area .note-item img {
+  max-width: 100%;
+  border-radius: 4px;
+}
+#note-content-area .note-item textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+}
+#note-content-area .note-item .delete-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: #ff4444;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 .card.memo {
   background: #fff;
   display: flex !important;
