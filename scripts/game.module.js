@@ -4974,9 +4974,14 @@ function createCardDom(cardId, imageSrc, state) {
   }
 
   if (state?.type === 'note') {
-    card.classList.add('note');
-    card.innerHTML = '📒';
-    img.style.display = 'none';
+    card.classList.add('note-icon');
+    const itemCount = (state.items || []).length;
+    card.innerHTML = `
+      <div class="note-clip"></div>
+      <div class="note-lines"></div>
+      <div class="note-badge">${itemCount}</div>
+    `;
+    if (img) img.style.display = 'none';
 
     card.addEventListener('click', (e) => {
       if (e.detail > 1) return;
@@ -5641,28 +5646,27 @@ function applyCardState(card, data) {
 
 
 
-  if (data.type === 'numcounter') {
-
-    card.classList.add('numcounter');
-
-    const input = card.querySelector('.nc-input');
-
-    if (input) {
-
-      const v = Number.isFinite(data.count) ? data.count : 0;
-
-      if (String(input.value) !== String(v)) input.value = v;
-
-      const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
-
-      input.disabled = !editable;
-
+  if (data.type === 'note') {
+    card.classList.add('note-icon');
+    const badge = card.querySelector('.note-badge');
+    if (badge) {
+      badge.textContent = (data.items || []).length;
     }
-
     const img2 = card.querySelector('img');
-
     if (img2) img2.style.display = 'none';
+  }
 
+  if (data.type === 'numcounter') {
+    card.classList.add('numcounter');
+    const input = card.querySelector('.nc-input');
+    if (input) {
+      const v = Number.isFinite(data.count) ? data.count : 0;
+      if (String(input.value) !== String(v)) input.value = v;
+      const editable = (card.dataset.ownerSeat === String(CURRENT_PLAYER));
+      input.disabled = !editable;
+    }
+    const img2 = card.querySelector('img');
+    if (img2) img2.style.display = 'none';
   }
 
 
@@ -12305,65 +12309,95 @@ globalThis.closeNoteModal = function() {
 };
 
 async function renderNoteContent() {
-  const contentArea = document.getElementById('note-content-area');
-  if (!contentArea) return;
-  contentArea.innerHTML = '読み込み中...';
+  const editorList = document.getElementById('note-editor-list');
+  if (!editorList) return;
+  editorList.innerHTML = '読み込み中...';
   
   try {
     const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
-    console.log('Fetching note data:', currentNoteId);
     const snap = await getDoc(docRef);
     if (!snap.exists()) {
-      console.warn('Note doc not found');
-      contentArea.innerHTML = 'ノートが見つかりません';
+      editorList.innerHTML = 'ノートが見つかりません';
       return;
     }
     const data = snap.data();
-    console.log('Note data loaded:', data);
     const items = data.items || [];
     
-    contentArea.innerHTML = '';
+    editorList.innerHTML = '';
     if (items.length === 0) {
-      contentArea.innerHTML = '<div style="text-align:center;color:#999;margin-top:20px;">コンテンツがありません。「＋」から追加してください。</div>';
+      editorList.innerHTML = '<div style="text-align:center;color:#7a6d5c;padding:28px 18px;border:3px dashed #b7a98e;border-radius:14px;background:rgba(255,255,255,0.55);margin-top:10px;">＋ボタンから画像またはテキストを追加してください。</div>';
+      return;
     }
 
     items.forEach((item, index) => {
-      const div = document.createElement('div');
-      div.className = 'note-item';
+      const card = document.createElement('div');
+      card.className = 'note-editor-card';
       
+      const header = document.createElement('div');
+      header.className = 'note-card-header';
+      
+      const titleInput = document.createElement('input');
+      titleInput.className = 'note-title-input';
+      titleInput.placeholder = item.type === 'image' ? '画像タイトル' : 'テキストタイトル';
+      titleInput.value = item.title || '';
+      let titleTmr = null;
+      titleInput.addEventListener('input', () => {
+        if (titleTmr) clearTimeout(titleTmr);
+        titleTmr = setTimeout(() => {
+          updateNoteItemTitle(index, titleInput.value);
+        }, 1000);
+      });
+      
+      const delBtn = document.createElement('button');
+      delBtn.className = 'note-remove-button';
+      delBtn.type = 'button';
+      delBtn.textContent = '削除';
+      delBtn.onclick = () => removeNoteItem(index);
+      
+      header.appendChild(titleInput);
+      header.appendChild(delBtn);
+      card.appendChild(header);
+
       if (item.type === 'text') {
         const textarea = document.createElement('textarea');
-        textarea.value = item.value;
+        textarea.className = 'note-textarea';
+        textarea.placeholder = 'ここにテキストを入力';
+        textarea.value = item.value || '';
         let tmr = null;
         textarea.addEventListener('input', () => {
           if (tmr) clearTimeout(tmr);
           tmr = setTimeout(() => {
-            console.log('Auto-saving note item:', index);
-            updateNoteItem(index, textarea.value);
+            updateNoteItemValue(index, textarea.value);
           }, 1000);
         });
-        div.appendChild(textarea);
+        card.appendChild(textarea);
       } else if (item.type === 'image') {
         const img = document.createElement('img');
+        img.className = 'note-preview-image';
         img.src = item.value;
-        div.appendChild(img);
+        card.appendChild(img);
       }
       
-      const del = document.createElement('div');
-      del.className = 'delete-btn';
-      del.innerHTML = '&times;';
-      del.onclick = () => removeNoteItem(index);
-      div.appendChild(del);
-      
-      contentArea.appendChild(div);
+      editorList.appendChild(card);
     });
   } catch (err) {
     console.error('Note render failed', err);
-    contentArea.innerHTML = '読み込みに失敗しました';
+    editorList.innerHTML = '読み込みに失敗しました';
   }
 }
 
-async function updateNoteItem(index, newValue) {
+async function updateNoteItemTitle(index, newTitle) {
+  if (!currentNoteId) return;
+  const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
+  const snap = await getDoc(docRef);
+  const items = snap.data().items || [];
+  if (items[index]) {
+    items[index].title = newTitle;
+    await updateDoc(docRef, { items, updatedAt: serverTimestamp() });
+  }
+}
+
+async function updateNoteItemValue(index, newValue) {
   if (!currentNoteId) return;
   const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
   const snap = await getDoc(docRef);
@@ -12389,10 +12423,19 @@ document.getElementById('note-add-content-btn')?.addEventListener('click', (e) =
   const menu = document.getElementById('note-plus-menu');
   if (!menu) return;
   menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-  // ウィンドウ内の相対位置で表示
-  menu.style.right = '10px';
-  menu.style.top = '50px';
-  menu.style.left = 'auto';
+});
+
+// Clear all logic
+document.getElementById('note-clear-all-btn')?.addEventListener('click', async () => {
+  if (!currentNoteId) return;
+  if (!confirm('ノートの全内容を削除しますか？')) return;
+  try {
+    const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
+    await updateDoc(docRef, { items: [], updatedAt: serverTimestamp() });
+    renderNoteContent();
+  } catch (err) {
+    console.error('Clear note failed', err);
+  }
 });
 
 globalThis.addNoteText = async function() {

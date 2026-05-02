@@ -823,21 +823,26 @@
   </div>
 
   <!-- === Note Modal === -->
-  <div id="note-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 20000; align-items: center; justify-content: center;">
-    <div class="sl-modal-container" style="max-width: 600px; width: 95%; height: 80vh; display: flex; flex-direction: column; position: relative;">
-      <div class="sl-modal-header" style="display: flex; justify-content: space-between; align-items: center;">
-        <h3 id="note-modal-title" data-i18n="note.title">ノート</h3>
-        <div style="display: flex; gap: 8px;">
-          <button id="note-add-content-btn" class="inline-toggle" title="コンテンツを追加" style="font-size: 20px;">＋</button>
-          <button onclick="closeNoteModal()" class="inline-toggle" style="font-size: 20px;">&times;</button>
+  <div id="note-modal" style="display: none; position: fixed; inset: 0; background: rgba(20, 16, 12, 0.45); z-index: 20000; align-items: center; justify-content: center;">
+    <div class="sl-modal-container">
+      <header class="sl-modal-header">
+        <h2 id="note-modal-title" class="modal-title" data-i18n="note.title">ノートを編集</h2>
+        <button onclick="closeNoteModal()" class="close-button-new" aria-label="閉じる">×</button>
+      </header>
+      <div id="note-content-area">
+        <div class="note-toolbar">
+          <button id="note-add-content-btn" class="note-plus-button" type="button" title="コンテンツを追加">＋</button>
+          <button onclick="closeNoteModal()" class="note-save-button" type="button">保存</button>
+          <button id="note-clear-all-btn" class="note-clear-button" type="button">全削除</button>
+
+          <div id="note-plus-menu" style="display: none;">
+            <button onclick="addNoteImage()" type="button">🖼 画像を追加</button>
+            <button onclick="addNoteText()" type="button">📝 テキストを追加</button>
+          </div>
         </div>
-      </div>
-      <div id="note-content-area" style="flex: 1; padding: 16px; overflow-y: auto; background: #fffdf0; border-radius: 8px; margin-top: 12px; border: 1px solid #eee;">
-        <!-- 内容がここに表示される -->
-      </div>
-      <div id="note-plus-menu" style="display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 8px; z-index: 11000;">
-        <button onclick="addNoteText()" class="sl-btn" style="margin-bottom: 4px;">📝 テキストを追加</button>
-        <button onclick="addNoteImage()" class="sl-btn">🖼 画像を追加</button>
+        <div id="note-editor-list">
+          <!-- コンテンツがここに表示される -->
+        </div>
       </div>
     </div>
   </div>
