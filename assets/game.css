@@ -1494,7 +1494,8 @@ body.is-spectator #spectator-banner { display: block; }
 }
 
 /* Modal Styling */
-#note-modal .sl-modal-container {
+#note-modal .sl-modal-container,
+#note-view-modal .sl-modal-container {
   max-width: 560px !important;
   height: auto !important;
   max-height: 86vh !important;
@@ -1506,7 +1507,8 @@ body.is-spectator #spectator-banner { display: block; }
   overflow: hidden !important;
 }
 
-#note-modal .sl-modal-header {
+#note-modal .sl-modal-header,
+#note-view-modal .sl-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1523,7 +1525,8 @@ body.is-spectator #spectator-banner { display: block; }
   font-weight: 800;
 }
 
-#note-modal .close-button-new {
+#note-modal .close-button-new,
+#note-view-modal .close-button-new {
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -1689,7 +1692,8 @@ body.is-spectator #spectator-banner { display: block; }
 }
 
 
-#note-modal .note-modal-title-input {
+#note-modal .note-modal-title-input,
+#note-view-modal .modal-title {
   flex: 1;
   background: transparent !important;
   border: none !important;
@@ -1700,6 +1704,7 @@ body.is-spectator #spectator-banner { display: block; }
   padding: 4px 0 !important;
   outline: none !important;
   font-family: inherit !important;
+  margin: 0;
 }
 
 #note-modal .note-modal-title-input:focus {
