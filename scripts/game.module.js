@@ -12332,6 +12332,11 @@ globalThis.closeNoteModal = function() {
   if (plusMenu) plusMenu.style.display = 'none';
 };
 
+// 背景クリックで閉じる処理
+document.getElementById('note-modal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'note-modal') closeNoteModal();
+});
+
 async function renderNoteContent() {
   const editorList = document.getElementById('note-editor-list');
   if (!editorList) return;
@@ -12520,6 +12525,11 @@ globalThis.closeNoteViewModal = function() {
   const modal = document.getElementById('note-view-modal');
   if (modal) modal.style.display = 'none';
 };
+
+// 背景クリックで閉じる処理
+document.getElementById('note-view-modal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'note-view-modal') closeNoteViewModal();
+});
 
 async function renderNoteViewContent() {
   const viewList = document.getElementById('note-view-list');
