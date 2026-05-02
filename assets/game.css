@@ -1633,7 +1633,6 @@ body.is-spectator #spectator-banner { display: block; }
   border-radius: 0;
   background: transparent;
   padding: 12px 0;
-  border-bottom: 2px dashed #b7a98e;
 }
 .note-editor-card:last-child {
   border-bottom: none;
@@ -1737,7 +1736,6 @@ body.is-spectator #spectator-banner { display: block; }
 
 .note-view-card {
   padding: 10px 0;
-  border-bottom: 2px dashed #b7a98e;
 }
 
 .note-view-card:last-child {
