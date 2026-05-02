@@ -4985,7 +4985,7 @@ function createCardDom(cardId, imageSrc, state) {
 
     card.addEventListener('click', (e) => {
       if (e.detail > 1) return;
-      if (typeof openNoteModal === 'function') openNoteModal(cardId);
+      if (typeof openNoteViewModal === 'function') openNoteViewModal(cardId);
     });
 
     card.addEventListener('contextmenu', (e) => {
@@ -12507,3 +12507,70 @@ document.getElementById('note-image-input')?.addEventListener('change', async (e
     alert('画像のアップロードに失敗しました');
   }
 });
+globalThis.openNoteViewModal = async function(cardId) {
+  currentNoteId = cardId;
+  const modal = document.getElementById('note-view-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    renderNoteViewContent();
+  }
+};
+
+globalThis.closeNoteViewModal = function() {
+  const modal = document.getElementById('note-view-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+async function renderNoteViewContent() {
+  const viewList = document.getElementById('note-view-list');
+  const titleHeader = document.getElementById('note-view-modal-title');
+  if (!viewList) return;
+  viewList.innerHTML = '読み込み中...';
+  
+  try {
+    const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) {
+      viewList.innerHTML = 'ノートが見つかりません';
+      return;
+    }
+    const data = snap.data();
+    const items = data.items || [];
+    if (titleHeader) titleHeader.textContent = data.noteTitle || 'ノートの内容';
+    
+    viewList.innerHTML = '';
+    if (items.length === 0) {
+      viewList.innerHTML = '<div class="empty-message">まだノートに内容がありません。</div>';
+      return;
+    }
+
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'note-view-card';
+      
+      if (item.title) {
+        const h3 = document.createElement('h3');
+        h3.className = 'note-view-title';
+        h3.textContent = item.title;
+        card.appendChild(h3);
+      }
+      
+      if (item.type === 'text' && item.value) {
+        const p = document.createElement('p');
+        p.className = 'note-view-text';
+        p.textContent = item.value;
+        card.appendChild(p);
+      } else if (item.type === 'image' && item.value) {
+        const img = document.createElement('img');
+        img.className = 'note-view-image';
+        img.src = item.value;
+        card.appendChild(img);
+      }
+      
+      viewList.appendChild(card);
+    });
+  } catch (err) {
+    console.error('Note view render failed', err);
+    viewList.innerHTML = '読み込みに失敗しました';
+  }
+}

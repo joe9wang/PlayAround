@@ -850,6 +850,21 @@
   <!-- Hidden file input for Note images -->
   <input type="file" id="note-image-input" accept="image/*" style="display: none;" />
 
+  <!-- === Note View Modal === -->
+  <div id="note-view-modal" style="display: none; position: fixed; inset: 0; background: rgba(20, 16, 12, 0.45); z-index: 20000; align-items: center; justify-content: center;">
+    <div class="sl-modal-container">
+      <header class="sl-modal-header">
+        <h2 id="note-view-modal-title" class="modal-title">ノートの内容</h2>
+        <button onclick="closeNoteViewModal()" class="close-button-new" aria-label="閉じる">×</button>
+      </header>
+      <div id="note-view-content-area" class="note-viewer-body">
+        <div id="note-view-list">
+          <!-- コンテンツがここに表示される -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- === Token Context Menu === -->
   <div id="token-context-menu" class="area-context-menu" style="display: none; position: absolute; z-index: 10001;">
     <ul>
