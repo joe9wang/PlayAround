@@ -3038,8 +3038,10 @@ async function generateBoardPreview() {
       return '#2ecc71'; // 最終手段の緑
     };
 
-    // 1. 全体の背景色の決定（UIに合わせて薄い灰色をベースにする）
-    ctx.fillStyle = '#f0f0f0';
+    const actualFieldBg = getEffectiveBackgroundColor(field);
+    
+    // 1. 全体の背景色の決定
+    ctx.fillStyle = actualFieldBg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // 2. 描画対象エリアの収集（フィールド内の要素に限定）
