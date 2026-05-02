@@ -12285,11 +12285,14 @@ globalThis.showNoteContextMenu = function(e, cardId) {
 
 // Modal functions
 globalThis.openNoteModal = async function(cardId) {
+  console.log('openNoteModal called for:', cardId);
   currentNoteId = cardId;
   const modal = document.getElementById('note-modal');
   if (modal) {
     modal.style.display = 'flex';
     renderNoteContent();
+  } else {
+    console.warn('note-modal element not found');
   }
 };
 
@@ -12373,15 +12376,20 @@ document.getElementById('note-add-content-btn')?.addEventListener('click', (e) =
 });
 
 globalThis.addNoteText = async function() {
+  console.log('addNoteText called for:', currentNoteId);
   if (!currentNoteId) return;
-  const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
-  const snap = await getDoc(docRef);
-  const items = snap.data().items || [];
-  items.push({ type: 'text', value: '' });
-  await updateDoc(docRef, { items, updatedAt: serverTimestamp() });
-  const menu = document.getElementById('note-plus-menu');
-  if (menu) menu.style.display = 'none';
-  renderNoteContent();
+  try {
+    const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentNoteId}`);
+    const snap = await getDoc(docRef);
+    const items = snap.data().items || [];
+    items.push({ type: 'text', value: '' });
+    await updateDoc(docRef, { items, updatedAt: serverTimestamp() });
+    const menu = document.getElementById('note-plus-menu');
+    if (menu) menu.style.display = 'none';
+    renderNoteContent();
+  } catch (err) {
+    console.error('addNoteText failed', err);
+  }
 };
 
 globalThis.addNoteImage = function() {
