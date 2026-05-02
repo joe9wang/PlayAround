@@ -12390,8 +12390,8 @@ document.getElementById('note-add-content-btn')?.addEventListener('click', (e) =
   if (!menu) return;
   menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
   // ウィンドウ内の相対位置で表示
-  menu.style.right = '40px';
-  menu.style.top = '40px';
+  menu.style.right = '10px';
+  menu.style.top = '50px';
   menu.style.left = 'auto';
 });
 
