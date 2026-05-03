@@ -2398,43 +2398,29 @@ function stopHostWatch() { if (hostWatchTimer) { clearInterval(hostWatchTimer); 
 
 
 function svgDiceDataUrl(n) {
-
-  const size = 72, r = 8, pipR = 6;
-
-  const pip = (cx, cy) => `<circle cx="${cx}" cy="${cy}" r="${pipR}" fill="#111"/>`;
-
-  const g = [size * 0.22, size * 0.5, size * 0.78];
-
+  const size = 72, r = 12, pipR = 6.5;
+  const pip = (cx, cy) => `<circle cx="${cx}" cy="${cy}" r="${pipR}" fill="#3b3027"/>`;
+  const g = [size * 0.24, size * 0.5, size * 0.76];
   const patterns = {
-
     1: [[1, 1]],
-
     2: [[0, 0], [2, 2]],
-
     3: [[0, 0], [1, 1], [2, 2]],
-
     4: [[0, 0], [0, 2], [2, 0], [2, 2]],
-
     5: [[0, 0], [0, 2], [1, 1], [2, 0], [2, 2]],
-
     6: [[0, 0], [1, 0], [2, 0], [0, 2], [1, 2], [2, 2]],
-
   };
-
   const pips = (patterns[n] || []).map(([i, j]) => pip(g[i], g[j])).join('');
-
-  const svg =
-
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-
-      <rect x="1" y="1" width="${size - 2}" height="${size - 2}" rx="${r}" ry="${r}" fill="#fff" stroke="#111" stroke-width="2"/>
-
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+      <defs>
+        <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <rect x="3" y="3" width="${size - 6}" height="${size - 6}" rx="${r}" ry="${r}" fill="#fff" stroke="#3b3027" stroke-width="4" filter="url(#s)"/>
       ${pips}
-
     </svg>`;
-
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-
 }
 
 
@@ -7200,23 +7186,19 @@ function disableDiceButtons(ms = 3000) {
 // ==== 数字表示の汎用ダイスSVG（D10/D20用） ====
 
 function svgNumberDiceDataUrl(n) {
-
-  const size = 72, r = 8;
-
+  const size = 72, r = 12;
   const svg = `
-
     <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-
-      <rect x="1" y="1" width="${size - 2}" height="${size - 2}" rx="${r}" ry="${r}" fill="#fff" stroke="#111" stroke-width="2"/>
-
-      <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle"
-
-            font-size="${n >= 100 ? 26 : n >= 10 ? 34 : 40}" font-family="ui-sans-serif, system-ui" fill="#111" font-weight="700">${n}</text>
-
+      <defs>
+        <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <rect x="3" y="3" width="${size - 6}" height="${size - 6}" rx="${r}" ry="${r}" fill="#fff" stroke="#3b3027" stroke-width="4" filter="url(#s)"/>
+      <text x="50%" y="56%" dominant-baseline="middle" text-anchor="middle"
+            font-size="${n >= 100 ? 26 : n >= 10 ? 32 : 38}" font-family="ui-sans-serif, system-ui, sans-serif" fill="#3b3027" font-weight="900">${n}</text>
     </svg>`;
-
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-
 }
 
 
@@ -7563,31 +7545,18 @@ window.flipCoin = async function () {
 // ===============================
 
 function svgCounterDataUrl(label) {
-
   const size = 60;
-
   const svg = `
-
     <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-
       <defs>
-
-        <filter id="s">
-
-          <feDropShadow dx="0" dy="1" stdDeviation="1" flood-opacity="0.35"/>
-
+        <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-opacity="0.3"/>
         </filter>
-
       </defs>
-
-      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 3}" fill="#ffffff" stroke="#111" stroke-width="2" filter="url(#s)"/>
-
-      <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="22" font-family="ui-sans-serif, system-ui" fill="#111" font-weight="700">${label}</text>
-
+      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 4}" fill="#ffffff" stroke="#3b3027" stroke-width="4" filter="url(#s)"/>
+      <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="20" font-family="ui-sans-serif, system-ui, sans-serif" fill="#3b3027" font-weight="900">${label}</text>
     </svg>`;
-
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-
 }
 
 //
