@@ -8582,7 +8582,7 @@ window.openMyDeckCardsDialog = function () {
   // タイトルを書き換え
 
   const titleEl = document.getElementById('card-list-title');
-  if (titleEl) titleEl.textContent = '自分のデッキ一覧';
+  if (titleEl) titleEl.textContent = '自分のデッキエリアにあるもの一覧';
 
 
 
@@ -8719,7 +8719,7 @@ window.openMyDiscardCardsDialog = function () {
   // タイトルを書き換え（モーダルは既存のものを流用）
 
   const titleEl = document.getElementById('card-list-title');
-  if (titleEl) titleEl.textContent = '自分の捨て札一覧';
+  if (titleEl) titleEl.textContent = '自分の捨て札エリアにあるもの一覧';
 
 
 
