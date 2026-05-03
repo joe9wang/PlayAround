@@ -163,6 +163,8 @@
       <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
       <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
       <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
+      <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全カードのウラ画像設定</button>
+      <button class="sl-btn" onclick="openBackImagePicker(true)" data-i18n="side.BackImageSelected">🖼 選択中カードのウラ画像設定</button>
       </details>
       <details class="ops-section">
       <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">コイン・ダイス<br>
@@ -213,8 +215,6 @@
       <button class="sl-btn" onclick="spawnNote()">📒 ノート作成</button>
       </details>
 
-      <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全マイカードウラ画像設定</button>
-      <button class="sl-btn" onclick="openBackImagePicker(true)" data-i18n="side.BackImageSelected">🖼 選択中カードのウラ画像設定</button>
       <!-- 非表示のファイル入力（画像選択ダイアログ用） -->
       <input id="card-back-input" type="file" accept="image/*" style="display:none">
 
