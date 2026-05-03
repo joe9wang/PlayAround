@@ -6073,7 +6073,7 @@ async function fileToThumbAndFull(file) {
 
   try { bmp.close?.(); } catch (_) { }
 
-  return { thumbDataUrl, fullDataUrl };
+  return { thumbDataUrl, fullDataUrl, sw, sh };
 
 }
 
@@ -6107,7 +6107,7 @@ async function processQueue() {
 
         const results = await Promise.all(group.map(async ({ file, kind }) => {
 
-          const { thumbDataUrl, fullDataUrl } = await fileToThumbAndFull(file);
+          const { thumbDataUrl, fullDataUrl, sw, sh } = await fileToThumbAndFull(file);
 
           if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) return null;
 
