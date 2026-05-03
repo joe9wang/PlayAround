@@ -139,7 +139,8 @@
 
       <!-- Search Section -->
       <details class="ops-section">
-        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;" data-i18n="side.search">検索</summary>
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;" data-i18n="side.search">
+          検索</summary>
         <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 一覧</button>
         <div class="sl-row" role="group" aria-label="Search lists">
           <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
@@ -159,20 +160,20 @@
         <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">マイカード<br>
           <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで裏表)</span>
         </summary>
-        <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
         <div class="sl-row" role="group" aria-label="Face up/down">
           <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏に</button>
           <button class="sl-btn" onclick="faceUpAll()" data-i18n="side.faceUp">🂡 全て表に</button>
         </div>
+        <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
+        <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードを集める</button>
+        <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全カードのウラ画像</button>
+        <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
         <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
         <button class="sl-btn" onclick="collectSelectedCards()" data-i18n="side.collectSelected">❖ 選択カードをまとめる</button>
-        <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードを集める</button>
-        <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
         <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 選択カード削除</button>
-        <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 選択カードを最背面</button>
-        <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全カードのウラ画像</button>
+        <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 選択カードを最背面に</button>
         <button class="sl-btn" onclick="openBackImagePicker(true)" data-i18n="side.BackImageSelected">🖼
-          選択中カードのウラ画像</button>
+          選択カードのウラ画像</button>
       </details>
       <details class="ops-section">
         <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">コイン・ダイス<br>
