@@ -4961,11 +4961,9 @@ function createCardDom(cardId, imageSrc, state) {
 
   if (state?.type === 'note') {
     card.classList.add('note-icon');
-    const itemCount = (state.items || []).length;
     card.innerHTML = `
       <div class="note-clip"></div>
       <div class="note-lines"></div>
-      <div class="note-badge">${itemCount}</div>
     `;
     if (img) img.style.display = 'none';
 
