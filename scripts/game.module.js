@@ -6802,70 +6802,40 @@ window.updateOverlapBadges = function () {
 
 
 
-  // 位置とZ
+  // 判定対象を「通常カード」のみに絞り込む（ボードなどがブリッジになるのを防ぐ）
+  const realElements = all.filter(isReal);
+  if (realElements.length === 0) return;
 
-  const rects = all.map(rectOfCard);
+  const rects = realElements.map(rectOfCard);
+  const zList = realElements.map(el => parseInt(el.style.zIndex || '1', 10) || 1);
 
-  const zList = all.map(el => parseInt(el.style.zIndex || '1', 10) || 1);
-
-
-
-  // Union-Find で重なりクラスタ化（※ブリッジ防止のため、判定は全要素で行う）
-
-  const uf = unionFind(all.length);
-
-  for (let i = 0; i < all.length; i++) {
-
-    for (let j = i + 1; j < all.length; j++) {
-
+  // Union-Find で重なりクラスタ化
+  const uf = unionFind(realElements.length);
+  for (let i = 0; i < realElements.length; i++) {
+    for (let j = i + 1; j < realElements.length; j++) {
       if (intersects(rects[i], rects[j])) uf.unite(i, j);
-
     }
-
   }
-
-
 
   // root -> indices
-
   const groups = new Map();
-
-  for (let i = 0; i < all.length; i++) {
-
+  for (let i = 0; i < realElements.length; i++) {
     const r = uf.find(i);
-
     if (!groups.has(r)) groups.set(r, []);
-
     groups.get(r).push(i);
-
   }
 
-
-
-  // 各グループごとに、通常カードのみを数え、最前面の「通常カード」にだけ表示
-
+  // 各グループごとに、最前面の要素にカウントを表示
   groups.forEach((idxList) => {
+    if (idxList.length <= 1) return;
 
-    const realIdx = idxList.filter(i => isReal(all[i]));
+    // 最前面（zIndex 高い順、同値はDOM後勝ち）
+    idxList.sort((a, b) => (zList[a] - zList[b]) || (a - b));
+    const topIdx = idxList[idxList.length - 1];
+    const topEl = realElements[topIdx];
 
-    if (realIdx.length <= 1) return; // 0 or 1 枚なら表示しない
-
-
-
-    // 最前面の「通常カード」を選ぶ（zIndex 高い順・同値はDOM後勝ち）
-
-    realIdx.sort((a, b) => (zList[a] - zList[b]) || (a - b));
-
-    const hostIndex = realIdx[realIdx.length - 1];
-
-    const hostEl = all[hostIndex];
-
-
-
-    const badge = ensureBadge(hostEl);
-
-    badge.textContent = String(realIdx.length); // ← 通常カード枚数のみ
-
+    const badge = ensureBadge(topEl);
+    badge.textContent = String(idxList.length);
   });
 
 }
