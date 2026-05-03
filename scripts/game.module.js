@@ -12546,7 +12546,7 @@ async function renderNoteViewContent() {
     }
     const data = snap.data();
     const items = data.items || [];
-    if (titleHeader) titleHeader.textContent = data.noteTitle || 'ノートの内容';
+    if (titleHeader) titleHeader.textContent = data.noteTitle || '';
     
     viewList.innerHTML = '';
     if (items.length === 0) {
