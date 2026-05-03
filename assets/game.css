@@ -1781,6 +1781,10 @@ body.is-spectator #spectator-banner { display: block; }
 }
 
 .area-context-menu ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background-color: #3b3027; /* セパレータの色 */
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1790,13 +1794,9 @@ body.is-spectator #spectator-banner { display: block; }
   padding: 10px 16px;
   font-weight: 700;
   cursor: pointer;
-  border-top: 2px solid #3b3027;
+  background-color: #fffaf0; /* 項目の背景色 */
   transition: background 0.1s;
   color: #3b3027;
-}
-
-.area-context-menu li:first-child {
-  border-top: none;
 }
 
 .area-context-menu li:hover {
