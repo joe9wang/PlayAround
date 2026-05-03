@@ -8792,37 +8792,6 @@ window.openMyDiscardCardsDialog = function () {
 
 
 
-window.toggleFieldSizeOptions = function () { fieldSizeOptions.style.display = fieldSizeOptions.style.display === "none" ? "block" : "none"; }
-
-window.setFieldSize = function (size) {
-
-  window.currentFieldSize = size;
-
-  const pc = typeof getPlayerSeatsCount === 'function' ? getPlayerSeatsCount() : 4;
-
-  const mm = typeof CURRENT_ROOM_META !== 'undefined' ? CURRENT_ROOM_META?.fieldMode : null;
-
-  const mode = (mm === 'board' || mm === 'trump') ? 'board' : 'card';
-
-  const cols = mode === 'card' ? Math.max(1, Math.ceil(pc / 2)) : 2;
-
-  const colWidths = { small: 1500, medium: 2500, large: 5000 };
-
-  const heights = { small: 1700, medium: 2500, large: 5000 };
-
-  const colW = colWidths[size] || colWidths.small;
-
-  const h = heights[size] || heights.small;
-
-  const w = colW * cols;
-
-  field.style.width = `${w}px`;
-
-  field.style.height = `${h}px`;
-
-  field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
-
-}
 
 window.shuffleDecks = async function () {
 
@@ -9617,8 +9586,16 @@ document.getElementById('toggle-chat')?.addEventListener('click', () => {
 
 
 function initializePlayField() {
-
-  setFieldSize('small');
+  window.currentFieldSize = 'small';
+  const pc = typeof getPlayerSeatsCount === 'function' ? getPlayerSeatsCount() : 4;
+  const mm = typeof CURRENT_ROOM_META !== 'undefined' ? CURRENT_ROOM_META?.fieldMode : null;
+  const mode = (mm === 'board' || mm === 'trump') ? 'board' : 'card';
+  const cols = mode === 'card' ? Math.max(1, Math.ceil(pc / 2)) : 2;
+  const colW = 1500; 
+  const h = 1700;   
+  const w = colW * cols;
+  field.style.width = `${w}px`;
+  field.style.height = `${h}px`;
 
 
 
@@ -9733,9 +9710,8 @@ Object.assign(window, {
 
   // フィールドサイズUI
 
-  toggleFieldSizeOptions,
-
-  setFieldSize,
+  // toggleFieldSizeOptions, (deleted)
+  // setFieldSize, (deleted)
 
   // 背面画像ピッカー起動
 

@@ -92,10 +92,6 @@ const I18N = {
         "game.addBoard.sub": "（画像サイズ維持・最背面）",
         "side.BackImage": "🖼 全カードのウラ画像",
         "side.BackImageSelected": "🖼 選択中カードのウラ画像",
-        "side.fieldSize": "フィールドサイズ変更",
-        "side.sizeS": "小",
-        "side.sizeM": "中",
-        "side.sizeL": "大",
 
         // --- Zones ---
         "zone.special": "特殊エリア",
@@ -237,10 +233,6 @@ const I18N = {
         "game.addBoard.sub": "(Original size, background)",
         "side.BackImage": "🖼 Set Back Image for All Cards",
         "side.BackImageSelected": "🖼 Set Selected Card Back",
-        "side.fieldSize": "Change field size",
-        "side.sizeS": "Small",
-        "side.sizeM": "Medium",
-        "side.sizeL": "Large",
 
         // --- Zones ---
         "zone.special": "Special",
