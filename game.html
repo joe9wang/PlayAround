@@ -88,15 +88,17 @@
     <div class="lobby-card" style="max-width:400px; padding:24px; background:#fff; border-radius:16px;">
       <h3 style="margin-top:0;">ルームに入室</h3>
       <div id="dj-room-info" style="font-size:14px; color:#666; margin-bottom:16px;"></div>
-      
+
       <label class="lobby-label">プレイヤー名</label>
-      <input class="field" id="dj-player-name" maxlength="24" placeholder="例: SOLVENTER" type="text" style="margin-bottom:12px;" />
-      
+      <input class="field" id="dj-player-name" maxlength="24" placeholder="例: SOLVENTER" type="text"
+        style="margin-bottom:12px;" />
+
       <div id="dj-password-area" style="display:none;">
         <label class="lobby-label">入室パスワード</label>
-        <input class="field" id="dj-room-pass" placeholder="ホストが設定した場合は必須" type="password" style="margin-bottom:16px;" />
+        <input class="field" id="dj-room-pass" placeholder="ホストが設定した場合は必須" type="password"
+          style="margin-bottom:16px;" />
       </div>
-      
+
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button class="btn secondary" onclick="location.href='lobby.html'">ロビーへ戻る</button>
         <button class="btn" id="dj-start-btn">入室</button>
@@ -135,84 +137,90 @@
     <!-- 操作パネル：ここだけ縦スクロールにする -->
     <div id="ops-scroll" style="flex: 1 1 0%; overflow:auto; min-height:0; padding-right:4px;">
 
+      <!-- Search Section -->
+      <details class="ops-section">
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;" data-i18n="side.search">検索</summary>
+        <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 全カード一覧</button>
+        <div class="sl-row" role="group" aria-label="Search lists">
+          <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
+          <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🔍 捨て札一覧</button>
+        </div>
+      </details>
+
       <!-- Save/Load: compact two-up row -->
       <details class="ops-section">
-      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">マイセット</summary>
-      <div class="sl-row" role="group" aria-label="Save/Load">
-        <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
-        <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
-      </div>
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">マイセット</summary>
+        <div class="sl-row" role="group" aria-label="Save/Load">
+          <button class="sl-btn" onclick="openSaveLoadDialog('save')" data-i18n="side.save">💾 セーブ</button>
+          <button class="sl-btn" onclick="openSaveLoadDialog('load')" data-i18n="side.load">📂 ロード</button>
+        </div>
       </details>
       <details class="ops-section">
-      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">マイカード<br>
-        <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで裏表)</span>
-      </summary>
-      <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 全カード一覧</button>
-      <div class="sl-row" role="group" aria-label="Face up/down">
-        <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
-        <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🔍 捨て札一覧</button>
-      </div>
-      <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
-      <div class="sl-row" role="group" aria-label="Face up/down">
-        <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏に</button>
-        <button class="sl-btn" onclick="faceUpAll()" data-i18n="side.faceUp">🂡 全て表に</button>
-      </div>
-      <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
-      <button class="sl-btn" onclick="collectSelectedCards()" data-i18n="side.collectSelected">❖ 選択カードをまとめる</button>
-      <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードを集める</button>
-      <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
-      <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 指定カード削除</button>
-      <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 指定カードを最背面</button>
-      <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全カードのウラ画像設定</button>
-      <button class="sl-btn" onclick="openBackImagePicker(true)" data-i18n="side.BackImageSelected">🖼 選択中カードのウラ画像設定</button>
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">マイカード<br>
+          <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで裏表)</span>
+        </summary>
+        <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
+        <div class="sl-row" role="group" aria-label="Face up/down">
+          <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏に</button>
+          <button class="sl-btn" onclick="faceUpAll()" data-i18n="side.faceUp">🂡 全て表に</button>
+        </div>
+        <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
+        <button class="sl-btn" onclick="collectSelectedCards()" data-i18n="side.collectSelected">❖ 選択カードをまとめる</button>
+        <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードを集める</button>
+        <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
+        <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 選択カード削除</button>
+        <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 選択カードを最背面</button>
+        <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全カードのウラ画像</button>
+        <button class="sl-btn" onclick="openBackImagePicker(true)" data-i18n="side.BackImageSelected">🖼
+          選択中カードのウラ画像</button>
       </details>
       <details class="ops-section">
-      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">コイン・ダイス<br>
-        <span style="font-size:12px;color:#666;font-weight:normal;">(左クリックか右クリックで削除)</span>
-      </summary>
-      <div class="sl-row" role="group" aria-label="dice-coin-row1">
-        <button class="sl-btn" id="flip-coin-btn" onclick="flipCoin()" data-i18n="side.flipCoin">🪙 コイントス</button>
-        <button class="sl-btn" id="roll-d4-btn" onclick="rollD4()" data-i18n="side.rollD4">🎲 4面ダイス</button>
-      </div>
-      <div class="sl-row" role="group" aria-label="dice-coin-row2">
-        <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイス</button>
-        <button class="sl-btn" id="roll-d10-btn" onclick="rollD10()" data-i18n="side.rollD10">🎲 10面ダイス</button>
-      </div>
-      <div class="sl-row" role="group" aria-label="dice-coin-row3">
-        <button class="sl-btn" id="roll-d20-btn" onclick="rollD20()" data-i18n="side.rollD20">🎲 20面ダイス</button>
-        <button class="sl-btn" id="roll-d100-btn" onclick="rollD100()" data-i18n="side.rollD100">🎲 100面ダイス</button>
-      </div>
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">コイン・ダイス<br>
+          <span style="font-size:12px;color:#666;font-weight:normal;">(左クリックか右クリックで削除)</span>
+        </summary>
+        <div class="sl-row" role="group" aria-label="dice-coin-row1">
+          <button class="sl-btn" id="flip-coin-btn" onclick="flipCoin()" data-i18n="side.flipCoin">🪙 コイントス</button>
+          <button class="sl-btn" id="roll-d4-btn" onclick="rollD4()" data-i18n="side.rollD4">🎲 4面ダイス</button>
+        </div>
+        <div class="sl-row" role="group" aria-label="dice-coin-row2">
+          <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイス</button>
+          <button class="sl-btn" id="roll-d10-btn" onclick="rollD10()" data-i18n="side.rollD10">🎲 10面ダイス</button>
+        </div>
+        <div class="sl-row" role="group" aria-label="dice-coin-row3">
+          <button class="sl-btn" id="roll-d20-btn" onclick="rollD20()" data-i18n="side.rollD20">🎲 20面ダイス</button>
+          <button class="sl-btn" id="roll-d100-btn" onclick="rollD100()" data-i18n="side.rollD100">🎲 100面ダイス</button>
+        </div>
       </details>
       <details class="ops-section">
-      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">カウンター・トークン<br>
-        <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで削除)</span>
-      </summary>
-      <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">カウンター<br>
+          <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで削除)</span>
+        </summary>
+        <button class="sl-btn" onclick="spawnNumberCounter()" data-i18n="side.numCounter">🔢 数値カウンター</button>
 
-      <div class="sl-row" role="group" aria-label="plus1/plus10">
-        <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1</button>
-        <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10</button>
-      </div>
-      <div class="sl-row" role="group" aria-label="plus50/plus100">
-        <button class="sl-btn" onclick="spawnCounter('+50')" data-i18n="side.plus50">➕50</button>
-        <button class="sl-btn" onclick="spawnCounter('+100')" data-i18n="side.plus100">➕100</button>
-      </div>
-      <div class="sl-row" role="group" aria-label="plus1/plus10">
-        <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1</button>
-        <button class="sl-btn" onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10</button>
-      </div>
-      <div class="sl-row" role="group" aria-label="plus50/plus100">
-        <button class="sl-btn" onclick="spawnCounter('-50')" data-i18n="side.minus50">➖50</button>
-        <button class="sl-btn" onclick="spawnCounter('-100')" data-i18n="side.minus100">➖100</button>
-      </div>
+        <div class="sl-row" role="group" aria-label="plus1/plus10">
+          <button class="sl-btn" onclick="spawnCounter('+1')" data-i18n="side.plus1">➕1</button>
+          <button class="sl-btn" onclick="spawnCounter('+10')" data-i18n="side.plus10">➕10</button>
+        </div>
+        <div class="sl-row" role="group" aria-label="plus50/plus100">
+          <button class="sl-btn" onclick="spawnCounter('+50')" data-i18n="side.plus50">➕50</button>
+          <button class="sl-btn" onclick="spawnCounter('+100')" data-i18n="side.plus100">➕100</button>
+        </div>
+        <div class="sl-row" role="group" aria-label="plus1/plus10">
+          <button class="sl-btn" onclick="spawnCounter('-1')" data-i18n="side.minus1">➖1</button>
+          <button class="sl-btn" onclick="spawnCounter('-10')" data-i18n="side.minus10">➖10</button>
+        </div>
+        <div class="sl-row" role="group" aria-label="plus50/plus100">
+          <button class="sl-btn" onclick="spawnCounter('-50')" data-i18n="side.minus50">➖50</button>
+          <button class="sl-btn" onclick="spawnCounter('-100')" data-i18n="side.minus100">➖100</button>
+        </div>
       </details>
 
       <details class="ops-section">
-      <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">メモ・ノート<br>
-        <span style="font-size:12px;color:#666;font-weight:normal;">(左クリックで表示、右クリックで操作)</span>
-      </summary>
-      <button class="sl-btn" onclick="spawnMemo()" data-i18n="side.memo">📝 メモ作成</button>
-      <button class="sl-btn" onclick="spawnNote()">📒 ノート作成</button>
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">メモ・ノート<br>
+          <span style="font-size:12px;color:#666;font-weight:normal;">(左クリックで表示、右クリックで操作)</span>
+        </summary>
+        <button class="sl-btn" onclick="spawnMemo()" data-i18n="side.memo">📝 メモ作成</button>
+        <button class="sl-btn" onclick="spawnNote()">📒 ノート作成</button>
       </details>
 
       <!-- 非表示のファイル入力（画像選択ダイアログ用） -->
@@ -227,46 +235,48 @@
 
       <div aria-live="polite" class="host-toggle" id="host-otherops">
         <details class="ops-section">
-        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">ホスト専用</summary>
-        <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
-          <div style="font-size:12px;color:#555;">
-            他プレイヤーのカード操作
-          </div>
-          <div class="row" style="align-items:center; gap:8px;">
-            <label class="switch" title="ONにすると、他人のカードも移動・表裏切替ができる">
-              <input id="toggle-other-ops" type="checkbox" />
-              <span class="slider">
+          <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">ホスト専用</summary>
+          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+            <div style="font-size:12px;color:#555;">
+              他プレイヤーのカード操作
+            </div>
+            <div class="row" style="align-items:center; gap:8px;">
+              <label class="switch" title="ONにすると、他人のカードも移動・表裏切替ができる">
+                <input id="toggle-other-ops" type="checkbox" />
+                <span class="slider">
+                </span>
+              </label>
+              <span id="toggle-other-ops-text" style="width:36px; text-align:right; font-weight:700;">
+                OFF
               </span>
-            </label>
-            <span id="toggle-other-ops-text" style="width:36px; text-align:right; font-weight:700;">
-              OFF
-            </span>
-          </div>
-        </div>
-
-        <div class="row" style="flex-direction:column; align-items:flex-start; margin-top:12px; gap:8px;">
-          <div style="font-size:12px;color:#555;font-weight:bold;">カードサイズ変更</div>
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="display:flex; align-items:center; gap:4px;">
-              <span style="font-size:11px;color:#777;">横</span>
-              <input type="number" id="host-card-w" value="120" min="40" max="400" style="width:50px; padding:2px 4px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
-              <span style="font-size:11px;color:#777;">px</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:4px;">
-              <span style="font-size:11px;color:#777;">縦</span>
-              <input type="number" id="host-card-h" value="160" min="40" max="600" style="width:50px; padding:2px 4px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
-              <span style="font-size:11px;color:#777;">px</span>
             </div>
           </div>
-        </div>
 
-        <div style="margin-top:12px;">
-          <div style="font-size:12px;color:#555;margin-bottom:4px;">モード変更</div>
-          <div class="row" style="gap:8px;">
-            <button class="sl-btn" id="btn-mode-card" style="flex:1;">カードゲーム</button>
-            <button class="sl-btn" id="btn-mode-board" style="flex:1;">ボードゲーム</button>
+          <div class="row" style="flex-direction:column; align-items:flex-start; margin-top:12px; gap:8px;">
+            <div style="font-size:12px;color:#555;font-weight:bold;">カードサイズ変更</div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-size:11px;color:#777;">横</span>
+                <input type="number" id="host-card-w" value="120" min="40" max="400"
+                  style="width:50px; padding:2px 4px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                <span style="font-size:11px;color:#777;">px</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-size:11px;color:#777;">縦</span>
+                <input type="number" id="host-card-h" value="160" min="40" max="600"
+                  style="width:50px; padding:2px 4px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                <span style="font-size:11px;color:#777;">px</span>
+              </div>
+            </div>
           </div>
-        </div>
+
+          <div style="margin-top:12px;">
+            <div style="font-size:12px;color:#555;margin-bottom:4px;">モード変更</div>
+            <div class="row" style="gap:8px;">
+              <button class="sl-btn" id="btn-mode-card" style="flex:1;">カードゲーム</button>
+              <button class="sl-btn" id="btn-mode-board" style="flex:1;">ボードゲーム</button>
+            </div>
+          </div>
         </details>
       </div>
 
@@ -646,29 +656,53 @@
   <div id="save-load-modal"
     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
     <div class="sl-modal-container">
-      
+
       <!-- スロット選択ビュー -->
       <div id="sl-selection-view">
-        <div class="sl-modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div class="sl-modal-header"
+          style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <div id="sl-title" style="font-weight:700; font-size:16px;">ロードするマイセットを選択</div>
-          <div class="sl-tabs" id="sl-tabs" style="display:flex; gap:4px; background:#f1f3f5; padding:4px; border-radius:8px;">
-            <button class="sl-tab active" data-target="myset" style="padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.05);">マイセット</button>
-            <button class="sl-tab" data-target="official" style="padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; background:none; color:#666;">公式セット</button>
+          <div class="sl-tabs" id="sl-tabs"
+            style="display:flex; gap:4px; background:#f1f3f5; padding:4px; border-radius:8px;">
+            <button class="sl-tab active" data-target="myset"
+              style="padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.05);">マイセット</button>
+            <button class="sl-tab" data-target="official"
+              style="padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; background:none; color:#666;">公式セット</button>
           </div>
         </div>
 
         <div id="sl-tab-content-myset" class="sl-tab-pane active">
           <div class="sl-grid" id="sl-grid">
-            <button class="slot-item-btn" data-slot="1"><span class="slot-label">マイセット1</span><div class="slot-preview" data-slot="1"></div></button>
-            <button class="slot-item-btn" data-slot="2"><span class="slot-label">マイセット2</span><div class="slot-preview" data-slot="2"></div></button>
-            <button class="slot-item-btn" data-slot="3"><span class="slot-label">マイセット3</span><div class="slot-preview" data-slot="3"></div></button>
-            <button class="slot-item-btn" data-slot="4"><span class="slot-label">マイセット4</span><div class="slot-preview" data-slot="4"></div></button>
-            <button class="slot-item-btn" data-slot="5"><span class="slot-label">マイセット5</span><div class="slot-preview" data-slot="5"></div></button>
-            <button class="slot-item-btn" data-slot="6"><span class="slot-label">マイセット6</span><div class="slot-preview" data-slot="6"></div></button>
-            <button class="slot-item-btn" data-slot="7"><span class="slot-label">マイセット7</span><div class="slot-preview" data-slot="7"></div></button>
-            <button class="slot-item-btn" data-slot="8"><span class="slot-label">マイセット8</span><div class="slot-preview" data-slot="8"></div></button>
-            <button class="slot-item-btn" data-slot="9"><span class="slot-label">マイセット9</span><div class="slot-preview" data-slot="9"></div></button>
-            <button class="slot-item-btn" data-slot="10"><span class="slot-label">マイセット10</span><div class="slot-preview" data-slot="10"></div></button>
+            <button class="slot-item-btn" data-slot="1"><span class="slot-label">マイセット1</span>
+              <div class="slot-preview" data-slot="1"></div>
+            </button>
+            <button class="slot-item-btn" data-slot="2"><span class="slot-label">マイセット2</span>
+              <div class="slot-preview" data-slot="2"></div>
+            </button>
+            <button class="slot-item-btn" data-slot="3"><span class="slot-label">マイセット3</span>
+              <div class="slot-preview" data-slot="3"></div>
+            </button>
+            <button class="slot-item-btn" data-slot="4"><span class="slot-label">マイセット4</span>
+              <div class="slot-preview" data-slot="4"></div>
+            </button>
+            <button class="slot-item-btn" data-slot="5"><span class="slot-label">マイセット5</span>
+              <div class="slot-preview" data-slot="5"></div>
+            </button>
+            <button class="slot-item-btn" data-slot="6"><span class="slot-label">マイセット6</span>
+              <div class="slot-preview" data-slot="6"></div>
+            </button>
+            <button class="slot-item-btn" data-slot="7"><span class="slot-label">マイセット7</span>
+              <div class="slot-preview" data-slot="7"></div>
+            </button>
+            <button class="slot-item-btn" data-slot="8"><span class="slot-label">マイセット8</span>
+              <div class="slot-preview" data-slot="8"></div>
+            </button>
+            <button class="slot-item-btn" data-slot="9"><span class="slot-label">マイセット9</span>
+              <div class="slot-preview" data-slot="9"></div>
+            </button>
+            <button class="slot-item-btn" data-slot="10"><span class="slot-label">マイセット10</span>
+              <div class="slot-preview" data-slot="10"></div>
+            </button>
           </div>
         </div>
 
@@ -729,30 +763,41 @@
     <div class="layout-modal-card"
       style="background:#fff; padding:32px; border-radius:24px; width:720px; max-width:95%; box-shadow:0 12px 48px rgba(0,0,0,0.4); text-align:center;">
       <div style="font-weight:800; font-size:24px; margin-bottom:24px; letter-spacing:1px; color:#333;">フィールド構成を選択</div>
-      
+
       <div style="display:flex; gap:24px; justify-content:center; margin-bottom:32px;">
         <!-- シンプル -->
-        <div class="layout-option" id="layout-opt-simple" style="flex:1; cursor:pointer;" onclick="selectLayoutOption('simple')">
-          <div class="layout-preview-wrap" style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
-            <img id="layout-img-simple" src="image/Field_simple_type.png" alt="Simple" style="width:100%; display:block;" />
-            <div class="selection-overlay" style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
+        <div class="layout-option" id="layout-opt-simple" style="flex:1; cursor:pointer;"
+          onclick="selectLayoutOption('simple')">
+          <div class="layout-preview-wrap"
+            style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
+            <img id="layout-img-simple" src="image/Field_simple_type.png" alt="Simple"
+              style="width:100%; display:block;" />
+            <div class="selection-overlay"
+              style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
           </div>
-          <div class="layout-label" style="margin-top:12px; font-weight:800; font-size:20px; color:#555; transition:0.3s;">シンプル</div>
+          <div class="layout-label"
+            style="margin-top:12px; font-weight:800; font-size:20px; color:#555; transition:0.3s;">シンプル</div>
         </div>
         <!-- スタンダード -->
-        <div class="layout-option active" id="layout-opt-standard" style="flex:1; cursor:pointer;" onclick="selectLayoutOption('standard')">
-          <div class="layout-preview-wrap" style="border:4px solid #2d8; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
-            <img id="layout-img-standard" src="image/Field_standard_type.png" alt="Standard" style="width:100%; display:block;" />
-            <div class="selection-overlay" style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:1; transition:0.3s;"></div>
+        <div class="layout-option active" id="layout-opt-standard" style="flex:1; cursor:pointer;"
+          onclick="selectLayoutOption('standard')">
+          <div class="layout-preview-wrap"
+            style="border:4px solid #2d8; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
+            <img id="layout-img-standard" src="image/Field_standard_type.png" alt="Standard"
+              style="width:100%; display:block;" />
+            <div class="selection-overlay"
+              style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:1; transition:0.3s;"></div>
           </div>
-          <div class="layout-label" style="margin-top:12px; font-weight:800; font-size:20px; color:#2d8; transition:0.3s;">スタンダード</div>
+          <div class="layout-label"
+            style="margin-top:12px; font-weight:800; font-size:20px; color:#2d8; transition:0.3s;">スタンダード</div>
         </div>
       </div>
 
 
 
       <div style="display:flex; justify-content:center; gap:20px;">
-        <button id="field-layout-cancel" class="btn secondary" style="padding:12px 32px; font-weight:700;">キャンセル</button>
+        <button id="field-layout-cancel" class="btn secondary"
+          style="padding:12px 32px; font-weight:700;">キャンセル</button>
         <button id="field-layout-ok" class="btn" style="padding:12px 48px; font-weight:800; font-size:18px;">OK</button>
       </div>
     </div>
@@ -822,7 +867,8 @@
   </div>
 
   <!-- === Note Modal === -->
-  <div id="note-modal" style="display: none; position: fixed; inset: 0; background: rgba(20, 16, 12, 0.45); z-index: 20000; align-items: center; justify-content: center;">
+  <div id="note-modal"
+    style="display: none; position: fixed; inset: 0; background: rgba(20, 16, 12, 0.45); z-index: 20000; align-items: center; justify-content: center;">
     <div class="sl-modal-container">
       <header class="sl-modal-header">
         <input id="note-modal-title-input" class="note-modal-title-input" placeholder="ノートのタイトルを入力...">
@@ -850,7 +896,8 @@
   <input type="file" id="note-image-input" accept="image/*" style="display: none;" />
 
   <!-- === Note View Modal === -->
-  <div id="note-view-modal" style="display: none; position: fixed; inset: 0; background: rgba(20, 16, 12, 0.45); z-index: 20000; align-items: center; justify-content: center;">
+  <div id="note-view-modal"
+    style="display: none; position: fixed; inset: 0; background: rgba(20, 16, 12, 0.45); z-index: 20000; align-items: center; justify-content: center;">
     <div class="sl-modal-container">
       <header class="sl-modal-header">
         <h2 id="note-view-modal-title" class="modal-title">ノートの内容</h2>
