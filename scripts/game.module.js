@@ -8407,8 +8407,10 @@ window.openMyCardsDialog = function () {
 
   if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
 
-  cardListGrid.innerHTML = '';
+  const titleEl = document.getElementById('card-list-title');
+  if (titleEl) titleEl.textContent = '自分のもの一覧';
 
+  cardListGrid.innerHTML = '';
   const mine = [];
 
   for (const [id, el] of cardDomMap) {
@@ -8580,8 +8582,7 @@ window.openMyDeckCardsDialog = function () {
   // タイトルを書き換え
 
   const titleEl = document.getElementById('card-list-title');
-
-  if (titleEl) titleEl.textContent = 'デッキエリアのカード一覧（自分）';
+  if (titleEl) titleEl.textContent = '自分のデッキ一覧';
 
 
 
@@ -8718,8 +8719,7 @@ window.openMyDiscardCardsDialog = function () {
   // タイトルを書き換え（モーダルは既存のものを流用）
 
   const titleEl = document.getElementById('card-list-title');
-
-  if (titleEl) titleEl.textContent = t('side.discardList') || '捨て札のカード一覧';
+  if (titleEl) titleEl.textContent = '自分の捨て札一覧';
 
 
 
