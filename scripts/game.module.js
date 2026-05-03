@@ -7224,27 +7224,20 @@ function svgNumberDiceDataUrl(n) {
 // ==== コインSVG（オモテ／ウラ）：背景を一切敷かず、完全な丸＋透過 ====
 
 function svgCoinDataUrl(face) { // face: 'オモテ' or 'ウラ'
-
   const size = 72;
-
   const svg = `
-
     <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-
-      <defs><filter id="s"><feDropShadow dx="0" dy="1" stdDeviation="1" flood-opacity="0.35"/></filter></defs>
-
-      <!-- 余白なし：丸のみ。背景は透明 -->
-
-      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 3}" fill="#ffd54f" stroke="#111" stroke-width="2" filter="url(#s)"/>
-
-      <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle"
-
-            font-size="24" font-family="ui-sans-serif, system-ui" fill="#111" font-weight="700">${face}</text>
-
+      <defs>
+        <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-opacity="0.4"/>
+        </filter>
+      </defs>
+      <!-- 背景透明・太い枠線の円 -->
+      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 4}" fill="#ffd54f" stroke="#3b3027" stroke-width="4" filter="url(#s)"/>
+      <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
+            font-size="20" font-family="ui-sans-serif, system-ui, sans-serif" fill="#3b3027" font-weight="900">${face}</text>
     </svg>`;
-
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-
 }
 
 

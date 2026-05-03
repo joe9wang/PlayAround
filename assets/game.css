@@ -847,9 +847,9 @@ input:checked + .slider:before {
 .card.dice {
   width: 72px;
   height: 72px;
-  border: none;
-  box-shadow: none;
-  background: transparent;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
 .card.numcounter {
