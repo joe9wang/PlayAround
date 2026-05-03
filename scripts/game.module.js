@@ -8469,6 +8469,11 @@ window.openMyCardsDialog = function () {
         item.appendChild(img);
       }
 
+      item.addEventListener('contextmenu', (e) => {
+        if (typeof showTokenContextMenu === 'function') {
+          showTokenContextMenu(e, id);
+        }
+      });
       item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
 
       item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
@@ -8660,6 +8665,12 @@ window.openMyDeckCardsDialog = function () {
         item.appendChild(img);
       }
 
+      item.addEventListener('contextmenu', (e) => {
+        if (typeof showTokenContextMenu === 'function') {
+          showTokenContextMenu(e, id);
+        }
+      });
+
       item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
 
       item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
@@ -8793,6 +8804,12 @@ window.openMyDiscardCardsDialog = function () {
         img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
         item.appendChild(img);
       }
+
+      item.addEventListener('contextmenu', (e) => {
+        if (typeof showTokenContextMenu === 'function') {
+          showTokenContextMenu(e, id);
+        }
+      });
 
       item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
 
