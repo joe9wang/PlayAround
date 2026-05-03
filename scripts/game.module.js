@@ -6791,13 +6791,13 @@ window.updateOverlapBadges = function () {
   const isReal = (el) => !(
 
     el.classList.contains('token') ||
-
     el.classList.contains('image-token') ||
-
     el.classList.contains('dice') ||
     el.classList.contains('counter') ||
     el.classList.contains('numcounter') ||
-    el.classList.contains('memo')
+    el.classList.contains('memo') ||
+    el.classList.contains('note-icon') ||
+    el.classList.contains('is-board')
   );
 
 
