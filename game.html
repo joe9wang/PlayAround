@@ -165,16 +165,18 @@
           <button class="sl-btn" onclick="faceUpAll()" data-i18n="side.faceUp">🂡 全て表に</button>
         </div>
         <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
-        <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードをデッキに集める</button>
-        <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全カードのウラ画像</button>
-        <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
+        <button class="sl-btn" onclick="resetSelectedRotation()" data-i18n="side.resetSelectedFacing">↻
+          選択カード向きリセット</button>
         <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキシャッフル</button>
-        <button class="sl-btn" onclick="resetSelectedRotation()" data-i18n="side.resetSelectedFacing">↻ 選択カード向きリセット</button>
-        <button class="sl-btn" onclick="collectSelectedCards()" data-i18n="side.collectSelected">❖ 選択カードをまとめる</button>
-        <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 選択カード削除</button>
         <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 選択カードを最背面に</button>
+        <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードをデッキに集める</button>
+        <button class="sl-btn" onclick="collectSelectedCards()" data-i18n="side.collectSelected">❖ 選択カードをまとめる</button>
+        <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全カードのウラ画像</button>
         <button class="sl-btn" onclick="openBackImagePicker(true)" data-i18n="side.BackImageSelected">🖼
           選択カードのウラ画像</button>
+        <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
+        <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 選択カード削除</button>
+
       </details>
       <details class="ops-section">
         <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">コイン・ダイス<br>
