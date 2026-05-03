@@ -6908,26 +6908,37 @@ window.faceUpAll = async function () {
 
 
 window.resetMyCardRotation = async function () {
-
   if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
-
   const batch = writeBatch(db);
-
   let count = 0;
-
   for (const [id, el] of cardDomMap) {
     if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
     if (el.classList.contains('memo')) continue;
     el.style.transform = 'rotate(0deg)';
-
     batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { rotation: 0 });
-
     if (++count >= 450) { await batch.commit(); count = 0; }
-
   }
-
   if (count > 0) await batch.commit();
+};
 
+window.resetSelectedRotation = async function () {
+  if (!CURRENT_ROOM || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+  const cards = getCurrentlySelectedCards();
+  if (cards.length === 0) { alert('リセットしたいカードを選択してください'); return; }
+
+  const batch = writeBatch(db);
+  let count = 0;
+  for (const el of cards) {
+    if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
+    if (el.classList.contains('memo')) continue;
+    const id = el.dataset.cardId;
+    if (!id) continue;
+
+    el.style.transform = 'rotate(0deg)';
+    batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { rotation: 0 });
+    if (++count >= 450) { await batch.commit(); count = 0; }
+  }
+  if (count > 0) await batch.commit();
 };
 
 
@@ -9716,6 +9727,7 @@ Object.assign(window, {
   openMyDiscardCardsDialog,
 
   resetMyCardRotation,
+  resetSelectedRotation,
 
   faceDownAll,
 
