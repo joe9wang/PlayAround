@@ -12239,6 +12239,16 @@ function bindNoteContextMenuOnce() {
   const ctxMenu = document.getElementById('note-context-menu');
   if (!ctxMenu) return;
 
+  // 他の場所をクリックしたら閉じる
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#note-context-menu')) return;
+    ctxMenu.style.display = 'none';
+  });
+
+  document.addEventListener('contextmenu', () => {
+    ctxMenu.style.display = 'none';
+  });
+
   ctxMenu.addEventListener('click', (e) => e.stopPropagation());
 
   document.getElementById('note-ctx-move')?.addEventListener('click', (e) => {
