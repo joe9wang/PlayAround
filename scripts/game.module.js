@@ -8415,11 +8415,21 @@ window.openMyCardsDialog = function () {
 
     if (el.dataset.ownerSeat === String(CURRENT_PLAYER)) {
 
+      const type = el.dataset.type || 'card';
       const imgEl = el.querySelector('img');
-
       const src = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
-
-      mine.push({ id, src });
+      const info = { id, src, type };
+      if (type === 'numcounter') {
+        const input = el.querySelector('.nc-input');
+        info.val = input ? input.value : 0;
+      } else if (type === 'memo' || type === 'token') {
+        const input = el.querySelector('.token-input');
+        info.text = input ? input.value : '';
+      } else if (type === 'note') {
+        const badge = el.querySelector('.note-badge');
+        info.noteCount = badge ? badge.textContent : 0;
+      }
+      mine.push(info);
 
     }
 
@@ -8437,19 +8447,27 @@ window.openMyCardsDialog = function () {
 
   } else {
 
-    mine.forEach(({ id, src }) => {
-
+    mine.forEach((info) => {
+      const { id, src, type } = info;
       const item = document.createElement('div');
-
       item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;';
-
       item.title = id;
 
-      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
-
-      img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
-
-      item.appendChild(img);
+      if (type === 'memo' || type === 'note' || type === 'numcounter') {
+        const placeholder = document.createElement('div');
+        placeholder.style.cssText = 'width:100%; aspect-ratio:3/4; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#eee; border-radius:6px;';
+        let icon = '❓';
+        let label = '';
+        if (type === 'memo') { icon = '📝'; label = info.text || 'メモ'; }
+        else if (type === 'note') { icon = '📒'; label = `ノート (${info.noteCount})`; }
+        else if (type === 'numcounter') { icon = '🔢'; label = info.val || '0'; }
+        placeholder.innerHTML = `<div style="font-size:28px;">${icon}</div><div style="font-size:10px; color:#666; margin-top:4px; text-align:center; overflow:hidden; width:90%; white-space:nowrap; text-overflow:ellipsis;">${label}</div>`;
+        item.appendChild(placeholder);
+      } else {
+        const img = document.createElement('img'); img.crossOrigin = 'anonymous';
+        img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
+        item.appendChild(img);
+      }
 
       item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
 
@@ -8581,29 +8599,29 @@ window.openMyDeckCardsDialog = function () {
   const listed = [];
 
   for (const [id, el] of cardDomMap) {
-
-    if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue; // 自分のカードのみ
-
+    if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
     const left = parseFloat(el.style.left) || 0;
-
     const top = parseFloat(el.style.top) || 0;
-
     const cx = left + CARD_W / 2;
-
     const cy = top + CARD_H / 2;
-
     if (cx >= deckRect.minX && cx <= deckRect.minX + deckRect.width &&
-
       cy >= deckRect.minY && cy <= deckRect.minY + deckRect.height) {
-
+      const type = el.dataset.type || 'card';
       const imgEl = el.querySelector('img');
-
       const src = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
-
-      listed.push({ id, src });
-
+      const info = { id, src, type };
+      if (type === 'numcounter') {
+        const input = el.querySelector('.nc-input');
+        info.val = input ? input.value : 0;
+      } else if (type === 'memo' || type === 'token') {
+        const input = el.querySelector('.token-input');
+        info.text = input ? input.value : '';
+      } else if (type === 'note') {
+        const badge = el.querySelector('.note-badge');
+        info.noteCount = badge ? badge.textContent : 0;
+      }
+      listed.push(info);
     }
-
   }
 
 
@@ -8620,21 +8638,27 @@ window.openMyDeckCardsDialog = function () {
 
   } else {
 
-    listed.forEach(({ id, src }) => {
-
+    listed.forEach((info) => {
+      const { id, src, type } = info;
       const item = document.createElement('div');
-
-      item.style.cssText =
-
-        'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;';
-
+      item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;';
       item.title = id;
 
-      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
-
-      img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
-
-      item.appendChild(img);
+      if (type === 'memo' || type === 'note' || type === 'numcounter') {
+        const placeholder = document.createElement('div');
+        placeholder.style.cssText = 'width:100%; aspect-ratio:3/4; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#eee; border-radius:6px;';
+        let icon = '❓';
+        let label = '';
+        if (type === 'memo') { icon = '📝'; label = info.text || 'メモ'; }
+        else if (type === 'note') { icon = '📒'; label = `ノート (${info.noteCount})`; }
+        else if (type === 'numcounter') { icon = '🔢'; label = info.val || '0'; }
+        placeholder.innerHTML = `<div style="font-size:28px;">${icon}</div><div style="font-size:10px; color:#666; margin-top:4px; text-align:center; overflow:hidden; width:90%; white-space:nowrap; text-overflow:ellipsis;">${label}</div>`;
+        item.appendChild(placeholder);
+      } else {
+        const img = document.createElement('img'); img.crossOrigin = 'anonymous';
+        img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
+        item.appendChild(img);
+      }
 
       item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
 
@@ -8709,29 +8733,29 @@ window.openMyDiscardCardsDialog = function () {
   const listed = [];
 
   for (const [id, el] of cardDomMap) {
-
-    if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue; // 自分のカードのみ
-
+    if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
     const left = parseFloat(el.style.left) || 0;
-
     const top = parseFloat(el.style.top) || 0;
-
     const cx = left + CARD_W / 2;
-
     const cy = top + CARD_H / 2;
-
     if (cx >= discardRect.minX && cx <= discardRect.minX + discardRect.width &&
-
       cy >= discardRect.minY && cy <= discardRect.minY + discardRect.height) {
-
+      const type = el.dataset.type || 'card';
       const imgEl = el.querySelector('img');
-
       const src = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
-
-      listed.push({ id, src });
-
+      const info = { id, src, type };
+      if (type === 'numcounter') {
+        const input = el.querySelector('.nc-input');
+        info.val = input ? input.value : 0;
+      } else if (type === 'memo' || type === 'token') {
+        const input = el.querySelector('.token-input');
+        info.text = input ? input.value : '';
+      } else if (type === 'note') {
+        const badge = el.querySelector('.note-badge');
+        info.noteCount = badge ? badge.textContent : 0;
+      }
+      listed.push(info);
     }
-
   }
 
 
@@ -8748,19 +8772,27 @@ window.openMyDiscardCardsDialog = function () {
 
   } else {
 
-    listed.forEach(({ id, src }) => {
-
+    listed.forEach((info) => {
+      const { id, src, type } = info;
       const item = document.createElement('div');
-
       item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;';
-
       item.title = id;
 
-      const img = document.createElement('img'); img.crossOrigin = 'anonymous';
-
-      img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
-
-      item.appendChild(img);
+      if (type === 'memo' || type === 'note' || type === 'numcounter') {
+        const placeholder = document.createElement('div');
+        placeholder.style.cssText = 'width:100%; aspect-ratio:3/4; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#eee; border-radius:6px;';
+        let icon = '❓';
+        let label = '';
+        if (type === 'memo') { icon = '📝'; label = info.text || 'メモ'; }
+        else if (type === 'note') { icon = '📒'; label = `ノート (${info.noteCount})`; }
+        else if (type === 'numcounter') { icon = '🔢'; label = info.val || '0'; }
+        placeholder.innerHTML = `<div style="font-size:28px;">${icon}</div><div style="font-size:10px; color:#666; margin-top:4px; text-align:center; overflow:hidden; width:90%; white-space:nowrap; text-overflow:ellipsis;">${label}</div>`;
+        item.appendChild(placeholder);
+      } else {
+        const img = document.createElement('img'); img.crossOrigin = 'anonymous';
+        img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
+        item.appendChild(img);
+      }
 
       item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
 
