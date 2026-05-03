@@ -8459,9 +8459,9 @@ window.openMyCardsDialog = function () {
 
         await focusCardById(id);
 
-        // ★全カード一覧から選択したログ
+        // ★一覧から選択したログ
 
-        postLog(`全カード一覧からカードを選択しました`);
+        postLog(`一覧から選択しました`);
 
         closeMyCardsDialog();
 
