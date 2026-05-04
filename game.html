@@ -251,39 +251,54 @@
       <div aria-live="polite" class="host-toggle" id="host-otherops">
         <details class="ops-section" open>
           <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">ホスト専用</summary>
+          
           <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
             <div style="font-size:12px;color:#555;">
               他プレイヤーのカード操作
             </div>
             <div class="row" style="align-items:center; gap:8px;">
+              <span id="toggle-other-ops-text" style="font-size:11px; font-weight:bold; color:#777;">OFF</span>
               <label class="switch" title="ONにすると、他人のカードも移動・表裏切替ができる">
-                <input id="can-move-others-switch" type="checkbox">
+                <input id="toggle-other-ops" type="checkbox">
                 <span class="slider round"></span>
               </label>
             </div>
           </div>
-          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
-            <div style="font-size:12px;color:#555;">
-              他プレイヤーのカード表裏切替
-            </div>
-            <div class="row" style="align-items:center; gap:8px;">
-              <label class="switch" title="ONにすると、他人のカードも移動・表裏切替ができる">
-                <input id="can-flip-others-switch" type="checkbox">
-                <span class="slider round"></span>
-              </label>
+
+          <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
+            <div style="font-size:12px;color:#555;margin-bottom:6px;">カード基本サイズ (px)</div>
+            <div class="row" style="gap:10px; align-items:center;">
+              <div class="row" style="align-items:center; gap:4px; flex:1;">
+                <span style="font-size:11px; color:#888;">幅:</span>
+                <input type="number" id="host-card-w" value="120" step="5" min="40" max="400" 
+                  style="width:100%; padding:4px; border:1px solid #ddd; border-radius:6px; font-size:13px;">
+              </div>
+              <div class="row" style="align-items:center; gap:4px; flex:1;">
+                <span style="font-size:11px; color:#888;">高:</span>
+                <input type="number" id="host-card-h" value="160" step="5" min="40" max="600" 
+                  style="width:100%; padding:4px; border:1px solid #ddd; border-radius:6px; font-size:13px;">
+              </div>
             </div>
           </div>
+
           <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
             <div style="font-size:12px;color:#555;margin-bottom:4px;">フィールド全体</div>
-            <button class="sl-btn" onclick="clearAllCardsConfirm()" style="color:#d32f2f;">🔥 全カード/オブジェクト削除</button>
+            <button class="sl-btn" onclick="clearAllCardsConfirm()" style="color:#d32f2f; margin-bottom:6px;">🔥 全カード/オブジェクト削除</button>
             <button class="sl-btn" id="host-otherops-save-btn">設定を保存</button>
           </div>
+
           <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
             <div style="font-size:12px;color:#555;margin-bottom:4px;">モード変更</div>
             <div class="row" style="gap:8px;">
               <button class="sl-btn" id="btn-mode-card" style="flex:1;">カードゲーム</button>
               <button class="sl-btn" id="btn-mode-board" style="flex:1;">ボードゲーム</button>
             </div>
+          </div>
+
+          <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
+            <button class="danger sl-btn" id="end-room-btn" style="display:none; width:100%; font-weight:bold; background:#c62828; color:#fff; border:none; padding:10px; border-radius:8px;">
+              🚪 ルームを終了する
+            </button>
           </div>
         </details>
       </div>
@@ -293,9 +308,6 @@
         🚪 退室する
       </button>
 
-      <button class="danger sl-btn" id="end-room-btn" style="display:none">
-        🚪 ルームを終了する
-      </button>
 
     </div><!-- /#ops-scroll -->
 
