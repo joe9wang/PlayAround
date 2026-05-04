@@ -38,6 +38,7 @@
       margin: 0;
       background: #f4f6f8;
       color: #222;
+      overflow: auto !important; /* game.css の overflow: hidden を上書き */
     }
 
     main {
@@ -503,13 +504,13 @@
       </div>
 
       <nav class="site-nav" aria-label="Global">
-        <a href="/index.html">ホーム</a>
-        <a href="/lobby.html">ロビー</a>
-        <a href="/howto.html">遊び方</a>
-        <a href="/about.html">運営者情報</a>
-        <a href="/privacy.html">プライバシー</a>
-        <a href="/terms.html">利用規約</a>
-        <a href="/contact.html">お問い合わせ</a>
+        <a href="/index.html" data-i18n="nav.home">ホーム</a>
+        <a href="/lobby.html" data-i18n="nav.lobby">ロビー</a>
+        <a href="/howto.html" data-i18n="nav.howto">遊び方</a>
+        <a href="/about.html" data-i18n="nav.about">運営者情報</a>
+        <a href="/privacy.html" data-i18n="nav.privacy">プライバシー</a>
+        <a href="/terms.html" data-i18n="nav.terms">利用規約</a>
+        <a href="/contact.html" data-i18n="nav.contact">お問い合わせ</a>
         <!-- 言語切替 -->
         <select aria-label="Language" class="lang-switch-header" id="lang-switch" style="margin-left: 10px;">
           <option value="ja">日本語</option>
