@@ -12580,8 +12580,8 @@ window.addEventListener('mousemove', (e) => {
   if (!card) return;
   
   const rect = field.getBoundingClientRect();
-  const x = (e.clientX - rect.left - panOffsetX) / zoom;
-  const y = (e.clientY - rect.top - panOffsetY) / zoom;
+  const x = (e.clientX - rect.left) / zoom;
+  const y = (e.clientY - rect.top) / zoom;
   
   const w = parseFloat(card.style.width) || 96;
   const h = parseFloat(card.style.height) || 112;
