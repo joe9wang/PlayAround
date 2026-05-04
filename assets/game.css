@@ -1546,7 +1546,7 @@ body.is-spectator #spectator-banner { display: block; }
   border: 4px solid #3b3027 !important;
   border-radius: 18px !important;
   box-shadow: 0 20px 40px rgba(20, 16, 12, 0.35) !important;
-  padding: 0 0 12px 0 !important;
+  padding: 0 8px 12px 0 !important;
   overflow: hidden !important;
 }
 
