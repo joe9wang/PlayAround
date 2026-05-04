@@ -10484,12 +10484,10 @@ function bindTokenContextMenuOnce() {
 
   const btnDelete = document.getElementById('token-ctx-delete');
 
-  const btnFontPlus = document.getElementById('token-ctx-font-plus');
-  const btnFontMinus = document.getElementById('token-ctx-font-minus');
   const btnToFront = document.getElementById('token-ctx-to-front');
   const btnToBack = document.getElementById('token-ctx-to-back');
 
-  if (!ctxMenu || !btnEnlarge || !btnShrink || !btnDelete || !btnToFront || !btnToBack || !btnFontPlus || !btnFontMinus) return;
+  if (!ctxMenu || !btnEnlarge || !btnShrink || !btnDelete || !btnToFront || !btnToBack) return;
 
 
 
@@ -10625,36 +10623,6 @@ function bindTokenContextMenuOnce() {
       if (typeof markLocal === 'function') markLocal(id);
       if (typeof markLocalDelete === 'function') markLocalDelete(id);
     } catch (err) { console.warn('delete token failed', err); }
-  });
-
-  btnFontPlus.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    ctxMenu.style.display = 'none';
-    if (!CURRENT_ROOM || !currentTokenId) return;
-    try {
-      const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const d = snap.data();
-        const currentSize = typeof d.fontSize === 'number' ? d.fontSize : 20;
-        await updateDoc(docRef, { fontSize: Math.min(currentSize + 4, 120), updatedAt: serverTimestamp() });
-      }
-    } catch (err) { console.warn(err); }
-  });
-
-  btnFontMinus.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    ctxMenu.style.display = 'none';
-    if (!CURRENT_ROOM || !currentTokenId) return;
-    try {
-      const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const d = snap.data();
-        const currentSize = typeof d.fontSize === 'number' ? d.fontSize : 20;
-        await updateDoc(docRef, { fontSize: Math.max(currentSize - 4, 8), updatedAt: serverTimestamp() });
-      }
-    } catch (err) { console.warn(err); }
   });
 
 }
