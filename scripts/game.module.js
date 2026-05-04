@@ -3369,6 +3369,7 @@ function loadSeatStatus(rid) {
     applyFieldModeLayout();
 
     IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+    document.body.classList.toggle('is-host', IS_ROOM_CREATOR);
 
     if (IS_ROOM_CREATOR && CURRENT_ROOM_META?.needsInitialization) {
       // Clear flag first to avoid multiple triggers

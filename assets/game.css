@@ -1230,9 +1230,9 @@ body.collapse-right .edge-right { display: inline-flex; }
 
 /* === Spectator View: Hide Ops === */
 body.is-spectator #ops-scroll .sl-btn:not(#sit-seat-btn):not(#end-room-btn):not(#leave-room-btn),
-body.is-spectator #ops-scroll .sl-row,
-body.is-spectator #ops-scroll .section-label,
-body.is-spectator #ops-scroll .ops-section {
+body.is-spectator #ops-scroll .sl-row:not(#host-otherops *),
+body.is-spectator #ops-scroll .section-label:not(#host-otherops *),
+body.is-spectator #ops-scroll .ops-section:not(#host-otherops *) {
   display: none !important;
 }
 

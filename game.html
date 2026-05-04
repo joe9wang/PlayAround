@@ -239,52 +239,6 @@
       <input id="card-back-input" type="file" accept="image/*" style="display:none">
 
 
-      <div aria-live="polite" class="host-toggle" id="host-otherops">
-        <details class="ops-section">
-          <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">ホスト専用</summary>
-          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
-            <div style="font-size:12px;color:#555;">
-              他プレイヤーのカード操作
-            </div>
-            <div class="row" style="align-items:center; gap:8px;">
-              <label class="switch" title="ONにすると、他人のカードも移動・表裏切替ができる">
-                <input id="toggle-other-ops" type="checkbox" />
-                <span class="slider">
-                </span>
-              </label>
-              <span id="toggle-other-ops-text" style="width:36px; text-align:right; font-weight:700;">
-                OFF
-              </span>
-            </div>
-          </div>
-
-          <div class="row" style="flex-direction:column; align-items:flex-start; margin-top:12px; gap:8px;">
-            <div style="font-size:12px;color:#555;font-weight:bold;">カードサイズ変更</div>
-            <div style="display:flex; align-items:center; gap:12px;">
-              <div style="display:flex; align-items:center; gap:4px;">
-                <span style="font-size:11px;color:#777;">横</span>
-                <input type="number" id="host-card-w" value="120" min="40" max="400"
-                  style="width:50px; padding:2px 4px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
-                <span style="font-size:11px;color:#777;">px</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:4px;">
-                <span style="font-size:11px;color:#777;">縦</span>
-                <input type="number" id="host-card-h" value="160" min="40" max="600"
-                  style="width:50px; padding:2px 4px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
-                <span style="font-size:11px;color:#777;">px</span>
-              </div>
-            </div>
-          </div>
-
-          <div style="margin-top:12px;">
-            <div style="font-size:12px;color:#555;margin-bottom:4px;">モード変更</div>
-            <div class="row" style="gap:8px;">
-              <button class="sl-btn" id="btn-mode-card" style="flex:1;">カードゲーム</button>
-              <button class="sl-btn" id="btn-mode-board" style="flex:1;">ボードゲーム</button>
-            </div>
-          </div>
-        </details>
-      </div>
 
       <!-- ★ 座席操作 -->
       <button class="sl-btn" id="sit-seat-btn" style="display:none; font-weight:bold;">
@@ -293,6 +247,46 @@
       <button class="sl-btn" id="leave-seat-btn" style="display:none; font-weight:bold;">
         🚶‍♂️ 座席から外れる
       </button>
+
+      <div aria-live="polite" class="host-toggle" id="host-otherops">
+        <details class="ops-section" open>
+          <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">ホスト専用</summary>
+          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+            <div style="font-size:12px;color:#555;">
+              他プレイヤーのカード操作
+            </div>
+            <div class="row" style="align-items:center; gap:8px;">
+              <label class="switch" title="ONにすると、他人のカードも移動・表裏切替ができる">
+                <input id="can-move-others-switch" type="checkbox">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+            <div style="font-size:12px;color:#555;">
+              他プレイヤーのカード表裏切替
+            </div>
+            <div class="row" style="align-items:center; gap:8px;">
+              <label class="switch" title="ONにすると、他人のカードも移動・表裏切替ができる">
+                <input id="can-flip-others-switch" type="checkbox">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+          <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
+            <div style="font-size:12px;color:#555;margin-bottom:4px;">フィールド全体</div>
+            <button class="sl-btn" onclick="clearAllCardsConfirm()" style="color:#d32f2f;">🔥 全カード/オブジェクト削除</button>
+            <button class="sl-btn" id="host-otherops-save-btn">設定を保存</button>
+          </div>
+          <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
+            <div style="font-size:12px;color:#555;margin-bottom:4px;">モード変更</div>
+            <div class="row" style="gap:8px;">
+              <button class="sl-btn" id="btn-mode-card" style="flex:1;">カードゲーム</button>
+              <button class="sl-btn" id="btn-mode-board" style="flex:1;">ボードゲーム</button>
+            </div>
+          </div>
+        </details>
+      </div>
 
       <!-- ★ 参加中のみ表示：退室/終了ボタン -->
       <button class="sl-btn" id="leave-room-btn" style="display:none">
