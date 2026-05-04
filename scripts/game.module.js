@@ -12201,6 +12201,8 @@ if (leaveSeatBtn) {
 // ===============================
 
 let currentNoteId = null;
+let carryingNoteId = null;
+let carryingOriginalPos = null;
 
 function bindNoteContextMenuOnce() {
   const ctxMenu = document.getElementById('note-context-menu');
@@ -12221,6 +12223,15 @@ function bindNoteContextMenuOnce() {
   document.getElementById('note-ctx-move')?.addEventListener('click', (e) => {
     const menu = document.getElementById('note-context-menu');
     if (menu) menu.style.display = 'none';
+    if (currentNoteId) {
+      carryingNoteId = currentNoteId;
+      const card = document.querySelector(`.card[data-card-id="${carryingNoteId}"]`);
+      if (card) {
+        carryingOriginalPos = { x: parseFloat(card.style.left) || 0, y: parseFloat(card.style.top) || 0 };
+        card.style.pointerEvents = 'none';
+        card.style.zIndex = 30000;
+      }
+    }
   });
 
   document.getElementById('note-ctx-edit')?.addEventListener('click', (e) => {
@@ -12561,3 +12572,52 @@ async function renderNoteViewContent() {
     viewList.innerHTML = '読み込みに失敗しました';
   }
 }
+
+// 持ち運び中の移動・確定処理
+window.addEventListener('mousemove', (e) => {
+  if (!carryingNoteId) return;
+  const card = document.querySelector(`.card[data-card-id="${carryingNoteId}"]`);
+  if (!card) return;
+  
+  const rect = field.getBoundingClientRect();
+  const x = (e.clientX - rect.left - panOffsetX) / zoom;
+  const y = (e.clientY - rect.top - panOffsetY) / zoom;
+  
+  const w = parseFloat(card.style.width) || 96;
+  const h = parseFloat(card.style.height) || 112;
+  
+  card.style.left = `${x - w/2}px`;
+  card.style.top = `${y - h/2}px`;
+});
+
+window.addEventListener('mousedown', (e) => {
+  if (carryingNoteId && e.button === 0) {
+    const id = carryingNoteId;
+    carryingNoteId = null;
+    
+    const card = document.querySelector(`.card[data-card-id="${id}"]`);
+    if (card) {
+      card.style.pointerEvents = 'auto';
+      const x = parseFloat(card.style.left);
+      const y = parseFloat(card.style.top);
+      updateCardBatched(id, { x, y });
+    }
+    
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+  }
+}, true);
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && carryingNoteId) {
+    const id = carryingNoteId;
+    carryingNoteId = null;
+    const card = document.querySelector(`.card[data-card-id="${id}"]`);
+    if (card && carryingOriginalPos) {
+      card.style.pointerEvents = 'auto';
+      card.style.left = `${carryingOriginalPos.x}px`;
+      card.style.top = `${carryingOriginalPos.y}px`;
+    }
+  }
+});
