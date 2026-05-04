@@ -1073,6 +1073,7 @@ input:checked + .slider:before {
 #field.mode-board #board-layout { display: block; }
 
 .host-toggle { display: none; }
+body.is-host .host-toggle { display: block; }
 
 #roll-d100-btn {
   font-size: 13px !important;
@@ -1542,6 +1543,10 @@ body.is-spectator #spectator-banner { display: block; }
   width: 90vw !important;
   height: auto !important;
   max-height: 86vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
   background: #fffaf0 !important;
   border: 4px solid #3b3027 !important;
   border-radius: 18px !important;
@@ -1585,9 +1590,10 @@ body.is-spectator #spectator-banner { display: block; }
 }
 
 #note-modal #note-content-area {
-  padding: 18px !important;
-  max-height: calc(86vh - 74px) !important;
-  overflow: auto !important;
+  padding: 18px 18px 40px !important;
+  max-height: none !important;
+  flex: 1 !important;
+  overflow-y: auto !important;
   background: transparent !important;
   border: none !important;
   margin: 0 !important;
@@ -1766,9 +1772,10 @@ body.is-spectator #spectator-banner { display: block; }
 
 
 .note-viewer-body {
-  padding: 18px !important;
-  max-height: calc(86vh - 74px) !important;
-  overflow: auto !important;
+  padding: 18px 18px 40px !important;
+  max-height: none !important;
+  flex: 1 !important;
+  overflow-y: auto !important;
   background: #fffaf0 !important;
 }
 

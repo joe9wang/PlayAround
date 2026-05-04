@@ -13,6 +13,7 @@
   <meta name="description" content="BatriTable マイページ。セーブデータの管理ができます。">
   <meta name="robots" content="noindex, nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="assets/game.css">
   <!-- 同じファビコン等（必要に応じて） -->
   <link href="/favicon.ico" rel="icon" sizes="any" />
   <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
@@ -37,42 +38,6 @@
       margin: 0;
       background: #f4f6f8;
       color: #222;
-    }
-
-    header {
-      height: var(--header-h);
-      background: #444;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 0 14px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    header .title {
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: .02em;
-    }
-
-    header .spacer {
-      flex: 1;
-    }
-
-    header a.btn {
-      text-decoration: none;
-      background: #fff;
-      color: #333;
-      padding: .45rem .7rem;
-      border-radius: 10px;
-      display: inline-flex;
-      align-items: center;
-      gap: .4rem;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
-      font-weight: 600;
     }
 
     main {
@@ -526,10 +491,36 @@
 </head>
 
 <body>
-  <header>
-    <div class="title" data-i18n="mypage.title">👤 マイページ</div>
-    <div class="spacer"></div>
-    <a class="btn" href="./game.html" data-i18n="mypage.back">← ゲームへ戻る</a>
+  <!-- === Global Header === -->
+  <header class="site-header game-header" role="banner">
+    <div class="site-header__inner">
+      <div class="header-left">
+        <a class="site-brand" href="/" aria-label="BatriTable Home">
+          <img src="/BatriTable-icon.png?v=3" alt="BatriTableアイコン"
+            style="width:36px; height:36px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.15);" />
+          <h1>BatriTable</h1>
+        </a>
+      </div>
+
+      <nav class="site-nav" aria-label="Global">
+        <a href="/index.html">ホーム</a>
+        <a href="/lobby.html">ロビー</a>
+        <a href="/howto.html">遊び方</a>
+        <a href="/about.html">運営者情報</a>
+        <a href="/privacy.html">プライバシー</a>
+        <a href="/terms.html">利用規約</a>
+        <a href="/contact.html">お問い合わせ</a>
+        <!-- 言語切替 -->
+        <select aria-label="Language" class="lang-switch-header" id="lang-switch" style="margin-left: 10px;">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+      </nav>
+
+      <div class="header-right">
+        <div id="auth-indicator" class="auth-indicator-header"></div>
+      </div>
+    </div>
   </header>
 
   <main>
@@ -771,6 +762,7 @@
       where, orderBy, deleteDoc, serverTimestamp, setDoc
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
     import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
+    import { initI18n } from "./scripts/i18n.js";
 
 
     // index.html と同じ設定（そのまま再掲）
@@ -801,6 +793,26 @@
     const premiumSection = document.getElementById('premium-section');
     const premiumInfo = document.getElementById('premium-info');
     const premiumBadgeInline = document.getElementById('premium-badge-inline');
+    const authIndicator = document.getElementById('auth-indicator');
+
+    // === Initialization ===
+    initI18n();
+
+    function updateAuthIndicator(user) {
+      if (!authIndicator) return;
+      if (!user || user.isAnonymous) {
+        authIndicator.innerHTML = `<a href="./login.html" class="login-btn">ログイン</a>`;
+      } else {
+        const photo = user.photoURL;
+        const name = user.displayName || user.email || 'Player';
+        const initial = name.charAt(0).toUpperCase();
+        authIndicator.innerHTML = `
+          <a href="./mypage.html" class="avatar-btn" title="マイページへ">
+            ${photo ? `<img src="${photo}" alt="Avatar">` : initial}
+          </a>
+        `;
+      }
+    }
 
     // ===== セーブデータ表示（サムネ&一覧） =====
     let CURRENT_UID = null;
@@ -1263,6 +1275,7 @@
       }
       CURRENT_UID = user.uid;
       applyUser(user);
+      updateAuthIndicator(user);
       // ログイン済みになったら情報を描画
       refreshSaveSlots().catch(console.error);
       refreshMyRooms().catch(console.error);
