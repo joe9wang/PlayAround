@@ -4498,43 +4498,42 @@ function subscribeChat() {
 // cards サブコレクションのスナップショットを購読し、DOMへ反映。
 
 // cards コレクションを購読し、変更を DOM に反映
+let isInitialLoadDone = false;
+function hideLoadingOverlay() {
+  const overlay = document.getElementById('loading-overlay');
+  if (overlay) {
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+      overlay.style.display = 'none';
+    }, 500);
+  }
+}
 
 //
 
 
 
 function subscribeCards() {
-
   if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; }
-
   const qCards = collection(db, `rooms/${CURRENT_ROOM}/cards`);
 
   unsubscribeCards = onSnapshot(qCards, snap => {
-
     snap.docChanges().forEach(change => {
-
       const data = change.doc.data();
-
       const id = change.doc.id;
-
       if (change.type === 'removed') {
-
         const el = cardDomMap.get(id); if (el) { el.remove(); cardDomMap.delete(id); }
-
-        // ★ 追加: サーバ側の削除を見たらローカル抑止フラグも掃除
-
         localDeleteMap.delete(id);
-
         return;
-
       }
-
       upsertCardFromRemote(id, data);
-
     });
 
+    if (!isInitialLoadDone) {
+      isInitialLoadDone = true;
+      hideLoadingOverlay();
+    }
   });
-
 }
 
 
