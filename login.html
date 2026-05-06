@@ -705,6 +705,7 @@
 
         // ===== Google =====
         const google = new GoogleAuthProvider();
+        google.setCustomParameters({ prompt: 'select_account' });
         loginGoogleBtn.addEventListener('click', async () => {
             try {
                 loginGoogleBtn.disabled = true;

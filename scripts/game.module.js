@@ -1772,6 +1772,7 @@ initI18n();
 // Googleプロバイダ
 
 const google = new GoogleAuthProvider();
+google.setCustomParameters({ prompt: 'select_account' });
 
 
 
