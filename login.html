@@ -695,15 +695,35 @@
         // ===== Register (modal Google) =====
         regGoogleBtn.addEventListener('click', async () => {
             try {
-                console.log('[Auth] Register Google clicked');
+                console.log('[Auth] Register Google clicked (Popup)');
                 regGoogleBtn.disabled = true;
                 const u = auth.currentUser;
                 if (u && u.isAnonymous) {
-                    console.log('[Auth] Linking anonymous user with Google (Redirect)');
-                    await linkWithRedirect(u, google);
+                    console.log('[Auth] Linking anonymous user with Google (Popup)');
+                    try {
+                        await linkWithPopup(u, google);
+                        location.href = './lobby.html';
+                    } catch (e) {
+                        if (e?.code === 'auth/credential-already-in-use') {
+                            const cred = GoogleAuthProvider.credentialFromError(e);
+                            if (cred) await signInWithCredential(auth, cred);
+                            location.href = './lobby.html';
+                        } else if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
+                            console.log('[Auth] Popup failed, falling back to Redirect');
+                            await linkWithRedirect(u, google);
+                        } else throw e;
+                    }
                 } else {
-                    console.log('[Auth] Signing in with Google (Redirect)');
-                    await signInWithRedirect(auth, google);
+                    console.log('[Auth] Signing in with Google (Popup)');
+                    try {
+                        await signInWithPopup(auth, google);
+                        location.href = './lobby.html';
+                    } catch (e) {
+                        if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
+                            console.log('[Auth] Popup failed, falling back to Redirect');
+                            await signInWithRedirect(auth, google);
+                        } else throw e;
+                    }
                 }
             } catch (e) {
                 console.warn('[GoogleRegister] Error:', e);
@@ -732,15 +752,35 @@
         google.setCustomParameters({ prompt: 'select_account' });
         loginGoogleBtn.addEventListener('click', async () => {
             try {
-                console.log('[Auth] Login Google clicked');
+                console.log('[Auth] Login Google clicked (Popup)');
                 loginGoogleBtn.disabled = true;
                 const u = auth.currentUser;
                 if (u && u.isAnonymous) {
-                    console.log('[Auth] Linking anonymous user with Google (Redirect)');
-                    await linkWithRedirect(u, google);
+                    console.log('[Auth] Linking anonymous user with Google (Popup)');
+                    try {
+                        await linkWithPopup(u, google);
+                        location.href = './lobby.html';
+                    } catch (e) {
+                        if (e?.code === 'auth/credential-already-in-use') {
+                            const cred = GoogleAuthProvider.credentialFromError(e);
+                            if (cred) await signInWithCredential(auth, cred);
+                            location.href = './lobby.html';
+                        } else if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
+                            console.log('[Auth] Popup failed, falling back to Redirect');
+                            await linkWithRedirect(u, google);
+                        } else throw e;
+                    }
                 } else {
-                    console.log('[Auth] Signing in with Google (Redirect)');
-                    await signInWithRedirect(auth, google);
+                    console.log('[Auth] Signing in with Google (Popup)');
+                    try {
+                        await signInWithPopup(auth, google);
+                        location.href = './lobby.html';
+                    } catch (e) {
+                        if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
+                            console.log('[Auth] Popup failed, falling back to Redirect');
+                            await signInWithRedirect(auth, google);
+                        } else throw e;
+                    }
                 }
             } catch (e) {
                 console.warn('[GoogleSignIn] Error:', e);
