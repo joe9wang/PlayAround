@@ -604,19 +604,19 @@
                 if (u && u.isAnonymous) {
                     try {
                         await linkWithCredential(u, EmailAuthProvider.credential(email, password));
-                        location.href = './game.html';
+                        location.href = './lobby.html';
                         return;
                     } catch (e) {
                         if (e?.code === 'auth/email-already-in-use' || e?.code === 'auth/credential-already-in-use') {
                             await signInWithEmailAndPassword(auth, email, password);
-                            location.href = './game.html';
+                            location.href = './lobby.html';
                             return;
                         }
                         throw e;
                     }
                 }
                 await signInWithEmailAndPassword(auth, email, password);
-                location.href = './game.html';
+                location.href = './lobby.html';
             } catch (e) {
                 console.warn('[EmailSignIn]', e);
                 const code = e?.code || '';
@@ -645,7 +645,7 @@
                 if (u && u.isAnonymous) {
                     try {
                         await linkWithCredential(u, EmailAuthProvider.credential(email, password));
-                        location.href = './game.html';
+                        location.href = './lobby.html';
                         return;
                     } catch (e) {
                         if (e?.code === 'auth/email-already-in-use') { alert(lang === 'ja' ? 'このメールアドレスは既に登録されています。' : 'Email already in use.'); return; }
@@ -653,7 +653,7 @@
                     }
                 }
                 await createUserWithEmailAndPassword(auth, email, password);
-                location.href = './game.html';
+                location.href = './lobby.html';
             } catch (e) {
                 console.warn('[Register]', e);
                 const code = e?.code || '';
@@ -681,7 +681,7 @@
                 } else {
                     await signInWithPopup(auth, google);
                 }
-                location.href = './game.html';
+                location.href = './lobby.html';
             } catch (e) {
                 console.warn('[GoogleRegister]', e);
                 alert(`${lang === 'ja' ? 'アカウント作成に失敗しました' : 'Registration failed'} (${e?.code || 'unknown'})`);
