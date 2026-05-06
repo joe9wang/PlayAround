@@ -600,10 +600,12 @@
                 authFormArea.style.display = '';
                 authLoggedinArea.style.display = 'none';
             } else {
+                console.log('[Auth] Logged in as:', user.email || user.displayName || 'non-email user');
                 authFormArea.style.display = 'none';
                 authLoggedinArea.style.display = '';
                 loggedinUser.textContent = user.email || user.displayName || '';
                 // ログイン済みなら自動的にロビーへ移動
+                console.log('[Auth] Already logged in, redirecting to lobby...');
                 setTimeout(() => {
                     location.href = './lobby.html';
                 }, 500);

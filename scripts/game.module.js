@@ -11919,7 +11919,9 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
 async function checkUrlParamsAndJoin() {
   const urlParams = new URLSearchParams(window.location.search);
   const roomId = urlParams.get('id');
+  console.log('[GameInit] roomId from URL:', roomId);
   if (!roomId) {
+    console.log('[GameInit] No roomId, redirecting to lobby...');
     window.location.href = 'lobby.html';
     return;
   }
