@@ -389,15 +389,15 @@
         <div id="auth-loggedin-area" style="display:none;">
             <div class="loggedin-msg" id="loggedin-msg">ログイン済みです</div>
             <div id="loggedin-user" style="color:#aaa; font-size:13px; margin-bottom:16px;"></div>
-            <button class="login-btn login-btn--primary" onclick="location.href='./game.html'" id="btn-back-game">
-                ゲームに戻る
+            <button class="login-btn login-btn--primary" onclick="location.href='./lobby.html'" id="btn-back-game">
+                ロビーに移動する
             </button>
             <button class="login-btn login-btn--register" id="logout-btn" type="button" style="margin-top:8px;">
                 ログアウト
             </button>
         </div>
 
-        <a href="./game.html" class="back-link" id="back-link">← ゲームに戻る</a>
+        <a href="./lobby.html" class="back-link" id="back-link">← ロビーに戻る</a>
     </div>
 
     <!-- ===== 新規アカウント作成モーダル ===== -->
@@ -590,6 +590,10 @@
                 authFormArea.style.display = 'none';
                 authLoggedinArea.style.display = '';
                 loggedinUser.textContent = user.email || user.displayName || '';
+                // ログイン済みなら自動的にロビーへ移動
+                setTimeout(() => {
+                    location.href = './lobby.html';
+                }, 500);
             }
         });
 
