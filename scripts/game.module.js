@@ -11919,7 +11919,10 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
 async function checkUrlParamsAndJoin() {
   const urlParams = new URLSearchParams(window.location.search);
   const roomId = urlParams.get('id');
-  if (!roomId) return;
+  if (!roomId) {
+    window.location.href = 'lobby.html';
+    return;
+  }
 
   await ensureAuthReady();
   const uid = auth.currentUser?.uid;

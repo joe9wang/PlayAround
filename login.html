@@ -571,6 +571,19 @@
 
         // ===== Auth state =====
         let __initial = false;
+
+        // リダイレクトログインの結果を確認
+        (async () => {
+            try {
+                const res = await getRedirectResult(auth);
+                if (res && res.user) {
+                    location.href = './lobby.html';
+                }
+            } catch (e) {
+                console.warn('[RedirectResult]', e);
+            }
+        })();
+
         onAuthStateChanged(auth, (user) => {
             if (!__initial) {
                 __initial = true;
@@ -726,7 +739,7 @@
                 } else {
                     await signInWithPopup(auth, google);
                 }
-                location.href = './game.html';
+                location.href = './lobby.html';
             } catch (e) {
                 console.warn('[GoogleSignIn]', e);
                 alert(`${lang === 'ja' ? 'ログインに失敗しました' : 'Sign-in failed'} (${e?.code || 'unknown'})`);
