@@ -574,17 +574,26 @@
 
         // リダイレクトログインの結果を確認
         (async () => {
+            console.log('[Auth] Checking redirect result...');
             try {
                 const res = await getRedirectResult(auth);
                 if (res && res.user) {
+                    console.log('[Auth] Redirect result success:', res.user.email);
                     location.href = './lobby.html';
+                } else {
+                    console.log('[Auth] No redirect result found.');
                 }
             } catch (e) {
-                console.warn('[RedirectResult]', e);
+                console.warn('[RedirectResult] Error:', e);
+                // 特徴的なエラーがあればユーザーに通知
+                if (e?.code === 'auth/credential-already-in-use') {
+                    alert(lang === 'ja' ? 'このGoogleアカウントは既に別の方法で登録されています。' : 'This Google account is already in use.');
+                }
             }
         })();
 
         onAuthStateChanged(auth, (user) => {
+            console.log('[Auth] State changed:', user ? (user.isAnonymous ? 'Anonymous' : user.email) : 'Null');
             if (!__initial) {
                 __initial = true;
                 if (!user) { signInAnonymously(auth).catch(console.error); return; }
@@ -686,25 +695,21 @@
         // ===== Register (modal Google) =====
         regGoogleBtn.addEventListener('click', async () => {
             try {
+                console.log('[Auth] Register Google clicked');
                 regGoogleBtn.disabled = true;
                 const u = auth.currentUser;
                 if (u && u.isAnonymous) {
-                    try { await linkWithPopup(u, google); } catch (e) {
-                        if (e?.code === 'auth/credential-already-in-use') {
-                            const cred = GoogleAuthProvider.credentialFromError(e);
-                            if (cred) await signInWithCredential(auth, cred);
-                        } else if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
-                            await linkWithRedirect(u, google); return;
-                        } else throw e;
-                    }
+                    console.log('[Auth] Linking anonymous user with Google (Redirect)');
+                    await linkWithRedirect(u, google);
                 } else {
-                    await signInWithPopup(auth, google);
+                    console.log('[Auth] Signing in with Google (Redirect)');
+                    await signInWithRedirect(auth, google);
                 }
-                location.href = './lobby.html';
             } catch (e) {
-                console.warn('[GoogleRegister]', e);
+                console.warn('[GoogleRegister] Error:', e);
                 alert(`${lang === 'ja' ? 'アカウント作成に失敗しました' : 'Registration failed'} (${e?.code || 'unknown'})`);
-            } finally { regGoogleBtn.disabled = false; }
+                regGoogleBtn.disabled = false;
+            }
         });
 
         // ===== Forgot password =====
@@ -727,25 +732,21 @@
         google.setCustomParameters({ prompt: 'select_account' });
         loginGoogleBtn.addEventListener('click', async () => {
             try {
+                console.log('[Auth] Login Google clicked');
                 loginGoogleBtn.disabled = true;
                 const u = auth.currentUser;
                 if (u && u.isAnonymous) {
-                    try { await linkWithPopup(u, google); } catch (e) {
-                        if (e?.code === 'auth/credential-already-in-use') {
-                            const cred = GoogleAuthProvider.credentialFromError(e);
-                            if (cred) await signInWithCredential(auth, cred);
-                        } else if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
-                            await linkWithRedirect(u, google); return;
-                        } else throw e;
-                    }
+                    console.log('[Auth] Linking anonymous user with Google (Redirect)');
+                    await linkWithRedirect(u, google);
                 } else {
-                    await signInWithPopup(auth, google);
+                    console.log('[Auth] Signing in with Google (Redirect)');
+                    await signInWithRedirect(auth, google);
                 }
-                location.href = './lobby.html';
             } catch (e) {
-                console.warn('[GoogleSignIn]', e);
+                console.warn('[GoogleSignIn] Error:', e);
                 alert(`${lang === 'ja' ? 'ログインに失敗しました' : 'Sign-in failed'} (${e?.code || 'unknown'})`);
-            } finally { loginGoogleBtn.disabled = false; }
+                loginGoogleBtn.disabled = false;
+            }
         });
 
         // ===== Logout =====
