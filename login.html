@@ -11,6 +11,7 @@
     <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
     <link href="/apple-touch-icon.png?v=3" rel="apple-touch-icon" sizes="180x180" />
     <link href="/site.webmanifest" rel="manifest" />
+    <link rel="stylesheet" href="assets/game.css">
 
     <meta name="description" content="BatriTableにログイン。メールアドレスまたはGoogleアカウントでサインインできます。" />
     <meta name="robots" content="noindex, nofollow" />
@@ -26,22 +27,24 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #1a1a2e;
-            color: #e0e0e0;
+            background: #f6f7fb;
+            color: #333;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            margin: 0;
         }
 
         .login-container {
             width: min(440px, 92vw);
-            background: #16213e;
+            background: #fff;
             border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .1);
             padding: 32px 28px;
             text-align: center;
+            margin-top: 40px;
+            margin-bottom: 40px;
         }
 
         .login-logo {
@@ -50,10 +53,11 @@
             margin: 0 auto 16px;
             border-radius: 50%;
             overflow: hidden;
-            background: #0f3460;
+            background: #f0f0f0;
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 2px solid #eee;
         }
 
         .login-logo img {
@@ -65,19 +69,19 @@
         .login-logo-text {
             font-size: 24px;
             font-weight: 800;
-            color: #fff;
+            color: #333;
         }
 
         .login-title {
             font-size: 24px;
             font-weight: 700;
-            color: #fff;
+            color: #333;
             margin-bottom: 8px;
         }
 
         .login-subtitle {
             font-size: 13px;
-            color: #888;
+            color: #666;
             margin-bottom: 24px;
             line-height: 1.5;
         }
@@ -85,7 +89,7 @@
         .section-label {
             font-size: 13px;
             font-weight: 700;
-            color: #ccc;
+            color: #555;
             margin: 20px 0 8px;
             text-align: left;
         }
@@ -94,22 +98,22 @@
             width: 100%;
             padding: 12px 14px;
             font-size: 15px;
-            border: 1px solid #333;
-            border-radius: 8px;
-            background: #0f3460;
-            color: #fff;
+            border: 1px solid #bbb;
+            border-radius: 10px;
+            background: #fff;
+            color: #333;
             margin-bottom: 10px;
             outline: none;
             transition: border-color .2s;
         }
 
         .login-field::placeholder {
-            color: #666;
+            color: #999;
         }
 
         .login-field:focus {
             border-color: #0a7;
-            box-shadow: 0 0 0 2px rgba(0, 170, 119, .2);
+            box-shadow: 0 0 0 2px rgba(0, 170, 119, .15);
         }
 
         .login-btn {
@@ -118,7 +122,7 @@
             justify-content: center;
             width: 100%;
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 10px;
             border: none;
             font-size: 15px;
             font-weight: 700;
@@ -133,39 +137,40 @@
         }
 
         .login-btn--primary {
-            background: #e94560;
+            background: #0a7;
             color: #fff;
         }
 
         .login-btn--primary:hover:not(:disabled) {
-            background: #c73850;
+            background: #086;
         }
 
         .login-btn--google {
             background: #fff;
             color: #333;
-            border: 1px solid #ddd;
+            border: 1px solid #ccc;
         }
 
         .login-btn--google:hover:not(:disabled) {
-            background: #f5f5f5;
+            background: #f8f8f8;
+            border-color: #bbb;
         }
 
         .login-btn--register {
-            background: transparent;
-            color: #ccc;
-            border: 1px solid #444;
+            background: #eee;
+            color: #333;
+            border: 1px solid #ccc;
         }
 
         .login-btn--register:hover:not(:disabled) {
-            background: #1a1a2e;
-            border-color: #666;
+            background: #e4e4e4;
+            border-color: #bbb;
         }
 
         .forgot-link {
             display: block;
             font-size: 12px;
-            color: #5cb8ff;
+            color: #1a73e8;
             text-decoration: none;
             margin: 4px 0 0;
             text-align: center;
@@ -177,7 +182,7 @@
 
         .divider {
             border: none;
-            border-top: 1px solid #333;
+            border-top: 1px solid #eee;
             margin: 20px 0;
         }
 
@@ -188,14 +193,14 @@
         .register-section {
             margin-top: 16px;
             padding-top: 16px;
-            border-top: 1px solid #333;
+            border-top: 1px solid #eee;
         }
 
         .back-link {
             display: inline-block;
             margin-top: 20px;
             font-size: 13px;
-            color: #5cb8ff;
+            color: #1a73e8;
             text-decoration: none;
         }
 
@@ -211,23 +216,11 @@
             margin: 16px 0;
         }
 
-        .lang-switch {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            border: 1px solid #444;
-            background: #16213e;
-            color: #ccc;
-        }
-
         /* ===== Registration Modal ===== */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, .75);
+            background: rgba(0, 0, 0, .5);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -246,13 +239,14 @@
             width: min(480px, 92vw);
             max-height: 90vh;
             overflow-y: auto;
-            background: #1e1e2f;
+            background: #fff;
             border-radius: 16px;
-            box-shadow: 0 16px 48px rgba(0, 0, 0, .6);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, .2);
             padding: 32px 28px;
             text-align: center;
             transform: translateY(20px);
             transition: transform .25s ease;
+            color: #333;
         }
 
         .modal-overlay.active .modal-card {
@@ -264,28 +258,29 @@
             height: 72px;
             margin: 0 auto 16px;
             border-radius: 50%;
-            background: #333;
+            background: #f0f0f0;
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 2px solid #eee;
         }
 
         .modal-avatar svg {
             width: 40px;
             height: 40px;
-            fill: #888;
+            fill: #aaa;
         }
 
         .modal-title {
             font-size: 22px;
             font-weight: 800;
-            color: #fff;
+            color: #333;
             margin-bottom: 10px;
         }
 
         .modal-desc {
             font-size: 12px;
-            color: #888;
+            color: #666;
             line-height: 1.6;
             margin-bottom: 8px;
         }
@@ -296,7 +291,7 @@
 
         .modal-links a {
             font-size: 12px;
-            color: #5cb8ff;
+            color: #1a73e8;
             text-decoration: none;
             display: block;
             margin: 2px 0;
@@ -308,7 +303,7 @@
 
         .modal-hint {
             font-size: 11px;
-            color: #666;
+            color: #888;
             text-align: left;
             margin-top: -6px;
             margin-bottom: 8px;
@@ -317,7 +312,7 @@
         .modal-footer {
             margin-top: 16px;
             padding-top: 16px;
-            border-top: 1px solid #333;
+            border-top: 1px solid #eee;
         }
 
         .modal-sns-row {
@@ -333,10 +328,37 @@
 </head>
 
 <body>
-    <select class="lang-switch" id="lang-switch" aria-label="Language">
-        <option value="ja">日本語</option>
-        <option value="en">English</option>
-    </select>
+  <!-- === Global Header === -->
+  <header class="site-header game-header" role="banner">
+    <div class="site-header__inner">
+      <div class="header-left">
+        <a class="site-brand" href="/" aria-label="BatriTable Home">
+          <img src="/BatriTable-icon.png?v=3" alt="BatriTableアイコン"
+            style="width:36px; height:36px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.15);" />
+          <h1>BatriTable</h1>
+        </a>
+      </div>
+
+      <nav class="site-nav" aria-label="Global">
+        <a href="/index.html">ホーム</a>
+        <a href="/lobby.html">ロビー</a>
+        <a href="/howto.html">遊び方</a>
+        <a href="/about.html">運営者情報</a>
+        <a href="/privacy.html">プライバシー</a>
+        <a href="/terms.html">利用規約</a>
+        <a href="/contact.html">お問い合わせ</a>
+        <!-- 言語切替 -->
+        <select aria-label="Language" class="lang-switch-header" id="lang-switch" style="margin-left: 10px;">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+      </nav>
+
+      <div class="header-right">
+        <div id="auth-indicator" class="auth-indicator-header"></div>
+      </div>
+    </div>
+  </header>
 
     <div class="login-container">
         <!-- ロゴ -->
