@@ -10,7 +10,7 @@ import {
     getAuth, signInAnonymously, onAuthStateChanged,
     GoogleAuthProvider,
     EmailAuthProvider, createUserWithEmailAndPassword,
-    signInWithEmailAndPassword, sendPasswordResetEmail,
+    signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification,
     signInWithPopup, linkWithPopup, signInWithCredential, linkWithCredential,
     signInWithRedirect, linkWithRedirect, getRedirectResult,
     signOut, updateProfile, onIdTokenChanged, getIdToken
@@ -80,7 +80,7 @@ export {
     signInAnonymously, onAuthStateChanged,
     GoogleAuthProvider,
     EmailAuthProvider, createUserWithEmailAndPassword,
-    signInWithEmailAndPassword, sendPasswordResetEmail,
+    signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification,
     signInWithPopup, linkWithPopup, signInWithCredential, linkWithCredential,
     signInWithRedirect, linkWithRedirect, getRedirectResult,
     signOut, updateProfile, onIdTokenChanged, getIdToken,

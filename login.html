@@ -486,7 +486,7 @@
             signInAnonymously, onAuthStateChanged,
             GoogleAuthProvider, EmailAuthProvider,
             createUserWithEmailAndPassword, signInWithEmailAndPassword,
-            sendPasswordResetEmail,
+            sendPasswordResetEmail, sendEmailVerification,
             signInWithPopup, linkWithPopup, signInWithCredential, linkWithCredential,
             signInWithRedirect, linkWithRedirect, getRedirectResult,
             signOut, updateProfile
@@ -696,6 +696,8 @@
                 if (u && u.isAnonymous) {
                     try {
                         await linkWithCredential(u, EmailAuthProvider.credential(email, password));
+                        await sendEmailVerification(auth.currentUser);
+                        alert(lang === 'ja' ? 'アカウント作成完了！確認メールを送信しました。' : 'Account created! Verification email sent.');
                         location.href = './lobby.html';
                         return;
                     } catch (e) {
@@ -704,6 +706,8 @@
                     }
                 }
                 await createUserWithEmailAndPassword(auth, email, password);
+                await sendEmailVerification(auth.currentUser);
+                alert(lang === 'ja' ? 'アカウント作成完了！確認メールを送信しました。' : 'Account created! Verification email sent.');
                 location.href = './lobby.html';
             } catch (e) {
                 console.warn('[Register]', e);
