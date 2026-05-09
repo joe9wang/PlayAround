@@ -746,6 +746,17 @@
       </div>
     </section>
 
+    <!-- アカウント設定 / 危険な操作 -->
+    <section aria-labelledby="sec-danger" style="margin-top: 40px; border: 1px solid #fed7d7; background: #fffafb;">
+      <h2 id="sec-danger" style="color: #e53e3e;" data-i18n="mypage.dangerZone">危険な操作</h2>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <p class="muted" style="margin: 0;" data-i18n="mypage.deleteAccountDesc">アカウントを完全に削除します。この操作は取り消せません。</p>
+        <button id="btn-delete-account" class="btn-delete" style="max-width: 200px; padding: 12px; font-size: 14px;" data-i18n="mypage.deleteAccountBtn">
+          アカウントを削除する
+        </button>
+      </div>
+    </section>
+
   </main>
 
   <footer>BatriTable — © 2025 SOLVENTER</footer>
@@ -755,7 +766,7 @@
     // マイページに表示名と Google の ID を反映する =====
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import {
-      getAuth, onAuthStateChanged,
+      getAuth, onAuthStateChanged, deleteUser,
       setPersistence, browserLocalPersistence, updateProfile
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
     import {
@@ -1410,6 +1421,29 @@
           c.classList.remove('active');
         }
       });
+    });
+
+    // アカウント削除
+    document.getElementById('btn-delete-account')?.addEventListener('click', async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      
+      const { t } = await import("./scripts/i18n.js");
+      
+      if (!confirm(t('mypage.deleteConfirm'))) return;
+      
+      try {
+        await deleteUser(user);
+        alert(t('mypage.deleteSuccess'));
+        location.href = './index.html';
+      } catch (e) {
+        console.error('deleteUser error', e);
+        if (e.code === 'auth/requires-recent-login') {
+          alert(t('mypage.deleteReLogin'));
+        } else {
+          alert((t('mypage.deleteAccountBtn') + ' failed: ') + e.message);
+        }
+      }
     });
 
   </script>

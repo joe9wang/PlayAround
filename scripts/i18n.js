@@ -151,7 +151,14 @@ const I18N = {
         "premium.registered": "プレミアム会員",
         "premium.since": "登録日",
         "premium.hint": "月額300円で特別な機能が使えます（近日公開）",
-        "premium.status": "プレミアムステータス"
+        "premium.status": "プレミアムステータス",
+
+        "mypage.dangerZone": "危険な操作",
+        "mypage.deleteAccountDesc": "アカウントを完全に削除します。この操作は取り消せません。",
+        "mypage.deleteAccountBtn": "アカウントを削除する",
+        "mypage.deleteConfirm": "本当にアカウントを完全に削除しますか？\n保存されたマイルームやマイセットも含むすべてのデータが消去され、元に戻すことはできません。",
+        "mypage.deleteSuccess": "アカウントを削除しました。ご利用ありがとうございました。",
+        "mypage.deleteReLogin": "セキュリティのため、再ログインが必要です。一度ログアウトしてから再度ログインし、すぐに削除を行ってください。"
     },
     en: {
         "app.title": "Play board/card games with images (up to 4)",
@@ -301,7 +308,14 @@ const I18N = {
         "premium.registered": "Premium Member",
         "premium.since": "Member since",
         "premium.hint": "Unlock special features for ¥300/mo (coming soon)",
-        "premium.status": "Premium Status"
+        "premium.status": "Premium Status",
+
+        "mypage.dangerZone": "Danger Zone",
+        "mypage.deleteAccountDesc": "Permanently delete your account. This action cannot be undone.",
+        "mypage.deleteAccountBtn": "Delete Account",
+        "mypage.deleteConfirm": "Are you sure you want to delete your account permanently?\nAll your data including My Rooms and My Sets will be lost and cannot be recovered.",
+        "mypage.deleteSuccess": "Account deleted. Thank you for using BatriTable.",
+        "mypage.deleteReLogin": "For security reasons, you need to re-login to delete your account. Please log out and log in again, then try deleting immediately."
     }
 };
 
