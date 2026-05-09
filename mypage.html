@@ -1280,7 +1280,7 @@
     onAuthStateChanged(auth, (user) => {
       // 未ログイン or 匿名ログインなら index に戻す
       if (!user || user.isAnonymous) {
-        alert('マイページは Google ログインが必要です。');
+        alert('マイページはログインが必要です。');
         location.href = './index.html';
         return;
       }
