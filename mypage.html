@@ -135,13 +135,23 @@
       font-size: 15px;
     }
 
-    .right a.small-btn {
+    .small-btn {
       text-decoration: none;
       border: 1px solid #ddd;
       padding: .35rem .6rem;
       border-radius: 10px;
       color: #333;
       background: #fafafa;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .small-btn:hover {
+      background: #f0f0f0;
+      border-color: #ccc;
+    }
+
+    .right a.small-btn {
+      display: inline-block;
     }
 
     ul.plain {
@@ -526,17 +536,20 @@
 
   <main>
     <!-- プロフィール -->
-    <section aria-labelledby="sec-profile">
-      <h2 id="sec-profile" data-i18n="mypage.profile">プロフィール</h2>
-      <div class="kv">
-        <div class="avatar" id="avatar">P</div>
-        <div>
-          <div><strong id="displayName">Player</strong> <span id="premium-badge-inline"></span></div>
-          <div style="margin-top: 8px;">
-            <button class="small-btn" id="changeAvatarBtn" style="font-size: 12px; cursor: pointer;">アイコンを変更</button>
+    <section aria-labelledby="sec-profile" style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <div>
+        <h2 id="sec-profile" data-i18n="mypage.profile">プロフィール</h2>
+        <div class="kv">
+          <div class="avatar" id="avatar">P</div>
+          <div>
+            <div><strong id="displayName">Player</strong> <span id="premium-badge-inline"></span></div>
+            <div style="margin-top: 8px;">
+              <button class="small-btn" id="changeAvatarBtn" style="font-size: 12px;">アイコンを変更</button>
+            </div>
           </div>
         </div>
       </div>
+      <button class="small-btn" id="logout-btn-mypage" data-i18n="auth.logout">ログアウト</button>
     </section>
 
     <!-- プレミアムステータス -->
@@ -1421,6 +1434,16 @@
           c.classList.remove('active');
         }
       });
+    });
+
+    // ログアウト
+    document.getElementById('logout-btn-mypage')?.addEventListener('click', async () => {
+      try {
+        await auth.signOut();
+        location.href = './lobby.html';
+      } catch (e) {
+        console.error('Logout failed:', e);
+      }
     });
 
     // アカウント削除 (Backend APIを利用して一括削除)
