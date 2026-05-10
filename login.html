@@ -737,7 +737,7 @@
 
                             if (!apiRes.ok) {
                                 const errData = await apiRes.json();
-                                throw new Error(errData.error || 'API call failed');
+                                throw new Error(`${errData.error || 'API call failed'} (Stage: ${errData.stage || 'unknown'})`);
                             }
                             
                             console.log('[AuthDebug] Custom API call resolved successfully.');
@@ -747,7 +747,7 @@
                                 : 'Verification email sent. Please click the link in the email to complete registration.');
                         } catch (evError) {
                             console.error('[AuthDebug] Custom API failed (Link):', evError);
-                            alert(lang === 'ja' ? '確認メールの送信に失敗しました。' : 'Failed to send verification email.');
+                            alert((lang === 'ja' ? '確認メールの送信に失敗しました：\n' : 'Failed to send verification email:\n') + evError.message);
                         }
 
                         await checkRegistrationAndRedirect(auth.currentUser, 'register');
@@ -778,7 +778,7 @@
 
                     if (!apiRes.ok) {
                         const errData = await apiRes.json();
-                        throw new Error(errData.error || 'API call failed');
+                        throw new Error(`${errData.error || 'API call failed'} (Stage: ${errData.stage || 'unknown'})`);
                     }
                     
                     console.log('[AuthDebug] Custom API call resolved successfully.');
@@ -788,7 +788,7 @@
                         : 'Verification email sent. Please click the link in the email to complete registration.');
                 } catch (evError) {
                     console.error('[AuthDebug] Custom API failed (Create):', evError);
-                    alert(lang === 'ja' ? '確認メールの送信に失敗しました。' : 'Failed to send verification email.');
+                    alert((lang === 'ja' ? '確認メールの送信に失敗しました：\n' : 'Failed to send verification email:\n') + evError.message);
                 }
 
                 await checkRegistrationAndRedirect(res.user, 'register');

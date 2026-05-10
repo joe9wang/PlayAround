@@ -26,7 +26,9 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  let stage = 'init';
   try {
+    stage = 'initAdmin';
     initAdmin();
     const auth = admin.auth();
 
@@ -37,6 +39,7 @@ module.exports = async (req, res) => {
       return res.status(401).json({ error: 'idToken required' });
     }
 
+    stage = 'verifyIdToken';
     // 1. Verify the ID Token and get user info
     const decodedToken = await auth.verifyIdToken(idToken);
     const email = decodedToken.email;
@@ -46,6 +49,7 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Email not found in token' });
     }
 
+    stage = 'generateLink';
     // 2. Generate the verification link
     const actionCodeSettings = {
       url: `${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'https://batritable.com'}/lobby.html`,
@@ -54,6 +58,7 @@ module.exports = async (req, res) => {
     
     const link = await auth.generateEmailVerificationLink(email, actionCodeSettings);
 
+    stage = 'setupTransporter';
     // 3. Setup Nodemailer
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -63,11 +68,11 @@ module.exports = async (req, res) => {
       },
     });
 
+    stage = 'composeEmail';
     // 4. Compose Email
     const isJa = (lang === 'ja');
     const subject = isJa ? '【BatriTable】メールアドレスの確認' : '[BatriTable] Email Verification';
     
-    // Custom HTML Template
     const htmlContent = isJa ? `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
         <h2 style="color: #b350be;">BatriTable へようこそ！</h2>
@@ -98,6 +103,7 @@ module.exports = async (req, res) => {
       </div>
     `;
 
+    stage = 'sendEmail';
     // 5. Send Email
     await transporter.sendMail({
       from: '"BatriTable" <noreply@batritable.com>',
@@ -110,7 +116,7 @@ module.exports = async (req, res) => {
     res.status(200).json({ ok: true });
 
   } catch (error) {
-    console.error('[API] Error sending verification email:', error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
+    console.error(`[API] Error at stage "${stage}":`, error);
+    res.status(500).json({ error: error.message || 'Internal Server Error', stage });
   }
 };
