@@ -409,25 +409,32 @@
         </div>
 
         <!-- ===== ログイン済み時 ===== -->
+        <div id="auth-loggedin-area" style="display:none;">
+            <div class="loggedin-msg" id="loggedin-msg">ログイン済みです</div>
+            <div id="loggedin-user" style="color:#aaa; font-size:13px; margin-bottom:16px;"></div>
+            <button class="login-btn login-btn--primary" onclick="location.href='./lobby.html'" id="btn-back-game">
+                ロビーに移動する
+            </button>
+            <button class="login-btn login-btn--register" id="logout-btn" type="button" style="margin-top:8px;">
+                ログアウト
+            </button>
         </div>
-+
-+        <!-- ===== メール確認待ち時 ===== -->
-+        <div id="auth-verify-area" style="display:none;">
-+            <div class="loggedin-msg" id="verify-msg" style="color: #e67e22;">メールアドレスの確認が必要です</div>
-+            <div id="verify-user" style="color:#aaa; font-size:13px; margin-bottom:16px;"></div>
-+            <div class="login-subtitle" id="verify-subtitle" style="font-size: 12px;">
-+                登録されたメールアドレスに確認メールを送信しました。<br>
-+                メール内のリンクをクリックして登録を完了してください。
-+            </div>
-+            <button class="login-btn login-btn--primary" id="resend-verify-btn" type="button" style="margin-top:16px;">
-+                確認メールを再送する
-+            </button>
-+            <button class="login-btn login-btn--register" id="verify-back-btn" type="button" style="margin-top:8px;">
-+                ログイン画面に戻る
-+            </button>
-+        </div>
 
-         <a href="./lobby.html" class="back-link" id="back-link">← ロビーに戻る</a>
+        <!-- ===== メール確認待ち時 ===== -->
+        <div id="auth-verify-area" style="display:none;">
+            <div class="loggedin-msg" id="verify-msg" style="color: #e67e22;">メールアドレスの確認が必要です</div>
+            <div id="verify-user" style="color:#aaa; font-size:13px; margin-bottom:16px;"></div>
+            <div class="login-subtitle" id="verify-subtitle" style="font-size: 12px;">
+                登録されたメールアドレスに確認メールを送信しました。<br>
+                メール内のリンクをクリックして登録を完了してください。
+            </div>
+            <button class="login-btn login-btn--primary" id="resend-verify-btn" type="button" style="margin-top:16px;">
+                確認メールを再送する
+            </button>
+            <button class="login-btn login-btn--register" id="verify-back-btn" type="button" style="margin-top:8px;">
+                ログイン画面に戻る
+            </button>
+        </div>
 
         <a href="./lobby.html" class="back-link" id="back-link">← ロビーに戻る</a>
     </div>
