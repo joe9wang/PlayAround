@@ -657,9 +657,6 @@
                 const userSnap = await getDoc(doc(db, 'users', uid));
                 const isRegistered = userSnap.exists();
                 console.log(`[AuthCheck] Firestore user exists: ${isRegistered}`);
-                
-                // デバッグ用の一時的なアラート
-                alert(`[DEBUG]\nUID: ${uid}\nFirestore User Exists: ${isRegistered}\nMode: ${mode}`);
 
                 if (mode === 'register') {
                     if (!isRegistered) {
@@ -704,6 +701,11 @@
                 });
                 const data = await res.json();
                 console.log('[WelcomeEmail] API Response:', data);
+                if (data.note) {
+                    alert('[Email Debug] ' + data.note);
+                } else if (!data.ok) {
+                    alert('[Email Debug] Error: ' + (data.error || 'Unknown'));
+                }
             } catch (e) {
                 console.warn('[WelcomeEmail] Failed to send notification:', e);
             }
