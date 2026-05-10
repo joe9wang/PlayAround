@@ -489,7 +489,7 @@
             sendPasswordResetEmail, sendEmailVerification,
             signInWithPopup, linkWithPopup, signInWithCredential, linkWithCredential,
             signInWithRedirect, linkWithRedirect, getRedirectResult,
-            signOut, updateProfile
+            signOut, updateProfile, getAdditionalUserInfo, deleteUser
         } from './scripts/firebase.init.js';
 
         // ===== DOM refs =====
@@ -602,6 +602,15 @@
                 const res = await getRedirectResult(auth);
                 if (res && res.user) {
                     console.log('[Auth] Redirect result success:', res.user.email);
+                    const mode = sessionStorage.getItem('pa:auth_mode');
+                    const details = getAdditionalUserInfo(res);
+                    if (mode === 'login' && details && details.isNewUser) {
+                        await deleteUser(res.user);
+                        alert(lang === 'ja' ? 'アカウントが見つかりません。先に「新規アカウント作成」から登録を行ってください。' : 'Account not found. Please register via "Create new account" first.');
+                        sessionStorage.removeItem('pa:auth_mode');
+                        return;
+                    }
+                    sessionStorage.removeItem('pa:auth_mode');
                     location.href = './lobby.html';
                 } else {
                     console.log('[Auth] No redirect result found.');
@@ -743,11 +752,13 @@
                 } else {
                     console.log('[Auth] Signing in with Google (Popup)');
                     try {
+                        sessionStorage.setItem('pa:auth_mode', 'register');
                         await signInWithPopup(auth, google);
                         location.href = './lobby.html';
                     } catch (e) {
                         if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
                             console.log('[Auth] Popup failed, falling back to Redirect');
+                            sessionStorage.setItem('pa:auth_mode', 'register');
                             await signInWithRedirect(auth, google);
                         } else throw e;
                     }
@@ -781,33 +792,25 @@
             try {
                 console.log('[Auth] Login Google clicked (Popup)');
                 loginGoogleBtn.disabled = true;
-                const u = auth.currentUser;
-                if (u && u.isAnonymous) {
-                    console.log('[Auth] Linking anonymous user with Google (Popup)');
-                    try {
-                        await linkWithPopup(u, google);
-                        location.href = './lobby.html';
-                    } catch (e) {
-                        if (e?.code === 'auth/credential-already-in-use') {
-                            const cred = GoogleAuthProvider.credentialFromError(e);
-                            if (cred) await signInWithCredential(auth, cred);
-                            location.href = './lobby.html';
-                        } else if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
-                            console.log('[Auth] Popup failed, falling back to Redirect');
-                            await linkWithRedirect(u, google);
-                        } else throw e;
+                // ログインボタンでは「新規作成」をさせない
+                console.log('[Auth] Signing in with Google (Login Mode)');
+                try {
+                    sessionStorage.setItem('pa:auth_mode', 'login');
+                    const result = await signInWithPopup(auth, google);
+                    const details = getAdditionalUserInfo(result);
+                    if (details && details.isNewUser) {
+                        await deleteUser(auth.currentUser);
+                        alert(lang === 'ja' ? 'アカウントが見つかりません。先に「新規アカウント作成」から登録を行ってください。' : 'Account not found. Please register via "Create new account" first.');
+                        loginGoogleBtn.disabled = false;
+                        return;
                     }
-                } else {
-                    console.log('[Auth] Signing in with Google (Popup)');
-                    try {
-                        await signInWithPopup(auth, google);
-                        location.href = './lobby.html';
-                    } catch (e) {
-                        if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
-                            console.log('[Auth] Popup failed, falling back to Redirect');
-                            await signInWithRedirect(auth, google);
-                        } else throw e;
-                    }
+                    location.href = './lobby.html';
+                } catch (e) {
+                    if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
+                        console.log('[Auth] Popup failed, falling back to Redirect');
+                        sessionStorage.setItem('pa:auth_mode', 'login');
+                        await signInWithRedirect(auth, google);
+                    } else throw e;
                 }
             } catch (e) {
                 console.warn('[GoogleSignIn] Error:', e);
