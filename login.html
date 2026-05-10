@@ -604,14 +604,19 @@
                     console.log('[Auth] Redirect result success:', res.user.email);
                     const mode = sessionStorage.getItem('pa:auth_mode');
                     const details = getAdditionalUserInfo(res);
-                    if (mode === 'login' && details && details.isNewUser) {
+                    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
+                    const userSnap = await getDoc(doc(db, 'users', res.user.uid));
+                    const isRegistered = userSnap.exists();
+
+                    if (mode === 'login' && !isRegistered) {
+                        console.log('[Auth] Unregistered user in Login Mode. Deleting...');
                         await deleteUser(res.user);
                         const { t } = await import("./scripts/i18n.js");
                         alert(t('auth.accountNotFound'));
                         sessionStorage.removeItem('pa:auth_mode');
                         return;
                     }
-                    if (mode === 'register' && details && details.isNewUser) {
+                    if (mode === 'register' && (details?.isNewUser || !isRegistered)) {
                         await sendWelcomeEmail(res.user.email);
                     }
                     sessionStorage.removeItem('pa:auth_mode');
@@ -824,7 +829,12 @@
                     sessionStorage.setItem('pa:auth_mode', 'login');
                     const result = await signInWithPopup(auth, google);
                     const details = getAdditionalUserInfo(result);
-                    if (details && details.isNewUser) {
+                    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
+                    const userSnap = await getDoc(doc(db, 'users', result.user.uid));
+                    const isRegistered = userSnap.exists();
+
+                    if (!isRegistered) {
+                        console.log('[Auth] Unregistered user in Login Mode. Deleting...');
                         await deleteUser(auth.currentUser);
                         const { t } = await import("./scripts/i18n.js");
                         alert(t('auth.accountNotFound'));
