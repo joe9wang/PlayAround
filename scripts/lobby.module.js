@@ -81,6 +81,36 @@ async function init() {
       }
 
       console.log('[AuthDebug] User in Lobby:', user.email, 'Verified:', user.emailVerified);
+
+      // --- NEW: メール確認 & アカウント有効化チェック ---
+      if (!user.isAnonymous) {
+        // パスワード認証の場合のみメール確認をチェック
+        if (user.providerData.some(p => p.providerId === 'password') && !user.emailVerified) {
+          console.warn('[Auth] Email not verified. Redirecting to login.');
+          location.href = './login.html';
+          return;
+        }
+
+        // 全ての非匿名ユーザーに対して、Firestore レコードがない場合は作成（アカウント有効化）
+        try {
+          const userDocRef = doc(db, `users/${user.uid}`);
+          const userSnap = await getDoc(userDocRef);
+          if (!userSnap.exists()) {
+            console.log('[Auth] Creating new user record (Activation)');
+            await setDoc(userDocRef, {
+              email: user.email,
+              displayName: user.displayName || user.email?.split('@')[0] || 'Player',
+              photoURL: user.photoURL || null,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              emailVerified: user.emailVerified || false
+            });
+          }
+        } catch (e) {
+          console.error('[Auth] Activation failed:', e);
+        }
+      }
+      
       whoamiSpan.textContent = user.displayName || user.email || 'Anonymous';
       
       // 匿名ログイン時は「ログイン」ボタンのみ表示し、ログアウト／マイページは隠す

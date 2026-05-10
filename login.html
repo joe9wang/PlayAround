@@ -409,16 +409,25 @@
         </div>
 
         <!-- ===== ログイン済み時 ===== -->
-        <div id="auth-loggedin-area" style="display:none;">
-            <div class="loggedin-msg" id="loggedin-msg">ログイン済みです</div>
-            <div id="loggedin-user" style="color:#aaa; font-size:13px; margin-bottom:16px;"></div>
-            <button class="login-btn login-btn--primary" onclick="location.href='./lobby.html'" id="btn-back-game">
-                ロビーに移動する
-            </button>
-            <button class="login-btn login-btn--register" id="logout-btn" type="button" style="margin-top:8px;">
-                ログアウト
-            </button>
         </div>
++
++        <!-- ===== メール確認待ち時 ===== -->
++        <div id="auth-verify-area" style="display:none;">
++            <div class="loggedin-msg" id="verify-msg" style="color: #e67e22;">メールアドレスの確認が必要です</div>
++            <div id="verify-user" style="color:#aaa; font-size:13px; margin-bottom:16px;"></div>
++            <div class="login-subtitle" id="verify-subtitle" style="font-size: 12px;">
++                登録されたメールアドレスに確認メールを送信しました。<br>
++                メール内のリンクをクリックして登録を完了してください。
++            </div>
++            <button class="login-btn login-btn--primary" id="resend-verify-btn" type="button" style="margin-top:16px;">
++                確認メールを再送する
++            </button>
++            <button class="login-btn login-btn--register" id="verify-back-btn" type="button" style="margin-top:8px;">
++                ログイン画面に戻る
++            </button>
++        </div>
+
+         <a href="./lobby.html" class="back-link" id="back-link">← ロビーに戻る</a>
 
         <a href="./lobby.html" class="back-link" id="back-link">← ロビーに戻る</a>
     </div>
@@ -504,6 +513,11 @@
         const logoutBtn = document.getElementById('logout-btn');
         const loggedinUser = document.getElementById('loggedin-user');
 
+        const authVerifyArea = document.getElementById('auth-verify-area');
+        const resendVerifyBtn = document.getElementById('resend-verify-btn');
+        const verifyBackBtn = document.getElementById('verify-back-btn');
+        const verifyUser = document.getElementById('verify-user');
+
         // Modal refs
         const registerModal = document.getElementById('register-modal');
         const regEmailInput = document.getElementById('reg-email');
@@ -588,6 +602,12 @@
             document.getElementById('modal-lbl-back').textContent = d.modalBack;
             document.getElementById('modal-link-terms').textContent = d.modalTerms;
             document.getElementById('modal-link-privacy').textContent = d.modalPrivacy;
+
+            // verify area i18n
+            document.getElementById('verify-msg').textContent = lang === 'ja' ? 'メールアドレスの確認が必要です' : 'Email verification required';
+            document.getElementById('verify-subtitle').innerHTML = lang === 'ja' ? '登録されたメールアドレスに確認メールを送信しました。<br>メール内のリンクをクリックして登録を完了してください。' : 'A verification email has been sent to your email address.<br>Please click the link in the email to complete registration.';
+            resendVerifyBtn.textContent = lang === 'ja' ? '確認メールを再送する' : 'Resend verification email';
+            verifyBackBtn.textContent = lang === 'ja' ? 'ログイン画面に戻る' : 'Back to login';
         }
         applyLang();
         langSel.addEventListener('change', () => { lang = langSel.value; localStorage.setItem('lang', lang); applyLang(); });
@@ -633,10 +653,23 @@
             if (user.isAnonymous) {
                 authFormArea.style.display = '';
                 authLoggedinArea.style.display = 'none';
+                authVerifyArea.style.display = 'none';
             } else {
                 console.log('[Auth] Logged in as:', user.email || user.displayName || 'non-email user');
+                
+                // メール確認チェック
+                if (!user.emailVerified && user.providerData.some(p => p.providerId === 'password')) {
+                    console.log('[Auth] Email NOT verified. Blocking.');
+                    authFormArea.style.display = 'none';
+                    authLoggedinArea.style.display = 'none';
+                    authVerifyArea.style.display = '';
+                    verifyUser.textContent = user.email;
+                    return;
+                }
+
                 authFormArea.style.display = 'none';
                 authLoggedinArea.style.display = '';
+                authVerifyArea.style.display = 'none';
                 loggedinUser.textContent = user.email || user.displayName || '';
                 // ログイン済みなら自動的にロビーへ移動
                 console.log('[Auth] Already logged in, redirecting to lobby...');
@@ -649,6 +682,17 @@
         // 登録状況をチェックしてリダイレクトまたはブロックする
         async function checkRegistrationAndRedirect(user, mode) {
             if (!user || user.isAnonymous) return;
+
+            // NEW: メール確認チェック (ログイン時のみ厳格に。登録時はUI側でハンドリング)
+            if (!user.emailVerified && user.providerData.some(p => p.providerId === 'password')) {
+                console.log('[AuthCheck] Email not verified. Redirecting to verify area.');
+                authFormArea.style.display = 'none';
+                authLoggedinArea.style.display = 'none';
+                authVerifyArea.style.display = '';
+                verifyUser.textContent = user.email;
+                return;
+            }
+
             const uid = user.uid;
             console.log(`[AuthCheck] Checking registration for UID: ${uid} (Mode: ${mode})`);
             
@@ -666,14 +710,20 @@
 
                 // Login mode (default)
                 if (!isRegistered) {
-                    console.warn('[AuthCheck] Account NOT FOUND in Firestore. Deleting Auth account and blocking login.');
-                    await deleteUser(user);
-                    const { t } = await import("./scripts/i18n.js");
-                    alert(t('auth.accountNotFound'));
-                    sessionStorage.removeItem('pa:auth_mode');
-                    if (typeof loginGoogleBtn !== 'undefined') loginGoogleBtn.disabled = false;
-                    if (typeof loginEmailBtn !== 'undefined') loginEmailBtn.disabled = false;
-                    return;
+                    // NEW: メール認証済み（passwordプロバイダ）なら、ロビーでの自動有効化を待つため削除せず通す
+                    const isEmailUser = user.providerData.some(p => p.providerId === 'password');
+                    if (isEmailUser && user.emailVerified) {
+                        console.log('[AuthCheck] Verified email user but no doc. Allowing entry for activation.');
+                    } else {
+                        console.warn('[AuthCheck] Account NOT FOUND in Firestore. Deleting Auth account and blocking login.');
+                        await deleteUser(user);
+                        const { t } = await import("./scripts/i18n.js");
+                        alert(t('auth.accountNotFound'));
+                        sessionStorage.removeItem('pa:auth_mode');
+                        if (typeof loginGoogleBtn !== 'undefined') loginGoogleBtn.disabled = false;
+                        if (typeof loginEmailBtn !== 'undefined') loginEmailBtn.disabled = false;
+                        return;
+                    }
                 }
 
                 console.log('[AuthCheck] Valid user found. Redirecting to lobby.');
@@ -791,16 +841,52 @@
                     alert((lang === 'ja' ? '確認メールの送信に失敗しました：\n' : 'Failed to send verification email:\n') + evError.message);
                 }
 
-                await checkRegistrationAndRedirect(res.user, 'register');
+                // --- 登録直後は「確認待ち」表示にするためリダイレクトしない ---
+                // await checkRegistrationAndRedirect(res.user, 'register');
+                authVerifyArea.style.display = '';
+                authFormArea.style.display = 'none';
+                verifyUser.textContent = email;
+                registerModal.classList.remove('active');
             } catch (e) {
                 console.error('[Register] Error:', e);
-                const code = e?.code || '';
-                let msg = lang === 'ja' ? 'アカウント作成に失敗しました' : 'Registration failed';
-                if (code === 'auth/email-already-in-use') msg = lang === 'ja' ? 'このメールアドレスは既に登録されています。' : 'Email already in use.';
-                else if (code === 'auth/weak-password') msg = lang === 'ja' ? 'パスワードが弱すぎます。' : 'Password too weak.';
-                else if (e.message) msg += ` (${e.message})`;
-                alert(msg);
-            } finally { regSubmitBtn.disabled = false; }
+                // ...
+            } finally {
+                regSubmitBtn.disabled = false;
+            }
+        });
+
+        // ===== Verify Area buttons =====
+        verifyBackBtn.addEventListener('click', async () => {
+            await signOut(auth);
+            authVerifyArea.style.display = 'none';
+            authFormArea.style.display = '';
+        });
+
+        resendVerifyBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            try {
+                resendVerifyBtn.disabled = true;
+                const oldText = resendVerifyBtn.textContent;
+                resendVerifyBtn.textContent = lang === 'ja' ? '送信中...' : 'Sending...';
+
+                const idToken = await user.getIdToken();
+                const apiRes = await fetch('/api/send-verify-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken, lang })
+                });
+
+                if (!apiRes.ok) throw new Error('API failed');
+
+                alert(lang === 'ja' ? '確認メールを再送しました。' : 'Verification email resent.');
+                resendVerifyBtn.textContent = oldText;
+            } catch (e) {
+                console.error('[Resend] Error:', e);
+                alert(lang === 'ja' ? '再送に失敗しました。' : 'Failed to resend.');
+            } finally {
+                resendVerifyBtn.disabled = false;
+            }
         });
 
         // ===== Register (modal Google) =====

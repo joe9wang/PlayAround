@@ -159,6 +159,10 @@ const I18N = {
         "mypage.deleteConfirm": "本当にアカウントを完全に削除しますか？\n保存されたマイルームやマイセットも含むすべてのデータが消去され、元に戻すことはできません。",
         "auth.accountNotFound": "アカウントが見つかりません。先に「新規アカウント作成」から登録を行ってください。",
         "auth.registrationComplete": "アカウント作成完了！ウェルカムメールを送信しました。",
+        "auth.verifyRequired": "メールアドレスの確認が必要です。",
+        "auth.verifySent": "確認メールを送信しました。メール内のリンクをクリックしてください。",
+        "auth.resendBtn": "確認メールを再送する",
+        "auth.resending": "送信中...",
         "mypage.deleteSuccess": "アカウントとすべてのデータを削除しました。ご利用ありがとうございました。"
     },
     en: {
@@ -317,6 +321,10 @@ const I18N = {
         "mypage.deleteConfirm": "Are you sure you want to delete your account permanently?\nAll your data including My Rooms and My Sets will be lost and cannot be recovered.",
         "auth.accountNotFound": "Account not found. Please register via 'Create new account' first.",
         "auth.registrationComplete": "Account created! A welcome email has been sent.",
+        "auth.verifyRequired": "Email verification required.",
+        "auth.verifySent": "Verification email sent. Please click the link in the email.",
+        "auth.resendBtn": "Resend verification email",
+        "auth.resending": "Sending...",
         "mypage.deleteSuccess": "Your account and all data have been deleted. Thank you for using BatriTable."
     }
 };
