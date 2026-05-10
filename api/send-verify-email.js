@@ -52,7 +52,7 @@ module.exports = async (req, res) => {
     stage = 'generateLink';
     // 2. Generate the verification link
     const actionCodeSettings = {
-      url: `${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'https://batritable.com'}/lobby.html`,
+      url: 'https://batritable.com/lobby.html',
       handleCodeInApp: false,
     };
     
