@@ -716,24 +716,6 @@
             if (!email || !password) { alert(lang === 'ja' ? 'メールアドレスとパスワードを入力してください。' : 'Please enter email and password.'); return; }
             try {
                 loginEmailBtn.disabled = true;
-                const u = auth.currentUser;
-                if (u && u.isAnonymous) {
-                    try {
-                        await linkWithCredential(u, EmailAuthProvider.credential(email, password));
-                        console.log('[EmailAuth] Linked anonymous user');
-                        await sendEmailVerification(auth.currentUser);
-                        await checkRegistrationAndRedirect(auth.currentUser, 'register');
-                        return;
-                    } catch (e) {
-                        if (e?.code === 'auth/email-already-in-use' || e?.code === 'auth/credential-already-in-use') {
-                            const cred = await signInWithEmailAndPassword(auth, email, password);
-                            console.log('[EmailAuth] Signed in with existing email');
-                            await checkRegistrationAndRedirect(cred.user, 'login');
-                            return;
-                        }
-                        throw e;
-                    }
-                }
                 const res = await signInWithEmailAndPassword(auth, email, password);
                 await checkRegistrationAndRedirect(res.user, 'login');
             } catch (e) {
