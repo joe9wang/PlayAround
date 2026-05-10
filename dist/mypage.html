@@ -13,6 +13,7 @@
   <meta name="description" content="BatriTable マイページ。セーブデータの管理ができます。">
   <meta name="robots" content="noindex, nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="assets/game.css">
   <!-- 同じファビコン等（必要に応じて） -->
   <link href="/favicon.ico" rel="icon" sizes="any" />
   <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
@@ -37,42 +38,7 @@
       margin: 0;
       background: #f4f6f8;
       color: #222;
-    }
-
-    header {
-      height: var(--header-h);
-      background: #444;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 0 14px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    header .title {
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: .02em;
-    }
-
-    header .spacer {
-      flex: 1;
-    }
-
-    header a.btn {
-      text-decoration: none;
-      background: #fff;
-      color: #333;
-      padding: .45rem .7rem;
-      border-radius: 10px;
-      display: inline-flex;
-      align-items: center;
-      gap: .4rem;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
-      font-weight: 600;
+      overflow: auto !important; /* game.css の overflow: hidden を上書き */
     }
 
     main {
@@ -328,11 +294,62 @@
       /* 余白時の左寄せ */
     }
 
+    .ms-section-title {
+      grid-column: 1 / -1;
+      font-size: 16px;
+      font-weight: 800;
+      padding: 14px 4px 6px;
+      border-bottom: 2px solid #eee;
+      margin-top: 8px;
+      color: #444;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     #card-list-grid .cl-item {
       border: 1px solid #ddd;
       border-radius: 10px;
       padding: 6px;
       background: #fff;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.1s, background-color 0.1s;
+    }
+
+    #card-list-grid .cl-item:hover {
+      transform: scale(1.03);
+      border-color: #aaa;
+    }
+
+    /* 背面表示 */
+    #card-list-grid .cl-item.is-back {
+      background: #000;
+      border-color: #444;
+    }
+    #card-list-grid .cl-item.is-back img {
+      visibility: hidden;
+    }
+    #card-list-grid .cl-item.is-back.has-back-img img {
+      visibility: visible;
+    }
+
+    #card-list-grid .cl-item.flippable:hover::after {
+      content: '🔄 Flip';
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 10px;
+      background: rgba(255,255,255,0.8);
+      color: #333;
+      font-weight: 700;
+    }
+
+    #card-list-grid .cl-item.is-back.flippable:hover::after {
+      background: rgba(0,0,0,0.6);
+      color: #fff;
     }
 
     #card-list-grid img {
@@ -475,10 +492,36 @@
 </head>
 
 <body>
-  <header>
-    <div class="title" data-i18n="mypage.title">👤 マイページ</div>
-    <div class="spacer"></div>
-    <a class="btn" href="./game.html" data-i18n="mypage.back">← ゲームへ戻る</a>
+  <!-- === Global Header === -->
+  <header class="site-header game-header" role="banner">
+    <div class="site-header__inner">
+      <div class="header-left">
+        <a class="site-brand" href="/" aria-label="BatriTable Home">
+          <img src="/BatriTable-icon.png?v=3" alt="BatriTableアイコン"
+            style="width:36px; height:36px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.15);" />
+          <h1>BatriTable</h1>
+        </a>
+      </div>
+
+      <nav class="site-nav" aria-label="Global">
+        <a href="/index.html" data-i18n="nav.home">ホーム</a>
+        <a href="/lobby.html" data-i18n="nav.lobby">ロビー</a>
+        <a href="/howto.html" data-i18n="nav.howto">遊び方</a>
+        <a href="/about.html" data-i18n="nav.about">運営者情報</a>
+        <a href="/privacy.html" data-i18n="nav.privacy">プライバシー</a>
+        <a href="/terms.html" data-i18n="nav.terms">利用規約</a>
+        <a href="/contact.html" data-i18n="nav.contact">お問い合わせ</a>
+        <!-- 言語切替 -->
+        <select aria-label="Language" class="lang-switch-header" id="lang-switch" style="margin-left: 10px;">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+      </nav>
+
+      <div class="header-right">
+        <div id="auth-indicator" class="auth-indicator-header"></div>
+      </div>
+    </div>
   </header>
 
   <main>
@@ -703,6 +746,16 @@
       </div>
     </section>
 
+    <!-- アカウント削除 -->
+    <section style="margin-top: 60px; padding: 32px 18px; text-align: center; border-top: 1px solid #eee; background: none; box-shadow: none;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <button id="btn-delete-account" class="btn-delete" style="width: 200px; padding: 12px; font-size: 14px;" data-i18n="mypage.deleteAccountBtn">
+          アカウントを削除する
+        </button>
+        <p class="muted" style="margin: 0; font-size: 12px;" data-i18n="mypage.deleteAccountDesc">アカウントを完全に削除します。この操作は取り消せません。</p>
+      </div>
+    </section>
+
   </main>
 
   <footer>BatriTable — © 2025 SOLVENTER</footer>
@@ -712,7 +765,7 @@
     // マイページに表示名と Google の ID を反映する =====
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import {
-      getAuth, onAuthStateChanged,
+      getAuth, onAuthStateChanged, deleteUser,
       setPersistence, browserLocalPersistence, updateProfile
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
     import {
@@ -720,6 +773,7 @@
       where, orderBy, deleteDoc, serverTimestamp, setDoc
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
     import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
+    import { initI18n } from "./scripts/i18n.js";
 
 
     // index.html と同じ設定（そのまま再掲）
@@ -750,6 +804,26 @@
     const premiumSection = document.getElementById('premium-section');
     const premiumInfo = document.getElementById('premium-info');
     const premiumBadgeInline = document.getElementById('premium-badge-inline');
+    const authIndicator = document.getElementById('auth-indicator');
+
+    // === Initialization ===
+    initI18n();
+
+    function updateAuthIndicator(user) {
+      if (!authIndicator) return;
+      if (!user || user.isAnonymous) {
+        authIndicator.innerHTML = `<a href="./login.html" class="login-btn">ログイン</a>`;
+      } else {
+        const photo = user.photoURL;
+        const name = user.displayName || user.email || 'Player';
+        const initial = name.charAt(0).toUpperCase();
+        authIndicator.innerHTML = `
+          <a href="./mypage.html" class="avatar-btn" title="マイページへ">
+            ${photo ? `<img src="${photo}" alt="Avatar">` : initial}
+          </a>
+        `;
+      }
+    }
 
     // ===== セーブデータ表示（サムネ&一覧） =====
     let CURRENT_UID = null;
@@ -890,22 +964,15 @@
       };
     }
 
-    async function fetchSlotThumbs(slot, max = 5) {
-      const col = collection(db, `${slPath(slot)}/cards`);
-      const snap = await getDocs(query(col, limit(max)));
-      return snap.docs.map(d => {
-        const s = d.data() || {};
-        return s.fullUrl || s.imageUrl || ''; // 保存時のURLをそのまま使う
-      }).filter(Boolean);
-    }
-
-    async function fetchSlotAllUrls(slot) {
+    async function fetchSlotData(slot) {
       const col = collection(db, `${slPath(slot)}/cards`);
       const snap = await getDocs(col);
-      return snap.docs.map(d => {
-        const s = d.data() || {};
-        return s.fullUrl || s.imageUrl || '';
-      }).filter(Boolean);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    async function fetchSlotThumbs(slot, max = 5) {
+      const items = await fetchSlotData(slot);
+      return items.map(d => d.imageUrl || d.fullUrl || '').filter(Boolean).slice(0, max);
     }
 
     function renderThumbs(el, urls, total) {
@@ -1000,12 +1067,14 @@
       if (!willOpen) return;
       wrap.style.display = 'block';
       grid.innerHTML = '';
-      const urls = await fetchSlotAllUrls(slot);
-      if (urls.length === 0) {
-        grid.innerHTML = '<div class="muted">画像はありません</div>';
+      const items = await fetchSlotData(slot);
+      if (items.length === 0) {
+        grid.innerHTML = '<div class="muted">アイテムはありません</div>';
         return;
       }
-      urls.forEach(u => {
+      items.forEach(d => {
+        const u = d.imageUrl || d.fullUrl || '';
+        if (!u) return;
         const img = document.createElement('img');
         img.loading = 'lazy';
         img.decoding = 'async';
@@ -1211,12 +1280,13 @@
     onAuthStateChanged(auth, (user) => {
       // 未ログイン or 匿名ログインなら index に戻す
       if (!user || user.isAnonymous) {
-        alert('マイページは Google ログインが必要です。');
+        alert('マイページはログインが必要です。');
         location.href = './index.html';
         return;
       }
       CURRENT_UID = user.uid;
       applyUser(user);
+      updateAuthIndicator(user);
       // ログイン済みになったら情報を描画
       refreshSaveSlots().catch(console.error);
       refreshMyRooms().catch(console.error);
@@ -1231,36 +1301,76 @@
       const grid = document.getElementById('card-list-grid');
       const title = document.getElementById('card-list-title');
       if (!modal || !grid || !title) return;
-      title.textContent = `マイセット${slot}のカード一覧`;
+      title.textContent = `マイセット${slot}の構成アイテム`;
       modal.style.display = 'flex';
       grid.innerHTML = '<div class="muted">読み込み中…</div>';
       try {
-        const urls = await fetchSlotAllUrls(slot);
+        const items = await fetchSlotData(slot);
         grid.innerHTML = '';
-        if (urls.length === 0) {
-          grid.innerHTML = '<div class="muted">画像はありません</div>';
+        if (items.length === 0) {
+          grid.innerHTML = '<div class="muted">アイテムはありません</div>';
           return;
         }
-        urls.forEach((u) => {
-          const item = document.createElement('div');
-          item.className = 'cl-item';
-          const img = document.createElement('img');
-          img.loading = 'lazy';
-          img.decoding = 'async';
-          img.alt = 'カード';
-          img.src = u;
-          item.appendChild(img);
-          grid.appendChild(item);
-        });
 
-        // delete btn setup
+        // カテゴライズ
+        const boards = items.filter(d => d.type === 'board');
+        const cards = items.filter(d => !d.type || d.type === 'card');
+        const tokens = items.filter(d => d.type === 'image-token' || d.type === 'token');
+
+        const addSection = (label, list) => {
+          if (list.length === 0) return;
+          const sec = document.createElement('div');
+          sec.className = 'ms-section-title';
+          sec.textContent = `${label} (${list.length})`;
+          grid.appendChild(sec);
+
+          list.forEach(d => {
+            const item = document.createElement('div');
+            item.className = 'cl-item';
+            if (d.type === 'card' || !d.type) item.classList.add('flippable');
+            
+            const img = document.createElement('img');
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            img.alt = 'アイテム';
+            img.src = d.imageUrl || d.fullUrl || '';
+            item.appendChild(img);
+
+            if (d.type === 'card' || !d.type) {
+              item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const front = d.imageUrl || d.fullUrl || '';
+                const back = d.backImageUrl || '';
+
+                if (item.classList.toggle('is-back')) {
+                  // 裏にする
+                  if (back) {
+                    img.src = back;
+                    item.classList.add('has-back-img');
+                  } else {
+                    item.classList.remove('has-back-img');
+                  }
+                } else {
+                  // 表にする
+                  img.src = front;
+                }
+              });
+            }
+            grid.appendChild(item);
+          });
+        };
+
+        addSection('🗺️ ボード', boards);
+        addSection('🎴 カード', cards);
+        addSection('♟️ コマ・トークン', tokens);
+
         const delBtn = document.getElementById('card-list-delete');
         if (delBtn) {
           delBtn.style.display = 'block';
           delBtn.dataset.slot = slot;
         }
-
       } catch (_e) {
+        console.error(_e);
         grid.innerHTML = '<div class="muted">取得に失敗しました</div>';
         const delBtn = document.getElementById('card-list-delete');
         if (delBtn) delBtn.style.display = 'none';
@@ -1312,6 +1422,73 @@
       });
     });
 
+    // アカウント削除 (Firestoreデータも一括削除)
+    document.getElementById('btn-delete-account')?.addEventListener('click', async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const uid = user.uid;
+      
+      const { t, getLang } = await import("./scripts/i18n.js");
+      const lang = getLang();
+      
+      if (!confirm(t('mypage.deleteConfirm'))) return;
+      
+      const btn = document.getElementById('btn-delete-account');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = (lang === 'ja' ? 'データ削除中...' : 'Deleting data...');
+      }
+
+      try {
+        // 1. 作成したルームを削除
+        const roomsQ = query(collection(db, 'rooms'), where('hostUid', '==', uid));
+        const roomsSnap = await getDocs(roomsQ);
+        if (!roomsSnap.empty) {
+          const batch = writeBatch(db);
+          roomsSnap.docs.forEach(d => batch.delete(d.ref));
+          await batch.commit();
+        }
+
+        // 2. 全セーブスロット(1-10)を削除
+        for (let slot = 1; slot <= 10; slot++) {
+          const path = `users/${uid}/saves/slot${slot}`;
+          const baseRef = doc(db, path);
+          const cardsCol = collection(db, `${path}/cards`);
+          
+          // サブコレクション(cards)を削除
+          const q = query(cardsCol, limit(500));
+          let currentSnap = await getDocs(q);
+          while (!currentSnap.empty) {
+            let b = writeBatch(db);
+            currentSnap.docs.forEach(d => b.delete(d.ref));
+            await b.commit();
+            currentSnap = await getDocs(q);
+          }
+          await deleteDoc(baseRef);
+        }
+
+        // 3. ユーザープロフィールを削除
+        await deleteDoc(doc(db, `users/${uid}`));
+
+        // 4. Firebase Authentication からユーザーを削除
+        await deleteUser(user);
+        
+        alert(t('mypage.deleteSuccess'));
+        location.href = './index.html';
+      } catch (e) {
+        console.error('Account deletion failed:', e);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = t('mypage.deleteAccountBtn');
+        }
+        if (e.code === 'auth/requires-recent-login') {
+          alert(t('mypage.deleteReLogin'));
+        } else {
+          alert((t('mypage.deleteAccountBtn') + ' failed: ') + (e.message || 'Unknown error'));
+        }
+      }
+    });
+
   </script>
 
 
@@ -1322,7 +1499,7 @@
       style="width:min(920px, 92vw); max-height:80vh; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
       <div id="card-list-header"
         style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
-        <div id="card-list-title" style="font-weight:700;">自分のカード一覧</div>
+        <div id="card-list-title" style="font-weight:700;">一覧</div>
         <div style="display:flex; gap:8px;">
           <button id="card-list-delete" type="button"
             style="display:none; border:1px solid #e53e3e; background:#fff4f4; color:#e53e3e; padding:6px 10px; border-radius:8px; cursor:pointer;"
