@@ -603,24 +603,8 @@
                 if (res && res.user) {
                     console.log('[Auth] Redirect result success:', res.user.email);
                     const mode = sessionStorage.getItem('pa:auth_mode');
-                    const details = getAdditionalUserInfo(res);
-                    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
-                    const userSnap = await getDoc(doc(db, 'users', res.user.uid));
-                    const isRegistered = userSnap.exists();
-
-                    if (mode === 'login' && !isRegistered) {
-                        console.log('[Auth] Unregistered user in Login Mode. Deleting...');
-                        await deleteUser(res.user);
-                        const { t } = await import("./scripts/i18n.js");
-                        alert(t('auth.accountNotFound'));
-                        sessionStorage.removeItem('pa:auth_mode');
-                        return;
-                    }
-                    if (mode === 'register' && (details?.isNewUser || !isRegistered)) {
-                        await sendWelcomeEmail(res.user.email);
-                    }
-                    sessionStorage.removeItem('pa:auth_mode');
-                    location.href = './lobby.html';
+                    console.log('[Auth] Redirect result success. Mode:', mode, 'UID:', res.user.uid);
+                    await checkRegistrationAndRedirect(res.user, mode);
                 } else {
                     console.log('[Auth] No redirect result found.');
                 }
@@ -662,15 +646,61 @@
             }
         });
 
+        // 登録状況をチェックしてリダイレクトまたはブロックする
+        async function checkRegistrationAndRedirect(user, mode) {
+            if (!user || user.isAnonymous) return;
+            const uid = user.uid;
+            console.log(`[AuthCheck] Checking registration for UID: ${uid} (Mode: ${mode})`);
+            
+            try {
+                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
+                const userSnap = await getDoc(doc(db, 'users', uid));
+                const isRegistered = userSnap.exists();
+                console.log(`[AuthCheck] Firestore user exists: ${isRegistered}`);
+
+                if (mode === 'register') {
+                    if (!isRegistered) {
+                        console.log('[AuthCheck] New registration detected. Sending welcome email...');
+                        await sendWelcomeEmail(user.email);
+                    }
+                    sessionStorage.removeItem('pa:auth_mode');
+                    location.href = './lobby.html';
+                    return;
+                }
+
+                // Login mode (default)
+                if (!isRegistered) {
+                    console.warn('[AuthCheck] Account NOT FOUND in Firestore. Deleting Auth account and blocking login.');
+                    await deleteUser(user);
+                    const { t } = await import("./scripts/i18n.js");
+                    alert(t('auth.accountNotFound'));
+                    sessionStorage.removeItem('pa:auth_mode');
+                    if (typeof loginGoogleBtn !== 'undefined') loginGoogleBtn.disabled = false;
+                    if (typeof loginEmailBtn !== 'undefined') loginEmailBtn.disabled = false;
+                    return;
+                }
+
+                console.log('[AuthCheck] Valid user found. Redirecting to lobby.');
+                sessionStorage.removeItem('pa:auth_mode');
+                location.href = './lobby.html';
+            } catch (e) {
+                console.error('[AuthCheck] Error during registration check:', e);
+                alert('Authentication check failed. Please try again.');
+            }
+        }
+
         // 登録通知メールを送信するヘルパー
         async function sendWelcomeEmail(email) {
             if (!email) return;
             try {
-                await fetch('/api/register-notification', {
+                console.log(`[WelcomeEmail] Calling API for: ${email}`);
+                const res = await fetch('/api/register-notification', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, lang })
                 });
+                const data = await res.json();
+                console.log('[WelcomeEmail] API Response:', data);
             } catch (e) {
                 console.warn('[WelcomeEmail] Failed to send notification:', e);
             }
@@ -687,19 +717,22 @@
                 if (u && u.isAnonymous) {
                     try {
                         await linkWithCredential(u, EmailAuthProvider.credential(email, password));
-                        location.href = './lobby.html';
+                        console.log('[EmailAuth] Linked anonymous user');
+                        await sendEmailVerification(auth.currentUser);
+                        await checkRegistrationAndRedirect(auth.currentUser, 'register');
                         return;
                     } catch (e) {
                         if (e?.code === 'auth/email-already-in-use' || e?.code === 'auth/credential-already-in-use') {
-                            await signInWithEmailAndPassword(auth, email, password);
-                            location.href = './lobby.html';
+                            const cred = await signInWithEmailAndPassword(auth, email, password);
+                            console.log('[EmailAuth] Signed in with existing email');
+                            await checkRegistrationAndRedirect(cred.user, 'login');
                             return;
                         }
                         throw e;
                     }
                 }
-                await signInWithEmailAndPassword(auth, email, password);
-                location.href = './lobby.html';
+                const res = await signInWithEmailAndPassword(auth, email, password);
+                await checkRegistrationAndRedirect(res.user, 'login');
             } catch (e) {
                 console.warn('[EmailSignIn]', e);
                 const code = e?.code || '';
@@ -828,20 +861,8 @@
                 try {
                     sessionStorage.setItem('pa:auth_mode', 'login');
                     const result = await signInWithPopup(auth, google);
-                    const details = getAdditionalUserInfo(result);
-                    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
-                    const userSnap = await getDoc(doc(db, 'users', result.user.uid));
-                    const isRegistered = userSnap.exists();
-
-                    if (!isRegistered) {
-                        console.log('[Auth] Unregistered user in Login Mode. Deleting...');
-                        await deleteUser(auth.currentUser);
-                        const { t } = await import("./scripts/i18n.js");
-                        alert(t('auth.accountNotFound'));
-                        loginGoogleBtn.disabled = false;
-                        return;
-                    }
-                    location.href = './lobby.html';
+                    console.log('[GoogleAuth] Popup success. UID:', result.user.uid);
+                    await checkRegistrationAndRedirect(result.user, 'login');
                 } catch (e) {
                     if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
                         console.log('[Auth] Popup failed, falling back to Redirect');
