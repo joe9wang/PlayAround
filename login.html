@@ -659,10 +659,6 @@
                 console.log(`[AuthCheck] Firestore user exists: ${isRegistered}`);
 
                 if (mode === 'register') {
-                    if (!isRegistered) {
-                        console.log('[AuthCheck] New registration detected. Sending welcome email...');
-                        await sendWelcomeEmail(user.email);
-                    }
                     sessionStorage.removeItem('pa:auth_mode');
                     location.href = './lobby.html';
                     return;
@@ -686,28 +682,6 @@
             } catch (e) {
                 console.error('[AuthCheck] Error during registration check:', e);
                 alert('Authentication check failed. Please try again.');
-            }
-        }
-
-        // 登録通知メールを送信するヘルパー
-        async function sendWelcomeEmail(email) {
-            if (!email) return;
-            try {
-                console.log(`[WelcomeEmail] Calling API for: ${email}`);
-                const res = await fetch('/api/register-notification', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, lang })
-                });
-                const data = await res.json();
-                console.log('[WelcomeEmail] API Response:', data);
-                if (data.note) {
-                    alert('[Email Debug] ' + data.note);
-                } else if (!data.ok) {
-                    alert('[Email Debug] Error: ' + (data.error || 'Unknown'));
-                }
-            } catch (e) {
-                console.warn('[WelcomeEmail] Failed to send notification:', e);
             }
         }
 
