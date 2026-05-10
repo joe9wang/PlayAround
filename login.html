@@ -721,31 +721,33 @@
                 const u = auth.currentUser;
                 if (u && u.isAnonymous) {
                     try {
+                        console.log('[Register] Linking anonymous user');
                         await linkWithCredential(u, EmailAuthProvider.credential(email, password));
                         await sendEmailVerification(auth.currentUser);
-                        await sendWelcomeEmail(email);
-                        const { t } = await import("./scripts/i18n.js");
-                        alert(t('auth.registrationComplete'));
-                        location.href = './lobby.html';
+                        await checkRegistrationAndRedirect(auth.currentUser, 'register');
                         return;
                     } catch (e) {
-                        if (e?.code === 'auth/email-already-in-use') { alert(lang === 'ja' ? 'このメールアドレスは既に登録されています。' : 'Email already in use.'); return; }
+                        console.warn('[Register] Link failed:', e);
+                        if (e?.code === 'auth/email-already-in-use' || e?.code === 'auth/credential-already-in-use') {
+                            alert(lang === 'ja' ? 'このメールアドレスは既に登録されています。「ログイン」から進んでください。' : 'This email is already registered. Please use "Login" instead.');
+                            regSubmitBtn.disabled = false;
+                            return;
+                        }
                         throw e;
                     }
                 }
-                await createUserWithEmailAndPassword(auth, email, password);
-                await sendEmailVerification(auth.currentUser);
-                await sendWelcomeEmail(email);
-                const { t } = await import("./scripts/i18n.js");
-                alert(t('auth.registrationComplete'));
-                location.href = './lobby.html';
+                console.log('[Register] Creating new user');
+                const res = await createUserWithEmailAndPassword(auth, email, password);
+                await sendEmailVerification(res.user);
+                await checkRegistrationAndRedirect(res.user, 'register');
             } catch (e) {
-                console.warn('[Register]', e);
+                console.error('[Register] Error:', e);
                 const code = e?.code || '';
-                if (code === 'auth/email-already-in-use') alert(lang === 'ja' ? 'このメールアドレスは既に登録されています。' : 'Email already in use.');
-                else if (code === 'auth/weak-password') alert(lang === 'ja' ? 'パスワードが弱すぎます。' : 'Password too weak.');
-                else if (code === 'auth/invalid-email') alert(lang === 'ja' ? 'メールアドレスの形式が正しくありません。' : 'Invalid email.');
-                else alert(`${lang === 'ja' ? 'アカウント作成に失敗しました' : 'Registration failed'} (${code})`);
+                let msg = lang === 'ja' ? 'アカウント作成に失敗しました' : 'Registration failed';
+                if (code === 'auth/email-already-in-use') msg = lang === 'ja' ? 'このメールアドレスは既に登録されています。' : 'Email already in use.';
+                else if (code === 'auth/weak-password') msg = lang === 'ja' ? 'パスワードが弱すぎます。' : 'Password too weak.';
+                else if (e.message) msg += ` (${e.message})`;
+                alert(msg);
             } finally { regSubmitBtn.disabled = false; }
         });
 
@@ -759,16 +761,15 @@
                     console.log('[Auth] Linking anonymous user with Google (Popup)');
                     try {
                         const res = await linkWithPopup(u, google);
-                        const details = getAdditionalUserInfo(res);
-                        if (details && details.isNewUser) await sendWelcomeEmail(res.user.email);
-                        location.href = './lobby.html';
+                        await checkRegistrationAndRedirect(res.user, 'register');
                     } catch (e) {
                         if (e?.code === 'auth/credential-already-in-use') {
-                            const cred = GoogleAuthProvider.credentialFromError(e);
-                            if (cred) await signInWithCredential(auth, cred);
-                            location.href = './lobby.html';
+                            console.log('[Auth] Credential already in use. Suggesting login.');
+                            alert(lang === 'ja' ? 'このGoogleアカウントは既に登録されています。「ログイン」ボタンからログインしてください。' : 'This Google account is already registered. Please use the "Login" button.');
+                            regGoogleBtn.disabled = false;
                         } else if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
                             console.log('[Auth] Popup failed, falling back to Redirect');
+                            sessionStorage.setItem('pa:auth_mode', 'register');
                             await linkWithRedirect(u, google);
                         } else throw e;
                     }
@@ -777,9 +778,7 @@
                     try {
                         sessionStorage.setItem('pa:auth_mode', 'register');
                         const res = await signInWithPopup(auth, google);
-                        const details = getAdditionalUserInfo(res);
-                        if (details && details.isNewUser) await sendWelcomeEmail(res.user.email);
-                        location.href = './lobby.html';
+                        await checkRegistrationAndRedirect(res.user, 'register');
                     } catch (e) {
                         if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
                             console.log('[Auth] Popup failed, falling back to Redirect');
