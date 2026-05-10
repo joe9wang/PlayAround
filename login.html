@@ -723,7 +723,31 @@
                     try {
                         console.log('[Register] Linking anonymous user');
                         await linkWithCredential(u, EmailAuthProvider.credential(email, password));
-                        await sendEmailVerification(auth.currentUser);
+                        
+                        // --- Email Verification with Debug ---
+                        try {
+                            console.log('[AuthDebug] Starting email verification process (Link)...');
+                            auth.languageCode = lang;
+                            console.log('[AuthDebug] Set languageCode to:', auth.languageCode);
+                            
+                            const actionCodeSettings = {
+                                url: window.location.origin + '/lobby.html',
+                                handleCodeInApp: false,
+                            };
+                            console.log('[AuthDebug] ActionCodeSettings:', actionCodeSettings);
+                            console.log('[AuthDebug] Sending verification to:', auth.currentUser.email);
+                            
+                            await sendEmailVerification(auth.currentUser, actionCodeSettings);
+                            console.log('[AuthDebug] sendEmailVerification call resolved successfully.');
+                            
+                            alert(lang === 'ja' 
+                                ? '確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。' 
+                                : 'Verification email sent. Please click the link in the email to complete registration.');
+                        } catch (evError) {
+                            console.error('[AuthDebug] sendEmailVerification failed (Link):', evError);
+                            // We don't throw here to allow the user to proceed, but we log it.
+                        }
+
                         await checkRegistrationAndRedirect(auth.currentUser, 'register');
                         return;
                     } catch (e) {
@@ -738,7 +762,31 @@
                 }
                 console.log('[Register] Creating new user');
                 const res = await createUserWithEmailAndPassword(auth, email, password);
-                await sendEmailVerification(res.user);
+                
+                // --- Email Verification with Debug ---
+                try {
+                    console.log('[AuthDebug] Starting email verification process (Create)...');
+                    auth.languageCode = lang;
+                    console.log('[AuthDebug] Set languageCode to:', auth.languageCode);
+                    
+                    const actionCodeSettings = {
+                        url: window.location.origin + '/lobby.html',
+                        handleCodeInApp: false,
+                    };
+                    console.log('[AuthDebug] ActionCodeSettings:', actionCodeSettings);
+                    console.log('[AuthDebug] Sending verification to:', res.user.email);
+                    
+                    await sendEmailVerification(res.user, actionCodeSettings);
+                    console.log('[AuthDebug] sendEmailVerification call resolved successfully.');
+                    
+                    alert(lang === 'ja' 
+                        ? '確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。' 
+                        : 'Verification email sent. Please click the link in the email to complete registration.');
+                } catch (evError) {
+                    console.error('[AuthDebug] sendEmailVerification failed (Create):', evError);
+                    // We don't throw here to allow the user to proceed, but we log it.
+                }
+
                 await checkRegistrationAndRedirect(res.user, 'register');
             } catch (e) {
                 console.error('[Register] Error:', e);

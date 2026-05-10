@@ -80,6 +80,7 @@ async function init() {
         localStorage.setItem('pa:last-anon-uid', user.uid);
       }
 
+      console.log('[AuthDebug] User in Lobby:', user.email, 'Verified:', user.emailVerified);
       whoamiSpan.textContent = user.displayName || user.email || 'Anonymous';
       
       // 匿名ログイン時は「ログイン」ボタンのみ表示し、ログアウト／マイページは隠す
