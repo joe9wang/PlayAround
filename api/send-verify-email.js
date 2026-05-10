@@ -56,7 +56,9 @@ module.exports = async (req, res) => {
       handleCodeInApp: false,
     };
     
-    const link = await auth.generateEmailVerificationLink(email, actionCodeSettings);
+    const linkRaw = await auth.generateEmailVerificationLink(email, actionCodeSettings);
+    // リンクのランディングページ言語を強制的に設定 (hl パラメータ)
+    const link = linkRaw + `&hl=${lang === 'ja' ? 'ja' : 'en'}`;
 
     stage = 'setupTransporter';
     // 3. Setup Nodemailer
