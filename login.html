@@ -724,28 +724,30 @@
                         console.log('[Register] Linking anonymous user');
                         await linkWithCredential(u, EmailAuthProvider.credential(email, password));
                         
-                        // --- Email Verification with Debug ---
+                        // --- Custom Email Verification via API ---
                         try {
-                            console.log('[AuthDebug] Starting email verification process (Link)...');
-                            auth.languageCode = lang;
-                            console.log('[AuthDebug] Set languageCode to:', auth.languageCode);
+                            console.log('[AuthDebug] Starting custom email verification process (Link)...');
+                            const idToken = await auth.currentUser.getIdToken();
                             
-                            const actionCodeSettings = {
-                                url: window.location.origin + '/lobby.html',
-                                handleCodeInApp: false,
-                            };
-                            console.log('[AuthDebug] ActionCodeSettings:', actionCodeSettings);
-                            console.log('[AuthDebug] Sending verification to:', auth.currentUser.email);
+                            const apiRes = await fetch('/api/send-verify-email', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ idToken, lang })
+                            });
+
+                            if (!apiRes.ok) {
+                                const errData = await apiRes.json();
+                                throw new Error(errData.error || 'API call failed');
+                            }
                             
-                            await sendEmailVerification(auth.currentUser, actionCodeSettings);
-                            console.log('[AuthDebug] sendEmailVerification call resolved successfully.');
+                            console.log('[AuthDebug] Custom API call resolved successfully.');
                             
                             alert(lang === 'ja' 
                                 ? '確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。' 
                                 : 'Verification email sent. Please click the link in the email to complete registration.');
                         } catch (evError) {
-                            console.error('[AuthDebug] sendEmailVerification failed (Link):', evError);
-                            // We don't throw here to allow the user to proceed, but we log it.
+                            console.error('[AuthDebug] Custom API failed (Link):', evError);
+                            alert(lang === 'ja' ? '確認メールの送信に失敗しました。' : 'Failed to send verification email.');
                         }
 
                         await checkRegistrationAndRedirect(auth.currentUser, 'register');
@@ -763,28 +765,30 @@
                 console.log('[Register] Creating new user');
                 const res = await createUserWithEmailAndPassword(auth, email, password);
                 
-                // --- Email Verification with Debug ---
+                // --- Custom Email Verification via API ---
                 try {
-                    console.log('[AuthDebug] Starting email verification process (Create)...');
-                    auth.languageCode = lang;
-                    console.log('[AuthDebug] Set languageCode to:', auth.languageCode);
+                    console.log('[AuthDebug] Starting custom email verification process (Create)...');
+                    const idToken = await res.user.getIdToken();
                     
-                    const actionCodeSettings = {
-                        url: window.location.origin + '/lobby.html',
-                        handleCodeInApp: false,
-                    };
-                    console.log('[AuthDebug] ActionCodeSettings:', actionCodeSettings);
-                    console.log('[AuthDebug] Sending verification to:', res.user.email);
+                    const apiRes = await fetch('/api/send-verify-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ idToken, lang })
+                    });
+
+                    if (!apiRes.ok) {
+                        const errData = await apiRes.json();
+                        throw new Error(errData.error || 'API call failed');
+                    }
                     
-                    await sendEmailVerification(res.user, actionCodeSettings);
-                    console.log('[AuthDebug] sendEmailVerification call resolved successfully.');
+                    console.log('[AuthDebug] Custom API call resolved successfully.');
                     
                     alert(lang === 'ja' 
                         ? '確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。' 
                         : 'Verification email sent. Please click the link in the email to complete registration.');
                 } catch (evError) {
-                    console.error('[AuthDebug] sendEmailVerification failed (Create):', evError);
-                    // We don't throw here to allow the user to proceed, but we log it.
+                    console.error('[AuthDebug] Custom API failed (Create):', evError);
+                    alert(lang === 'ja' ? '確認メールの送信に失敗しました。' : 'Failed to send verification email.');
                 }
 
                 await checkRegistrationAndRedirect(res.user, 'register');
