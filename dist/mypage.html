@@ -766,7 +766,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import {
       getAuth, onAuthStateChanged, deleteUser,
-      setPersistence, browserLocalPersistence, updateProfile
+      setPersistence, browserLocalPersistence, updateProfile,
+      GoogleAuthProvider, reauthenticateWithPopup
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
     import {
       getFirestore, doc, getDoc, collection, getDocs, query, limit, updateDoc, writeBatch,
@@ -1431,16 +1432,28 @@
       const { t, getLang } = await import("./scripts/i18n.js");
       const lang = getLang();
       
+      // 1. 意志の最終確認
       if (!confirm(t('mypage.deleteConfirm'))) return;
       
       const btn = document.getElementById('btn-delete-account');
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = (lang === 'ja' ? 'データ削除中...' : 'Deleting data...');
-      }
-
+      
       try {
-        // 1. 作成したルームを削除
+        // 2. セキュリティのための再認証 (Google Auth前提)
+        alert(t('mypage.deleteAuthRequired'));
+        const provider = new GoogleAuthProvider();
+        
+        // 再認証を実行
+        // これにより「最近のログイン」トークンが取得される
+        await reauthenticateWithPopup(user, provider);
+        
+        // 認証成功後のUIフィードバック
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = (lang === 'ja' ? 'データ削除中...' : 'Deleting data...');
+        }
+
+        // 3. Firestoreデータの削除
+        // 3-1. 作成したルームを削除
         const roomsQ = query(collection(db, 'rooms'), where('hostUid', '==', uid));
         const roomsSnap = await getDocs(roomsQ);
         if (!roomsSnap.empty) {
@@ -1449,13 +1462,12 @@
           await batch.commit();
         }
 
-        // 2. 全セーブスロット(1-10)を削除
+        // 3-2. 全セーブスロット(1-10)を削除
         for (let slot = 1; slot <= 10; slot++) {
           const path = `users/${uid}/saves/slot${slot}`;
           const baseRef = doc(db, path);
           const cardsCol = collection(db, `${path}/cards`);
           
-          // サブコレクション(cards)を削除
           const q = query(cardsCol, limit(500));
           let currentSnap = await getDocs(q);
           while (!currentSnap.empty) {
@@ -1467,7 +1479,7 @@
           await deleteDoc(baseRef);
         }
 
-        // 3. ユーザープロフィールを削除
+        // 3-3. ユーザープロフィールを削除
         await deleteDoc(doc(db, `users/${uid}`));
 
         // 4. Firebase Authentication からユーザーを削除
@@ -1481,8 +1493,14 @@
           btn.disabled = false;
           btn.textContent = t('mypage.deleteAccountBtn');
         }
+        
         if (e.code === 'auth/requires-recent-login') {
           alert(t('mypage.deleteReLogin'));
+        } else if (e.code === 'auth/user-mismatch') {
+          alert(lang === 'ja' ? 'ログインしているアカウントが一致しません。' : 'The logged-in account does not match.');
+        } else if (e.code === 'auth/cancelled-popup-request' || e.code === 'auth/popup-closed-by-user') {
+          // ユーザーが認証をキャンセルした場合は何も表示しないか、中断を伝える
+          console.log('Re-authentication cancelled');
         } else {
           alert((t('mypage.deleteAccountBtn') + ' failed: ') + (e.message || 'Unknown error'));
         }

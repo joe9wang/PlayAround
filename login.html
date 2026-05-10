@@ -606,9 +606,13 @@
                     const details = getAdditionalUserInfo(res);
                     if (mode === 'login' && details && details.isNewUser) {
                         await deleteUser(res.user);
-                        alert(lang === 'ja' ? 'アカウントが見つかりません。先に「新規アカウント作成」から登録を行ってください。' : 'Account not found. Please register via "Create new account" first.');
+                        const { t } = await import("./scripts/i18n.js");
+                        alert(t('auth.accountNotFound'));
                         sessionStorage.removeItem('pa:auth_mode');
                         return;
+                    }
+                    if (mode === 'register' && details && details.isNewUser) {
+                        await sendWelcomeEmail(res.user.email);
                     }
                     sessionStorage.removeItem('pa:auth_mode');
                     location.href = './lobby.html';
@@ -652,6 +656,20 @@
                 }, 500);
             }
         });
+
+        // 登録通知メールを送信するヘルパー
+        async function sendWelcomeEmail(email) {
+            if (!email) return;
+            try {
+                await fetch('/api/register-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, lang })
+                });
+            } catch (e) {
+                console.warn('[WelcomeEmail] Failed to send notification:', e);
+            }
+        }
 
         // ===== Email login =====
         loginEmailBtn.addEventListener('click', async () => {
@@ -706,7 +724,9 @@
                     try {
                         await linkWithCredential(u, EmailAuthProvider.credential(email, password));
                         await sendEmailVerification(auth.currentUser);
-                        alert(lang === 'ja' ? 'アカウント作成完了！確認メールを送信しました。' : 'Account created! Verification email sent.');
+                        await sendWelcomeEmail(email);
+                        const { t } = await import("./scripts/i18n.js");
+                        alert(t('auth.registrationComplete'));
                         location.href = './lobby.html';
                         return;
                     } catch (e) {
@@ -716,7 +736,9 @@
                 }
                 await createUserWithEmailAndPassword(auth, email, password);
                 await sendEmailVerification(auth.currentUser);
-                alert(lang === 'ja' ? 'アカウント作成完了！確認メールを送信しました。' : 'Account created! Verification email sent.');
+                await sendWelcomeEmail(email);
+                const { t } = await import("./scripts/i18n.js");
+                alert(t('auth.registrationComplete'));
                 location.href = './lobby.html';
             } catch (e) {
                 console.warn('[Register]', e);
@@ -737,7 +759,9 @@
                 if (u && u.isAnonymous) {
                     console.log('[Auth] Linking anonymous user with Google (Popup)');
                     try {
-                        await linkWithPopup(u, google);
+                        const res = await linkWithPopup(u, google);
+                        const details = getAdditionalUserInfo(res);
+                        if (details && details.isNewUser) await sendWelcomeEmail(res.user.email);
                         location.href = './lobby.html';
                     } catch (e) {
                         if (e?.code === 'auth/credential-already-in-use') {
@@ -753,7 +777,9 @@
                     console.log('[Auth] Signing in with Google (Popup)');
                     try {
                         sessionStorage.setItem('pa:auth_mode', 'register');
-                        await signInWithPopup(auth, google);
+                        const res = await signInWithPopup(auth, google);
+                        const details = getAdditionalUserInfo(res);
+                        if (details && details.isNewUser) await sendWelcomeEmail(res.user.email);
                         location.href = './lobby.html';
                     } catch (e) {
                         if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e?.code)) {
@@ -800,7 +826,8 @@
                     const details = getAdditionalUserInfo(result);
                     if (details && details.isNewUser) {
                         await deleteUser(auth.currentUser);
-                        alert(lang === 'ja' ? 'アカウントが見つかりません。先に「新規アカウント作成」から登録を行ってください。' : 'Account not found. Please register via "Create new account" first.');
+                        const { t } = await import("./scripts/i18n.js");
+                        alert(t('auth.accountNotFound'));
                         loginGoogleBtn.disabled = false;
                         return;
                     }

@@ -156,10 +156,9 @@ const I18N = {
         "mypage.dangerZone": "危険な操作",
         "mypage.deleteAccountDesc": "アカウントを完全に削除します。この操作は取り消せません。",
         "mypage.deleteAccountBtn": "アカウントを削除する",
-        "mypage.deleteConfirm": "本当にアカウントを完全に削除しますか？\n保存されたマイルームやマイセットも含むすべてのデータが消去され、元に戻すことはできません。",
-        "mypage.deleteSuccess": "アカウントを削除しました。ご利用ありがとうございました。",
-        "mypage.deleteReLogin": "セキュリティのため、再ログインが必要です。一度ログアウトしてから再度ログインし、すぐに削除を行ってください。",
-        "mypage.deleteAuthRequired": "セキュリティのため、本人確認が必要です。ポップアップが表示されたら再度ログインしてください。"
+        "auth.accountNotFound": "アカウントが見つかりません。先に「新規アカウント作成」から登録を行ってください。",
+        "auth.registrationComplete": "アカウント作成完了！ウェルカムメールを送信しました。",
+        "mypage.deleteSuccess": "アカウントとすべてのデータを削除しました。ご利用ありがとうございました。"
     },
     en: {
         "app.title": "Play board/card games with images (up to 4)",
@@ -314,10 +313,9 @@ const I18N = {
         "mypage.dangerZone": "Danger Zone",
         "mypage.deleteAccountDesc": "Permanently delete your account. This action cannot be undone.",
         "mypage.deleteAccountBtn": "Delete Account",
-        "mypage.deleteConfirm": "Are you sure you want to delete your account permanently?\nAll your data including My Rooms and My Sets will be lost and cannot be recovered.",
-        "mypage.deleteSuccess": "Account deleted. Thank you for using BatriTable.",
-        "mypage.deleteReLogin": "For security reasons, you need to re-login to delete your account. Please log out and log in again, then try deleting immediately.",
-        "mypage.deleteAuthRequired": "For security, identity verification is required. Please sign in again when the popup appears."
+        "auth.accountNotFound": "Account not found. Please register via 'Create new account' first.",
+        "auth.registrationComplete": "Account created! A welcome email has been sent.",
+        "mypage.deleteSuccess": "Your account and all data have been deleted. Thank you for using BatriTable."
     }
 };
 
