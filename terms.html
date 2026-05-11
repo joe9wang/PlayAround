@@ -120,60 +120,53 @@
       background: rgba(255, 255, 255, .18)
     }
 
-    .header-spacer {
-      flex: 1;
-    }
-
-    .header-play-btn {
-      font-size: 0.9rem !important;
-      padding: 8px 20px !important;
-      border-radius: 10px !important;
-      flex-shrink: 0;
-    }
-
     /* レイアウト（ヘッダー下） */
     .layout {
       min-height: calc(100dvh - 64px);
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      grid-template-rows: auto auto auto;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto;
       gap: var(--gap);
       padding: var(--gap);
+      max-width: 1000px;
+      margin: 0 auto;
     }
 
-    /* メイン（緑の面） */
+    /* メイン */
     .hero {
-      grid-column: 1;
-      grid-row: 1 / 4;
-      background: var(--green);
+      background: transparent;
       border-radius: var(--radius);
-      padding: 40px 42px;
-      color: #053021;
-      box-shadow: 0 10px 24px rgba(39, 217, 138, .25);
+      padding: 0;
+      color: var(--ink);
+      box-shadow: none;
     }
 
     .hero h2 {
-      margin: 0 0 6px;
-      font-size: 1.9rem
+      margin: 0 0 12px;
+      font-size: 1.9rem;
+      color: #0b3b2b;
     }
 
     .hero p.lead {
       margin: 6px 0 22px;
-      font-size: 1.05rem
+      font-size: 1.05rem;
+      color: #444;
     }
 
     .terms {
       background: rgba(255, 255, 255, .92);
       border-radius: 12px;
-      padding: 22px;
+      padding: 32px 42px;
       line-height: 1.82;
       box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
     }
 
     .terms h3 {
-      margin: 18px 0 8px;
-      font-size: 1.15rem;
-      color: #0b3b2b
+      margin: 24px 0 12px;
+      font-size: 1.25rem;
+      color: #0b3b2b;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 6px;
     }
 
     .terms ul {
@@ -184,35 +177,9 @@
       margin: 0 0 12px
     }
 
-    /* 右上（赤）／右下（橙）カード */
-    .card {
-      border-radius: var(--radius);
-      padding: 22px;
-      color: #fff;
-      box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
-    }
-
-    .card h3 {
-      margin: 0 0 10px
-    }
-
-    .right-top {
-      grid-column: 2;
-      grid-row: 1;
-      background: var(--red)
-    }
-
-    .right-bottom {
-      grid-column: 2;
-      grid-row: 2;
-      background: var(--orange);
-      color: #3d2600
-    }
-
     /* フッター */
     footer {
       grid-column: 1 / -1;
-      grid-row: 4;
       background: #1e82e0;
       padding: 40px 32px;
       border-radius: 14px;
@@ -220,7 +187,7 @@
       flex-direction: column;
       gap: 24px;
       box-shadow: 0 10px 24px rgba(0,0,0,.15);
-      margin-top: 0px;
+      margin-top: 20px;
     }
 
     /* レスポンシブ */
@@ -245,39 +212,6 @@
       .nav a {
         padding: 6px 12px;
         font-size: 0.85rem;
-      }
-
-      .header-spacer {
-        display: none;
-      }
-
-      .header-play-btn {
-        margin-left: auto;
-      }
-
-      .layout {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto auto auto auto;
-      }
-
-      .hero {
-        grid-column: 1;
-        grid-row: 1;
-      }
-
-      .right-top {
-        grid-column: 1;
-        grid-row: 2;
-      }
-
-      .right-bottom {
-        grid-column: 1;
-        grid-row: 3;
-      }
-
-      footer {
-        grid-column: 1;
-        grid-row: 4;
       }
     }
   </style>
@@ -305,14 +239,14 @@
 
   <div class="layout">
 
-    <!-- メイン（緑） -->
+    <!-- メイン -->
     <main class="hero" role="main">
-      <header>
-        <h2>利用規約</h2>
-        <p class="lead">本規約は、BatriTable（以下「本サービス」）の利用条件を定めるものです。ユーザーは本規約に同意のうえ、本サービスを利用するものとします。</p>
-      </header>
-
       <section class="terms">
+        <header>
+          <h2>利用規約</h2>
+          <p class="lead">本規約は、BatriTable（以下「本サービス」）の利用条件を定めるものです。ユーザーは本規約に同意のうえ、本サービスを利用するものとします。</p>
+        </header>
+
         <h3>1. 適用範囲・変更</h3>
         <p>本規約は本サービスに関する一切の関係に適用されます。必要に応じて本規約を変更する場合があり、変更後は本ページへの掲示時に効力を生じます。</p>
 
@@ -366,28 +300,8 @@
       </section>
     </main>
 
-    <!-- 右上カード：クイック要約 -->
-    <aside class="card right-top" aria-labelledby="quick-title">
-      <h3 id="quick-title">要点まとめ</h3>
-      <ul style="margin:0; padding-left:1.1em">
-        <li>ユーザー作品の権利はユーザーに帰属</li>
-        <li>運営は表示・保存等に必要な範囲で利用可</li>
-        <li>不正・権利侵害・高負荷行為はNG</li>
-      </ul>
-    </aside>
-
-    <!-- 右下カード：関連ポリシー -->
-    <aside class="card right-bottom" aria-labelledby="related-title">
-      <h3 id="related-title" style="color:#3d2600">関連ポリシー</h3>
-      <ol style="margin:0; padding-left:1.2em; color:#3d2600">
-        <li><a href="https://www.batritable.com/privacy.html" style="color:#3d2600">プライバシーポリシー</a> を確認</li>
-        <li><a href="https://www.batritable.com/contact.html" style="color:#3d2600">お問い合わせ</a> で相談</li>
-        <li>不正や権利侵害を見つけたら通報</li>
-      </ol>
-    </aside>
-
     <!-- フッター -->
-    <footer style="grid-column: 1 / -1; background: #1e82e0; padding: 40px 32px; border-radius: 14px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.15); margin-top: 0px;">
+    <footer>
       <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
         <a href="/terms.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">利用規約</a>
         <a href="/privacy.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">プライバシーポリシー</a>
