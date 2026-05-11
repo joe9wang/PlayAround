@@ -14,7 +14,7 @@ import {
     signInWithPopup, linkWithPopup, signInWithCredential, linkWithCredential,
     signInWithRedirect, linkWithRedirect, getRedirectResult,
     signOut, updateProfile, onIdTokenChanged, getIdToken,
-    getAdditionalUserInfo, deleteUser
+    getAdditionalUserInfo, deleteUser, applyActionCode
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 
 import {
@@ -85,7 +85,7 @@ export {
     signInWithPopup, linkWithPopup, signInWithCredential, linkWithCredential,
     signInWithRedirect, linkWithRedirect, getRedirectResult,
     signOut, updateProfile, onIdTokenChanged, getIdToken,
-    getAdditionalUserInfo, deleteUser,
+    getAdditionalUserInfo, deleteUser, applyActionCode,
     // Firestore
     doc, setDoc, getDoc, updateDoc, onSnapshot,
     serverTimestamp, runTransaction, deleteDoc, collection, limit,

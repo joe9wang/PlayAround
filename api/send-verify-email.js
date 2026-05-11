@@ -57,8 +57,13 @@ module.exports = async (req, res) => {
     };
     
     const linkRaw = await auth.generateEmailVerificationLink(email, actionCodeSettings);
-    // リンクのランディングページ言語を強制的に設定 (hl パラメータ)
-    const link = linkRaw + `&hl=${lang === 'ja' ? 'ja' : 'en'}`;
+    
+    // Firebaseの標準リンクからパラメータを抽出し、自前の verify.html へのリンクに差し替える
+    const urlObj = new URL(linkRaw);
+    const oobCode = urlObj.searchParams.get('oobCode');
+    const apiKey = urlObj.searchParams.get('apiKey');
+    
+    const link = `https://batritable.com/verify.html?oobCode=${oobCode}&apiKey=${apiKey}&lang=${lang === 'ja' ? 'ja' : 'en'}`;
 
     stage = 'setupTransporter';
     // 3. Setup Nodemailer
