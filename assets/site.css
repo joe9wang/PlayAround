@@ -93,5 +93,97 @@
   .btn-play::after, .btn-play-small::after{ display:none }
 }
 
+/* ===== 共通ヘッダースタイル ===== */
+.site-header {
+  background: linear-gradient(135deg, #b350be 0%, #8e3a9b 100%);
+  color: #fff;
+  padding: 0 24px;
+  box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
+  border-radius: 14px;
+  margin: 16px 16px 0;
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 80px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: .2px;
+  color: #fff;
+}
+
+.nav {
+  display: flex;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.nav a {
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .08);
+  backdrop-filter: saturate(140%) blur(2px);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background .2s;
+}
+
+.nav a:hover {
+  background: rgba(255, 255, 255, .18);
+}
+
+.header-spacer {
+  flex: 1;
+}
+
+.header-play-btn {
+  font-size: 0.9rem !important;
+  padding: 8px 20px !important;
+  border-radius: 10px !important;
+  flex-shrink: 0;
+}
+
+/* レスポンシブ対応（ヘッダー） */
+@media (max-width: 1000px) {
+  .header-inner {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 12px 0;
+    gap: 10px;
+  }
+  .nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 6px;
+    margin-left: 0;
+    padding-bottom: 4px;
+  }
+  .nav a {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+  .header-play-btn {
+    margin-left: auto;
+  }
+}
+
 
 
