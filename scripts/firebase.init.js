@@ -27,7 +27,7 @@ import {
     getStorage, ref, uploadString, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
 
-import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 
 // ===== Firebase Config =====
 const firebaseConfig = {
@@ -59,9 +59,11 @@ if (typeof window !== "undefined") {
 }
 
 console.log('apps:', getApps().length);
-getToken(window.appCheck)
-    .then(t => console.log('AppCheck token OK', !!t.token))
-    .catch(e => console.error('AppCheck error', e));
+if (window.appCheck) {
+    getToken(window.appCheck)
+        .then(t => console.log('AppCheck token OK', !!t.token))
+        .catch(e => console.error('AppCheck error', e));
+}
 
 // ===== Auth / Firestore / Storage =====
 const auth = getAuth(app);
