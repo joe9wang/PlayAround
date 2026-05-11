@@ -31,21 +31,9 @@
       min-height: 100vh;
     }
 
-    .site-header {
-      background: linear-gradient(135deg, var(--purple) 0%, #8e3a9b 100%);
-      color: #fff;
-      padding: 0 24px;
-      box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
-      border-radius: var(--radius);
-      margin: 16px 16px 0;
-    }
-
-    .header-inner {
-      max-width: 1400px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      height: 80px;
+    /* ヘッダーのスタイルは partials/header.html から読み込まれるためここでは最低限に */
+    #header-mount {
+      min-height: 80px;
     }
 
     .layout {
@@ -147,6 +135,7 @@
   </main>
 
   <script>
+    window.process = { env: {} }; // Firebase SDK のエラー回避用
     (async () => {
       async function loadPartial(id, path) {
         const el = document.getElementById(id);

@@ -3,6 +3,11 @@
 // Firebase App, App Check, Auth, Firestore, Storage を初期化し、export する。
 // ====================================================================
 
+// Firebase SDK (App Check) の ReferenceError: process is not defined 回避用
+if (typeof window !== "undefined" && !window.process) {
+    window.process = { env: {} };
+}
+
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider, getToken } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app-check.js";
 
