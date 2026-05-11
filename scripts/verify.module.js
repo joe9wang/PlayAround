@@ -16,14 +16,17 @@ async function verifyEmail() {
     }
 
     try {
+        console.log('Starting applyActionCode...');
         // Firebase のアクションコードを適用（メール確認完了）
         await applyActionCode(auth, oobCode);
+        console.log('applyActionCode success!');
         
         loadingState.style.display = 'none';
         successState.style.display = 'block';
 
-        // 3秒後に自動的にロビーへ移動
+        // 5秒後に自動的にロビーへ移動
         setTimeout(() => {
+            console.log('Redirecting to lobby...');
             window.location.href = '/lobby.html';
         }, 5000);
 
@@ -40,5 +43,9 @@ async function verifyEmail() {
     }
 }
 
-// 実行
-window.addEventListener('DOMContentLoaded', verifyEmail);
+// 実行の確実化
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', verifyEmail);
+} else {
+    verifyEmail();
+}
