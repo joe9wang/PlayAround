@@ -135,10 +135,10 @@
 
     /* レイアウト（ヘッダー下） */
     .layout {
-      min-height: calc(100dvh - 80px);
+      min-height: calc(100dvh - 120px);
       display: grid;
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto auto;
+      grid-template-rows: 1fr auto;
       gap: var(--gap);
       padding: var(--gap);
     }
@@ -148,8 +148,11 @@
       background: transparent;
       border-radius: var(--radius);
       padding: 0;
+      margin: 0;
       color: var(--ink);
       box-shadow: none;
+      display: flex;
+      flex-direction: column;
     }
 
     .hero h2 {
@@ -170,6 +173,11 @@
       padding: 32px 42px;
       line-height: 1.82;
       box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
+      margin: 0;
+    }
+
+    .terms > *:last-child {
+      margin-bottom: 0 !important;
     }
 
     .terms h3 {
@@ -287,7 +295,7 @@
     </main>
 
     <!-- フッター -->
-    <div id="footer-mount"></div>
+    <div id="footer-mount" style="grid-column: 1 / -1;"></div>
 
   </div>
 
