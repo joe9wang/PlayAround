@@ -3,365 +3,265 @@
 
 <head>
 
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
-        crossorigin="anonymous"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
+    crossorigin="anonymous"></script>
 
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="/favicon.ico" rel="icon" sizes="any" />
   <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
   <link href="/favicon-16.png?v=3" rel="icon" sizes="16x16" type="image/png" />
   <link href="/apple-touch-icon.png?v=3" rel="apple-touch-icon" sizes="180x180" />
-    <title>BatriTable — 特定商取引法に基づく表記</title>
-    <meta name="description" content="BatriTableの特定商取引法に基づく表記です。">
-    <link rel="canonical" href="https://www.batritable.com/law.html">
-    <meta name="robots" content="index, follow">
+  <title>BatriTable — 特定商取引法に基づく表記</title>
+  <meta name="description" content="BatriTableの特定商取引法に基づく表記です。">
+  <link rel="canonical" href="https://www.batritable.com/law.html">
+  <meta name="robots" content="index, follow">
 
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./assets/site.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/site.css">
 
-    <style>
-        :root {
-            --gap: 16px;
-            --radius: 14px;
-            --purple: #b350be;
-            --green: #3cd08e;
-            --red: #e64a5a;
-            --orange: #f79f27;
-            --blue: #1e82e0;
-            --ink: #0f172a;
-            --bg: #f6f7fb;
-            --card: #ffffff;
-        }
+  <style>
+    :root {
+      --gap: 16px;
+      --radius: 14px;
+      /* index.html と統一のカラーパレット */
+      --purple: #b350be;
+      --green: #3cd08e;
+      --red: #e64a5a;
+      --orange: #f79f27;
+      --blue: #1e82e0;
+      --ink: #0f172a;
+      --bg: #f6f7fb;
+      --card: #ffffff;
+    }
 
-        * {
-            box-sizing: border-box
-        }
+    * {
+      box-sizing: border-box
+    }
 
-        html,
-        body {
-            height: 100%
-        }
+    html,
+    body {
+      height: 100%
+    }
 
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--ink);
-            font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
-                "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", Meiryo, sans-serif;
-        }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
+        "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", Meiryo, sans-serif;
+    }
 
-        /* ====== ヘッダー ====== */
-        .site-header {
-            background: linear-gradient(135deg, var(--purple) 0%, #8e3a9b 100%);
-            color: #fff;
-            padding: 0 24px;
-            box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
-        }
+    /* ====== ヘッダー ====== */
+    .site-header {
+      background: linear-gradient(135deg, var(--purple) 0%, #8e3a9b 100%);
+      color: #fff;
+      padding: 0 24px;
+      box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
+      border-radius: var(--radius);
+      margin: 16px 16px 0;
+    }
 
-        .header-inner {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            height: 64px;
-        }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: 80px;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
 
-        .brand h1 {
-            margin: 0;
-            font-size: 1.15rem;
-            letter-spacing: .2px;
-            color: #fff;
-        }
+    .brand h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      letter-spacing: .2px;
+      color: #fff;
+    }
 
-        .nav {
-            display: flex;
-            gap: 6px;
-            margin-left: 8px;
-        }
+    .nav {
+      display: flex;
+      gap: 6px;
+      margin-left: 8px;
+    }
 
-        .nav a {
-            color: #fff;
-            text-decoration: none;
-            padding: 8px 14px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, .08);
-            backdrop-filter: saturate(140%) blur(2px);
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: background .2s;
-        }
+    .nav a {
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .08);
+      backdrop-filter: saturate(140%) blur(2px);
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background .2s;
+    }
 
-        .nav a:hover {
-            background: rgba(255, 255, 255, .18)
-        }
+    .nav a:hover {
+      background: rgba(255, 255, 255, .18)
+    }
 
-        .header-spacer {
-            flex: 1;
-        }
+    /* レイアウト（ヘッダー下） */
+    .layout {
+      min-height: calc(100dvh - 64px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      gap: var(--gap);
+      padding: var(--gap);
+      max-width: 1000px;
+      margin: 0 auto;
+    }
 
-        .header-play-btn {
-            font-size: 0.9rem !important;
-            padding: 8px 20px !important;
-            border-radius: 10px !important;
-            flex-shrink: 0;
-        }
+    /* メイン */
+    .hero {
+      background: transparent;
+      border-radius: var(--radius);
+      padding: 0;
+      color: var(--ink);
+      box-shadow: none;
+    }
 
-        /* レイアウト（ヘッダー下） */
-        .layout {
-            min-height: calc(100dvh - 64px);
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 320px;
-            grid-template-rows: auto auto auto;
-            gap: var(--gap);
-            padding: var(--gap);
-        }
+    .hero h2 {
+      margin: 0 0 12px;
+      font-size: 1.9rem;
+      color: #0b3b2b;
+    }
 
-        .hero {
-            grid-column: 1;
-            grid-row: 1 / 4;
-            background: var(--green);
-            border-radius: var(--radius);
-            padding: 40px 42px;
-            color: #053021;
-            box-shadow: 0 10px 24px rgba(39, 217, 138, .25);
-        }
+    .hero p.lead {
+      margin: 6px 0 22px;
+      font-size: 1.05rem;
+      color: #444;
+    }
 
-        .hero h2 {
-            margin: 0 0 6px;
-            font-size: 1.9rem
-        }
+    .terms {
+      background: rgba(255, 255, 255, .92);
+      border-radius: 12px;
+      padding: 32px 42px;
+      line-height: 1.82;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
+    }
 
-        .hero p.lead {
-            margin: 6px 0 22px;
-            font-size: 1.05rem
-        }
+    .terms h3 {
+      margin: 24px 0 12px;
+      font-size: 1.25rem;
+      color: #0b3b2b;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 6px;
+    }
 
-        .terms {
-            background: rgba(255, 255, 255, .92);
-            border-radius: 12px;
-            padding: 22px;
-            line-height: 1.82;
-            box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
-        }
+    .terms p {
+      margin: 0 0 12px
+    }
 
-        .terms h3 {
-            margin: 18px 0 8px;
-            font-size: 1.15rem;
-            color: #0b3b2b
-        }
+    /* レスポンシブ */
+    @media (max-width: 1000px) {
+      .header-inner {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 12px 0;
+        gap: 10px;
+      }
 
-        .terms p {
-            margin: 0 0 12px
-        }
+      .nav {
+        order: 3;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        gap: 6px;
+        margin-left: 0;
+        padding-bottom: 4px;
+      }
 
-        .card {
-            border-radius: var(--radius);
-            padding: 22px;
-            color: #fff;
-            box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
-        }
-
-        .card h3 {
-            margin: 0 0 10px
-        }
-
-        .right-top {
-            grid-column: 2;
-            grid-row: 1;
-            background: var(--red)
-        }
-
-        .right-bottom {
-            grid-column: 2;
-            grid-row: 2;
-            background: var(--orange);
-            color: #3d2600
-        }
-
-        /* フッター */
-        footer {
-            grid-column: 1 / -1;
-            grid-row: 4;
-            background: #1e82e0;
-            padding: 40px 32px;
-            border-radius: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            box-shadow: 0 10px 24px rgba(0,0,0,.15);
-            margin-top: 0px;
-        }
-
-        @media (max-width: 1000px) {
-            .header-inner {
-                flex-wrap: wrap;
-                height: auto;
-                padding: 12px 0;
-                gap: 10px;
-            }
-
-            .nav {
-                order: 3;
-                width: 100%;
-                overflow-x: auto;
-                white-space: nowrap;
-                gap: 6px;
-                margin-left: 0;
-                padding-bottom: 4px;
-            }
-
-            .nav a {
-                padding: 6px 12px;
-                font-size: 0.85rem;
-            }
-
-            .header-spacer {
-                display: none;
-            }
-
-            .header-play-btn {
-                margin-left: auto;
-            }
-
-            .layout {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto auto auto auto auto;
-            }
-
-            .hero {
-                grid-column: 1;
-                grid-row: 1;
-            }
-
-            .right-top {
-                grid-column: 1;
-                grid-row: 2;
-            }
-
-            .right-bottom {
-                grid-column: 1;
-                grid-row: 3;
-            }
-
-            footer {
-                grid-column: 1;
-                grid-row: 4;
-            }
-        }
-    </style>
+      .nav a {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+      }
+    }
+  </style>
 </head>
 
 <body>
-    <!-- ヘッダー -->
-    <div id="header-mount"></div>
-    <script>
-        (async () => {
-            const el = document.getElementById('header-mount');
-            async function loadHeader() {
-                const tries = ["./partials/header.html", "/partials/header.html"];
-                for (const url of tries) {
-                    try {
-                        const res = await fetch(url, { cache: "no-store" });
-                        if (res.ok) { el.innerHTML = await res.text(); return; }
-                    } catch (e) { }
-                }
-                console.warn("header.html が見つかりませんでした。");
-            }
-            loadHeader();
-        })();
-    </script>
+  <!-- ヘッダー -->
+  <div id="header-mount"></div>
 
-    <div class="layout">
+  <div class="layout">
 
-        <main class="hero" role="main">
-            <header>
-                <h2>特定商取引法に基づく表記</h2>
-            </header>
+    <!-- メイン -->
+    <main class="hero" role="main">
+      <section class="terms">
+        <header>
+          <h2>特定商取引法に基づく表記</h2>
+        </header>
 
-            <section class="terms">
-                <h3>販売事業者名</h3>
-                <p>SOLVENTER</p>
-                <h3>運営責任者</h3>
-                <p>永井 丈介</p>
-                <h3>所在地</h3>
-                <p>〒177-0041 東京都練馬区石神井町 2丁目 9-2</p>
+        <h3>販売事業者名</h3>
+        <p>SOLVENTER</p>
 
-                <h3>お問い合わせ先</h3>
-                <p>
-                    メールアドレス：joe9bk@gmail.com<br>
-                    電話番号：050-3697-3603
-                </p>
+        <h3>運営責任者</h3>
+        <p>永井 丈介</p>
 
-                <h3>販売価格</h3>
-                <p>各購入ページおよびマイページ等に表示される価格となります。</p>
+        <h3>所在地</h3>
+        <p>〒177-0041 東京都練馬区石神井町 2丁目 9-2</p>
 
-                <h3>商品代金以外の必要料金</h3>
-                <p>インターネット接続料金、通信料金等はお客様の負担となります。</p>
+        <h3>お問い合わせ先</h3>
+        <p>
+          メールアドレス：joe9bk@gmail.com<br>
+          電話番号：050-3697-3603
+        </p>
 
-                <h3>お支払方法</h3>
-                <p>クレジットカード決済（Stripe）</p>
+        <h3>販売価格</h3>
+        <p>各購入ページおよびマイページ等に表示される価格となります。</p>
 
-                <h3>代金の支払時期</h3>
-                <p>ご利用のクレジットカード会社の規定に基づきます（サブスクリプションの場合は定期的に自動引き落としとなります）。</p>
+        <h3>商品代金以外の必要料金</h3>
+        <p>インターネット接続料金、通信料金等はお客様の負担となります。</p>
 
-                <h3>サービスの提供時期</h3>
-                <p>決済手続きが完了次第、すぐにご利用いただけます。</p>
+        <h3>お支払方法</h3>
+        <p>クレジットカード決済（Stripe）</p>
 
-                <h3>返品・キャンセルについて</h3>
-                <p>
-                    デジタルコンテンツという商品の特性上、購入後の返品・返金には応じられません。<br>
-                    サブスクリプション（定期課金）の解約は、マイページからいつでも手続き可能です。解約手続き後、次回の更新日をもってサービス提供および請求が停止します。
-                </p>
-            </section>
-        </main>
+        <h3>代金の支払時期</h3>
+        <p>ご利用のクレジットカード会社の規定に基づきます（サブスクリプションの場合は定期的に自動引き落としとなります）。</p>
 
-        <aside class="card right-top">
-            <h3>要点</h3>
-            <ul style="margin:0; padding-left:1.1em">
-                <li>デジタル商品の性質上、返金は不可です</li>
-                <li>解約はマイページからいつでも可能です</li>
-            </ul>
-        </aside>
+        <h3>サービスの提供時期</h3>
+        <p>決済手続きが完了次第、すぐにご利用いただけます。</p>
 
-        <aside class="card right-bottom">
-            <h3 style="color:#3d2600">関連リンク</h3>
-            <ol style="margin:0; padding-left:1.2em; color:#3d2600">
-                <li><a href="https://www.batritable.com/terms.html" style="color:#3d2600">利用規約</a></li>
-                <li><a href="https://www.batritable.com/privacy.html" style="color:#3d2600">プライバシーポリシー</a></li>
-                <li><a href="https://www.batritable.com/contact.html" style="color:#3d2600">お問い合わせ</a></li>
-            </ol>
-        </aside>
+        <h3>返品・キャンセルについて</h3>
+        <p>
+          デジタルコンテンツという商品の特性上、購入後の返品・返金には応じられません。<br>
+          サブスクリプション（定期課金）の解約は、マイページからいつでも手続き可能です。解約手続き後、次回の更新日をもってサービス提供および請求が停止します。
+        </p>
+      </section>
+    </main>
 
-        <!-- フッター -->
-        <footer style="grid-column: 1 / -1; background: #1e82e0; padding: 40px 32px; border-radius: 14px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.15); margin-top: 0px;">
-          <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
-            <a href="/terms.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">利用規約</a>
-            <a href="/privacy.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">プライバシーポリシー</a>
-            <a href="/law.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">特定商取引法に基づく表記</a>
-            <a href="/contact.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">お問い合わせ</a>
-          </div>
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 12px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <img src="/BatriTable-icon.png?v=3" alt="BatriTable" style="width: 28px; height: 28px; border-radius: 6px;">
-              <strong style="font-size: 1.2rem; color: #fff; letter-spacing: 0.05em;">BatriTable</strong>
-            </div>
-            <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.8rem;">
-              © 2025 SOLVENTER
-            </div>
-          </div>
-        </footer>
+    <!-- フッター -->
+    <div id="footer-mount"></div>
 
-    </div>
+  </div>
+
+  <script>
+    (async () => {
+      async function loadPartial(id, path) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const tries = ["./partials/" + path, "/partials/" + path];
+        for (const url of tries) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (res.ok) { el.innerHTML = await res.text(); return; }
+          } catch (e) { }
+        }
+        console.warn(path + " が見つかりませんでした。");
+      }
+      loadPartial('header-mount', 'header.html');
+      loadPartial('footer-mount', 'footer.html');
+    })();
+  </script>
 </body>
 
 </html>

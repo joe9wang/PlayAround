@@ -31,12 +31,15 @@
   <meta name="twitter:description" content="BatriTableへのお問い合わせ。バグ報告、機能要望はこちら。">
   <meta name="twitter:image" content="https://www.batritable.com/assets/ogp.jpg">
 
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/site.css">
+
   <style>
     :root {
       --gap: 16px;
       --radius: 14px;
+      /* index.html と統一のカラーパレット */
       --purple: #b350be;
       --green: #3cd08e;
       --red: #e64a5a;
@@ -51,11 +54,17 @@
       box-sizing: border-box
     }
 
+    html,
+    body {
+      height: 100%
+    }
+
     body {
       margin: 0;
-      font-family: "Noto Sans JP", sans-serif;
       background: var(--bg);
-      color: var(--ink)
+      color: var(--ink);
+      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
+        "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", Meiryo, sans-serif;
     }
 
     /* ====== ヘッダー ====== */
@@ -64,6 +73,8 @@
       color: #fff;
       padding: 0 24px;
       box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
+      border-radius: var(--radius);
+      margin: 16px 16px 0;
     }
 
     .header-inner {
@@ -72,7 +83,7 @@
       display: flex;
       align-items: center;
       gap: 16px;
-      height: 64px;
+      height: 80px;
     }
 
     .brand {
@@ -111,86 +122,73 @@
       background: rgba(255, 255, 255, .18)
     }
 
-    .header-spacer {
-      flex: 1;
-    }
-
-    .header-play-btn {
-      font-size: 0.9rem !important;
-      padding: 8px 20px !important;
-      border-radius: 10px !important;
-      flex-shrink: 0;
-    }
-
     /* レイアウト（ヘッダー下） */
     .layout {
       min-height: calc(100dvh - 64px);
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      grid-template-rows: auto auto auto;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto;
       gap: var(--gap);
       padding: var(--gap);
+      max-width: 1000px;
+      margin: 0 auto;
     }
 
+    /* メイン */
     .hero {
-      grid-column: 1;
-      grid-row: 1 / 4;
-      background: var(--green);
+      background: transparent;
       border-radius: var(--radius);
-      padding: 40px;
-      box-shadow: 0 10px 24px rgba(39, 217, 138, .25);
-      color: #053021
+      padding: 0;
+      color: var(--ink);
+      box-shadow: none;
     }
 
     .hero h2 {
-      margin-top: 0
+      margin: 0 0 12px;
+      font-size: 1.9rem;
+      color: #0b3b2b;
+    }
+
+    .hero p.lead {
+      margin: 6px 0 22px;
+      font-size: 1.05rem;
+      color: #444;
+    }
+
+    .content-box {
+      background: rgba(255, 255, 255, .92);
+      border-radius: 12px;
+      padding: 32px 42px;
+      line-height: 1.82;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
+    }
+
+    .content-box h3 {
+      margin: 24px 0 12px;
+      font-size: 1.25rem;
+      color: #0b3b2b;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 6px;
     }
 
     .btn-mail {
       display: inline-block;
-      padding: 14px 22px;
-      margin-top: 18px;
+      padding: 14px 24px;
+      margin: 18px 0;
       border-radius: 12px;
       background: #0b3b2b;
       color: #fff;
       text-decoration: none;
-      font-weight: 700
+      font-weight: 700;
+      transition: opacity .2s;
     }
 
-    .card {
-      border-radius: var(--radius);
-      padding: 22px;
-      color: #fff;
-      box-shadow: 0 10px 22px rgba(15, 23, 42, .12)
+    .btn-mail:hover {
+      opacity: 0.9;
     }
 
-    .right-top {
-      grid-column: 2;
-      grid-row: 1;
-      background: var(--red)
-    }
-
-    .right-bottom {
-      grid-column: 2;
-      grid-row: 2;
-      background: var(--orange);
-      color: #3d2600
-    }
-
-    footer {
-      grid-column: 1 / -1;
-      grid-row: 4;
-      background: #1e82e0;
-      padding: 40px 32px;
-      border-radius: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      box-shadow: 0 10px 24px rgba(0,0,0,.15);
-      margin-top: 0px;
-    }
-
-    @media(max-width:1000px) {
+    /* レスポンシブ */
+    @media (max-width: 1000px) {
       .header-inner {
         flex-wrap: wrap;
         height: auto;
@@ -212,39 +210,6 @@
         padding: 6px 12px;
         font-size: 0.85rem;
       }
-
-      .header-spacer {
-        display: none;
-      }
-
-      .header-play-btn {
-        margin-left: auto;
-      }
-
-      .layout {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto auto auto;
-      }
-
-      .hero {
-        grid-column: 1;
-        grid-row: 1;
-      }
-
-      .right-top {
-        grid-column: 1;
-        grid-row: 2;
-      }
-
-      .right-bottom {
-        grid-column: 1;
-        grid-row: 3;
-      }
-
-      footer {
-        grid-column: 1;
-        grid-row: 4;
-      }
     }
   </style>
 </head>
@@ -252,75 +217,54 @@
 <body>
   <!-- ヘッダー -->
   <div id="header-mount"></div>
+
+  <div class="layout">
+
+    <!-- メイン -->
+    <main class="hero" role="main">
+      <section class="content-box">
+        <header>
+          <h2>お問い合わせ</h2>
+          <p class="lead">BatriTable へのご意見・ご要望・不具合報告は、以下よりお気軽にご連絡ください。<br>
+            開発チームが確認し、必要に応じて数日以内に返信いたします。</p>
+        </header>
+
+        <p>お問い合わせメールアドレス：<a href="mailto:joe9bk@gmail.com">joe9bk@gmail.com</a></p>
+        <a href="mailto:joe9bk@gmail.com" class="btn-mail">✉ メールで連絡する</a>
+
+        <h3>開発チームより</h3>
+        <p>BatriTable は「誰でも気軽に遊べる場」を目指して開発しています。<br>
+          あなたの声が、サービスをもっと良くする力になります！</p>
+        <p style="margin-top:28px;font-size:.95rem;color:#666;">
+          ※ 内容によっては返信にお時間をいただく場合がございます。<br>
+          ※ バグ報告の際は「再現手順」や「使用環境（PC/スマホ、ブラウザ名）」を添えていただけると助かります。
+        </p>
+      </section>
+    </main>
+
+    <!-- フッター -->
+    <div id="footer-mount"></div>
+
+  </div>
+
   <script>
     (async () => {
-      const el = document.getElementById('header-mount');
-      async function loadHeader() {
-        const tries = ["./partials/header.html", "/partials/header.html"];
+      async function loadPartial(id, path) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const tries = ["./partials/" + path, "/partials/" + path];
         for (const url of tries) {
           try {
             const res = await fetch(url, { cache: "no-store" });
             if (res.ok) { el.innerHTML = await res.text(); return; }
           } catch (e) { }
         }
-        console.warn("header.html が見つかりませんでした。");
+        console.warn(path + " が見つかりませんでした。");
       }
-      loadHeader();
+      loadPartial('header-mount', 'header.html');
+      loadPartial('footer-mount', 'footer.html');
     })();
   </script>
-
-  <div class="layout">
-
-    <!-- メイン -->
-    <main class="hero">
-      <h2>お問い合わせ</h2>
-      <p>BatriTable へのご意見・ご要望・不具合報告は、以下よりお気軽にご連絡ください。<br>
-        開発チームが確認し、必要に応じて数日以内に返信いたします。</p>
-      <p>お問い合わせ：<a href="mailto:joe9bk@gmail.com">joe9bk@gmail.com</a></p>
-      <a href="mailto:joe9bk@gmail.com" class="btn-mail">✉ メールで連絡する</a>
-      <p style="margin-top:28px;font-size:.95rem">
-        ※ 内容によっては返信にお時間をいただく場合がございます。<br>
-        ※ バグ報告の際は「再現手順」や「使用環境（PC/スマホ、ブラウザ名）」を添えていただけると助かります。
-      </p>
-    </main>
-
-    <!-- 右上カード -->
-    <section class="card right-top">
-      <h3>よくあるご質問</h3>
-      <ul>
-        <li>インストールは必要ですか？<br> → 不要です。ブラウザだけで遊べます。</li>
-        <li>料金はかかりますか？ <br>→ 基本無料です。</li>
-        <li>スマホでも動きますか？ <br>→ 主要なスマートフォン・タブレットのブラウザに対応しています。</li>
-      </ul>
-    </section>
-
-    <!-- 右下カード -->
-    <section class="card right-bottom">
-      <h3>開発チームより</h3>
-      <p>BatriTable は「誰でも気軽に遊べる場」を目指して開発しています。<br>
-        あなたの声が、サービスをもっと良くする力になります！</p>
-    </section>
-
-    <!-- フッター -->
-    <footer style="grid-column: 1 / -1; background: #1e82e0; padding: 40px 32px; border-radius: 14px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.15); margin-top: 0px;">
-      <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
-        <a href="/terms.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">利用規約</a>
-        <a href="/privacy.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">プライバシーポリシー</a>
-        <a href="/law.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">特定商取引法に基づく表記</a>
-        <a href="/contact.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">お問い合わせ</a>
-      </div>
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 12px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <img src="/BatriTable-icon.png?v=3" alt="BatriTable" style="width: 28px; height: 28px; border-radius: 6px;">
-          <strong style="font-size: 1.2rem; color: #fff; letter-spacing: 0.05em;">BatriTable</strong>
-        </div>
-        <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.8rem;">
-          © 2025 SOLVENTER
-        </div>
-      </div>
-    </footer>
-
-  </div>
 </body>
 
 </html>
