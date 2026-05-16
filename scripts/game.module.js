@@ -891,15 +891,14 @@ async function loadFromSlot(slot) {
         visibleToAll: (s.visibleToAll !== false),
 
         ...(s.type ? { type: s.type } : {}),
-
         ...(typeof s.count === 'number' ? { count: s.count } : {}),
-
         ...(typeof s.tokenText === 'string' ? { tokenText: s.tokenText } : {}),
-
         ...(typeof s.scaleLevel === 'number' ? { scaleLevel: s.scaleLevel } : {}),
-
+        ...(s.backImageUrl ? { backImageUrl: s.backImageUrl } : {}),
+        ...(typeof s.width === 'number' ? { width: s.width } : {}),
+        ...(typeof s.height === 'number' ? { height: s.height } : {}),
+        ...(typeof s.fontSize === 'number' ? { fontSize: s.fontSize } : {}),
         imageUrl: s.imageUrl || '',
-
         fullUrl: s.fullUrl || '',
 
         ownerUid: CURRENT_UID,
@@ -3404,32 +3403,29 @@ function loadSeatStatus(rid) {
 
     // 既存の currentSeatMap 更新はそのまま残してください
 
+    const seatNo = idx + 1;
     if (snap.exists()) {
-
       const d = snap.data() || {};
+      const oldBack = currentSeatMap[seatNo]?.backImageUrl;
 
-      // 互換重視なら Object.assign を使う（spreadが苦手な環境でもOK）
-
-      currentSeatMap[idx + 1] = Object.assign(
+      currentSeatMap[seatNo] = Object.assign(
         {},
-        currentSeatMap[idx + 1] || {},
+        currentSeatMap[seatNo] || {},
         {
           displayName: d.displayName || '',
           claimedByUid: d.claimedByUid || null,
           heartbeatAt: d.heartbeatAt || null,
           areaColors: d.areaColors || {},
-          // 追加: 背面画像URL（オーナーが選択したもの）
-
           backImageUrl: d.backImageUrl || null,
-
         }
-
       );
 
+      // 背面画像が設定または変更された場合、その席のカードをリフレッシュする
+      if (currentSeatMap[seatNo].backImageUrl !== oldBack) {
+        refreshCardBacksForSeat(seatNo);
+      }
     } else {
-
-      currentSeatMap[idx + 1] = null;
-
+      currentSeatMap[seatNo] = null;
     }
 
 

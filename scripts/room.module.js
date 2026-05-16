@@ -17,16 +17,13 @@ import {
 export async function releaseSeat(db, roomId, seat, currentUid, hostUid) {
   if (seat === 'spectator') return;
   try {
-    const isHost = !!(hostUid && currentUid && hostUid === currentUid);
-    if (isHost) {
-      await deleteDoc(doc(db, `rooms/${roomId}/seats/${seat}`));
-    } else {
-      await setDoc(
-        doc(db, `rooms/${roomId}/seats/${seat}`),
-        { claimedByUid: null, displayName: '', heartbeatAt: null, updatedAt: serverTimestamp() },
-        { merge: true }
-      );
-    }
+    // ホスト・非ホストに関わらずドキュメントは削除せず、所有権とハートビートのみクリアする
+    // これにより backImageUrl や areaColors などの設定が保持される
+    await setDoc(
+      doc(db, `rooms/${roomId}/seats/${seat}`),
+      { claimedByUid: null, displayName: '', heartbeatAt: null, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
   } catch (e) {
     if (e?.code !== 'permission-denied' && e?.code !== 'not-found') {
       console.warn('releaseSeat error', e);
