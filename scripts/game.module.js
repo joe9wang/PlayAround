@@ -10478,17 +10478,15 @@ function bindTokenContextMenuOnce() {
 
 
   const ctxMenu = document.getElementById('token-context-menu');
-
   const btnEnlarge = document.getElementById('token-ctx-enlarge');
-
   const btnShrink = document.getElementById('token-ctx-shrink');
-
   const btnDelete = document.getElementById('token-ctx-delete');
-
   const btnToFront = document.getElementById('token-ctx-to-front');
   const btnToBack = document.getElementById('token-ctx-to-back');
+  const btnFontPlus = document.getElementById('token-ctx-font-plus');
+  const btnFontMinus = document.getElementById('token-ctx-font-minus');
 
-  if (!ctxMenu || !btnEnlarge || !btnShrink || !btnDelete || !btnToFront || !btnToBack) return;
+  if (!ctxMenu || !btnEnlarge || !btnShrink || !btnDelete || !btnToFront || !btnToBack || !btnFontPlus || !btnFontMinus) return;
 
 
 
@@ -10612,6 +10610,66 @@ function bindTokenContextMenuOnce() {
 
 
 
+  btnFontPlus.addEventListener('click', async (e) => {
+
+    e.stopPropagation();
+
+    ctxMenu.style.display = 'none';
+
+    if (!CURRENT_ROOM || !currentTokenId) return;
+
+    try {
+
+      const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
+
+      const snap = await getDoc(docRef);
+
+      if (snap.exists()) {
+
+        const d = snap.data();
+
+        const currentSize = typeof d.fontSize === 'number' ? d.fontSize : 20;
+
+        await updateDoc(docRef, { fontSize: Math.min(currentSize + 4, 120), updatedAt: serverTimestamp() });
+
+      }
+
+    } catch (err) { console.warn(err); }
+
+  });
+
+
+
+  btnFontMinus.addEventListener('click', async (e) => {
+
+    e.stopPropagation();
+
+    ctxMenu.style.display = 'none';
+
+    if (!CURRENT_ROOM || !currentTokenId) return;
+
+    try {
+
+      const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${currentTokenId}`);
+
+      const snap = await getDoc(docRef);
+
+      if (snap.exists()) {
+
+        const d = snap.data();
+
+        const currentSize = typeof d.fontSize === 'number' ? d.fontSize : 20;
+
+        await updateDoc(docRef, { fontSize: Math.max(currentSize - 4, 8), updatedAt: serverTimestamp() });
+
+      }
+
+    } catch (err) { console.warn(err); }
+
+  });
+
+
+
   btnDelete.addEventListener('click', async (e) => {
     e.stopPropagation();
     ctxMenu.style.display = 'none';
@@ -10645,6 +10703,15 @@ globalThis.showTokenContextMenu = function(e, cardId) {
   const areaMenu = document.getElementById('area-context-menu');
 
   if (areaMenu) areaMenu.style.display = 'none';
+
+
+
+  const el = cardDomMap.get(cardId);
+  const isMemo = el?.classList.contains('memo');
+  const btnFontPlus = document.getElementById('token-ctx-font-plus');
+  const btnFontMinus = document.getElementById('token-ctx-font-minus');
+  if (btnFontPlus) btnFontPlus.style.display = isMemo ? 'flex' : 'none';
+  if (btnFontMinus) btnFontMinus.style.display = isMemo ? 'flex' : 'none';
 
   
 
