@@ -3571,23 +3571,14 @@ async function claimSeat(roomId, seat) {
       const snap = await tx.get(seatRef);
 
       if (!snap.exists()) {
-
-        tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() });
-
+        tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() }, { merge: true });
         return true;
-
       }
-
       const data = snap.data();
-
       const stale = isSeatStale(data);
-
       if (!data.claimedByUid || stale || data.claimedByUid === CURRENT_UID) {
-
-        tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() });
-
+        tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() }, { merge: true });
         return true;
-
       }
 
       return false;
