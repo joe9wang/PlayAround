@@ -8925,6 +8925,54 @@ window.collectSelectedCards = async function () {
 
 };
 
+window.shuffleSelectedCards = async function () {
+  if (!CURRENT_ROOM) return;
+  const selectedCards = Array.from(document.querySelectorAll('.card.selected'));
+  if (selectedCards.length === 0) {
+    alert(t('err.noSelectedCards'));
+    return;
+  }
+
+  // 中心座標の計算 (左上の平均)
+  let totalX = 0, totalY = 0;
+  selectedCards.forEach(el => {
+    totalX += parseFloat(el.style.left) || 0;
+    totalY += parseFloat(el.style.top) || 0;
+  });
+  const avgX = Math.round(totalX / selectedCards.length);
+  const avgY = Math.round(totalY / selectedCards.length);
+
+  // ランダムな順番でシャッフル
+  const targets = selectedCards.map(el => ({ id: el.dataset.cardId, el }));
+  shuffleArray(targets);
+
+  const baseZ = getMaxZIndex(Z_FRONT_BASE) + 1;
+  let z = baseZ;
+  let batch = writeBatch(db);
+  let count = 0;
+
+  for (const { id, el } of targets) {
+    el.style.left = `${avgX}px`;
+    el.style.top = `${avgY}px`;
+    el.style.zIndex = z++;
+    
+    batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), {
+      x: avgX,
+      y: avgY,
+      zIndex: parseInt(el.style.zIndex) || z
+    });
+    
+    if (++count >= 450) {
+      await batch.commit();
+      batch = writeBatch(db);
+      count = 0;
+    }
+  }
+  if (count > 0) await batch.commit();
+  updateOverlapBadges();
+  postLog(`${targets.length}枚の選択カードをシャッフルしました`);
+};
+
 
 
 
