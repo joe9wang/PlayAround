@@ -39,7 +39,7 @@
     :root {
       --gap: 16px;
       --radius: 14px;
-      /* BatriTable配色（index.htmlと揃え） */
+      /* index.html と統一のカラーパレット */
       --purple: #b350be;
       --green: #3cd08e;
       --red: #e64a5a;
@@ -67,113 +67,63 @@
         "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", Meiryo, sans-serif;
     }
 
-    /* ====== ヘッダー ====== */
-    .site-header {
-      background: linear-gradient(135deg, var(--purple) 0%, #8e3a9b 100%);
-      color: #fff;
-      padding: 0 24px;
-      box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
-    }
-
-    .header-inner {
-      max-width: 1400px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      height: 64px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-
-    .brand h1 {
-      margin: 0;
-      font-size: 1.15rem;
-      letter-spacing: .2px;
-      color: #fff;
-    }
-
-    .nav {
-      display: flex;
-      gap: 6px;
-      margin-left: 8px;
-    }
-
-    .nav a {
-      color: #fff;
-      text-decoration: none;
-      padding: 8px 14px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, .08);
-      backdrop-filter: saturate(140%) blur(2px);
-      font-size: 0.9rem;
-      font-weight: 600;
-      transition: background .2s;
-    }
-
-    .nav a:hover {
-      background: rgba(255, 255, 255, .18)
-    }
-
     .header-spacer {
       flex: 1;
     }
 
-    .header-play-btn {
-      font-size: 0.9rem !important;
-      padding: 8px 20px !important;
-      border-radius: 10px !important;
-      flex-shrink: 0;
-    }
-
     /* レイアウト（ヘッダー下） */
     .layout {
-      min-height: calc(100dvh - 64px);
+      min-height: calc(100dvh - 120px);
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      grid-template-rows: auto auto auto;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: 1fr auto;
       gap: var(--gap);
       padding: var(--gap);
-    }
+     }
 
-    /* メイン（緑の面） */
+    /* メイン */
     .hero {
-      grid-column: 1;
-      grid-row: 1 / 4;
-      background: var(--green);
+      background: transparent;
       border-radius: var(--radius);
-      padding: 40px 42px;
-      color: #053021;
-      box-shadow: 0 10px 24px rgba(39, 217, 138, .25);
+      padding: 0;
+      margin: 0;
+      color: var(--ink);
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
     }
 
     .hero h2 {
-      margin: 0 0 6px;
-      font-size: 1.9rem
+      margin: 0 0 12px;
+      font-size: 1.9rem;
+      color: #0b3b2b;
     }
 
     .hero p.lead {
       margin: 6px 0 22px;
-      font-size: 1.05rem
+      font-size: 1.05rem;
+      color: #444;
     }
 
     .policy {
-      background: rgba(255, 255, 255, .9);
+      background: rgba(255, 255, 255, .92);
       border-radius: 12px;
-      padding: 22px;
-      line-height: 1.8;
+      padding: 32px 42px;
+      line-height: 1.82;
       box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
+      margin: 0;
+    }
+
+    .policy > *:last-child {
+      margin-bottom: 0 !important;
     }
 
     .policy h3 {
-      margin: 18px 0 8px;
-      font-size: 1.15rem;
-      color: #0b3b2b
+      margin: 24px 0 12px;
+      font-size: 1.25rem;
+      color: #0b3b2b;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 6px;
     }
 
     .policy ul {
@@ -182,45 +132,6 @@
 
     .policy p {
       margin: 0 0 12px
-    }
-
-    /* 右上（赤）／右下（橙）カード */
-    .card {
-      border-radius: var(--radius);
-      padding: 22px;
-      color: #fff;
-      box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
-    }
-
-    .card h3 {
-      margin: 0 0 10px
-    }
-
-    .right-top {
-      grid-column: 2;
-      grid-row: 1;
-      background: var(--red)
-    }
-
-    .right-bottom {
-      grid-column: 2;
-      grid-row: 2;
-      background: var(--orange);
-      color: #3d2600
-    }
-
-    /* フッター */
-    footer {
-      grid-column: 1 / -1;
-      grid-row: 4;
-      background: #1e82e0;
-      padding: 40px 32px;
-      border-radius: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      box-shadow: 0 10px 24px rgba(0,0,0,.15);
-      margin-top: 0px;
     }
 
     /* レスポンシブ */
@@ -247,37 +158,8 @@
         font-size: 0.85rem;
       }
 
-      .header-spacer {
-        display: none;
-      }
-
       .header-play-btn {
         margin-left: auto;
-      }
-
-      .layout {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto auto auto auto;
-      }
-
-      .hero {
-        grid-column: 1;
-        grid-row: 1;
-      }
-
-      .right-top {
-        grid-column: 1;
-        grid-row: 2;
-      }
-
-      .right-bottom {
-        grid-column: 1;
-        grid-row: 3;
-      }
-
-      footer {
-        grid-column: 1;
-        grid-row: 4;
       }
     }
   </style>
@@ -286,33 +168,17 @@
 <body>
   <!-- ヘッダー -->
   <div id="header-mount"></div>
-  <script>
-    (async () => {
-      const el = document.getElementById('header-mount');
-      async function loadHeader() {
-        const tries = ["./partials/header.html", "/partials/header.html"];
-        for (const url of tries) {
-          try {
-            const res = await fetch(url, { cache: "no-store" });
-            if (res.ok) { el.innerHTML = await res.text(); return; }
-          } catch (e) { }
-        }
-        console.warn("header.html が見つかりませんでした。");
-      }
-      loadHeader();
-    })();
-  </script>
 
   <div class="layout">
 
-    <!-- メイン（緑） -->
+    <!-- メイン -->
     <main class="hero" role="main">
-      <header>
-        <h2>プライバシーポリシー</h2>
-        <p class="lead">BatriTable（以下「当サイト」）は、ユーザーのプライバシーを尊重し、関連法令に従って個人情報を適切に取り扱います。</p>
-      </header>
-
       <section class="policy">
+        <header>
+          <h2>プライバシーポリシー</h2>
+          <p class="lead">BatriTable（以下「当サイト」）は、ユーザーのプライバシーを尊重し、関連法令に従って個人情報を適切に取り扱います。</p>
+        </header>
+
         <h3>1. 取得する情報</h3>
         <ul>
           <li>お問い合わせ時にご入力いただく情報（メールアドレス、氏名など）</li>
@@ -362,46 +228,29 @@
       </section>
     </main>
 
-    <!-- 右上カード：簡易要約 -->
-    <aside class="card right-top" aria-labelledby="summary-title">
-      <h3 id="summary-title">要点まとめ</h3>
-      <ul style="margin:0; padding-left:1.1em">
-        <li>Cookieと広告識別子を広告/解析に利用</li>
-        <li>目的：提供・改善・不具合対応・問合せ対応</li>
-        <li>第三者提供は法令等を除き行いません</li>
-      </ul>
-    </aside>
-
-    <!-- 右下カード：ユーザーの選択肢 -->
-    <aside class="card right-bottom" aria-labelledby="controls-title">
-      <h3 id="controls-title" style="color:#3d2600">あなたの選択肢</h3>
-      <ol style="margin:0; padding-left:1.2em; color:#3d2600">
-        <li>広告のパーソナライズ設定を見直す</li>
-        <li>問い合わせで開示・訂正等を請求</li>
-        <li>ブラウザのCookie設定を調整</li>
-      </ol>
-    </aside>
-
     <!-- フッター -->
-    <footer style="grid-column: 1 / -1; background: #1e82e0; padding: 40px 32px; border-radius: 14px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.15); margin-top: 0px;">
-      <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
-        <a href="/terms.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">利用規約</a>
-        <a href="/privacy.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">プライバシーポリシー</a>
-        <a href="/law.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">特定商取引法に基づく表記</a>
-        <a href="/contact.html" style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">お問い合わせ</a>
-      </div>
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 12px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <img src="/BatriTable-icon.png?v=3" alt="BatriTable" style="width: 28px; height: 28px; border-radius: 6px;">
-          <strong style="font-size: 1.2rem; color: #fff; letter-spacing: 0.05em;">BatriTable</strong>
-        </div>
-        <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.8rem;">
-          © 2026 SOLVENTER
-        </div>
-      </div>
-    </footer>
+    <div id="footer-mount" style="grid-column: 1 / -1;"></div>
 
   </div>
+
+  <script>
+    (async () => {
+      async function loadPartial(id, path) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const tries = ["./partials/" + path, "/partials/" + path];
+        for (const url of tries) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (res.ok) { el.innerHTML = await res.text(); return; }
+          } catch (e) { }
+        }
+        console.warn(path + " が見つかりませんでした。");
+      }
+      loadPartial('header-mount', 'header.html');
+      loadPartial('footer-mount', 'footer.html');
+    })();
+  </script>
 </body>
 
 </html>

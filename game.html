@@ -242,7 +242,7 @@
 
 
       <div aria-live="polite" class="host-toggle" id="host-otherops">
-        <details class="ops-section" open>
+        <details class="ops-section">
           <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">ホスト専用</summary>
 
           <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
@@ -289,25 +289,25 @@
             </div>
           </div>
 
-          <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
-            <button class="danger sl-btn" id="end-room-btn"
-              style="display:none; width:100%; font-weight:bold; background:#c62828; color:#fff; border:none; padding:10px; border-radius:8px;">
-              🚪 ルームを終了する
-            </button>
-          </div>
         </details>
       </div>
 
       <!-- ★ 座席操作 -->
-      <button class="sl-btn" id="sit-seat-btn" style="display:none; font-weight:bold;">
+      <button class="sl-btn" id="sit-seat-btn" style="display:none; font-weight:bold; margin-top:12px;">
         🪑 座席に座る
       </button>
-      <button class="sl-btn" id="leave-seat-btn" style="display:none; font-weight:bold;">
+      <button class="sl-btn" id="leave-seat-btn" style="display:none; font-weight:bold; margin-top:12px;">
         🚶‍♂️ 座席から外れる
       </button>
 
+      <!-- ★ ルーム終了ボタン -->
+      <button class="danger sl-btn" id="end-room-btn"
+        style="display:none; width:100%; font-weight:bold; background:#c62828; color:#fff; border:none; padding:10px; border-radius:8px; margin-top:12px;">
+        🚪 ルームを終了する
+      </button>
+
       <!-- ★ 参加中のみ表示：退室/終了ボタン -->
-      <button class="sl-btn" id="leave-room-btn" style="display:none">
+      <button class="sl-btn" id="leave-room-btn" style="display:none; margin-top:12px;">
         🚪 退室する
       </button>
 
