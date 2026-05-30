@@ -3627,11 +3627,9 @@ function applyCardBackStyle(card) {
     return;
   }
 
-  // 裏面の背景を適用（カード固有の背面画像 > 席の設定 > 黒）
+  // 裏面の背景を適用（カード固有の背面画像のみ。なければ黒）
 
-  const cardBackUrl = card.dataset.backImageUrl || null;
-  const seat = parseInt(card.dataset.ownerSeat || '0', 10);
-  const url = cardBackUrl || seatBackUrl(seat);
+  const url = card.dataset.backImageUrl || null;
 
   if (url) {
     card.classList.add('has-back');
@@ -4828,11 +4826,8 @@ function createCardDom(cardId, imageSrc, state) {
           applyCardBackStyle(card);
 
           if (selectedCard === card) {
-
-            const back = seatBackUrl(parseInt(card.dataset.ownerSeat || '0', 10));
-
-            setPreview(back || '');
-
+            const back = card.dataset.backImageUrl || '';
+            setPreview(back);
           }
 
         }
@@ -5130,9 +5125,7 @@ function createCardDom(cardId, imageSrc, state) {
 
       const otherHand = isOtherPlayersHandCard(card); /* 判定関数 */
 
-      const ownerSeat = parseInt(card.dataset.ownerSeat || '0', 10);   // ★ 追加：宣言
-
-      const seatBack = getSeatBackUrl(ownerSeat) || TRUMP_BACK_URL;    // ★ 席の裏→無ければ黒
+      const seatBack = card.dataset.backImageUrl || '';
 
       const isActuallyCard = !card.dataset.type || card.dataset.type === 'card';
       const previewSrc = (isActuallyCard && (!isFaceUp || otherHand)) ? seatBack : frontSrc;
@@ -5298,9 +5291,7 @@ function createCardDom(cardId, imageSrc, state) {
 
       const isOther = isOtherPlayersHandCard(selectedCard);
 
-      const oSeat = parseInt(selectedCard.dataset.ownerSeat || '0', 10);
-
-      const sBack = seatBackUrl(oSeat) || TRUMP_BACK_URL;
+      const sBack = selectedCard.dataset.backImageUrl || '';
 
       const pSrc = (!isUp || isOther) ? sBack : fSrc;
 
@@ -5522,8 +5513,7 @@ function applyCardState(card, data) {
         card.style.backgroundImage = '';
         // 裏面画像をあらかじめセット（プリロード）しておく。
         // background-imageをセットしても、表の<img>タグやbackgroundColorが白なので隠れる。
-        const seat = parseInt(card.dataset.ownerSeat || '0', 10);
-        const backUrl = card.dataset.backImageUrl || seatBackUrl(seat);
+        const backUrl = card.dataset.backImageUrl || '';
         if (backUrl) {
           const tempImg = new Image();
           tempImg.src = backUrl;
@@ -5708,21 +5698,19 @@ function applyCardState(card, data) {
 
       const img = card.querySelector('img');
 
-      if (img) { img.style.display = 'none'; card.style.backgroundColor = '#000'; }
+      if (img) { img.style.display = 'none'; }
 
       const tokenInput2 = card.querySelector('.token-input');
 
-      if (tokenInput2) { tokenInput2.style.display = 'none'; card.style.backgroundColor = '#000'; }
+      if (tokenInput2) { tokenInput2.style.display = 'none'; }
 
-      // ★選択中でもプレビューは「その席の裏面」
+      applyCardBackStyle(card);
+
+      // ★選択中ならプレビューは「カード固有の裏面」
 
       if (selectedCard === card) {
 
-        const seatData = currentSeatMap?.[insideSeat] || null;
-
-        const back = seatData?.backImageUrl || TRUMP_BACK_URL;
-
-        setPreview(back);
+        setPreview(card.dataset.backImageUrl || '');
 
       }
 
@@ -6106,6 +6094,7 @@ async function processQueue() {
             visibleToAll: true,
             width: isBoard ? sw : null,
             height: isBoard ? sh : null,
+            backImageUrl: isToken ? '' : (seatBackUrl(CURRENT_PLAYER) || ''),
             createdAt: serverTimestamp(), updatedAt: serverTimestamp()
           });
 
@@ -8471,13 +8460,11 @@ async function focusCardById(cardId, additive = false, skipPreview = false) {
 
   const otherHand = isOtherPlayersHandCard(el);
 
-  const ownerSeatValue = parseInt(el.dataset.ownerSeat || '0', 10);
-
   const frontSrc = full || (thumbEl && thumbEl.src) || '';
 
   const isActuallyCard = !el.dataset.type || el.dataset.type === 'card';
   const previewSrc = (isActuallyCard && (!isFaceUp || otherHand))
-    ? getSeatBackUrl(ownerSeatValue)
+    ? (el.dataset.backImageUrl || '')
     : frontSrc;
 
   if (!skipPreview) {
@@ -9913,6 +9900,28 @@ function openBackImagePicker(onlySelected = false) {
           backImageUrl: url,
           updatedAt: serverTimestamp()
         });
+
+        // 自分が所有するすべての通常カードの backImageUrl を一括更新
+        let batch = writeBatch(db);
+        let count = 0;
+        for (const [cardId, el] of cardDomMap.entries()) {
+          const type = el.dataset.type || 'card';
+          const isActuallyCard = type === 'card';
+          if (isActuallyCard && el.dataset.ownerSeat === String(CURRENT_PLAYER)) {
+            const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`);
+            batch.update(docRef, { backImageUrl: url, updatedAt: serverTimestamp() });
+            count++;
+            if (count >= 400) {
+              await batch.commit();
+              batch = writeBatch(db);
+              count = 0;
+            }
+          }
+        }
+        if (count > 0) {
+          await batch.commit();
+        }
+
         refreshCardBacksForSeat(CURRENT_PLAYER);
       }
 
