@@ -1927,36 +1927,28 @@ async function waitForBoardDeckRect(maxWaitMs = 1000) {
 
 function isMyCard(cardEl) { return cardEl?.dataset?.ownerSeat === String(CURRENT_PLAYER); }
 
+function isCardLockedByOther(cardEl) {
+  const operator = cardEl?.dataset?.activeOperator;
+  return !!(operator && operator !== String(CURRENT_PLAYER));
+}
+
 function allowOperateOthers() { 
   return !!(CURRENT_ROOM_META?.allowOthersMove || CURRENT_ROOM_META?.allowOtherOps); 
 }
 
 /**
- * 「かるた方式」: 他人の操作が許可されている場合、触れた瞬間に所有権を自分に移す
- * これにより同期の競合（引き戻し）を防ぎ、スムーズな操作を可能にする
+ * 「かるた方式」の自動所有権変更は廃止されました。
+ * 代わりにドラッグ開始・終了時の activeOperator による一時的ロック制御を行います。
  */
 function maybeTakeOwnership(cardEl) {
-  if (CURRENT_PLAYER === 'spectator') return; // 観戦者は操作権を奪えない
-  if (allowOperateOthers() && !isMyCard(cardEl)) {
-    const cardId = cardEl.dataset.cardId;
-    if (!cardId) return;
-
-    // Firestoreを更新
-    updateCardBatched(cardId, { ownerUid: CURRENT_UID, ownerSeat: CURRENT_PLAYER });
-
-    // DOMも即座に書き換えて、後続の権限チェックをパスさせる
-    cardEl.dataset.ownerUid = CURRENT_UID;
-    cardEl.dataset.ownerSeat = String(CURRENT_PLAYER);
-    cardEl.setAttribute('data-owner', 'me');
-    
-    console.log(`[Karuta] 奪取成功: ${cardId}`);
-  }
+  // NOOP: 所有者はドラッグ中も変化させません
 }
 
 // kind: 'move' | 'flip' | 'delete' | 'rotate'
 
 function canOperateCard(cardEl, kind) {
   if (CURRENT_PLAYER === 'spectator') return false;
+  if (isCardLockedByOther(cardEl)) return false; // 他人が操作中の場合は一切の操作不可
   if (isMyCard(cardEl)) return true;
 
   if (allowOperateOthers()) {
@@ -4671,17 +4663,12 @@ function createCardDom(cardId, imageSrc, state) {
     card.style.cursor = 'pointer';
 
     card.dataset.cardId = cardId;
-
     card.dataset.ownerUid = state?.ownerUid || '';
-
     card.dataset.ownerSeat = state?.ownerSeat ? String(state.ownerSeat) : '';
-
+    card.dataset.activeOperator = state?.activeOperator || '';
     card.setAttribute(
-
       'data-owner',
-
       (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me'
-
     );
 
 
@@ -4861,13 +4848,10 @@ function createCardDom(cardId, imageSrc, state) {
 
 
 
-
   card.dataset.cardId = cardId;
-
   card.dataset.ownerUid = state?.ownerUid || '';
-
   card.dataset.ownerSeat = state?.ownerSeat ? String(state.ownerSeat) : '';
-
+  card.dataset.activeOperator = state?.activeOperator || '';
   card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
 
 
@@ -5454,9 +5438,8 @@ function applyCardState(card, data) {
   if (!card || !data) return;
 
   card.dataset.ownerUid = data.ownerUid || '';
-
   card.dataset.ownerSeat = (data.ownerSeat != null) ? String(data.ownerSeat) : '';
-
+  card.dataset.activeOperator = data.activeOperator || '';
   card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
 
 
@@ -6262,13 +6245,6 @@ function makeDraggable(card) {
   card.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
     
-    // かるた方式: 触れたカード（および選択中の全カード）の所有権を奪う
-    if (card.classList.contains('selected')) {
-      Array.from(document.querySelectorAll('.card.selected')).forEach(c => maybeTakeOwnership(c));
-    } else {
-      maybeTakeOwnership(card);
-    }
-
     if (!canOperateCard(card, 'move')) return;
 
     // メモのリサイズハンドルを操作している場合はドラッグを開始しない
@@ -6280,63 +6256,43 @@ function makeDraggable(card) {
 
     if (e.detail > 1) return;
 
-
-
     const rect = field.getBoundingClientRect();
-
     const mouseX = (e.clientX - rect.left - panOffsetX) / zoom;
-
     const mouseY = (e.clientY - rect.top - panOffsetY) / zoom;
 
-
-
     startClientX = e.clientX;
-
     startClientY = e.clientY;
-
     grabOffsetX = mouseX - (parseFloat(card.style.left || '0') || 0);
-
     grabOffsetY = mouseY - (parseFloat(card.style.top || '0') || 0);
 
-
-
     if (card.classList.contains('selected')) {
-
-      selectedCards = Array.from(document.querySelectorAll('.card.selected'));
-
+      selectedCards = Array.from(document.querySelectorAll('.card.selected')).filter(c => canOperateCard(c, 'move'));
       initialPositions.clear();
-
       selectedCards.forEach(c => {
-
         initialPositions.set(c.dataset.cardId, {
-
           left: parseFloat(c.style.left) || 0,
-
           top: parseFloat(c.style.top) || 0,
-
           zIndex: parseInt(c.style.zIndex) || 0
-
         });
-
       });
-
     } else {
-
       selectedCards = [card];
-
       initialPositions.clear();
-
       initialPositions.set(card.dataset.cardId, {
-
         left: parseFloat(card.style.left) || 0,
-
         top: parseFloat(card.style.top) || 0,
-
         zIndex: parseInt(card.style.zIndex) || 0
-
       });
-
     }
+
+    // 操作中のカード全てにアクティブ・オペレーターのロックを適用
+    selectedCards.forEach(c => {
+      const id = c.dataset.cardId;
+      if (id) {
+        updateCardBatched(id, { activeOperator: CURRENT_PLAYER });
+        c.dataset.activeOperator = String(CURRENT_PLAYER);
+      }
+    });
 
 
 
@@ -6395,59 +6351,46 @@ function makeDraggable(card) {
 
 
     const onUp = async () => {
-
       document.removeEventListener("mousemove", onMove);
-
       document.removeEventListener("mouseup", onUp);
-
       
-
       selectedCards.forEach(c => {
-
         c.style.cursor = "grab";
-
       });
 
+      // 操作・ドラッグが終わったので、対象カード全員の activeOperator ロックを解除する
+      selectedCards.forEach(c => {
+        const id = c.dataset.cardId;
+        if (!id) return;
 
+        if (isDragging) {
+          const x = parseFloat(c.style.left) || 0;
+          const y = parseFloat(c.style.top) || 0;
+          const zIndex = parseInt(c.style.zIndex) || 1;
+          const updateData = { x, y, zIndex, activeOperator: null };
+          
+          if (c.style.width) {
+            updateData.width = Math.round(parseFloat(c.style.width));
+          } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
+            updateData.width = Math.round(c.offsetWidth);
+          }
+          if (c.style.height) {
+            updateData.height = Math.round(parseFloat(c.style.height));
+          } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
+            updateData.height = Math.round(c.offsetHeight);
+          }
+          updateCardBatched(id, updateData);
+        } else {
+          // ドラッグされずクリックのみだった場合もロックを解放
+          updateCardBatched(id, { activeOperator: null });
+        }
+        c.dataset.activeOperator = '';
+      });
 
       if (!isDragging) return;
-
       isDragging = false;
 
-
-
-      selectedCards.forEach(c => {
-
-        const id = c.dataset.cardId;
-
-        const x = parseFloat(c.style.left) || 0;
-
-        const y = parseFloat(c.style.top) || 0;
-
-        const zIndex = parseInt(c.style.zIndex) || 1;
-
-        const updateData = { x, y, zIndex };
-        
-        // サイズ保存（ボードやトークン用）
-        // inline style が無い場合は offsetWidth/Height (実寸) を使用する
-        if (c.style.width) {
-          updateData.width = Math.round(parseFloat(c.style.width));
-        } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
-          updateData.width = Math.round(c.offsetWidth);
-        }
-
-        if (c.style.height) {
-          updateData.height = Math.round(parseFloat(c.style.height));
-        } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
-          updateData.height = Math.round(c.offsetHeight);
-        }
-
-        updateCardBatched(id, updateData);
-
-      });
-
       updateOverlapBadges();
-
     };
 
 
@@ -6463,13 +6406,6 @@ function makeDraggable(card) {
 
 
   card.addEventListener('touchstart', (e) => {
-    // かるた方式: 触れたカード（および選択中の全カード）の所有権を奪う
-    if (card.classList.contains('selected')) {
-      Array.from(document.querySelectorAll('.card.selected')).forEach(c => maybeTakeOwnership(c));
-    } else {
-      maybeTakeOwnership(card);
-    }
-
     if (!canOperateCard(card, 'move')) return;
 
     if (e.touches.length !== 1) return;
@@ -6477,64 +6413,44 @@ function makeDraggable(card) {
     e.preventDefault();
 
     const t = e.touches[0];
-
     const rect = field.getBoundingClientRect();
-
     const mouseX = (t.clientX - rect.left - panOffsetX) / zoom;
-
     const mouseY = (t.clientY - rect.top - panOffsetY) / zoom;
 
-
-
     startClientX = t.clientX;
-
     startClientY = t.clientY;
-
     grabOffsetX = mouseX - (parseFloat(card.style.left || '0') || 0);
-
     grabOffsetY = mouseY - (parseFloat(card.style.top || '0') || 0);
-
     isDragging = false;
 
-
-
     if (card.classList.contains('selected')) {
-
-      selectedCards = Array.from(document.querySelectorAll('.card.selected'));
-
+      selectedCards = Array.from(document.querySelectorAll('.card.selected')).filter(c => canOperateCard(c, 'move'));
       initialPositions.clear();
-
       selectedCards.forEach(c => {
-
         initialPositions.set(c.dataset.cardId, {
-
           left: parseFloat(c.style.left) || 0,
-
           top: parseFloat(c.style.top) || 0,
-
           zIndex: parseInt(c.style.zIndex) || 0
-
         });
-
       });
-
     } else {
-
       selectedCards = [card];
-
       initialPositions.clear();
-
       initialPositions.set(card.dataset.cardId, {
-
         left: parseFloat(card.style.left) || 0,
-
         top: parseFloat(card.style.top) || 0,
-
         zIndex: parseInt(card.style.zIndex) || 0
-
       });
-
     }
+
+    // 操作中のカード全てにアクティブ・オペレーターのロックを適用
+    selectedCards.forEach(c => {
+      const id = c.dataset.cardId;
+      if (id) {
+        updateCardBatched(id, { activeOperator: CURRENT_PLAYER });
+        c.dataset.activeOperator = String(CURRENT_PLAYER);
+      }
+    });
 
 
 
@@ -6595,61 +6511,47 @@ function makeDraggable(card) {
     };
 
     const onEnd = async () => {
-
       document.removeEventListener('touchmove', onMove, { passive: false });
-
       document.removeEventListener('touchend', onEnd);
-
       document.removeEventListener('touchcancel', onEnd);
-
       
-
       selectedCards.forEach(c => {
-
         c.style.cursor = "grab";
-
       });
 
+      // 操作・ドラッグが終わったので、対象カード全員の activeOperator ロックを解除する
+      selectedCards.forEach(c => {
+        const id = c.dataset.cardId;
+        if (!id) return;
 
+        if (isDragging) {
+          const x = parseFloat(c.style.left) || 0;
+          const y = parseFloat(c.style.top) || 0;
+          const zIndex = parseInt(c.style.zIndex) || 1;
+          const updateData = { x, y, zIndex, activeOperator: null };
+          
+          if (c.style.width) {
+            updateData.width = Math.round(parseFloat(c.style.width));
+          } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
+            updateData.width = Math.round(c.offsetWidth);
+          }
+          if (c.style.height) {
+            updateData.height = Math.round(parseFloat(c.style.height));
+          } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
+            updateData.height = Math.round(c.offsetHeight);
+          }
+          updateCardBatched(id, updateData);
+        } else {
+          // ドラッグされずクリックのみだった場合もロックを解放
+          updateCardBatched(id, { activeOperator: null });
+        }
+        c.dataset.activeOperator = '';
+      });
 
       if (!isDragging) return;
-
       isDragging = false;
 
-      
-
-      selectedCards.forEach(c => {
-
-        const id = c.dataset.cardId;
-
-        const x = parseFloat(c.style.left) || 0;
-
-        const y = parseFloat(c.style.top) || 0;
-
-        const zIndex = parseInt(c.style.zIndex) || 1;
-
-        const updateData = { x, y, zIndex };
-        
-        // サイズ保存（ボードやトークン用）
-        // inline style が無い場合は offsetWidth/Height (実寸) を使用する
-        if (c.style.width) {
-          updateData.width = Math.round(parseFloat(c.style.width));
-        } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
-          updateData.width = Math.round(c.offsetWidth);
-        }
-
-        if (c.style.height) {
-          updateData.height = Math.round(parseFloat(c.style.height));
-        } else if (c.classList.contains('image-token') || c.classList.contains('is-board')) {
-          updateData.height = Math.round(c.offsetHeight);
-        }
-
-        updateCardBatched(id, updateData);
-
-      });
-
       updateOverlapBadges();
-
     };
 
     document.addEventListener('touchmove', onMove, { passive: false });
