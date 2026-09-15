@@ -4606,6 +4606,49 @@ function upsertCardFromRemote(id, data) {
 
 
 
+function applyCardSelection(card) {
+  if (!card) return;
+
+  const cardId = card.dataset.cardId;
+  const isBoard = card.classList.contains('is-board') || card.dataset.type === 'board';
+  const zBase = isBoard ? Z_CENTER_BASE : Z_FRONT_BASE;
+  card.style.zIndex = getMaxZIndex(zBase) + 1;
+  updateOverlapBadges();
+
+  if (selectedCard) {
+    if (!card.classList.contains('selected')) {
+      document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    }
+  } else {
+    card.classList.add('selected');
+  }
+  selectedCard = card;
+
+  const isToken = card.classList.contains('token');
+  if (isToken) {
+    setPreview();
+  } else {
+    const isFaceUp = card.dataset.faceUp === 'true';
+    const full = card.dataset.fullUrl || fullImageStore.get(cardId);
+    const thumbEl = card.querySelector('img');
+    const frontSrc = full || (thumbEl && thumbEl.src) || '';
+    const otherHand = isOtherPlayersHandCard(card);
+    const seatBack = card.dataset.backImageUrl || '';
+    const isActuallyCard = !card.dataset.type || card.dataset.type === 'card';
+    const previewSrc = (isActuallyCard && (!isFaceUp || otherHand)) ? seatBack : frontSrc;
+    setPreview(previewSrc);
+  }
+
+  const ownerPlayerNum = card.dataset.ownerSeat ? `SEAT${card.dataset.ownerSeat}` : '?';
+  if (isToken) {
+    const t = card.querySelector('.token-input')?.value || '';
+    previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || '?'}\n内容: ${t ? t.slice(0, 200) : '(未記入)'}`;
+  } else {
+    previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || '?'}`;
+  }
+}
+
 // ===============================
 
 // カードDOM生成
@@ -5049,93 +5092,10 @@ function createCardDom(cardId, imageSrc, state) {
 
 
 
-  card.addEventListener("click", async e => {
-
+  card.addEventListener("click", e => {
     e.stopPropagation();
-
-    // 表示上だけ最前面へ（サーバーへzIndexは書かない：無駄書き減）
-    const isBoard = card.classList.contains('is-board') || card.dataset.type === 'board';
-    const zBase = isBoard ? Z_CENTER_BASE : Z_FRONT_BASE;
-    const newZ = getMaxZIndex(zBase) + 1;
-    card.style.zIndex = newZ;
-
-    updateOverlapBadges(); //Z順変更で最新化
-
-
-
-    if (selectedCard) {
-
-      if (!card.classList.contains("selected")) {
-
-        // 選択されていないカードをクリックしたときのみ、他を解除してこれ単体を選択
-
-        document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
-
-        card.classList.add("selected");
-
-      }
-
-    } else {
-
-      card.classList.add("selected");
-
-    }
-
-    selectedCard = card;
-
-
-
-    const isToken = card.classList.contains('token');
-
-
-
-
-
-    // プレビュー：他人の手札 or 裏向き → 席ごとの裏画像（無ければ黒）、それ以外は表画像
-
-    if (isToken) {
-
-      setPreview(); // トークンはプレビューなし
-
-    } else {
-
-      const isFaceUp = card.dataset.faceUp === 'true';
-
-      const full = card.dataset.fullUrl || fullImageStore.get(cardId);
-
-      const thumbEl = card.querySelector('img');
-
-      const frontSrc = full || (thumbEl && thumbEl.src) || '';
-
-      const otherHand = isOtherPlayersHandCard(card); /* 判定関数 */
-
-      const seatBack = card.dataset.backImageUrl || '';
-
-      const isActuallyCard = !card.dataset.type || card.dataset.type === 'card';
-      const previewSrc = (isActuallyCard && (!isFaceUp || otherHand)) ? seatBack : frontSrc;
-
-      setPreview(previewSrc);
-
-    }
-
-
-
-    const ownerPlayerNum = card.dataset.ownerSeat ? `SEAT${card.dataset.ownerSeat}` : "?";
-
-    if (isToken) {
-
-      const t = card.querySelector('.token-input')?.value || '';
-
-      previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}\n内容: ${t ? t.slice(0, 200) : '(未記入)'}`;
-
-    } else {
-
-      previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
-
-    }
-
+    applyCardSelection(card);
   });
-
 
 
   // 右クリックで表裏トグル（自分のカードのみ／カウンターは除外）
@@ -5364,7 +5324,7 @@ function createCardDom(cardId, imageSrc, state) {
 
   {
 
-    let lpTimer = null, lpFired = false;
+    let lpTimer = null;
 
     const LP_MS = 500;
 
@@ -5374,13 +5334,13 @@ function createCardDom(cardId, imageSrc, state) {
 
       if (ev.touches.length !== 1) return;
 
-      lpFired = false;
+      card._lpFired = false;
 
       clearLP();
 
       lpTimer = setTimeout(() => {
 
-        lpFired = true;
+        card._lpFired = true;
 
         handleLongPressOnCard(card, state);
 
@@ -5389,6 +5349,8 @@ function createCardDom(cardId, imageSrc, state) {
     }, { passive: true });
 
     const cancelLP = () => clearLP();
+
+    card._cancelLongPress = cancelLP;
 
     card.addEventListener('touchend', cancelLP);
 
@@ -6406,7 +6368,7 @@ function makeDraggable(card) {
 
 
   card.addEventListener('touchstart', (e) => {
-    if (!canOperateCard(card, 'move')) return;
+    const canMove = canOperateCard(card, 'move');
 
     if (e.touches.length !== 1) return;
 
@@ -6422,6 +6384,7 @@ function makeDraggable(card) {
     grabOffsetX = mouseX - (parseFloat(card.style.left || '0') || 0);
     grabOffsetY = mouseY - (parseFloat(card.style.top || '0') || 0);
     isDragging = false;
+    let maxDistance = 0;
 
     if (card.classList.contains('selected')) {
       selectedCards = Array.from(document.querySelectorAll('.card.selected')).filter(c => canOperateCard(c, 'move'));
@@ -6443,6 +6406,10 @@ function makeDraggable(card) {
       });
     }
 
+    if (!canMove) {
+      selectedCards = [];
+      initialPositions.clear();
+    } else {
     // 操作中のカード全てにアクティブ・オペレーターのロックを適用
     selectedCards.forEach(c => {
       const id = c.dataset.cardId;
@@ -6451,16 +6418,25 @@ function makeDraggable(card) {
         c.dataset.activeOperator = String(CURRENT_PLAYER);
       }
     });
+    }
 
 
 
     const onMove = (ev) => {
-
       if (ev.touches.length !== 1) return;
 
-      ev.preventDefault();
-
       const tt = ev.touches[0];
+      const dist = Math.hypot(tt.clientX - startClientX, tt.clientY - startClientY);
+      if (dist > maxDistance) maxDistance = dist;
+
+      // 10px以上動いた場合はドラッグ操作とみなし、長押し（表裏反転）タイマーを解除
+      if (dist >= 10 && typeof card._cancelLongPress === 'function') {
+        card._cancelLongPress();
+      }
+
+      if (!canMove) return;
+
+      ev.preventDefault();
 
       const dx = (tt.clientX - startClientX) / zoom;
 
@@ -6470,7 +6446,7 @@ function makeDraggable(card) {
 
       if (!isDragging) {
 
-        if (Math.hypot(tt.clientX - startClientX, tt.clientY - startClientY) < 5) return;
+        if (dist < 10) return;
 
         isDragging = true;
 
@@ -6514,6 +6490,10 @@ function makeDraggable(card) {
       document.removeEventListener('touchmove', onMove, { passive: false });
       document.removeEventListener('touchend', onEnd);
       document.removeEventListener('touchcancel', onEnd);
+
+      if (typeof card._cancelLongPress === 'function') {
+        card._cancelLongPress();
+      }
       
       selectedCards.forEach(c => {
         c.style.cursor = "grab";
@@ -6548,7 +6528,13 @@ function makeDraggable(card) {
         c.dataset.activeOperator = '';
       });
 
-      if (!isDragging) return;
+      // ドラッグしておらず（移動が10px未満）、長押し（表裏反転）が発火していない場合はタップ（カード選択）
+      if (!isDragging && maxDistance < 10) {
+        if (!card._lpFired) {
+          applyCardSelection(card);
+        }
+        return;
+      }
       isDragging = false;
 
       updateOverlapBadges();
@@ -9144,6 +9130,12 @@ function bindPanZoomHandlers() {
 
       touchMode.sy = e.touches[0].clientY;
 
+      touchMode.startX = e.touches[0].clientX;
+
+      touchMode.startY = e.touches[0].clientY;
+
+      touchMode.hasMoved = false;
+
     } else if (e.touches.length === 2) {
 
       e.preventDefault();
@@ -9179,6 +9171,12 @@ function bindPanZoomHandlers() {
       e.preventDefault();
 
       const t = e.touches[0];
+
+      if (Math.hypot(t.clientX - (touchMode.startX || touchMode.sx), t.clientY - (touchMode.startY || touchMode.sy)) >= 10) {
+
+        touchMode.hasMoved = true;
+
+      }
 
       const dx = t.clientX - touchMode.sx;
 
@@ -9224,7 +9222,29 @@ function bindPanZoomHandlers() {
 
 
 
-  const endTouch = () => { touchMode.type = null; };
+  const endTouch = () => {
+
+    if (touchMode.type === 'pan' && !touchMode.hasMoved) {
+
+      // 余白タップで選択解除
+
+      const selected = document.querySelectorAll('.card.selected');
+
+      if (selected.length > 0) {
+
+        selected.forEach(el => el.classList.remove("selected"));
+
+        selectedCard = null;
+
+        setPreview();
+
+      }
+
+    }
+
+    touchMode.type = null;
+
+  };
 
   container.addEventListener('touchend', endTouch);
 

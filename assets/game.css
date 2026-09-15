@@ -6,16 +6,30 @@
   --footer-h: 24px;
   --gheader-h: 0px;
   --special-w: 16.6%;
-  --stack-h: calc(var(--header-h) + var(--upload-h));
+  --stack-h: calc(var(--header-h) + var(--upload-h) + var(--footer-h));
   --card-w: 120px;
   --card-h: 160px;
+}
+
+html {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif;
   margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
   background: #eee;
   overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .game-header {
@@ -153,6 +167,7 @@ body {
 #sidebar {
   width: var(--sidebar-w);
   height: calc(100vh - var(--stack-h));
+  height: calc(100dvh - var(--stack-h));
   float: left;
   background: #fff;
   border-right: 2px solid #aaa;
@@ -333,6 +348,7 @@ input:checked + .slider:before {
 #container {
   width: calc(100% - var(--sidebar-w) - var(--preview-w));
   height: calc(100vh - var(--stack-h));
+  height: calc(100dvh - var(--stack-h));
   overflow-x: auto;
   overflow-y: hidden;
   position: relative;
@@ -460,6 +476,7 @@ input:checked + .slider:before {
   background: #fff;
   cursor: grab;
   user-select: none;
+  touch-action: none;
   transition: border .2s;
   z-index: 300;
   transform-origin: 50% 50%;
@@ -503,6 +520,7 @@ input:checked + .slider:before {
 #preview {
   width: var(--preview-w);
   height: calc(100vh - var(--stack-h));
+  height: calc(100dvh - var(--stack-h));
   float: right;
   background: #fff;
   border-left: 2px solid #aaa;
@@ -513,6 +531,7 @@ input:checked + .slider:before {
   flex-direction: column;
   position: relative;
   z-index: 500;
+  overflow: hidden;
 }
 
 #preview h2:not(.panel-title) {
@@ -1086,7 +1105,7 @@ body.is-host .host-toggle { display: block; }
 .site-nav { margin-left: auto; display: flex; align-items: center; gap: 14px; }
 .site-nav a { color: #fff !important; text-decoration: none; font-size: 14px; }
 .site-nav a:hover { text-decoration: underline; }
-.site-footer { background: #fff; border-top: 1px solid #e5e7eb; height: var(--footer-h); display: flex; align-items: center; justify-content: center; padding: 0 12px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 1; }
+.site-footer { background: #fff; border-top: 1px solid #e5e7eb; height: var(--footer-h); display: flex; align-items: center; justify-content: center; padding: 0 12px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 100; box-sizing: border-box; }
 
 @media (max-width: 768px) {
   :root { --sidebar-w: 100%; --preview-w: 100%; }
