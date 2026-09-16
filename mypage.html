@@ -1244,57 +1244,200 @@
       }
     }
 
-    // アイコン変更（画像ファイル選択・アップロード）
+    // ===== アイコン変更（拡大縮小・位置ずらしクロップ機能付き） =====
+    let cropImg = null;
+    let cropBaseScale = 1.0;
+    let cropZoom = 1.0;
+    let cropOffsetX = 0;
+    let cropOffsetY = 0;
+    const CROP_VIEW_SIZE = 280;
+
+    const cropModal = document.getElementById('avatar-crop-modal');
+    const cropCanvas = document.getElementById('avatar-crop-canvas');
+    const cropCtx = cropCanvas?.getContext('2d');
+    const cropContainer = document.getElementById('avatar-crop-container');
+    const zoomSlider = document.getElementById('avatar-zoom-slider');
+
+    function renderCropCanvas() {
+      if (!cropCtx || !cropImg) return;
+      cropCtx.clearRect(0, 0, CROP_VIEW_SIZE, CROP_VIEW_SIZE);
+
+      const currentScale = cropBaseScale * cropZoom;
+      const drawW = cropImg.naturalWidth * currentScale;
+      const drawH = cropImg.naturalHeight * currentScale;
+      const drawX = (CROP_VIEW_SIZE - drawW) / 2 + cropOffsetX;
+      const drawY = (CROP_VIEW_SIZE - drawH) / 2 + cropOffsetY;
+
+      cropCtx.drawImage(cropImg, drawX, drawY, drawW, drawH);
+    }
+
+    function openCropModal(imgElement) {
+      cropImg = imgElement;
+      cropBaseScale = Math.max(CROP_VIEW_SIZE / cropImg.naturalWidth, CROP_VIEW_SIZE / cropImg.naturalHeight);
+      cropZoom = 1.0;
+      cropOffsetX = 0;
+      cropOffsetY = 0;
+
+      if (zoomSlider) {
+        zoomSlider.value = '1';
+      }
+      if (cropModal) {
+        cropModal.style.display = 'flex';
+      }
+      renderCropCanvas();
+    }
+
+    function closeCropModal() {
+      if (cropModal) cropModal.style.display = 'none';
+      cropImg = null;
+    }
+
+    // ドラッグ操作（マウス / タッチ共通 Pointer Events）
+    let isCropDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragStartOffsetX = 0;
+    let dragStartOffsetY = 0;
+
+    cropContainer?.addEventListener('pointerdown', (e) => {
+      if (!cropImg) return;
+      isCropDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      dragStartOffsetX = cropOffsetX;
+      dragStartOffsetY = cropOffsetY;
+      cropContainer.style.cursor = 'grabbing';
+      cropContainer.setPointerCapture(e.pointerId);
+    });
+
+    cropContainer?.addEventListener('pointermove', (e) => {
+      if (!isCropDragging) return;
+      cropOffsetX = dragStartOffsetX + (e.clientX - dragStartX);
+      cropOffsetY = dragStartOffsetY + (e.clientY - dragStartY);
+      renderCropCanvas();
+    });
+
+    const stopCropDrag = () => {
+      isCropDragging = false;
+      if (cropContainer) cropContainer.style.cursor = 'grab';
+    };
+    cropContainer?.addEventListener('pointerup', stopCropDrag);
+    cropContainer?.addEventListener('pointercancel', stopCropDrag);
+
+    // スライダーズーム
+    zoomSlider?.addEventListener('input', () => {
+      cropZoom = parseFloat(zoomSlider.value) || 1.0;
+      renderCropCanvas();
+    });
+
+    // マウスホイールズーム
+    cropContainer?.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.05 : -0.05;
+      let nextZoom = Math.min(3.0, Math.max(1.0, cropZoom + delta));
+      cropZoom = nextZoom;
+      if (zoomSlider) zoomSlider.value = String(cropZoom);
+      renderCropCanvas();
+    }, { passive: false });
+
+    // モーダルの閉じる・キャンセル
+    document.getElementById('avatar-crop-close')?.addEventListener('click', closeCropModal);
+    document.getElementById('avatar-crop-cancel')?.addEventListener('click', closeCropModal);
+    cropModal?.addEventListener('click', (e) => {
+      if (e.target === cropModal) closeCropModal();
+    });
+
+    // 「アイコンを変更」ボタン：ファイル選択を起動
     document.getElementById('changeAvatarBtn')?.addEventListener('click', () => {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
-      input.onchange = async () => {
+      input.onchange = () => {
         const file = input.files?.[0];
         if (!file) return;
 
-        const btn = document.getElementById('changeAvatarBtn');
-        if (btn) {
-          btn.disabled = true;
-          btn.textContent = 'アップロード中…';
-        }
-
-        try {
-          const extMatch = file.name.match(/\.[0-9a-z]+$/i);
-          const ext = extMatch ? extMatch[0].toLowerCase() : '.jpg';
-          const uid = auth.currentUser?.uid;
-          if (!uid) throw new Error('Not logged in');
-
-          const storagePath = `users/${uid}/avatar_${Date.now()}${ext}`;
-          const sref = ref(storage, storagePath);
-          await uploadBytes(sref, file);
-          const downloadUrl = await getDownloadURL(sref);
-
-          // Firebase Auth のプロフィール更新
-          await updateProfile(auth.currentUser, { photoURL: downloadUrl });
-
-          // Firestore のユーザードキュメントにも反映
-          await setDoc(doc(db, `users/${uid}`), {
-            photoURL: downloadUrl,
-            updatedAt: serverTimestamp()
-          }, { merge: true });
-
-          // 画面に即時反映
-          if (avEl) avEl.innerHTML = `<img src="${downloadUrl}" alt="Avatar">`;
-          updateAuthIndicator(auth.currentUser);
-
-          alert('アイコンを更新しました！');
-        } catch (e) {
-          console.error('Avatar update failed:', e);
-          alert('アイコンの更新に失敗しました。');
-        } finally {
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = 'アイコンを変更';
-          }
-        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            openCropModal(img);
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
       };
       input.click();
+    });
+
+    // 「適用する」ボタン：Canvasで切り抜いてFirebase Storageにアップロード
+    document.getElementById('avatar-crop-apply')?.addEventListener('click', async () => {
+      if (!cropImg) return;
+
+      const applyBtn = document.getElementById('avatar-crop-apply');
+      if (applyBtn) {
+        applyBtn.disabled = true;
+        applyBtn.textContent = '保存中…';
+      }
+
+      try {
+        const uid = auth.currentUser?.uid;
+        if (!uid) throw new Error('Not logged in');
+
+        // 512x512 の高解像度出力Canvasを作成
+        const OUT_SIZE = 512;
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = OUT_SIZE;
+        outCanvas.height = OUT_SIZE;
+        const outCtx = outCanvas.getContext('2d');
+
+        // 丸型にクリップして切り抜く（透明PNG出力）
+        outCtx.beginPath();
+        outCtx.arc(OUT_SIZE / 2, OUT_SIZE / 2, OUT_SIZE / 2, 0, Math.PI * 2);
+        outCtx.closePath();
+        outCtx.clip();
+
+        const currentScale = cropBaseScale * cropZoom;
+        const ratio = OUT_SIZE / CROP_VIEW_SIZE;
+        const drawW = cropImg.naturalWidth * currentScale * ratio;
+        const drawH = cropImg.naturalHeight * currentScale * ratio;
+        const drawX = ((CROP_VIEW_SIZE - cropImg.naturalWidth * currentScale) / 2 + cropOffsetX) * ratio;
+        const drawY = ((CROP_VIEW_SIZE - cropImg.naturalHeight * currentScale) / 2 + cropOffsetY) * ratio;
+
+        outCtx.drawImage(cropImg, drawX, drawY, drawW, drawH);
+
+        // Blob化してStorageへアップロード
+        const blob = await new Promise((resolve) => outCanvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error('Failed to generate image blob');
+
+        const storagePath = `users/${uid}/avatar_${Date.now()}.png`;
+        const sref = ref(storage, storagePath);
+        await uploadBytes(sref, blob);
+        const downloadUrl = await getDownloadURL(sref);
+
+        // Firebase Auth のプロフィール更新
+        await updateProfile(auth.currentUser, { photoURL: downloadUrl });
+
+        // Firestore のユーザードキュメントにも反映
+        await setDoc(doc(db, `users/${uid}`), {
+          photoURL: downloadUrl,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        // 画面に即時反映
+        if (avEl) avEl.innerHTML = `<img src="${downloadUrl}" alt="Avatar">`;
+        updateAuthIndicator(auth.currentUser);
+
+        closeCropModal();
+        alert('アイコンを更新しました！');
+      } catch (err) {
+        console.error('Apply avatar crop failed:', err);
+        alert('アイコンの保存に失敗しました。');
+      } finally {
+        if (applyBtn) {
+          applyBtn.disabled = false;
+          applyBtn.textContent = '適用する';
+        }
+      }
     });
 
     // ===== プレミアムステータス表示 =====
@@ -1839,6 +1982,42 @@
             <span style="font-size:16px;">➕</span> カード追加
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ▼ アイコン切り抜き（クロップ）モーダル -->
+  <div id="avatar-crop-modal" role="dialog" aria-modal="true"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); align-items:center; justify-content:center; z-index:10001;">
+    <div id="avatar-crop-sheet"
+      style="width:min(380px, 92vw); background:#fff; border-radius:16px; box-shadow:0 12px 36px rgba(0,0,0,.4); overflow:hidden; display:flex; flex-direction:column;">
+      <div style="padding:14px 18px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
+        <div style="font-weight:700; font-size:16px;">アイコンの調整</div>
+        <button id="avatar-crop-close" type="button"
+          style="border:0; background:none; font-size:22px; color:#888; cursor:pointer; padding:0 4px; line-height:1;">✕</button>
+      </div>
+      <div style="padding:20px; display:flex; flex-direction:column; align-items:center; gap:16px;">
+        <!-- クロップ表示エリア (280x280) -->
+        <div id="avatar-crop-container"
+          style="width:280px; height:280px; position:relative; overflow:hidden; background:#18181b; border-radius:12px; cursor:grab; touch-action:none; user-select:none;">
+          <canvas id="avatar-crop-canvas" width="280" height="280" style="display:block; width:100%; height:100%;"></canvas>
+          <!-- 丸いオーバーレイマスク（中央の円が透明、周囲が暗い半透明） -->
+          <div style="position:absolute; inset:0; pointer-events:none; border-radius:50%; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55), inset 0 0 0 2px rgba(255,255,255,0.9);"></div>
+        </div>
+
+        <!-- ズームスライダー -->
+        <div style="width:100%; max-width:280px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:14px; color:#777; user-select:none;">🔍-</span>
+          <input type="range" id="avatar-zoom-slider" min="1" max="3" step="0.01" value="1"
+            style="flex:1; cursor:pointer; accent-color:#2563eb;">
+          <span style="font-size:14px; color:#777; user-select:none;">🔍+</span>
+        </div>
+      </div>
+      <div style="padding:12px 18px; border-top:1px solid #eee; background:#f9fafb; display:flex; justify-content:flex-end; gap:10px;">
+        <button id="avatar-crop-cancel" type="button"
+          style="border:1px solid #ddd; background:#fff; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; color:#555;">キャンセル</button>
+        <button id="avatar-crop-apply" type="button"
+          style="border:none; background:#2563eb; color:#fff; padding:8px 20px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:700; box-shadow:0 2px 6px rgba(37,99,235,0.3);">適用する</button>
       </div>
     </div>
   </div>
