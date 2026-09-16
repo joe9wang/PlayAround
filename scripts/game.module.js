@@ -4574,9 +4574,9 @@ const cardDomMap = new Map();
 
 const localChangeMap = new Map();
 
-function markLocal(id) { localChangeMap.set(id, Date.now()); setTimeout(() => localChangeMap.delete(id), 800); }
+function markLocal(id) { localChangeMap.set(id, Date.now()); setTimeout(() => localChangeMap.delete(id), 1200); }
 
-function isLocalRecent(id) { const t = localChangeMap.get(id); return t && (Date.now() - t < 800); }
+function isLocalRecent(id) { const t = localChangeMap.get(id); return t && (Date.now() - t < 1200); }
 
 // ★ 追加: 直近でローカル削除したIDを覚えて、再生成を抑止
 
@@ -5457,11 +5457,25 @@ function applyCardState(card, data) {
   card.dataset.activeOperator = data.activeOperator || '';
   card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
 
+  // ★ 自分が現在ドラッグ中のカード、または直近にローカルで位置更新したカードは、
+  // リモートからの古いスナップショット座標で上書きされないよう保護する
+  const cardId = card.dataset.cardId;
+  const isDraggingLocally = card.dataset.isDragging === 'true';
+  const isRecentlyMovedLocally = cardId && isLocalRecent(cardId);
 
+  if (isRecentlyMovedLocally && data.x != null && data.y != null) {
+    const curLeft = Math.round(parseFloat(card.style.left) || 0);
+    const curTop = Math.round(parseFloat(card.style.top) || 0);
+    // リモート側のデータがローカルの最新座標に追いついていれば保護を解除
+    if (curLeft === Math.round(data.x) && curTop === Math.round(data.y)) {
+      localChangeMap.delete(cardId);
+    }
+  }
 
-  card.style.left = `${data.x || 0}px`;
-
-  card.style.top = `${data.y || 0}px`;
+  if (!isDraggingLocally && !isLocalRecent(cardId)) {
+    card.style.left = `${data.x || 0}px`;
+    card.style.top = `${data.y || 0}px`;
+  }
 
   if (data.zIndex) {
 
@@ -6284,6 +6298,7 @@ function makeDraggable(card) {
       selectedCards = Array.from(document.querySelectorAll('.card.selected')).filter(c => canOperateCard(c, 'move'));
       initialPositions.clear();
       selectedCards.forEach(c => {
+        c.dataset.isDragging = 'false';
         initialPositions.set(c.dataset.cardId, {
           left: parseFloat(c.style.left) || 0,
           top: parseFloat(c.style.top) || 0,
@@ -6293,6 +6308,7 @@ function makeDraggable(card) {
     } else {
       selectedCards = [card];
       initialPositions.clear();
+      card.dataset.isDragging = 'false';
       initialPositions.set(card.dataset.cardId, {
         left: parseFloat(card.style.left) || 0,
         top: parseFloat(card.style.top) || 0,
@@ -6309,21 +6325,16 @@ function makeDraggable(card) {
       }
     });
 
-
-
     const onMove = (e2) => {
-
       const dx = (e2.clientX - startClientX) / zoom;
-
       const dy = (e2.clientY - startClientY) / zoom;
 
-      
-
       if (!isDragging) {
-
         if (Math.hypot(e2.clientX - startClientX, e2.clientY - startClientY) < DRAG_THRESHOLD) return;
-
         isDragging = true;
+        selectedCards.forEach(c => {
+          c.dataset.isDragging = 'true';
+        });
 
         const boards = selectedCards.filter(c => c.classList.contains('is-board') || c.dataset.type === 'board');
         const others = selectedCards.filter(c => !boards.includes(c));
@@ -6342,28 +6353,16 @@ function makeDraggable(card) {
             c.style.zIndex = zBase + idx;
           });
         }
-
       }
 
-
-
       selectedCards.forEach(c => {
-
         const init = initialPositions.get(c.dataset.cardId);
-
         if (init) {
-
           c.style.left = `${init.left + dx}px`;
-
           c.style.top = `${init.top + dy}px`;
-
         }
-
       });
-
     };
-
-
 
     const onUp = async () => {
       document.removeEventListener("mousemove", onMove);
@@ -6371,6 +6370,7 @@ function makeDraggable(card) {
       
       selectedCards.forEach(c => {
         c.style.cursor = "grab";
+        c.dataset.isDragging = 'false';
       });
 
       // 操作・ドラッグが終わったので、対象カード全員の activeOperator ロックを解除する
@@ -6443,6 +6443,7 @@ function makeDraggable(card) {
       selectedCards = Array.from(document.querySelectorAll('.card.selected')).filter(c => canOperateCard(c, 'move'));
       initialPositions.clear();
       selectedCards.forEach(c => {
+        c.dataset.isDragging = 'false';
         initialPositions.set(c.dataset.cardId, {
           left: parseFloat(c.style.left) || 0,
           top: parseFloat(c.style.top) || 0,
@@ -6452,6 +6453,7 @@ function makeDraggable(card) {
     } else {
       selectedCards = [card];
       initialPositions.clear();
+      card.dataset.isDragging = 'false';
       initialPositions.set(card.dataset.cardId, {
         left: parseFloat(card.style.left) || 0,
         top: parseFloat(card.style.top) || 0,
@@ -6498,10 +6500,11 @@ function makeDraggable(card) {
 
 
       if (!isDragging) {
-
         if (dist < 10) return;
-
         isDragging = true;
+        selectedCards.forEach(c => {
+          c.dataset.isDragging = 'true';
+        });
 
         const boards = selectedCards.filter(c => c.classList.contains('is-board') || c.dataset.type === 'board');
         const others = selectedCards.filter(c => !boards.includes(c));
@@ -6509,16 +6512,17 @@ function makeDraggable(card) {
         if (boards.length > 0) {
           const zBase = getMaxZIndex(Z_CENTER_BASE) + 1;
           boards.forEach((c, idx) => {
+            c.style.cursor = "grabbing";
             c.style.zIndex = zBase + idx;
           });
         }
         if (others.length > 0) {
           const zBase = getMaxZIndex(Z_FRONT_BASE) + 1;
           others.forEach((c, idx) => {
+            c.style.cursor = "grabbing";
             c.style.zIndex = zBase + idx;
           });
         }
-
       }
 
 
@@ -6550,6 +6554,7 @@ function makeDraggable(card) {
       
       selectedCards.forEach(c => {
         c.style.cursor = "grab";
+        c.dataset.isDragging = 'false';
       });
 
       // 操作・ドラッグが終わったので、対象カード全員の activeOperator ロックを解除する
