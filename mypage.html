@@ -322,20 +322,29 @@
       border-radius: 10px;
       padding: 6px;
       background: #fff;
-      cursor: pointer;
       position: relative;
       transition: transform 0.1s, background-color 0.1s;
+      display: flex;
+      flex-direction: column;
     }
 
     #card-list-grid .cl-item:hover {
-      transform: scale(1.03);
+      transform: scale(1.02);
       border-color: #aaa;
     }
 
+    .cl-card-img-wrap {
+      position: relative;
+      cursor: pointer;
+      border-radius: 6px;
+      overflow: hidden;
+      width: 100%;
+    }
+
     /* 背面表示 */
-    #card-list-grid .cl-item.is-back {
+    #card-list-grid .cl-item.is-back .cl-card-img-wrap {
       background: #000;
-      border-color: #444;
+      border: 1px solid #444;
     }
     #card-list-grid .cl-item.is-back img {
       visibility: hidden;
@@ -344,7 +353,7 @@
       visibility: visible;
     }
 
-    #card-list-grid .cl-item.flippable:hover::after {
+    #card-list-grid .cl-item.flippable .cl-card-img-wrap:hover::after {
       content: '🔄 Flip';
       position: absolute;
       bottom: 4px;
@@ -352,13 +361,14 @@
       width: 100%;
       text-align: center;
       font-size: 10px;
-      background: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.85);
       color: #333;
       font-weight: 700;
+      pointer-events: none;
     }
 
-    #card-list-grid .cl-item.is-back.flippable:hover::after {
-      background: rgba(0,0,0,0.6);
+    #card-list-grid .cl-item.is-back.flippable .cl-card-img-wrap:hover::after {
+      background: rgba(0,0,0,0.65);
       color: #fff;
     }
 
@@ -368,6 +378,44 @@
       object-fit: contain;
       border-radius: 6px;
       display: block;
+    }
+
+    .cl-item-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+      width: 100%;
+    }
+
+    .cl-btn-change-img, .cl-btn-delete-card {
+      flex: 1;
+      padding: 4px 2px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      border: 1px solid #ddd;
+      background: #fdfdfd;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .cl-btn-change-img:hover {
+      background: #f0f7ff;
+      border-color: #93c5fd;
+      color: #1d4ed8;
+    }
+
+    .cl-btn-delete-card {
+      border-color: #fed7d7;
+      color: #e53e3e;
+      background: #fffafa;
+    }
+
+    .cl-btn-delete-card:hover {
+      background: #fee2e2;
+      border-color: #f87171;
     }
 
     /* ▼ タブ */
@@ -598,8 +646,10 @@
               <div class="thumbs-grid" id="slot1-list-grid"></div>
             </div>
           </div>
-          <div class="right">
-            <a class="small-btn slot-list-btn" href="#" data-slot="1">一覧</a>
+          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+            <a class="small-btn slot-list-btn" href="#" data-slot="1" style="text-align:center;">一覧</a>
+            <a class="small-btn slot-edit-btn" href="#" data-slot="1" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
+            <button class="small-btn slot-delete-btn" type="button" data-slot="1" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
           </div>
         </li>
         <!-- ▼スロット2 -->
@@ -615,8 +665,10 @@
               <div class="thumbs-grid" id="slot2-list-grid"></div>
             </div>
           </div>
-          <div class="right">
-            <a class="small-btn slot-list-btn" href="#" data-slot="2">一覧</a>
+          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+            <a class="small-btn slot-list-btn" href="#" data-slot="2" style="text-align:center;">一覧</a>
+            <a class="small-btn slot-edit-btn" href="#" data-slot="2" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
+            <button class="small-btn slot-delete-btn" type="button" data-slot="2" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
           </div>
         </li>
         <!-- ▼スロット3 -->
@@ -632,8 +684,10 @@
               <div class="thumbs-grid" id="slot3-list-grid"></div>
             </div>
           </div>
-          <div class="right">
-            <a class="small-btn slot-list-btn" href="#" data-slot="3">一覧</a>
+          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+            <a class="small-btn slot-list-btn" href="#" data-slot="3" style="text-align:center;">一覧</a>
+            <a class="small-btn slot-edit-btn" href="#" data-slot="3" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
+            <button class="small-btn slot-delete-btn" type="button" data-slot="3" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
           </div>
         </li>
         <!-- ▼スロット4 -->
@@ -649,8 +703,10 @@
               <div class="thumbs-grid" id="slot4-list-grid"></div>
             </div>
           </div>
-          <div class="right">
-            <a class="small-btn slot-list-btn" href="#" data-slot="4">一覧</a>
+          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+            <a class="small-btn slot-list-btn" href="#" data-slot="4" style="text-align:center;">一覧</a>
+            <a class="small-btn slot-edit-btn" href="#" data-slot="4" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
+            <button class="small-btn slot-delete-btn" type="button" data-slot="4" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
           </div>
         </li>
         <!-- ▼スロット5 -->
@@ -666,8 +722,10 @@
               <div class="thumbs-grid" id="slot5-list-grid"></div>
             </div>
           </div>
-          <div class="right">
-            <a class="small-btn slot-list-btn" href="#" data-slot="5">一覧</a>
+          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+            <a class="small-btn slot-list-btn" href="#" data-slot="5" style="text-align:center;">一覧</a>
+            <a class="small-btn slot-edit-btn" href="#" data-slot="5" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
+            <button class="small-btn slot-delete-btn" type="button" data-slot="5" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
           </div>
         </li>
         <!-- ▼スロット6 -->
@@ -683,8 +741,10 @@
               <div class="thumbs-grid" id="slot6-list-grid"></div>
             </div>
           </div>
-          <div class="right">
-            <a class="small-btn slot-list-btn" href="#" data-slot="6">一覧</a>
+          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+            <a class="small-btn slot-list-btn" href="#" data-slot="6" style="text-align:center;">一覧</a>
+            <a class="small-btn slot-edit-btn" href="#" data-slot="6" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
+            <button class="small-btn slot-delete-btn" type="button" data-slot="6" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
           </div>
         </li>
         <!-- ▼スロット7 -->
@@ -700,8 +760,10 @@
               <div class="thumbs-grid" id="slot7-list-grid"></div>
             </div>
           </div>
-          <div class="right">
-            <a class="small-btn slot-list-btn" href="#" data-slot="7">一覧</a>
+          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+            <a class="small-btn slot-list-btn" href="#" data-slot="7" style="text-align:center;">一覧</a>
+            <a class="small-btn slot-edit-btn" href="#" data-slot="7" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
+            <button class="small-btn slot-delete-btn" type="button" data-slot="7" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
           </div>
         </li>
         <!-- ▼スロット8 -->
@@ -717,8 +779,10 @@
               <div class="thumbs-grid" id="slot8-list-grid"></div>
             </div>
           </div>
-          <div class="right">
-            <a class="small-btn slot-list-btn" href="#" data-slot="8">一覧</a>
+          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+            <a class="small-btn slot-list-btn" href="#" data-slot="8" style="text-align:center;">一覧</a>
+            <a class="small-btn slot-edit-btn" href="#" data-slot="8" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
+            <button class="small-btn slot-delete-btn" type="button" data-slot="8" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
           </div>
         </li>
         <!-- ▼スロット9 -->
@@ -734,8 +798,10 @@
               <div class="thumbs-grid" id="slot9-list-grid"></div>
             </div>
           </div>
-          <div class="right">
-            <a class="small-btn slot-list-btn" href="#" data-slot="9">一覧</a>
+          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+            <a class="small-btn slot-list-btn" href="#" data-slot="9" style="text-align:center;">一覧</a>
+            <a class="small-btn slot-edit-btn" href="#" data-slot="9" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
+            <button class="small-btn slot-delete-btn" type="button" data-slot="9" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
           </div>
         </li>
         <!-- ▼スロット10 -->
@@ -751,8 +817,10 @@
               <div class="thumbs-grid" id="slot10-list-grid"></div>
             </div>
           </div>
-          <div class="right">
-            <a class="small-btn slot-list-btn" href="#" data-slot="10">一覧</a>
+          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+            <a class="small-btn slot-list-btn" href="#" data-slot="10" style="text-align:center;">一覧</a>
+            <a class="small-btn slot-edit-btn" href="#" data-slot="10" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
+            <button class="small-btn slot-delete-btn" type="button" data-slot="10" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
           </div>
         </li>
       </ul>
@@ -784,9 +852,9 @@
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
     import {
       getFirestore, doc, getDoc, collection, getDocs, query, limit, updateDoc, writeBatch,
-      where, orderBy, deleteDoc, serverTimestamp, setDoc
+      where, orderBy, deleteDoc, serverTimestamp, setDoc, addDoc
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-    import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
+    import { getStorage, ref, getDownloadURL, uploadBytes } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
     import { initI18n } from "./scripts/i18n.js";
 
 
@@ -1024,45 +1092,24 @@
         const uEl = document.getElementById(`slot${slot}-updated`);
         const tEl = document.getElementById(`slot${slot}-thumbs`);
         const bEl = itemEl.querySelector('.slot-list-btn');
-        const rightDiv = itemEl.querySelector('.right');
+        const eEl = itemEl.querySelector('.slot-edit-btn');
+        const dEl = itemEl.querySelector('.slot-delete-btn');
 
         if (count > 0) {
           if (cEl) cEl.textContent = `(${count}枚)`;
           if (uEl) uEl.textContent = `最終更新: ${updatedAt ? updatedAt.toLocaleString() : '-'}`;
           const urls = await fetchSlotThumbs(slot, 5);
           if (tEl) renderThumbs(tEl, urls, count);
-          if (bEl) bEl.style.display = 'inline-flex';
-
-          if (rightDiv) {
-            rightDiv.style.display = 'flex';
-            rightDiv.style.flexDirection = 'column';
-            rightDiv.style.alignItems = 'stretch';
-
-            let delBtn = rightDiv.querySelector('.slot-delete-btn');
-            if (!delBtn) {
-              delBtn = document.createElement('button');
-              delBtn.className = 'small-btn slot-delete-btn';
-              delBtn.dataset.slot = slot;
-              delBtn.textContent = '削除する';
-              delBtn.style.marginTop = '8px';
-              delBtn.style.borderColor = '#e53e3e';
-              delBtn.style.color = '#e53e3e';
-              delBtn.style.background = '#fff4f4';
-              delBtn.style.cursor = 'pointer';
-              rightDiv.appendChild(delBtn);
-            }
-          }
-
+          if (bEl) bEl.style.display = 'inline-block';
+          if (eEl) eEl.style.display = 'inline-block';
+          if (dEl) dEl.style.display = 'inline-block';
         } else {
           if (cEl) cEl.textContent = '(0枚)';
           if (uEl) uEl.textContent = '最終更新: -';
           if (tEl) renderThumbs(tEl, [], 0);
           if (bEl) bEl.style.display = 'none';
-
-          if (rightDiv) {
-            const delBtn = rightDiv.querySelector('.slot-delete-btn');
-            if (delBtn) delBtn.remove();
-          }
+          if (eEl) eEl.style.display = 'inline-block'; // 空スロットでも編集（カード追加）可能
+          if (dEl) dEl.style.display = 'none';
         }
       }
     }
@@ -1117,14 +1164,23 @@
       }
     });
 
-    // 「一覧」ボタン「削除する」ボタンのイベント委譲 → モーダルを開く・削除する
+    // 「一覧」「編集」「削除」ボタンのイベント委譲 → モーダルを開く・削除する
     document.getElementById('saveList')?.addEventListener('click', async (e) => {
       // 一覧
       const listBtn = e.target.closest('.slot-list-btn');
       if (listBtn) {
         e.preventDefault();
         const slot = parseInt(listBtn.dataset.slot, 10);
-        if (slot) openSlotModal(slot);
+        if (slot) openSlotModal(slot, 'view');
+        return;
+      }
+
+      // 編集
+      const editBtn = e.target.closest('.slot-edit-btn');
+      if (editBtn) {
+        e.preventDefault();
+        const slot = parseInt(editBtn.dataset.slot, 10);
+        if (slot) openSlotModal(slot, 'edit');
         return;
       }
 
@@ -1309,20 +1365,36 @@
     });
 
 
-    // ▼ スロット画像を「カード一覧」モーダルで表示
-    async function openSlotModal(slot) {
+    // ▼ スロット画像を「カード一覧 / 編集」モーダルで表示
+    let CURRENT_MODAL_SLOT = null;
+    let CURRENT_MODAL_MODE = 'view';
+
+    async function openSlotModal(slot, mode = 'view') {
+      CURRENT_MODAL_SLOT = slot;
+      CURRENT_MODAL_MODE = mode;
+
       const modal = document.getElementById('card-list-modal');
       const grid = document.getElementById('card-list-grid');
       const title = document.getElementById('card-list-title');
+      const footer = document.getElementById('card-list-footer');
+      const footerInfo = document.getElementById('card-list-footer-info');
+      const delBtn = document.getElementById('card-list-delete');
+
       if (!modal || !grid || !title) return;
-      title.textContent = `マイセット${slot}の構成アイテム`;
+
+      title.textContent = (mode === 'edit') ? `マイセット${slot}の編集` : `マイセット${slot}の構成アイテム`;
+      if (footer) footer.style.display = (mode === 'edit') ? 'flex' : 'none';
+      if (footerInfo) footerInfo.textContent = '';
+      if (delBtn) delBtn.style.display = 'none';
+
       modal.style.display = 'flex';
       grid.innerHTML = '<div class="muted">読み込み中…</div>';
+
       try {
         const items = await fetchSlotData(slot);
         grid.innerHTML = '';
         if (items.length === 0) {
-          grid.innerHTML = '<div class="muted">アイテムはありません</div>';
+          grid.innerHTML = '<div class="muted" style="padding:24px; text-align:center;">アイテムはありません。下の「＋ カード追加」から追加できます。</div>';
           return;
         }
 
@@ -1341,17 +1413,23 @@
           list.forEach(d => {
             const item = document.createElement('div');
             item.className = 'cl-item';
+            item.dataset.id = d.id;
             if (d.type === 'card' || !d.type) item.classList.add('flippable');
-            
+
+            const imgWrap = document.createElement('div');
+            imgWrap.className = 'cl-card-img-wrap';
+
             const img = document.createElement('img');
             img.loading = 'lazy';
             img.decoding = 'async';
             img.alt = 'アイテム';
             img.src = d.imageUrl || d.fullUrl || '';
-            item.appendChild(img);
+            imgWrap.appendChild(img);
+            item.appendChild(imgWrap);
 
+            // カード反転
             if (d.type === 'card' || !d.type) {
-              item.addEventListener('click', (e) => {
+              imgWrap.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const front = d.imageUrl || d.fullUrl || '';
                 const back = d.backImageUrl || '';
@@ -1370,6 +1448,38 @@
                 }
               });
             }
+
+            // 編集モード時のアクションボタン
+            if (mode === 'edit') {
+              const actions = document.createElement('div');
+              actions.className = 'cl-item-actions';
+
+              const changeBtn = document.createElement('button');
+              changeBtn.type = 'button';
+              changeBtn.className = 'cl-btn-change-img';
+              changeBtn.textContent = '画像変更';
+              changeBtn.title = '現在表示されている面（表/裏）の画像を変更';
+              changeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isBack = item.classList.contains('is-back');
+                triggerChangeCardImage(slot, d.id, isBack, item, img, d);
+              });
+
+              const deleteCardBtn = document.createElement('button');
+              deleteCardBtn.type = 'button';
+              deleteCardBtn.className = 'cl-btn-delete-card';
+              deleteCardBtn.textContent = '削除';
+              deleteCardBtn.title = 'このカードを削除';
+              deleteCardBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                triggerDeleteCard(slot, d.id, item);
+              });
+
+              actions.appendChild(changeBtn);
+              actions.appendChild(deleteCardBtn);
+              item.appendChild(actions);
+            }
+
             grid.appendChild(item);
           });
         };
@@ -1378,18 +1488,174 @@
         addSection('🎴 カード', cards);
         addSection('♟️ コマ・トークン', tokens);
 
-        const delBtn = document.getElementById('card-list-delete');
-        if (delBtn) {
-          delBtn.style.display = 'block';
-          delBtn.dataset.slot = slot;
-        }
       } catch (_e) {
         console.error(_e);
         grid.innerHTML = '<div class="muted">取得に失敗しました</div>';
-        const delBtn = document.getElementById('card-list-delete');
-        if (delBtn) delBtn.style.display = 'none';
       }
     }
+
+    // ▼ カード画像変更処理
+    function triggerChangeCardImage(slot, cardId, isBack, itemEl, imgEl, dataObj) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+
+        const changeBtn = itemEl.querySelector('.cl-btn-change-img');
+        if (changeBtn) {
+          changeBtn.disabled = true;
+          changeBtn.textContent = '変更中…';
+        }
+
+        try {
+          const extMatch = file.name.match(/\.[0-9a-z]+$/i);
+          const ext = extMatch ? extMatch[0].toLowerCase() : '.jpg';
+          const side = isBack ? 'back' : 'front';
+          const storagePath = `users/${CURRENT_UID}/saves/slot${slot}/cards/${cardId}_${side}_${Date.now()}${ext}`;
+          const sref = ref(storage, storagePath);
+          await uploadBytes(sref, file);
+          const url = await getDownloadURL(sref);
+
+          const cardRef = doc(db, `${slPath(slot)}/cards/${cardId}`);
+          if (isBack) {
+            await updateDoc(cardRef, { backImageUrl: url, updatedAt: serverTimestamp() });
+            dataObj.backImageUrl = url;
+            imgEl.src = url;
+            itemEl.classList.add('has-back-img');
+          } else {
+            await updateDoc(cardRef, { fullUrl: url, imageUrl: url, updatedAt: serverTimestamp() });
+            dataObj.fullUrl = url;
+            dataObj.imageUrl = url;
+            imgEl.src = url;
+          }
+
+          await setDoc(doc(db, slPath(slot)), { updatedAt: serverTimestamp() }, { merge: true });
+          refreshSaveSlots().catch(console.error);
+        } catch (err) {
+          console.error('Change card image failed', err);
+          alert('画像の変更に失敗しました');
+        } finally {
+          if (changeBtn) {
+            changeBtn.disabled = false;
+            changeBtn.textContent = '画像変更';
+          }
+        }
+      };
+      input.click();
+    }
+
+    // ▼ カード1枚削除処理
+    async function triggerDeleteCard(slot, cardId, itemEl) {
+      if (!confirm('このカードを削除しますか？')) return;
+
+      const delBtn = itemEl.querySelector('.cl-btn-delete-card');
+      if (delBtn) {
+        delBtn.disabled = true;
+        delBtn.textContent = '削除中…';
+      }
+
+      try {
+        const cardRef = doc(db, `${slPath(slot)}/cards/${cardId}`);
+        await deleteDoc(cardRef);
+
+        const slotRef = doc(db, slPath(slot));
+        const snap = await getDoc(slotRef);
+        const curr = snap.exists() ? (snap.data().count || 0) : 0;
+        const nextCount = Math.max(0, curr - 1);
+        await setDoc(slotRef, { count: nextCount, updatedAt: serverTimestamp() }, { merge: true });
+
+        itemEl.remove();
+
+        const grid = document.getElementById('card-list-grid');
+        if (grid && !grid.querySelector('.cl-item')) {
+          grid.innerHTML = '<div class="muted" style="padding:24px; text-align:center;">アイテムはありません。下の「＋ カード追加」から追加できます。</div>';
+        }
+
+        refreshSaveSlots().catch(console.error);
+      } catch (err) {
+        console.error('Delete card failed', err);
+        alert('カードの削除に失敗しました');
+        if (delBtn) {
+          delBtn.disabled = false;
+          delBtn.textContent = '削除';
+        }
+      }
+    }
+
+    // ▼ 「カード追加」ボタン処理
+    document.getElementById('card-add-btn')?.addEventListener('click', () => {
+      const input = document.getElementById('card-add-input');
+      if (input) {
+        input.value = '';
+        input.click();
+      }
+    });
+
+    document.getElementById('card-add-input')?.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0 || !CURRENT_MODAL_SLOT) return;
+
+      const addBtn = document.getElementById('card-add-btn');
+      const infoEl = document.getElementById('card-list-footer-info');
+
+      if (addBtn) addBtn.disabled = true;
+      if (infoEl) infoEl.textContent = `カードを追加中 (0/${files.length})...`;
+
+      try {
+        let addedCount = 0;
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          if (infoEl) infoEl.textContent = `カードを追加中 (${i + 1}/${files.length})...`;
+
+          const extMatch = file.name.match(/\.[0-9a-z]+$/i);
+          const ext = extMatch ? extMatch[0].toLowerCase() : '.jpg';
+
+          const newCardRef = doc(collection(db, `${slPath(CURRENT_MODAL_SLOT)}/cards`));
+          const cardId = newCardRef.id;
+
+          const storagePath = `users/${CURRENT_UID}/saves/slot${CURRENT_MODAL_SLOT}/cards/${cardId}_${Date.now()}${ext}`;
+          const sref = ref(storage, storagePath);
+          await uploadBytes(sref, file);
+          const url = await getDownloadURL(sref);
+
+          await setDoc(newCardRef, {
+            type: 'card',
+            imageUrl: url,
+            fullUrl: url,
+            backImageUrl: '',
+            faceUp: true,
+            zIndex: 1,
+            rotation: 0,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+          addedCount++;
+        }
+
+        const slotRef = doc(db, slPath(CURRENT_MODAL_SLOT));
+        const snap = await getDoc(slotRef);
+        const curr = snap.exists() ? (snap.data().count || 0) : 0;
+        await setDoc(slotRef, {
+          count: curr + addedCount,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        if (infoEl) infoEl.textContent = `${addedCount}枚のカードを追加しました！`;
+        setTimeout(() => { if (infoEl) infoEl.textContent = ''; }, 3000);
+
+        await openSlotModal(CURRENT_MODAL_SLOT, 'edit');
+        refreshSaveSlots().catch(console.error);
+
+      } catch (err) {
+        console.error('Add cards failed', err);
+        alert('カードの追加に失敗しました');
+        if (infoEl) infoEl.textContent = '追加エラー';
+      } finally {
+        if (addBtn) addBtn.disabled = false;
+      }
+    });
 
 
     // モーダルの閉じる・削除挙動（イベント委譲：要素が後で挿入されてもOK）
@@ -1512,8 +1778,20 @@
             style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;">閉じる</button>
         </div>
       </div>
-      <div id="card-list-body" style="padding:12px; overflow:auto;">
+      <div id="card-list-body" style="padding:16px; overflow:auto; flex:1;">
         <div id="card-list-grid" style="display:grid; gap:10px;"></div>
+      </div>
+      <!-- ▼ 編集用フッターバー -->
+      <div id="card-list-footer"
+        style="display:none; padding:12px 16px; border-top:1px solid #eee; background:#f9fafb; align-items:center; justify-content:space-between; gap:12px;">
+        <div id="card-list-footer-info" style="font-size:13px; color:#666;"></div>
+        <div>
+          <input type="file" id="card-add-input" accept="image/*" multiple style="display:none;">
+          <button id="card-add-btn" type="button"
+            style="background:#2563eb; color:#fff; border:none; padding:8px 18px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(37,99,235,0.25);">
+            <span style="font-size:16px;">➕</span> カード追加
+          </button>
+        </div>
       </div>
     </div>
   </div>
