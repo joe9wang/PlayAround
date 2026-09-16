@@ -1074,7 +1074,9 @@ async function showLoadConfirmation(slot) {
 
   if (!confirmView || !confirmTitle || !detailsList) return;
 
-  confirmTitle.textContent = `マイセット${slot} をロードしますか？`;
+  const nameEl = document.querySelector(`#sl-tab-content-myset .slot-item-btn[data-slot="${slot}"] .slot-custom-name`);
+  const customName = nameEl?.textContent?.trim() || '';
+  confirmTitle.textContent = customName ? `マイセット${slot}（${customName}）をロードしますか？` : `マイセット${slot} をロードしますか？`;
   detailsList.innerHTML = '<div style="padding:20px; color:#666; text-align:center;">読み込み中...</div>';
   
   if (selectionView) selectionView.style.display = 'none';
@@ -1209,101 +1211,72 @@ async function loadOfficialSet(type) {
 // ▼ 追加：スロットのプレビューを描画（各最大5枚）
 
 async function updateSlotPreviews() {
-
   try {
-
     await ensureAuthReady();
-
     const wrap = document.querySelector('#save-load-modal .sl-grid');
-
     if (!wrap) return;
 
     const boxes = Array.from(wrap.querySelectorAll('.slot-preview'));
 
-    for (const box of boxes) {
-
+    await Promise.all(boxes.map(async (box) => {
       const slot = parseInt(box.dataset.slot, 10);
+      if (isNaN(slot)) return;
+
+      const nameEl = box.closest('.slot-item-btn')?.querySelector('.slot-custom-name');
 
       // プレースホルダ
-
       box.innerHTML = '<span class="empty">読み込み中…</span>';
 
       try {
+        // メタデータ（セット名等）とカード（最大5件）を並行取得
+        const [metaSnap, cardsSnap] = await Promise.all([
+          getDoc(doc(db, slDocPath(slot))),
+          getDocs(query(collection(db, `${slDocPath(slot)}/cards`), limit(5)))
+        ]);
 
-        // users/{UID}/saves/slot{n}/cards から最大5件
-
-        const cardsRef = collection(db, `${slDocPath(slot)}/cards`);
-
-        const snap = await getDocs(query(cardsRef, limit(5)));
-
-        if (snap.empty) {
-
-          box.innerHTML = '<span class="empty">空き</span>';
-
-          continue;
-
+        const metaData = metaSnap.exists() ? (metaSnap.data() || {}) : {};
+        const customName = metaData.name || '';
+        if (nameEl) {
+          nameEl.textContent = customName;
+          nameEl.title = customName;
         }
 
-        // まとめて描画してリフローを減らす
+        if (cardsSnap.empty) {
+          box.innerHTML = '<span class="empty">空き</span>';
+          return;
+        }
 
         const frag = document.createDocumentFragment();
-
         let added = 0;
 
-        for (const d of snap.docs) {
-
+        for (const d of cardsSnap.docs) {
           const s = d.data() || {};
-
-          // 保存されているURLは fullUrl を優先、なければ Storage 経由で解決
-
           let url = s.fullUrl;
-
           if (!url && s.imageUrl) url = await storageDownloadURL(s.imageUrl);
-
           if (!url) continue;
 
-          const img = document.createElement('img'); img.crossOrigin = 'anonymous';
-
+          const img = document.createElement('img');
+          img.crossOrigin = 'anonymous';
           img.src = url;
-
           img.alt = '';
-
           frag.appendChild(img);
-
           added++;
-
         }
 
         if (added === 0) {
-
           box.innerHTML = '<span class="empty">画像なし</span>';
-
         } else {
-
           box.innerHTML = '';
-
-          // ← 正: frag を box に追加（wrap ではない）
-
           box.appendChild(frag);
-
         }
-
       } catch (e) {
-
         console.warn('preview fetch failed', e);
-
         box.innerHTML = '<span class="empty">取得失敗</span>';
-
       }
-
-    }
-
+    }));
   } catch (e) {
-
     console.warn('updateSlotPreviews error', e);
-
   }
-
 }
 
 

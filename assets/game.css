@@ -1397,10 +1397,29 @@ body.is-spectator #spectator-banner { display: block; }
   box-shadow: 0 4px 12px rgba(0,123,255,0.1);
 }
 
+.slot-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  overflow: hidden;
+  width: 100%;
+}
+
 .slot-label {
   font-size: 14px;
   font-weight: 700;
   color: #444;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.slot-custom-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .slot-preview {
