@@ -2936,7 +2936,7 @@ let hostHeartbeatTimer = null;
 
 
 /**
- * 盤面の簡易プレビュー（スクリーンショット）を生成する
+ * ゲーム盤面のプレビュー画像をHTML5 Canvasで生成してDataURLを返す
  */
 async function generateBoardPreview() {
   try {
@@ -2950,49 +2950,29 @@ async function generateBoardPreview() {
     canvas.width = 640;
     canvas.height = 360;
     const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     const fieldRect = field.getBoundingClientRect();
     const zoomVal = typeof zoom !== 'undefined' ? zoom : 1;
 
-    // 色取得ヘルパー: 透明なら親を遡る、または子から探す
-    const getEffectiveBackgroundColor = (el) => {
-      // 1. 本人の色を確認
-      const style = window.getComputedStyle(el);
-      const bg = style.backgroundColor;
-      if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg;
-
-      // 2. 子要素から「一番面積の大きい背景色」を探す（フィールド自体が透明なケース対策）
-      const children = Array.from(el.querySelectorAll('div'));
-      let bestBg = null;
-      let maxArea = 0;
-      for (const child of children) {
-        const cStyle = window.getComputedStyle(child);
-        const cBg = cStyle.backgroundColor;
-        if (cBg && cBg !== 'rgba(0, 0, 0, 0)' && cBg !== 'transparent') {
-          const area = child.offsetWidth * child.offsetHeight;
-          if (area > maxArea) {
-            maxArea = area;
-            bestBg = cBg;
+    // 1. 全体の背景色の決定（上質なフェルト調のカードテーブルグリーンを基調）
+    let tableBg = '#1a3f2b';
+    if (field.style.backgroundColor && field.style.backgroundColor !== 'transparent') {
+      tableBg = field.style.backgroundColor;
+    } else {
+      const container = document.getElementById('container');
+      if (container) {
+        const cStyle = window.getComputedStyle(container);
+        if (cStyle.backgroundColor && cStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' && cStyle.backgroundColor !== 'transparent') {
+          if (cStyle.backgroundColor !== 'rgb(247, 247, 247)' && cStyle.backgroundColor !== '#f7f7f7') {
+            tableBg = cStyle.backgroundColor;
           }
         }
       }
-      if (bestBg) return bestBg;
+    }
 
-      // 3. 親を遡る
-      let current = el.parentElement;
-      while (current && current !== document.body) {
-        const pStyle = window.getComputedStyle(current);
-        const pBg = pStyle.backgroundColor;
-        if (pBg && pBg !== 'rgba(0, 0, 0, 0)' && pBg !== 'transparent') return pBg;
-        current = current.parentElement;
-      }
-      return '#2ecc71'; // 最終手段の緑
-    };
-
-    const actualFieldBg = getEffectiveBackgroundColor(field);
-    
-    // 1. 全体の背景色の決定
-    ctx.fillStyle = actualFieldBg;
+    ctx.fillStyle = tableBg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // 2. 描画対象エリアの収集（フィールド内の要素に限定）
@@ -3047,36 +3027,81 @@ async function generateBoardPreview() {
       return null;
     }
 
-    const margin = 30;
+    const margin = 16;
     minX -= margin; minY -= margin; maxX += margin; maxY += margin;
-    const width = maxX - minX;
-    const height = maxY - minY;
+    let width = maxX - minX;
+    let height = maxY - minY;
 
-    const scale = Math.min(canvas.width / width, canvas.height / height);
-    const offsetX = (canvas.width - width * scale) / 2 - minX * scale;
-    const offsetY = (canvas.height - height * scale) / 2 - minY * scale;
+    // 16:9 のアスペクト比に合わせて領域を拡張し、上下左右の不自然な余白帯をなくす
+    const targetAspect = canvas.width / canvas.height; // 16 / 9
+    const currentAspect = width / height;
+    if (currentAspect > targetAspect) {
+      const targetH = width / targetAspect;
+      const diff = targetH - height;
+      minY -= diff / 2;
+      height = targetH;
+    } else {
+      const targetW = height * targetAspect;
+      const diff = targetW - width;
+      minX -= diff / 2;
+      width = targetW;
+    }
+
+    const scale = canvas.width / width;
+    const offsetX = -minX * scale;
+    const offsetY = -minY * scale;
 
     // エリア描画
     validAreas.forEach(({ el, pos }) => {
+      const isPlayerArea = el.classList.contains('player-area');
       const style = window.getComputedStyle(el);
-      const drawX = pos.l * scale + offsetX;
-      const drawY = pos.t * scale + offsetY;
-      const drawW = pos.w * scale;
-      const drawH = pos.h * scale;
+      const drawX = Math.round(pos.l * scale + offsetX);
+      const drawY = Math.round(pos.t * scale + offsetY);
+      const drawW = Math.round(pos.w * scale);
+      const drawH = Math.round(pos.h * scale);
+      if (drawW < 1 || drawH < 1) return;
 
-      const bgColor = style.backgroundColor;
-      if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
-        ctx.fillStyle = bgColor;
+      if (isPlayerArea) {
+        // プレイヤー枠：落ち着いたマット調の背景と上品な枠線
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
         ctx.fillRect(drawX, drawY, drawW, drawH);
-      }
-
-      const border = style.borderStyle;
-      if (border && border !== 'none') {
-        ctx.strokeStyle = style.borderColor || 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = Math.max(1, 1 * scale);
-        if (border === 'dashed' || border === 'dotted') ctx.setLineDash([2, 2]);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.lineWidth = 1;
         ctx.strokeRect(drawX, drawY, drawW, drawH);
-        ctx.setLineDash([]);
+
+        // SEAT番号バッジ
+        const seatMatch = el.className.match(/player-(\d+)/);
+        if (seatMatch) {
+          const seatText = `SEAT ${seatMatch[1]}`;
+          ctx.font = `bold ${Math.max(8, Math.round(10 * scale))}px sans-serif`;
+          const textMetrics = ctx.measureText(seatText);
+          const padX = 5;
+          const badgeH = Math.max(12, Math.round(15 * scale));
+          const badgeW = textMetrics.width + padX * 2;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+          if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(drawX + 3, drawY + 3, badgeW, badgeH, 2);
+            ctx.fill();
+          } else {
+            ctx.fillRect(drawX + 3, drawY + 3, badgeW, badgeH);
+          }
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(seatText, drawX + 3 + padX, drawY + 3 + badgeH / 2);
+        }
+      } else {
+        const bgColor = style.backgroundColor;
+        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+          ctx.fillStyle = bgColor;
+          ctx.fillRect(drawX, drawY, drawW, drawH);
+        }
+
+        // ゾーンの区切り線（にじみのない1pxの整った境界線）
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(drawX, drawY, drawW, drawH);
       }
     });
 
@@ -3085,13 +3110,39 @@ async function generateBoardPreview() {
 
     cardEls.forEach(el => {
       const pos = getRelativePos(el);
-      const drawX = pos.l * scale + offsetX;
-      const drawY = pos.t * scale + offsetY;
-      const drawW = pos.w * scale;
-      const drawH = pos.h * scale;
+      const drawX = Math.round(pos.l * scale + offsetX);
+      const drawY = Math.round(pos.t * scale + offsetY);
+      const drawW = Math.round(pos.w * scale);
+      const drawH = Math.round(pos.h * scale);
+      if (drawW < 1 || drawH < 1) return;
 
-      ctx.fillStyle = 'rgba(0,0,0,0.3)';
-      ctx.fillRect(drawX + 1, drawY + 1, drawW, drawH);
+      const cardRadius = Math.max(1, Math.round(3 * scale));
+
+      // ソフトシャドウ
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      ctx.shadowBlur = Math.max(2, Math.round(3 * scale));
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = Math.max(1, Math.round(2 * scale));
+
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(drawX, drawY, drawW, drawH, cardRadius);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(drawX, drawY, drawW, drawH);
+      }
+      ctx.restore();
+
+      // カード本体描画
+      ctx.save();
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(drawX, drawY, drawW, drawH, cardRadius);
+        ctx.clip();
+      }
 
       if (el.dataset.faceUp === 'true') {
         const img = el.querySelector('img');
@@ -3099,36 +3150,64 @@ async function generateBoardPreview() {
           try {
             ctx.drawImage(img, drawX, drawY, drawW, drawH);
           } catch (e) {
-            ctx.fillStyle = '#333'; ctx.fillRect(drawX, drawY, drawW, drawH);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(drawX, drawY, drawW, drawH);
           }
         } else {
-          ctx.fillStyle = '#333'; ctx.fillRect(drawX, drawY, drawW, drawH);
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(drawX, drawY, drawW, drawH);
         }
       } else {
-        ctx.fillStyle = '#000'; // 裏面を黒に
+        // 洗練されたカード裏面（ダークネイビー + 微細なゴールド枠）
+        ctx.fillStyle = '#1e293b';
         ctx.fillRect(drawX, drawY, drawW, drawH);
+        if (drawW > 8 && drawH > 10) {
+          ctx.strokeStyle = 'rgba(212, 175, 55, 0.45)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(drawX + 2, drawY + 2, drawW - 4, drawH - 4);
+        }
+      }
+      ctx.restore();
+
+      // カード外枠
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+      ctx.lineWidth = 1;
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(drawX, drawY, drawW, drawH, cardRadius);
+        ctx.stroke();
+      } else {
+        ctx.strokeRect(drawX, drawY, drawW, drawH);
       }
 
+      // トークン・カウンター文字
       const input = el.querySelector('.token-input');
       if (input && input.value) {
-        ctx.fillStyle = '#000';
-        ctx.font = `bold ${Math.max(6, 8 * scale)}px sans-serif`;
+        ctx.fillStyle = '#111';
+        ctx.font = `bold ${Math.max(7, Math.round(9 * scale))}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(input.value.slice(0, 10), drawX + drawW/2, drawY + drawH/2, drawW * 0.9);
+        ctx.fillText(input.value.slice(0, 10), drawX + drawW / 2, drawY + drawH / 2, drawW * 0.9);
       }
-      
+
       const num = el.querySelector('.num-val');
       if (num) {
-        ctx.fillStyle = '#d32f2f';
-        ctx.font = `bold ${Math.max(8, 14 * scale)}px sans-serif`;
+        ctx.fillStyle = '#ef4444';
+        ctx.font = `bold ${Math.max(9, Math.round(13 * scale))}px sans-serif`;
         ctx.textAlign = 'center';
-        ctx.fillText(num.textContent, drawX + drawW/2, drawY + drawH/2);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(num.textContent, drawX + drawW / 2, drawY + drawH / 2);
       }
     });
 
-    console.log(`[Preview] 生成完了 (エリア:${validAreas.length}, カード:${cardEls.length}, 色:${actualFieldBg})`);
-    return canvas.toDataURL('image/jpeg', 0.6);
+    console.log(`[Preview] 生成完了 (エリア:${validAreas.length}, カード:${cardEls.length})`);
+    
+    // WebP はブロックノイズが無く圧縮効率が極めて高い (非対応環境は高画質JPEG 0.92)
+    let dataUrl = canvas.toDataURL('image/webp', 0.92);
+    if (!dataUrl || !dataUrl.startsWith('data:image/webp')) {
+      dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    }
+    return dataUrl;
   } catch (e) {
     console.error('[Preview] プレビュー生成エラー:', e);
     return null;
@@ -3172,7 +3251,8 @@ function startHostHeartbeat(roomId) {
         if (dataUrl) {
           try {
             console.log('[Preview] 画像生成成功、アップロード中...');
-            const previewRef = ref(storage, `rooms/${roomId}/preview.jpg`);
+            const isWebp = dataUrl.startsWith('data:image/webp');
+            const previewRef = ref(storage, `rooms/${roomId}/preview.${isWebp ? 'webp' : 'jpg'}`);
             await uploadString(previewRef, dataUrl, 'data_url');
             const url = await getDownloadURL(previewRef);
             updatePayload.previewUrl = url;
