@@ -4665,8 +4665,14 @@ function applyCardSelection(card) {
   const cardId = card.dataset.cardId;
   const isBoard = card.classList.contains('is-board') || card.dataset.type === 'board';
   const zBase = isBoard ? Z_CENTER_BASE : Z_FRONT_BASE;
-  card.style.zIndex = getMaxZIndex(zBase) + 1;
+  const newZ = getMaxZIndex(zBase) + 1;
+  card.style.zIndex = newZ;
   updateOverlapBadges();
+
+  if (cardId && canOperateCard(card, 'move')) {
+    markLocal(cardId);
+    updateCardBatched(cardId, { zIndex: newZ });
+  }
 
   if (selectedCard) {
     if (!card.classList.contains('selected')) {
@@ -5457,17 +5463,21 @@ function applyCardState(card, data) {
   card.dataset.activeOperator = data.activeOperator || '';
   card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
 
-  // ★ 自分が現在ドラッグ中のカード、または直近にローカルで位置更新したカードは、
-  // リモートからの古いスナップショット座標で上書きされないよう保護する
+  // ★ 自分が現在ドラッグ中のカード、または直近にローカルで位置・重なり更新したカードは、
+  // リモートからの古いスナップショット座標・zIndexで上書きされないよう保護する
   const cardId = card.dataset.cardId;
   const isDraggingLocally = card.dataset.isDragging === 'true';
   const isRecentlyMovedLocally = cardId && isLocalRecent(cardId);
 
-  if (isRecentlyMovedLocally && data.x != null && data.y != null) {
+  if (isRecentlyMovedLocally) {
     const curLeft = Math.round(parseFloat(card.style.left) || 0);
     const curTop = Math.round(parseFloat(card.style.top) || 0);
-    // リモート側のデータがローカルの最新座標に追いついていれば保護を解除
-    if (curLeft === Math.round(data.x) && curTop === Math.round(data.y)) {
+    const curZ = parseInt(card.style.zIndex) || 0;
+    const remoteZ = data.zIndex ? ((parseInt(data.zIndex, 10) < Z_CENTER_BASE) ? (parseInt(data.zIndex, 10) + Z_FRONT_BASE) : parseInt(data.zIndex, 10)) : curZ;
+    // リモート側のデータがローカルの最新座標およびzIndexに追いついていれば保護を解除
+    const posMatched = (data.x == null || curLeft === Math.round(data.x)) && (data.y == null || curTop === Math.round(data.y));
+    const zMatched = (data.zIndex == null || curZ <= remoteZ);
+    if (posMatched && zMatched) {
       localChangeMap.delete(cardId);
     }
   }
@@ -5475,15 +5485,12 @@ function applyCardState(card, data) {
   if (!isDraggingLocally && !isLocalRecent(cardId)) {
     card.style.left = `${data.x || 0}px`;
     card.style.top = `${data.y || 0}px`;
-  }
 
-  if (data.zIndex) {
-
-    // 互換性確保：古いデータ(z-index < 300)は300以上のレイヤーに底上げする
-
-    const z = parseInt(data.zIndex, 10);
-    card.style.zIndex = (z < Z_CENTER_BASE) ? (z + Z_FRONT_BASE) : z;
-
+    if (data.zIndex) {
+      // 互換性確保：古いデータ(z-index < 300)は300以上のレイヤーに底上げする
+      const z = parseInt(data.zIndex, 10);
+      card.style.zIndex = (z < Z_CENTER_BASE) ? (z + Z_FRONT_BASE) : z;
+    }
   }
 
 
@@ -5988,7 +5995,8 @@ function getMaxZIndex(base = Z_FRONT_BASE) {
   let max = base;
   document.querySelectorAll(".card").forEach(c => {
     const z = parseInt(c.style.zIndex) || 0;
-    if (z >= base && z < base + 10000 && z > max) max = z;
+    const inRange = (base === Z_FRONT_BASE) ? (z >= base) : (z >= base && z < base + 10000);
+    if (inRange && z > max) max = z;
   });
   return max;
 }
@@ -6373,6 +6381,26 @@ function makeDraggable(card) {
         c.dataset.isDragging = 'false';
       });
 
+      // ★ ドラッグ終了時に改めて最前面zIndexを再計算・再割り当てし、
+      // ドロップ先にあったカード等の上へ確実に配置されるようにする
+      if (isDragging) {
+        const boards = selectedCards.filter(c => c.classList.contains('is-board') || c.dataset.type === 'board');
+        const others = selectedCards.filter(c => !boards.includes(c));
+
+        if (boards.length > 0) {
+          const zBase = getMaxZIndex(Z_CENTER_BASE) + 1;
+          boards.forEach((c, idx) => {
+            c.style.zIndex = zBase + idx;
+          });
+        }
+        if (others.length > 0) {
+          const zBase = getMaxZIndex(Z_FRONT_BASE) + 1;
+          others.forEach((c, idx) => {
+            c.style.zIndex = zBase + idx;
+          });
+        }
+      }
+
       // 操作・ドラッグが終わったので、対象カード全員の activeOperator ロックを解除する
       selectedCards.forEach(c => {
         const id = c.dataset.cardId;
@@ -6556,6 +6584,26 @@ function makeDraggable(card) {
         c.style.cursor = "grab";
         c.dataset.isDragging = 'false';
       });
+
+      // ★ ドラッグ終了時に改めて最前面zIndexを再計算・再割り当てし、
+      // ドロップ先にあったカード等の上へ確実に配置されるようにする
+      if (isDragging) {
+        const boards = selectedCards.filter(c => c.classList.contains('is-board') || c.dataset.type === 'board');
+        const others = selectedCards.filter(c => !boards.includes(c));
+
+        if (boards.length > 0) {
+          const zBase = getMaxZIndex(Z_CENTER_BASE) + 1;
+          boards.forEach((c, idx) => {
+            c.style.zIndex = zBase + idx;
+          });
+        }
+        if (others.length > 0) {
+          const zBase = getMaxZIndex(Z_FRONT_BASE) + 1;
+          others.forEach((c, idx) => {
+            c.style.zIndex = zBase + idx;
+          });
+        }
+      }
 
       // 操作・ドラッグが終わったので、対象カード全員の activeOperator ロックを解除する
       selectedCards.forEach(c => {
