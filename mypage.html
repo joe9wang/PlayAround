@@ -1378,14 +1378,23 @@
       const title = document.getElementById('card-list-title');
       const footer = document.getElementById('card-list-footer');
       const footerInfo = document.getElementById('card-list-footer-info');
+      const editBtn = document.getElementById('card-list-edit');
       const delBtn = document.getElementById('card-list-delete');
 
       if (!modal || !grid || !title) return;
 
-      title.textContent = (mode === 'edit') ? `マイセット${slot}の編集` : `マイセット${slot}の構成アイテム`;
+      title.textContent = (mode === 'edit') ? `マイセット${slot}の編集` : `マイセット${slot}の一覧`;
       if (footer) footer.style.display = (mode === 'edit') ? 'flex' : 'none';
       if (footerInfo) footerInfo.textContent = '';
-      if (delBtn) delBtn.style.display = 'none';
+
+      if (editBtn) {
+        editBtn.style.display = (mode === 'view') ? 'inline-block' : 'none';
+        editBtn.dataset.slot = slot;
+      }
+      if (delBtn) {
+        delBtn.style.display = 'inline-block';
+        delBtn.dataset.slot = slot;
+      }
 
       modal.style.display = 'flex';
       grid.innerHTML = '<div class="muted">読み込み中…</div>';
@@ -1667,7 +1676,12 @@
         const m = document.getElementById('card-list-modal');
         if (m) m.style.display = 'none';
       }
-      // 「削除する」ボタン（モーダル内）
+      // 「編集」ボタン（モーダルヘッダー内）
+      if (t.id === 'card-list-edit') {
+        const slot = parseInt(t.dataset.slot, 10);
+        if (slot) openSlotModal(slot, 'edit');
+      }
+      // 「削除」ボタン（モーダル内）
       if (t.id === 'card-list-delete') {
         const slot = parseInt(t.dataset.slot, 10);
         if (slot) {
@@ -1768,14 +1782,17 @@
     <div id="card-list-sheet"
       style="width:min(920px, 92vw); max-height:80vh; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
       <div id="card-list-header"
-        style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
-        <div id="card-list-title" style="font-weight:700;">一覧</div>
+        style="padding:10px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
+        <div id="card-list-title" style="font-weight:700; font-size:16px;">一覧</div>
         <div style="display:flex; gap:8px;">
+          <button id="card-list-edit" type="button"
+            style="display:none; border:1px solid #93c5fd; background:#f0f7ff; color:#1d4ed8; padding:6px 14px; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px;"
+            data-slot="">編集</button>
           <button id="card-list-delete" type="button"
-            style="display:none; border:1px solid #e53e3e; background:#fff4f4; color:#e53e3e; padding:6px 10px; border-radius:8px; cursor:pointer;"
-            data-slot="">削除する</button>
+            style="display:none; border:1px solid #fed7d7; background:#fffafa; color:#e53e3e; padding:6px 14px; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px;"
+            data-slot="">削除</button>
           <button id="card-list-close" type="button"
-            style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;">閉じる</button>
+            style="border:0; background:#eee; padding:6px 14px; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px;">閉じる</button>
         </div>
       </div>
       <div id="card-list-body" style="padding:16px; overflow:auto; flex:1;">
