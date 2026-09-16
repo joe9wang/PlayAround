@@ -10746,7 +10746,10 @@ function bindTokenContextMenuOnce() {
     e.stopPropagation();
     ctxMenu.style.display = 'none';
     if (!CURRENT_ROOM || !currentTokenId) return;
-    const confirmDel = confirm('このメモ/トークンを削除しますか？');
+    const el = cardDomMap.get(currentTokenId);
+    const isBoard = el?.classList.contains('is-board') || el?.dataset.type === 'board';
+    const msg = isBoard ? 'このボードを削除しますか？' : 'このメモ/トークンを削除しますか？';
+    const confirmDel = confirm(msg);
     if (!confirmDel) return;
     try {
       const id = currentTokenId;
