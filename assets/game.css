@@ -1372,7 +1372,7 @@ body.is-spectator #spectator-banner { display: block; }
 
 .sl-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 8px;
 }
@@ -1388,6 +1388,7 @@ body.is-spectator #spectator-banner { display: block; }
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .slot-item-btn:hover {
@@ -1403,6 +1404,7 @@ body.is-spectator #spectator-banner { display: block; }
   gap: 8px;
   overflow: hidden;
   width: 100%;
+  min-width: 0;
 }
 
 .slot-label {
@@ -1420,6 +1422,8 @@ body.is-spectator #spectator-banner { display: block; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+  flex: 1;
 }
 
 .slot-preview {
