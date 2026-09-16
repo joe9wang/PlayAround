@@ -1244,27 +1244,57 @@
       }
     }
 
-    // アイコン変更 (絵文字選択ダイアログ)
-    document.getElementById('changeAvatarBtn')?.addEventListener('click', async () => {
-      const emojis = ['👤', '🐱', '🐶', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐚', '🍄', '⭐', '🔥', '💧', '⚡', '🍀'];
-      const choice = prompt(`新しいアイコン絵文字を選んで入力してください:\n\n${emojis.join(' ')}`);
-      if (choice && choice.length > 0) {
-        try {
-          await updateProfile(auth.currentUser, { photoURL: null, displayName: auth.currentUser.displayName }); // clear photo if it's emoji
-          // Note: updateProfile photoURL can be an emoji in some browsers' display of text? 
-          // Actually u.photoURL should be an image. If a user chooses an emoji, we might need a custom metadata field.
-          // For now, let's just let them enter a URL or keep it simple.
-          
-          // Better: If they enter a single emoji, we'll store it as a special pseudo-URL or just use displayName.
-          // But wait, Firebase updateProfile photoURL *can* store any string.
-          await updateProfile(auth.currentUser, { photoURL: choice });
-          alert('アイコンを更新しました。');
-          location.reload();
-        } catch (e) {
-          console.error(e);
-          alert('更新に失敗しました。');
+    // アイコン変更（画像ファイル選択・アップロード）
+    document.getElementById('changeAvatarBtn')?.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+
+        const btn = document.getElementById('changeAvatarBtn');
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'アップロード中…';
         }
-      }
+
+        try {
+          const extMatch = file.name.match(/\.[0-9a-z]+$/i);
+          const ext = extMatch ? extMatch[0].toLowerCase() : '.jpg';
+          const uid = auth.currentUser?.uid;
+          if (!uid) throw new Error('Not logged in');
+
+          const storagePath = `users/${uid}/avatar_${Date.now()}${ext}`;
+          const sref = ref(storage, storagePath);
+          await uploadBytes(sref, file);
+          const downloadUrl = await getDownloadURL(sref);
+
+          // Firebase Auth のプロフィール更新
+          await updateProfile(auth.currentUser, { photoURL: downloadUrl });
+
+          // Firestore のユーザードキュメントにも反映
+          await setDoc(doc(db, `users/${uid}`), {
+            photoURL: downloadUrl,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+
+          // 画面に即時反映
+          if (avEl) avEl.innerHTML = `<img src="${downloadUrl}" alt="Avatar">`;
+          updateAuthIndicator(auth.currentUser);
+
+          alert('アイコンを更新しました！');
+        } catch (e) {
+          console.error('Avatar update failed:', e);
+          alert('アイコンの更新に失敗しました。');
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'アイコンを変更';
+          }
+        }
+      };
+      input.click();
     });
 
     // ===== プレミアムステータス表示 =====
