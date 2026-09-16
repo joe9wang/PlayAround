@@ -1362,17 +1362,6 @@ let lastSeatHBWriteAt = 0;
 
 });
 
-// iOS Safari で画面全体が縦スクロール／バウンドするのを完全に防止
-window.addEventListener('touchmove', (e) => {
-  if (e.target.closest('#sidebar, .modal, .sl-modal-container, #card-list-body, #hp-panel, #note-editor-list, #note-view-list, textarea, input')) {
-    return;
-  }
-  if (e.target.closest('#container')) {
-    return;
-  }
-  e.preventDefault();
-}, { passive: false });
-
 
 
 
