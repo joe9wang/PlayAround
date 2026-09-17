@@ -4849,100 +4849,8 @@ function createCardDom(cardId, imageSrc, state) {
 
     card.addEventListener('dblclick', e => e.preventDefault());
 
-
-
-
-
-    // === 長押し（モバイル）で右クリック相当の処理 ===
-
-    async function handleLongPressOnCard(card, state) {
-
-      const cardId = card.dataset.cardId;
-
-      const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
-
-      const isToken = (state?.type === 'token') || card.classList.contains('token');
-
-      const isNumCtr = (state?.type === 'numcounter') || card.classList.contains('numcounter');
-
-      if (isCounter || isToken || isNumCtr) {
-
-        if (!canOperateCard(card, 'delete')) return;
-
-        try { await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`)); } catch (e) { console.warn(e); }
-
-        return;
-
-      }
-
-      // 通常カード：表裏トグル
-
-      if (!canOperateCard(card, 'flip')) return;
-
-      if (state?.type === 'memo' || card.classList.contains('memo')) return;
-
-      const isFaceUp = card.dataset.faceUp === 'true';
-      const nextFaceUp = !isFaceUp;
-
-      card.dataset.faceUp = nextFaceUp ? 'true' : 'false';
-
-      const imgEl = card.querySelector('img');
-
-
-
-      if (imgEl) {
-
-        if (nextFaceUp) {
-
-          imgEl.style.display = 'block';
-
-          card.style.backgroundColor = '#fff';
-
-          if (selectedCard === card) {
-
-            const full = card.dataset.fullUrl || fullImageStore.get(cardId);
-
-            setPreview(full || imgEl.src);
-
-          }
-
-        } else {
-
-          imgEl.style.display = 'none';
-
-          // 席に設定された背面画像を適用（なければ黒）
-
-          applyCardBackStyle(card);
-
-          if (selectedCard === card) {
-            const back = card.dataset.backImageUrl || '';
-            setPreview(back);
-          }
-
-        }
-
-      }
-
-
-
-      const tokenEl = card.querySelector('.token-input');
-
-      if (tokenEl) { tokenEl.style.display = nextFaceUp ? 'block' : 'none'; }
-
-      updateCardBatched(cardId, { faceUp: nextFaceUp });
-
-    }
-
-
-
-
-
-
-
     // ダイスはドラッグ不可：makeDraggable は呼ばない
-
     return card;
-
   }
 
 
@@ -5157,50 +5065,28 @@ function createCardDom(cardId, imageSrc, state) {
   });
 
 
-  // 右クリックで表裏トグル（自分のカードのみ／カウンターは除外）
-
-  // 右クリック：
-
-  //   - 自分の「トークン / カウンター」なら削除
-
-  //   - それ以外の自分のカードは表裏トグル
-
-  card.addEventListener("contextmenu", async (e) => {
-    e.preventDefault();
+  // カードの表裏反転（右クリック／モバイル長押し共通）
+  async function flipCards(card) {
+    if (!card) return;
     maybeTakeOwnership(card);
 
-
-
-    const isCounter = (state?.type === 'counter') || card.classList.contains('counter');
-
-    const isTextToken = (state?.type === 'token') || card.classList.contains('token') || card.classList.contains('memo');
-    const isImageToken = (state?.type === 'image-token') || card.classList.contains('image-token');
+    const isCounter = card.classList.contains('counter');
+    const isTextToken = card.classList.contains('token') || card.classList.contains('memo');
+    const isImageToken = card.classList.contains('image-token');
     const isToken = isTextToken || isImageToken;
-
-    const isNumCtr = (state?.type === 'numcounter') || card.classList.contains('numcounter');
-
-    
+    const isNumCtr = card.classList.contains('numcounter');
 
     if (isToken) {
-
       if (!canOperateCard(card, 'delete')) return;
-
       if (typeof globalThis.showTokenContextMenu === 'function') {
-
-        globalThis.showTokenContextMenu(e, card.dataset.cardId);
-
+        const rect = card.getBoundingClientRect();
+        globalThis.showTokenContextMenu({ clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, preventDefault: () => {}, stopPropagation: () => {} }, card.dataset.cardId);
       }
-
       return;
-
     }
 
-    
-
     if (isCounter || isNumCtr) {
-
       if (!canOperateCard(card, 'delete')) return;
-
       try {
         const id = card.dataset.cardId;
         await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
@@ -5209,42 +5095,26 @@ function createCardDom(cardId, imageSrc, state) {
       } catch (err) {
         console.warn('delete token/counter failed', err);
       }
-
       return;
-
     }
 
-
-
     if (!canOperateCard(card, 'flip')) return;
-
-
+    if (card.classList.contains('memo')) return;
 
     const isSelected = card.classList.contains('selected');
-
     const cardsToFlip = isSelected 
       ? Array.from(document.querySelectorAll('.card.selected')).filter(el => !el.classList.contains('memo'))
-      : (card.classList.contains('memo') ? [] : [card]);
-
-
+      : [card];
 
     const nextFaceUp = !(card.dataset.faceUp === 'true');
-
-
 
     cardsToFlip.forEach(c => {
       maybeTakeOwnership(c);
       if (!canOperateCard(c, 'flip')) return;
 
-      
-
       c.dataset.faceUp = nextFaceUp ? 'true' : 'false';
-
       const imgEl = c.querySelector('img');
-
       const cId = c.dataset.cardId;
-
-
 
       if (imgEl) {
         if (nextFaceUp) {
@@ -5257,8 +5127,6 @@ function createCardDom(cardId, imageSrc, state) {
           imgEl.style.display = 'none';
         }
       }
-
-
 
       const tokenEl = c.querySelector('.token-input');
       if (tokenEl) {
@@ -5274,147 +5142,88 @@ function createCardDom(cardId, imageSrc, state) {
         }
       }
 
-
-
       updateCardBatched(cId, { faceUp: nextFaceUp });
-
     });
 
-
-
     if (selectedCard && (selectedCard === card || cardsToFlip.includes(selectedCard))) {
-
       const isUp = selectedCard.dataset.faceUp === 'true';
-
       const fUrl = selectedCard.dataset.fullUrl || fullImageStore.get(selectedCard.dataset.cardId);
-
       const tEl = selectedCard.querySelector('img');
-
       const fSrc = fUrl || (tEl && tEl.src) || '';
-
       const isOther = isOtherPlayersHandCard(selectedCard);
-
       const sBack = selectedCard.dataset.backImageUrl || '';
-
       const pSrc = (!isUp || isOther) ? sBack : fSrc;
-
       setPreview(pSrc);
-
     }
+  }
 
-  });
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // ダブルクリックで90°回転（自分のカードのみ）
-
-  card.addEventListener("dblclick", async (e) => {
-    e.stopPropagation();
-
-    // かるた方式: 触れた瞬間に所有権を奪う
+  // カードの90°回転（PCダブルクリック／モバイルダブルタップ共通）
+  async function rotateCards(card) {
+    if (!card) return;
     maybeTakeOwnership(card);
-
-    
 
     if (card.classList.contains('memo')) return;
 
     const isSelected = card.classList.contains('selected');
-
     const cardsToRotate = isSelected 
-
       ? Array.from(document.querySelectorAll('.card.selected')) 
-
       : [card];
 
-
-
     const currentStyle = card.style.transform || '';
-
     const match = currentStyle.match(/rotate\((-?\d+(?:\.\d+)?)deg\)/);
-
     const current = match ? parseFloat(match[1]) : (typeof state?.rotation === 'number' ? state.rotation : 0);
-
     const next = ((current + 270) % 360 + 360) % 360;
 
-
-
     cardsToRotate.forEach(c => {
-      // かるた方式: 選択カード全取得
       maybeTakeOwnership(c);
       if (!canOperateCard(c, 'rotate')) return;
-
       if (c.classList.contains('numcounter')) return;
 
-
-
       const cId = c.dataset.cardId;
-
       const cStyle = c.style.transform || '';
-
       const matchScale = cStyle.match(/scale\(([^)]+)\)/);
-
       const currentScale = matchScale ? matchScale[1] : 1;
 
-      
-
       c.style.transform = `rotate(${next}deg) scale(${currentScale})`;
-
       updateCardBatched(cId, { rotation: next });
-
     });
+  }
 
+  card._rotateCards = () => rotateCards(card);
+  card._flipCards = () => flipCards(card);
+
+  // 右クリックで表裏トグル（PC）
+  card.addEventListener("contextmenu", async (e) => {
+    e.preventDefault();
+    await flipCards(card);
   });
 
+  // ダブルクリックで90°回転（PC）
+  card.addEventListener("dblclick", async (e) => {
+    e.stopPropagation();
+    await rotateCards(card);
+  });
 
-
-
-
-// === 長押し（0.5s）で右クリック相当（モバイル）
-
+  // 長押し（0.5s）で表裏トグル（iPad / モバイル対応）
   {
-
     let lpTimer = null;
-
     const LP_MS = 500;
-
     const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
 
     card.addEventListener('touchstart', (ev) => {
-
       if (ev.touches.length !== 1) return;
-
       card._lpFired = false;
-
       clearLP();
-
       lpTimer = setTimeout(() => {
-
         card._lpFired = true;
-
-        handleLongPressOnCard(card, state);
-
+        flipCards(card);
       }, LP_MS);
-
     }, { passive: true });
 
     const cancelLP = () => clearLP();
-
     card._cancelLongPress = cancelLP;
-
     card.addEventListener('touchend', cancelLP);
-
     card.addEventListener('touchcancel', cancelLP);
-
   }
 
 
@@ -6518,6 +6327,7 @@ function makeDraggable(card) {
       }
 
       if (!canMove) return;
+      if (card._lpFired) return; // 長押し発火後はドラッグさせない
 
       ev.preventDefault();
 
@@ -6634,13 +6444,27 @@ function makeDraggable(card) {
         c.dataset.activeOperator = '';
       });
 
-      // ドラッグしておらず（移動が10px未満）、長押し（表裏反転）が発火していない場合はタップ（カード選択）
+      // ドラッグしておらず（移動が10px未満）、長押し（表裏反転）が発火していない場合はタップ（カード選択 / ダブルタップで90度回転）
       if (!isDragging && maxDistance < 10) {
         if (!card._lpFired) {
-          applyCardSelection(card);
+          const now = Date.now();
+          const lastTap = card._lastTapTime || 0;
+          if (now - lastTap < 350) {
+            // ダブルタップ検出: 90度回転
+            card._lastTapTime = 0;
+            if (typeof card._rotateCards === 'function') {
+              card._rotateCards();
+            }
+          } else {
+            // シングルタップ: 選択
+            card._lastTapTime = now;
+            applyCardSelection(card);
+          }
         }
+        card._lpFired = false;
         return;
       }
+      card._lpFired = false;
       isDragging = false;
 
       updateOverlapBadges();
