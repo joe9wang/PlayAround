@@ -64,7 +64,7 @@ const I18N = {
         "side.saveRoom": "💾 ルームを保存",
         "side.save": "💾 セーブ",
         "side.load": "📂 ロード",
-        "side.resetFacing": "↻ 全カード向きリセット",
+        "side.resetFacing": "↻ 全カード<br>向きリセット",
         "side.faceDown": "🂠 全て裏に",
         "side.faceUp": "🂡 全て表に",
         "side.flipCoin": "🪙 コイントス",
@@ -75,7 +75,7 @@ const I18N = {
         "side.rollD100": "🎲 100面ダイス",
         "side.shuffle": "⇅ デッキエリアをシャッフル",
         "side.shuffleSelected": "⇅ 選択カードをシャッフル",
-        "side.resetSelectedFacing": "↻ 選択カード向きリセット",
+        "side.resetSelectedFacing": "↻ 選択カード<br>向きリセット",
         "side.collectSelected": "❖ 選択カードをまとめる",
         "side.collect": "❖ 全カードをデッキに集める",
         "side.allMyCards": "🔍 一覧",
@@ -227,7 +227,7 @@ const I18N = {
         "side.saveRoom": "💾 Save room",
         "side.save": "💾 Save",
         "side.load": "📂 Load",
-        "side.resetFacing": "↻ Reset card orientation",
+        "side.resetFacing": "↻ Reset All<br>Orientation",
         "side.faceDown": "🂠 Face-down",
         "side.faceUp": "🂡 Face-up",
         "side.flipCoin": "🪙 flip a coin",
@@ -238,7 +238,7 @@ const I18N = {
         "side.rollD100": "🎲 Roll a d100",
         "side.shuffle": "⇅ Shuffle Deck Area",
         "side.shuffleSelected": "⇅ Shuffle Selected Cards",
-        "side.resetSelectedFacing": "↻ Reset selected cards orientation",
+        "side.resetSelectedFacing": "↻ Reset Sel<br>Orientation",
         "side.collectSelected": "❖ Gather selected cards",
         "side.collect": "❖ Gather all cards to deck",
         "side.allMyCards": "🔍 List",
@@ -349,7 +349,14 @@ export function t(key) {
 }
 
 export function applyI18n() {
-    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const val = t(el.dataset.i18n);
+        if (val.includes('<br>') || val.includes('<br/>')) {
+            el.innerHTML = `<span>${val}</span>`;
+        } else {
+            el.textContent = val;
+        }
+    });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
     document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
 }
