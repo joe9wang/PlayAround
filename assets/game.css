@@ -185,7 +185,14 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
-  margin: 4px 0 8px;
+  margin: 0 0 10px 0;
+}
+
+#sidebar .sl-row button,
+#sidebar .sl-row .sl-btn,
+#sidebar .row button,
+#sidebar .row .sl-btn {
+  margin: 0 !important;
 }
 
 #sidebar .sl-btn {
@@ -194,6 +201,7 @@ body {
   justify-content: center;
   gap: 6px;
   width: 100% !important;
+  margin: 0 0 10px 0;
   padding: 8px 12px !important;
   font-size: 0.9rem;
   font-weight: 600;
