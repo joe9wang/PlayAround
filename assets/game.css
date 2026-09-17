@@ -221,6 +221,19 @@ body {
   transform: translateY(0);
 }
 
+#sidebar .sl-btn#btn-multi-select.active {
+  background: #0078d7 !important;
+  color: #ffffff !important;
+  border-color: #005a9e !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+}
+
+#sidebar .sl-btn#btn-multi-select.active:hover {
+  background: #0063b1 !important;
+  border-color: #004578 !important;
+  color: #ffffff !important;
+}
+
 #sidebar .section-label {
   margin: 2px 0 6px;
   font-weight: 600;

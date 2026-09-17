@@ -4668,14 +4668,10 @@ function toggleMultiSelectMode(forceState) {
   if (btn) {
     if (isMultiSelectMode) {
       btn.textContent = '複数選択解除';
-      btn.style.backgroundColor = '#0078d7';
-      btn.style.color = '#fff';
-      btn.style.borderColor = '#005a9e';
+      btn.classList.add('active');
     } else {
       btn.textContent = '複数選択';
-      btn.style.backgroundColor = '';
-      btn.style.color = '';
-      btn.style.borderColor = '';
+      btn.classList.remove('active');
     }
   }
   const container = document.getElementById('field-container');
