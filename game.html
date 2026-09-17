@@ -161,6 +161,15 @@
         </div>
       </details>
 
+      <!-- Selection Section -->
+      <details class="ops-section" open>
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">選択</summary>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+          <button id="btn-multi-select" class="sl-btn" style="flex:1; margin:0;" onclick="toggleMultiSelectMode()">複数選択</button>
+          <span id="selected-cards-count-badge" style="font-size:12px; font-weight:bold; color:#888; background:#f5f5f5; border:1px solid #ddd; border-radius:12px; padding:3px 8px; white-space:nowrap;">選択中: 0枚</span>
+        </div>
+      </details>
+
       <!-- Save/Load: compact two-up row -->
       <details class="ops-section">
         <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">マイセット</summary>
@@ -170,7 +179,7 @@
         </div>
       </details>
       <details class="ops-section">
-        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">マイカード<br>
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">カード<br>
           <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで裏表)</span>
         </summary>
         <div class="sl-row" role="group" aria-label="Face up/down">

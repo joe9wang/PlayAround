@@ -2153,45 +2153,26 @@ function centerOfDeck(seat, w, h) {
 
 
 function getCardsInsideRect(rect) {
-
   const cards = [];
-
   const rectRight = rect.minX + rect.width;
-
   const rectBottom = rect.minY + rect.height;
 
-
-
   document.querySelectorAll('.card').forEach(el => {
-
     const id = el.dataset.cardId;
-
     const left = parseFloat(el.style.left) || 0;
-
     const top = parseFloat(el.style.top) || 0;
+    const cardWidth = parseFloat(el.style.width) || el.offsetWidth || CARD_W;
+    const cardHeight = parseFloat(el.style.height) || el.offsetHeight || CARD_H;
 
-    
-
-    const cardRight = left + CARD_W;
-
-    const cardBottom = top + CARD_H;
-
-
+    const cardRight = left + cardWidth;
+    const cardBottom = top + cardHeight;
 
     const isInside = (left < rectRight && cardRight > rect.minX && top < rectBottom && cardBottom > rect.minY);
-
-    
-
     if (isInside) {
-
       cards.push({ id, el });
-
     }
-
   });
-
   return cards;
-
 }
 
 function shuffleArray(arr) {
@@ -4659,6 +4640,54 @@ function upsertCardFromRemote(id, data) {
 
 
 
+// ===============================
+// 複数選択モード管理
+// ===============================
+let isMultiSelectMode = false;
+
+function updateSelectedCount() {
+  const count = document.querySelectorAll('.card.selected').length;
+  const badge = document.getElementById('selected-cards-count-badge');
+  if (badge) {
+    badge.textContent = `選択中: ${count}枚`;
+    if (count > 0) {
+      badge.style.color = '#0078d7';
+      badge.style.backgroundColor = '#e8f2fc';
+      badge.style.borderColor = '#b3d7ff';
+    } else {
+      badge.style.color = '#888';
+      badge.style.backgroundColor = '#f5f5f5';
+      badge.style.borderColor = '#ddd';
+    }
+  }
+}
+
+function toggleMultiSelectMode(forceState) {
+  isMultiSelectMode = (typeof forceState === 'boolean') ? forceState : !isMultiSelectMode;
+  const btn = document.getElementById('btn-multi-select');
+  if (btn) {
+    if (isMultiSelectMode) {
+      btn.textContent = '複数選択解除';
+      btn.style.backgroundColor = '#0078d7';
+      btn.style.color = '#fff';
+      btn.style.borderColor = '#005a9e';
+    } else {
+      btn.textContent = '複数選択';
+      btn.style.backgroundColor = '';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }
+  }
+  const container = document.getElementById('field-container');
+  if (container) {
+    container.style.cursor = isMultiSelectMode ? 'crosshair' : '';
+  }
+  updateSelectedCount();
+}
+
+window.toggleMultiSelectMode = toggleMultiSelectMode;
+window.updateSelectedCount = updateSelectedCount;
+
 function applyCardSelection(card) {
   if (!card) return;
 
@@ -4674,13 +4703,19 @@ function applyCardSelection(card) {
     updateCardBatched(cardId, { zIndex: newZ });
   }
 
-  if (selectedCard) {
-    if (!card.classList.contains('selected')) {
-      document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+  if (isMultiSelectMode) {
+    card.classList.add('selected');
+    updateSelectedCount();
+  } else {
+    if (selectedCard) {
+      if (!card.classList.contains('selected')) {
+        document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+      }
+    } else {
       card.classList.add('selected');
     }
-  } else {
-    card.classList.add('selected');
+    updateSelectedCount();
   }
   selectedCard = card;
 
@@ -6149,6 +6184,9 @@ function makeDraggable(card) {
       if (!isDragging) {
         if (Math.hypot(e2.clientX - startClientX, e2.clientY - startClientY) < DRAG_THRESHOLD) return;
         isDragging = true;
+        if (isMultiSelectMode && card.classList.contains('selected')) {
+          toggleMultiSelectMode(false);
+        }
         selectedCards.forEach(c => {
           c.dataset.isDragging = 'true';
         });
@@ -6340,6 +6378,9 @@ function makeDraggable(card) {
       if (!isDragging) {
         if (dist < 10) return;
         isDragging = true;
+        if (isMultiSelectMode && card.classList.contains('selected')) {
+          toggleMultiSelectMode(false);
+        }
         selectedCards.forEach(c => {
           c.dataset.isDragging = 'true';
         });
@@ -8002,6 +8043,7 @@ window.deleteSelectedMine = async function () {
 
 
     if (window.previewImg) { setPreview(); }
+    updateSelectedCount();
 
     postLog(`選択中のカード ${mine.length} 枚を削除しました`);
 
@@ -8269,6 +8311,7 @@ async function focusCardById(cardId, additive = false, skipPreview = false) {
   el.classList.add('selected');
 
   selectedCard = el;
+  updateSelectedCount();
 
   const full = fullImageStore.get(cardId);
 
@@ -8794,424 +8837,334 @@ window.shuffleSelectedCards = async function () {
 
 
 
+let justMarqueeSelected = false;
+
 function bindPanZoomHandlers() {
-
   // === マウスホイールズーム
-
   field.addEventListener("wheel", e => {
-
     if (e.ctrlKey) return;
-
     e.preventDefault();
-
     const rect = field.getBoundingClientRect();
-
     const cx = e.clientX - rect.left;
-
     const cy = e.clientY - rect.top;
-
     const scale = 0.1;
-
     const old = zoom;
-
     zoom += e.deltaY < 0 ? scale : -scale;
-
     zoom = Math.max(0.3, Math.min(zoom, 3));
-
     const sx = (cx - panOffsetX) / old;
-
     const sy = (cy - panOffsetY) / old;
-
     panOffsetX = cx - sx * zoom;
-
     panOffsetY = cy - sy * zoom;
-
     field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
-
   }, { passive: false });
 
-
-
-  // === マウス1本パン
-
+  // === マウス1本パン / 複数選択マーキー
   container.addEventListener("mousedown", e => {
-
     if (e.button !== 0 && e.button !== 1) return;
-
     if (e.detail > 1) return;
-
     if (e.target.closest(".card")) return;
 
-
-
-    if (e.shiftKey || e.button === 1) {
-
+    if (e.shiftKey || e.button === 1 || (isMultiSelectMode && e.button === 0)) {
       // Marquee selection
-
       e.preventDefault();
-
       const containerRect = container.getBoundingClientRect();
-
       const startX = e.clientX - containerRect.left;
-
       const startY = e.clientY - containerRect.top;
-
       const marquee = document.getElementById('marquee');
-
       if (!marquee) return;
 
-
-
       marquee.style.display = 'block';
-
       marquee.style.left = `${startX}px`;
-
       marquee.style.top = `${startY}px`;
-
       marquee.style.width = '0px';
-
       marquee.style.height = '0px';
 
-
-
       const onMove = e2 => {
-
         const curX = e2.clientX - containerRect.left;
-
         const curY = e2.clientY - containerRect.top;
-
         const left = Math.min(startX, curX);
-
         const top = Math.min(startY, curY);
-
         const width = Math.abs(curX - startX);
-
         const height = Math.abs(curY - startY);
-
         marquee.style.left = `${left}px`;
-
         marquee.style.top = `${top}px`;
-
         marquee.style.width = `${width}px`;
-
         marquee.style.height = `${height}px`;
-
       };
 
-
-
       const onUp = () => {
-
         document.removeEventListener("mousemove", onMove);
-
         document.removeEventListener("mouseup", onUp);
 
-
-
         const mRect = marquee.getBoundingClientRect();
-
         marquee.style.display = 'none';
 
+        if (mRect.width < 5 && mRect.height < 5) {
+          if (isMultiSelectMode) {
+            document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+            selectedCard = null;
+            setPreview();
+            updateSelectedCount();
+          }
+          return;
+        }
 
-
-        if (mRect.width < 5 && mRect.height < 5) return;
-
-
+        justMarqueeSelected = true;
+        setTimeout(() => { justMarqueeSelected = false; }, 100);
 
         const fieldOriginX = containerRect.left + panOffsetX;
-
         const fieldOriginY = containerRect.top + panOffsetY;
 
-
-
         const minX = (mRect.left - fieldOriginX) / zoom;
-
         const minY = (mRect.top - fieldOriginY) / zoom;
-
         const width = mRect.width / zoom;
-
         const height = mRect.height / zoom;
-
-
 
         const cards = getCardsInsideRect({ minX, minY, width, height });
 
-
-
         if (cards.length > 0) {
-
-          // Clear current selection
-
-          document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
-
-
-
-          cards.forEach(({ id, el }) => {
-
-            el.classList.add('selected');
-
-          });
-
-
-
-          if (cards.length === 1) {
-
-            focusCardById(cards[0].id, true);
-
-          } else {
-
-            const lastId = cards[cards.length - 1].id;
-
-            focusCardById(lastId, true, true);
-
+          if (!isMultiSelectMode) {
+            document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
           }
 
-        }
+          cards.forEach(({ id, el }) => {
+            el.classList.add('selected');
+          });
+          updateSelectedCount();
 
+          if (cards.length === 1) {
+            focusCardById(cards[0].id, true);
+          } else {
+            const lastId = cards[cards.length - 1].id;
+            focusCardById(lastId, true, true);
+          }
+        }
       };
 
       document.addEventListener("mousemove", onMove);
-
       document.addEventListener("mouseup", onUp);
-
       return;
-
     }
-
-
 
     const TH = 5;
-
     let panning = false;
-
     let sx = e.clientX, sy = e.clientY;
-
     document.body.style.userSelect = 'none';
-
     container.style.cursor = 'grabbing';
-
     const onMove = e2 => {
-
       const dx = e2.clientX - sx;
-
       const dy = e2.clientY - sy;
-
       if (!panning) {
-
         if (Math.hypot(dx, dy) < TH) return;
-
         panning = true;
-
       }
-
       panOffsetX += dx;
-
       panOffsetY += dy;
-
       sx = e2.clientX; sy = e2.clientY;
-
       field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
-
     };
-
     const cleanup = () => {
-
       document.removeEventListener("mousemove", onMove);
-
       document.removeEventListener("mouseup", cleanup);
-
       document.body.style.userSelect = '';
-
       container.style.cursor = '';
-
     };
-
     document.addEventListener("mousemove", onMove);
-
     document.addEventListener("mouseup", cleanup);
-
   });
 
-
-
-  // === タッチ：1本指パン / 2本指ピンチズーム
-
+  // === タッチ：1本指パン / 複数選択マーキー / 2本指ピンチズーム
   let touchMode = { type: null, startDist: 0, startZoom: zoom, startPanX: 0, startPanY: 0, cx: 0, cy: 0, sx: 0, sy: 0 };
 
-
-
   const getDist = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-
   const getCenter = (t1, t2) => ({ x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 });
 
-
-
   container.addEventListener('touchstart', (e) => {
-
     if (e.target.closest('.card')) return;  // カード上のタッチはカード側で処理
 
-    if (e.touches.length === 1) {
-
+    if (isMultiSelectMode && e.touches.length === 1) {
       e.preventDefault();
+      const containerRect = container.getBoundingClientRect();
+      const touch = e.touches[0];
+      const startX = touch.clientX - containerRect.left;
+      const startY = touch.clientY - containerRect.top;
+      const marquee = document.getElementById('marquee');
 
-      touchMode.type = 'pan';
-
-      touchMode.sx = e.touches[0].clientX;
-
-      touchMode.sy = e.touches[0].clientY;
-
-      touchMode.startX = e.touches[0].clientX;
-
-      touchMode.startY = e.touches[0].clientY;
-
+      touchMode.type = 'marquee';
+      touchMode.startX = startX;
+      touchMode.startY = startY;
+      touchMode.touchStartX = touch.clientX;
+      touchMode.touchStartY = touch.clientY;
       touchMode.hasMoved = false;
 
-    } else if (e.touches.length === 2) {
-
-      e.preventDefault();
-
-      touchMode.type = 'pinch';
-
-      touchMode.startDist = getDist(e.touches[0], e.touches[1]);
-
-      touchMode.startZoom = zoom;
-
-      const c = getCenter(e.touches[0], e.touches[1]);
-
-      const rect = field.getBoundingClientRect();
-
-      touchMode.cx = c.x - rect.left;
-
-      touchMode.cy = c.y - rect.top;
-
-      touchMode.startPanX = panOffsetX;
-
-      touchMode.startPanY = panOffsetY;
-
+      if (marquee) {
+        marquee.style.display = 'block';
+        marquee.style.left = `${startX}px`;
+        marquee.style.top = `${startY}px`;
+        marquee.style.width = '0px';
+        marquee.style.height = '0px';
+      }
+      return;
     }
 
+    if (e.touches.length === 1) {
+      e.preventDefault();
+      touchMode.type = 'pan';
+      touchMode.sx = e.touches[0].clientX;
+      touchMode.sy = e.touches[0].clientY;
+      touchMode.startX = e.touches[0].clientX;
+      touchMode.startY = e.touches[0].clientY;
+      touchMode.hasMoved = false;
+    } else if (e.touches.length === 2) {
+      e.preventDefault();
+      const marquee = document.getElementById('marquee');
+      if (marquee) marquee.style.display = 'none';
+      touchMode.type = 'pinch';
+      touchMode.startDist = getDist(e.touches[0], e.touches[1]);
+      touchMode.startZoom = zoom;
+      const c = getCenter(e.touches[0], e.touches[1]);
+      const rect = field.getBoundingClientRect();
+      touchMode.cx = c.x - rect.left;
+      touchMode.cy = c.y - rect.top;
+      touchMode.startPanX = panOffsetX;
+      touchMode.startPanY = panOffsetY;
+    }
   }, { passive: false });
-
-
 
   container.addEventListener('touchmove', (e) => {
+    if (touchMode.type === 'marquee' && e.touches.length === 1) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const containerRect = container.getBoundingClientRect();
+      const curX = touch.clientX - containerRect.left;
+      const curY = touch.clientY - containerRect.top;
+
+      if (Math.hypot(touch.clientX - touchMode.touchStartX, touch.clientY - touchMode.touchStartY) >= 10) {
+        touchMode.hasMoved = true;
+      }
+
+      const left = Math.min(touchMode.startX, curX);
+      const top = Math.min(touchMode.startY, curY);
+      const width = Math.abs(curX - touchMode.startX);
+      const height = Math.abs(curY - touchMode.startY);
+
+      const marquee = document.getElementById('marquee');
+      if (marquee) {
+        marquee.style.left = `${left}px`;
+        marquee.style.top = `${top}px`;
+        marquee.style.width = `${width}px`;
+        marquee.style.height = `${height}px`;
+      }
+      return;
+    }
 
     if (touchMode.type === 'pan' && e.touches.length === 1) {
-
       e.preventDefault();
-
       const t = e.touches[0];
-
       if (Math.hypot(t.clientX - (touchMode.startX || touchMode.sx), t.clientY - (touchMode.startY || touchMode.sy)) >= 10) {
-
         touchMode.hasMoved = true;
-
       }
-
       const dx = t.clientX - touchMode.sx;
-
       const dy = t.clientY - touchMode.sy;
-
       touchMode.sx = t.clientX;
-
       touchMode.sy = t.clientY;
-
       panOffsetX += dx;
-
       panOffsetY += dy;
-
       field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
-
     } else if (touchMode.type === 'pinch' && e.touches.length === 2) {
-
       e.preventDefault();
-
       const dist = getDist(e.touches[0], e.touches[1]);
-
       let nextZoom = touchMode.startZoom * (dist / Math.max(1, touchMode.startDist));
-
       nextZoom = Math.max(0.3, Math.min(nextZoom, 3));
-
       // ピンチ中心を維持するようにオフセットを調整
-
       const old = touchMode.startZoom;
-
       const cx = touchMode.cx, cy = touchMode.cy;
-
       panOffsetX = cx - ((cx - touchMode.startPanX) / old) * nextZoom;
-
       panOffsetY = cy - ((cy - touchMode.startPanY) / old) * nextZoom;
-
       zoom = nextZoom;
-
       field.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoom})`;
-
     }
-
   }, { passive: false });
 
-
-
   const endTouch = () => {
-
-    if (touchMode.type === 'pan' && !touchMode.hasMoved) {
-
-      // 余白タップで選択解除
-
-      const selected = document.querySelectorAll('.card.selected');
-
-      if (selected.length > 0) {
-
-        selected.forEach(el => el.classList.remove("selected"));
-
-        selectedCard = null;
-
-        setPreview();
-
+    if (touchMode.type === 'marquee') {
+      const marquee = document.getElementById('marquee');
+      let mRect = null;
+      if (marquee) {
+        mRect = marquee.getBoundingClientRect();
+        marquee.style.display = 'none';
       }
 
+      if (!touchMode.hasMoved || (mRect && mRect.width < 10 && mRect.height < 10)) {
+        // 余白タップで選択解除
+        const selected = document.querySelectorAll('.card.selected');
+        if (selected.length > 0) {
+          selected.forEach(el => el.classList.remove("selected"));
+          selectedCard = null;
+          setPreview();
+          updateSelectedCount();
+        }
+      } else if (mRect && mRect.width >= 10 && mRect.height >= 10) {
+        justMarqueeSelected = true;
+        setTimeout(() => { justMarqueeSelected = false; }, 100);
+
+        const containerRect = container.getBoundingClientRect();
+        const fieldOriginX = containerRect.left + panOffsetX;
+        const fieldOriginY = containerRect.top + panOffsetY;
+
+        const minX = (mRect.left - fieldOriginX) / zoom;
+        const minY = (mRect.top - fieldOriginY) / zoom;
+        const width = mRect.width / zoom;
+        const height = mRect.height / zoom;
+
+        const cards = getCardsInsideRect({ minX, minY, width, height });
+        if (cards.length > 0) {
+          cards.forEach(({ id, el }) => {
+            el.classList.add('selected');
+          });
+          updateSelectedCount();
+
+          if (cards.length === 1) {
+            focusCardById(cards[0].id, true);
+          } else {
+            const lastId = cards[cards.length - 1].id;
+            focusCardById(lastId, true, true);
+          }
+        }
+      }
+      touchMode.type = null;
+      return;
     }
 
+    if (touchMode.type === 'pan' && !touchMode.hasMoved) {
+      // 余白タップで選択解除
+      const selected = document.querySelectorAll('.card.selected');
+      if (selected.length > 0) {
+        selected.forEach(el => el.classList.remove("selected"));
+        selectedCard = null;
+        setPreview();
+        updateSelectedCount();
+      }
+    }
     touchMode.type = null;
-
   };
 
   container.addEventListener('touchend', endTouch);
-
   container.addEventListener('touchcancel', endTouch);
 
-
-
   // === 余白クリックで選択解除
-
   field.addEventListener("click", e => {
-
-    if (e.shiftKey) return; // 範囲選択（Shift+Drag）直後のブブリングによる解除を防止
-
+    if (e.shiftKey || justMarqueeSelected) return; // 範囲選択直後のブブリングによる解除を防止
     
-
     const selected = document.querySelectorAll('.card.selected');
-
     if (selected.length > 0) {
-
       selected.forEach(el => el.classList.remove("selected"));
-
       selectedCard = null;
-
       setPreview();
-
+      updateSelectedCount();
     }
-
   });
-
 }
-
-
-
-
-
-
-
 
 
 // ===== end room button
