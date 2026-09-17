@@ -190,16 +190,23 @@
           <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing"><span>↻ 全カード<br>向きリセット</span></button>
           <button class="sl-btn" onclick="resetSelectedRotation()" data-i18n="side.resetSelectedFacing"><span>↻ 選択カード<br>向きリセット</span></button>
         </div>
-        <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキエリアをシャッフル</button>
-        <button class="sl-btn" onclick="shuffleSelectedCards()" data-i18n="side.shuffleSelected">🌀 選択カードをシャッフル</button>
+        <div class="sl-row" role="group" aria-label="Shuffle">
+          <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle"><span>🌀 デッキエリアを<br>シャッフル</span></button>
+          <button class="sl-btn" onclick="shuffleSelectedCards()" data-i18n="side.shuffleSelected"><span>🌀 選択カードを<br>シャッフル</span></button>
+        </div>
         <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 選択カードを最背面に</button>
-        <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードをデッキに集める</button>
-        <button class="sl-btn" onclick="collectSelectedCards()" data-i18n="side.collectSelected">❖ 選択カードをまとめる</button>
-        <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全カードのウラ画像</button>
-        <button class="sl-btn" onclick="openBackImagePicker(true)" data-i18n="side.BackImageSelected">🖼
-          選択カードのウラ画像</button>
-        <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
-        <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 選択カード削除</button>
+        <div class="sl-row" role="group" aria-label="Collect Cards">
+          <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect"><span>❖ 全カードを<br>デッキに集める</span></button>
+          <button class="sl-btn" onclick="collectSelectedCards()" data-i18n="side.collectSelected"><span>❖ 選択カードを<br>まとめる</span></button>
+        </div>
+        <div class="sl-row" role="group" aria-label="Back Image">
+          <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage"><span>🖼 全カードの<br>ウラ画像</span></button>
+          <button class="sl-btn" onclick="openBackImagePicker(true)" data-i18n="side.BackImageSelected"><span>🖼 選択カードの<br>ウラ画像</span></button>
+        </div>
+        <div class="sl-row" role="group" aria-label="Delete Cards">
+          <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine"><span>🗑 全カード<br>削除</span></button>
+          <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected"><span>🗑 選択カード<br>削除</span></button>
+        </div>
 
       </details>
       <details class="ops-section">
