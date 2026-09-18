@@ -476,6 +476,93 @@ document.getElementById('field-layout-ok')?.addEventListener('click', async () =
   }
 });
 
+// ===== プレイ人数変更（ホスト専用） =====
+let PENDING_PLAYER_COUNT = 4;
+
+const hostChangePlayerCountBtn = document.getElementById('host-change-player-count-btn');
+const playerCountModal = document.getElementById('player-count-modal');
+const playerCountOptions = document.getElementById('player-count-options');
+const playerCountCancel = document.getElementById('player-count-cancel');
+const playerCountApply = document.getElementById('player-count-apply');
+const hostCurrentPlayerCountEl = document.getElementById('host-current-player-count');
+
+function updateHostPlayerCountUI() {
+  const count = CURRENT_ROOM_META?.playerCount || 4;
+  if (hostCurrentPlayerCountEl) {
+    hostCurrentPlayerCountEl.textContent = count;
+  }
+}
+
+function openPlayerCountModal() {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (!isHost) { alert('ホスト専用機能です。'); return; }
+  if (!playerCountModal || !playerCountOptions) return;
+
+  PENDING_PLAYER_COUNT = CURRENT_ROOM_META?.playerCount || 4;
+  playerCountOptions.innerHTML = '';
+
+  for (let i = 1; i <= 10; i++) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'player-count-btn';
+    btn.textContent = `${i}人`;
+    if (i === PENDING_PLAYER_COUNT) {
+      btn.classList.add('active');
+    }
+    btn.addEventListener('click', () => {
+      PENDING_PLAYER_COUNT = i;
+      playerCountOptions.querySelectorAll('.player-count-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+    playerCountOptions.appendChild(btn);
+  }
+
+  playerCountModal.style.display = 'flex';
+}
+
+hostChangePlayerCountBtn?.addEventListener('click', openPlayerCountModal);
+
+playerCountCancel?.addEventListener('click', () => {
+  if (playerCountModal) playerCountModal.style.display = 'none';
+});
+
+playerCountApply?.addEventListener('click', async () => {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (!isHost || !CURRENT_ROOM) return;
+
+  const newCount = PENDING_PLAYER_COUNT;
+  const oldCount = CURRENT_ROOM_META?.playerCount || 4;
+
+  if (playerCountModal) playerCountModal.style.display = 'none';
+
+  if (newCount === oldCount) return;
+
+  try {
+    // 1. ルームドキュメントのプレイ人数を更新
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), {
+      playerCount: newCount,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    // 2. 減員した場合、削除された座席の解放処理
+    if (newCount < oldCount) {
+      for (let s = newCount + 1; s <= oldCount; s++) {
+        const seatData = currentSeatMap[s];
+        if (seatData && seatData.claimedByUid) {
+          try {
+            await releaseSeat(db, CURRENT_ROOM, s, seatData.claimedByUid, CURRENT_ROOM_META?.hostUid || null);
+          } catch (e) {
+            console.warn(`Seat ${s} release failed:`, e);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Failed to change player count:', e);
+    alert('プレイ人数の変更に失敗しました。');
+  }
+});
+
 
 
 
@@ -3391,8 +3478,26 @@ function loadSeatStatus(rid) {
     applyOtherOpsUI();
     applyCardSizeUI();
     applyBoardSizeUI();
+    updateHostPlayerCountUI();
 
     applyFieldModeLayout();
+
+    // 減員により現在の座席番号が無効になった場合は自動離席・観戦者へ移行
+    const maxSeatsNow = CURRENT_ROOM_META?.playerCount || 4;
+    if (CURRENT_PLAYER && CURRENT_PLAYER > maxSeatsNow) {
+      const oldSeat = CURRENT_PLAYER;
+      CURRENT_PLAYER = null;
+      document.body.classList.add('is-spectator');
+      try {
+        releaseSeat(db, roomId, oldSeat, CURRENT_UID, CURRENT_ROOM_META?.hostUid || null);
+      } catch (e) {
+        console.warn('Seat release on shrink failed:', e);
+      }
+      updateSessionIndicator();
+      updateEndRoomButtonVisibility();
+      updateLeaveRoomButtonVisibility();
+      alert(`プレイ人数が ${maxSeatsNow} 人に変更されたため、観戦者になりました。`);
+    }
 
     IS_ROOM_CREATOR = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
     document.body.classList.toggle('is-host', IS_ROOM_CREATOR);

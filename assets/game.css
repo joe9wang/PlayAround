@@ -820,6 +820,32 @@ input:checked + .slider:before {
   cursor: not-allowed;
 }
 
+.player-count-btn {
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f8f8f8;
+  cursor: pointer;
+  text-align: center;
+  color: #333;
+  transition: all 0.15s ease;
+}
+
+.player-count-btn:hover {
+  background: #eef5fc;
+  border-color: #0078d7;
+  color: #0078d7;
+}
+
+.player-count-btn.active {
+  background: #0078d7 !important;
+  color: #fff !important;
+  border-color: #005a9e !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
 .player-label {
   position: absolute;
   top: 6px;
