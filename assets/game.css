@@ -1290,7 +1290,12 @@ body.collapse-right .edge-right { display: inline-flex; }
 /* === Area Snap Grid Overlay & Dimension Badge === */
 #area-snap-grid-overlay {
   position: absolute;
-  inset: 0;
+  top: -2000px;
+  left: -2000px;
+  width: calc(100% + 4000px);
+  height: calc(100% + 4000px);
+  min-width: 8000px;
+  min-height: 6000px;
   pointer-events: none;
   z-index: 10005;
   display: none;

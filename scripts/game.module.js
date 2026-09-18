@@ -11533,26 +11533,33 @@ function makeAreaResizable(el, areaId) {
 
       const startX = e.clientX;
       const startY = e.clientY;
-      const startRect = el.getBoundingClientRect();
-      const parentEl = el.parentElement || document.getElementById('board-layout') || field;
-      const parentRect = parentEl.getBoundingClientRect();
+      const fieldEl = document.getElementById('field') || field;
+      const fieldRect = fieldEl.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
       const z = typeof zoom !== 'undefined' ? zoom : 1;
       const totalScale = z;
 
-      // 親要素（#board-layout 等）のボーダー幅を取得し、padding-box 起点（グリッド線の原点 (0, 0)）と完全一致させる
+      // 要素の寸法（キャンバススケール）
+      const startW = elRect.width / totalScale;
+      const startH = elRect.height / totalScale;
+
+      // #field（ワールド絶対座標）基準での要素位置
+      const startFieldL = (elRect.left - fieldRect.left) / totalScale;
+      const startFieldT = (elRect.top - fieldRect.top) / totalScale;
+
+      // 親要素基準での要素位置（style.left / style.top 適用用）
+      const parentEl = el.parentElement || fieldEl;
+      const parentRect = parentEl.getBoundingClientRect();
       const parentBorderL = parentEl.clientLeft || 0;
       const parentBorderT = parentEl.clientTop || 0;
-
-      const startW = startRect.width / totalScale;
-      const startH = startRect.height / totalScale;
-      const startL = (startRect.left - parentRect.left) / totalScale - parentBorderL;
-      const startT = (startRect.top - parentRect.top) / totalScale - parentBorderT;
+      const startParentL = (elRect.left - parentRect.left) / totalScale - parentBorderL;
+      const startParentT = (elRect.top - parentRect.top) / totalScale - parentBorderT;
 
       // right/bottom 指定を解除して left/top/width/height に統一
       el.style.right = 'auto';
       el.style.bottom = 'auto';
-      el.style.left = `${Math.round(startL)}px`;
-      el.style.top = `${Math.round(startT)}px`;
+      el.style.left = `${Math.round(startParentL)}px`;
+      el.style.top = `${Math.round(startParentT)}px`;
       el.style.width = `${Math.round(startW)}px`;
       el.style.height = `${Math.round(startH)}px`;
 
@@ -11564,8 +11571,8 @@ function makeAreaResizable(el, areaId) {
       const updateBadge = (mx, my, w, h) => {
         if (!dimBadge || !SNAP_GRID_ENABLED) return;
         dimBadge.textContent = `${Math.round(w)} × ${Math.round(h)} px`;
-        const badgeX = (mx - parentRect.left) / totalScale - parentBorderL;
-        const badgeY = (my - parentRect.top) / totalScale - parentBorderT;
+        const badgeX = (mx - fieldRect.left) / totalScale;
+        const badgeY = (my - fieldRect.top) / totalScale;
         dimBadge.style.left = badgeX + 'px';
         dimBadge.style.top = badgeY + 'px';
       };
@@ -11586,67 +11593,65 @@ function makeAreaResizable(el, areaId) {
         const MIN_SIZE = 60;
         const snap = (v) => Math.round(v / GRID_SIZE) * GRID_SIZE;
 
-        let newL = startL;
-        let newT = startT;
+        let newParentL = startParentL;
+        let newParentT = startParentT;
         let newW = startW;
         let newH = startH;
 
         if (SNAP_GRID_ENABLED) {
-          const alignedL = snap(startL);
-          const alignedT = snap(startT);
+          // #field の絶対座標系で四辺をスナップ
+          const alignedFieldL = snap(startFieldL);
+          const alignedFieldT = snap(startFieldT);
           const alignedW = Math.max(MIN_SIZE, snap(startW));
           const alignedH = Math.max(MIN_SIZE, snap(startH));
-          const alignedR = alignedL + alignedW;
-          const alignedB = alignedT + alignedH;
+          const alignedFieldR = alignedFieldL + alignedW;
+          const alignedFieldB = alignedFieldT + alignedH;
 
-          newL = alignedL;
-          newT = alignedT;
-          newW = alignedW;
-          newH = alignedH;
+          let targetFieldL = alignedFieldL;
+          let targetFieldT = alignedFieldT;
+          let targetFieldR = alignedFieldR;
+          let targetFieldB = alignedFieldB;
 
           if (pos.includes('e')) {
-            const rawRight = alignedL + alignedW + dx;
-            const snappedRight = snap(rawRight);
-            newW = Math.max(MIN_SIZE, snappedRight - alignedL);
-            newL = alignedL;
+            targetFieldR = snap(alignedFieldL + alignedW + dx);
+            targetFieldR = Math.max(targetFieldL + MIN_SIZE, targetFieldR);
           }
           if (pos.includes('w')) {
-            const rawLeft = alignedL + dx;
-            const snappedLeft = snap(rawLeft);
-            const safeLeft = Math.min(snappedLeft, alignedR - MIN_SIZE);
-            newW = alignedR - safeLeft;
-            newL = safeLeft;
+            targetFieldL = snap(alignedFieldL + dx);
+            targetFieldL = Math.min(alignedFieldR - MIN_SIZE, targetFieldL);
           }
           if (pos.includes('s')) {
-            const rawBottom = alignedT + alignedH + dy;
-            const snappedBottom = snap(rawBottom);
-            newH = Math.max(MIN_SIZE, snappedBottom - alignedT);
-            newT = alignedT;
+            targetFieldB = snap(alignedFieldT + alignedH + dy);
+            targetFieldB = Math.max(targetFieldT + MIN_SIZE, targetFieldB);
           }
           if (pos.includes('n')) {
-            const rawTop = alignedT + dy;
-            const snappedTop = snap(rawTop);
-            const safeTop = Math.min(snappedTop, alignedB - MIN_SIZE);
-            newH = alignedB - safeTop;
-            newT = safeTop;
+            targetFieldT = snap(alignedFieldT + dy);
+            targetFieldT = Math.min(alignedFieldB - MIN_SIZE, targetFieldT);
           }
+
+          newW = targetFieldR - targetFieldL;
+          newH = targetFieldB - targetFieldT;
+
+          // 絶対座標の移動量を親要素座標系へ反映
+          newParentL = startParentL + (targetFieldL - startFieldL);
+          newParentT = startParentT + (targetFieldT - startFieldT);
         } else {
           if (pos.includes('e')) newW = Math.max(MIN_SIZE, startW + dx);
           if (pos.includes('s')) newH = Math.max(MIN_SIZE, startH + dy);
           if (pos.includes('w')) {
             const delta = Math.min(dx, startW - MIN_SIZE);
-            newL = startL + delta;
+            newParentL = startParentL + delta;
             newW = startW - delta;
           }
           if (pos.includes('n')) {
             const delta = Math.min(dy, startH - MIN_SIZE);
-            newT = startT + delta;
+            newParentT = startParentT + delta;
             newH = startH - delta;
           }
         }
 
-        el.style.left = Math.round(newL) + 'px';
-        el.style.top = Math.round(newT) + 'px';
+        el.style.left = Math.round(newParentL) + 'px';
+        el.style.top = Math.round(newParentT) + 'px';
         el.style.width = Math.round(newW) + 'px';
         el.style.height = Math.round(newH) + 'px';
 
