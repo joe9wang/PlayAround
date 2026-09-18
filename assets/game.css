@@ -1283,6 +1283,40 @@ body.collapse-right .edge-right { display: inline-flex; }
   background: rgba(255, 0, 0, 0.3) !important;
 }
 
+/* === Area Snap Grid Overlay & Dimension Badge === */
+#area-snap-grid-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10005;
+  display: none;
+  background-image:
+    linear-gradient(to right, rgba(0, 120, 215, 0.4) 1.5px, transparent 1.5px),
+    linear-gradient(to bottom, rgba(0, 120, 215, 0.4) 1.5px, transparent 1.5px),
+    linear-gradient(to right, rgba(0, 120, 215, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 120, 215, 0.15) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  background-position: 0 0;
+}
+
+#resize-dimension-badge {
+  display: none;
+  position: absolute;
+  pointer-events: none;
+  z-index: 10006;
+  background: rgba(18, 30, 49, 0.88);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.5px;
+  transform: translate(14px, 14px);
+}
+
 /* === Animations === */
 .shake { animation: shake-h 0.35s ease; }
 @keyframes shake-h {

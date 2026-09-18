@@ -280,6 +280,19 @@
             </div>
           </div>
 
+          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+            <div style="font-size:12px;color:#555;">
+              サイズ調整メモリ
+            </div>
+            <div class="row" style="align-items:center; gap:8px;">
+              <span id="toggle-snap-grid-text" style="font-size:11px; font-weight:bold; color:#777;">ON</span>
+              <label class="switch" title="ONにすると、エリアリサイズ時にマス目メモリが表示され自動でスナップします">
+                <input id="toggle-snap-grid" type="checkbox" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
           <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
             <div style="font-size:12px;color:#555;margin-bottom:6px;">カード基本サイズ (px)</div>
             <div class="row" style="gap:10px; align-items:center;">
@@ -585,6 +598,8 @@
         </div>
       </div>
       <div id="board-layout">
+        <div id="area-snap-grid-overlay"></div>
+        <div id="resize-dimension-badge"></div>
         <div id="board-play">
           <div class="zone-label" data-i18n="zone.play.shared">プレイエリア（共有）</div>
         </div>

@@ -315,6 +315,7 @@ function applyOtherOpsUI() {
   const on = !!(CURRENT_ROOM_META?.allowOthersMove || CURRENT_ROOM_META?.allowOtherOps);
   if (toggleOtherOpsInput) toggleOtherOpsInput.checked = on;
   if (toggleOtherOpsText) toggleOtherOpsText.textContent = on ? 'ON' : 'OFF';
+  applySnapGridUI();
 }
 
 function applyCardSizeUI() {
@@ -372,6 +373,22 @@ toggleOtherOpsInput?.addEventListener('change', async () => {
 
   } catch (e) { console.warn('toggle allowOthersMove failed', e); }
 
+});
+
+// ===== サイズ調整メモリスナップ（ホスト専用） =====
+let SNAP_GRID_ENABLED = localStorage.getItem('pa:snapGrid') !== '0'; // デフォルト ON (true)
+const toggleSnapGridInput = document.getElementById('toggle-snap-grid');
+const toggleSnapGridText = document.getElementById('toggle-snap-grid-text');
+
+function applySnapGridUI() {
+  if (toggleSnapGridInput) toggleSnapGridInput.checked = SNAP_GRID_ENABLED;
+  if (toggleSnapGridText) toggleSnapGridText.textContent = SNAP_GRID_ENABLED ? 'ON' : 'OFF';
+}
+
+toggleSnapGridInput?.addEventListener('change', () => {
+  SNAP_GRID_ENABLED = !!toggleSnapGridInput.checked;
+  localStorage.setItem('pa:snapGrid', SNAP_GRID_ENABLED ? '1' : '0');
+  applySnapGridUI();
 });
 
 hostCardWInput?.addEventListener('change', () => updateCardSize(hostCardWInput.value, hostCardHInput.value));
@@ -11517,7 +11534,7 @@ function makeAreaResizable(el, areaId) {
       const startX = e.clientX;
       const startY = e.clientY;
       const startRect = el.getBoundingClientRect();
-      const fieldRect = field.getBoundingClientRect();
+      const parentRect = (el.parentElement || field).getBoundingClientRect();
       const z = typeof zoom !== 'undefined' ? zoom : 1;
       
       const bScale = 1.0; 
@@ -11525,10 +11542,23 @@ function makeAreaResizable(el, areaId) {
 
       const startW = startRect.width / totalScale;
       const startH = startRect.height / totalScale;
-      const startL = (startRect.left - fieldRect.left) / totalScale;
-      const startT = (startRect.top - fieldRect.top) / totalScale;
+      const startL = (startRect.left - parentRect.left) / totalScale;
+      const startT = (startRect.top - parentRect.top) / totalScale;
 
       el.classList.add('area-resizing');
+
+      const gridOverlay = document.getElementById('area-snap-grid-overlay');
+      const dimBadge = document.getElementById('resize-dimension-badge');
+
+      if (SNAP_GRID_ENABLED) {
+        if (gridOverlay) gridOverlay.style.display = 'block';
+        if (dimBadge) {
+          dimBadge.textContent = `${Math.round(startW)} × ${Math.round(startH)} px`;
+          dimBadge.style.left = (e.clientX - parentRect.left) / totalScale + 'px';
+          dimBadge.style.top = (e.clientY - parentRect.top) / totalScale + 'px';
+          dimBadge.style.display = 'block';
+        }
+      }
 
       const onMouseMove = (moveEvent) => {
         const dx = (moveEvent.clientX - startX) / totalScale;
@@ -11539,29 +11569,69 @@ function makeAreaResizable(el, areaId) {
         let newW = startW;
         let newH = startH;
 
-        if (pos.includes('e')) newW = Math.max(50, startW + dx);
-        if (pos.includes('s')) newH = Math.max(50, startH + dy);
-        if (pos.includes('w')) {
-          const delta = Math.min(dx, startW - 50);
-          newL = startL + delta;
-          newW = startW - delta;
-        }
-        if (pos.includes('n')) {
-          const delta = Math.min(dy, startH - 50);
-          newT = startT + delta;
-          newH = startH - delta;
+        const GRID_SIZE = 20;
+        const MIN_SIZE = 50;
+        const snap = (v) => Math.round(v / GRID_SIZE) * GRID_SIZE;
+
+        if (SNAP_GRID_ENABLED) {
+          if (pos.includes('e')) {
+            const rawRight = startL + startW + dx;
+            const snappedRight = snap(rawRight);
+            newW = Math.max(MIN_SIZE, snappedRight - startL);
+          }
+          if (pos.includes('s')) {
+            const rawBottom = startT + startH + dy;
+            const snappedBottom = snap(rawBottom);
+            newH = Math.max(MIN_SIZE, snappedBottom - startT);
+          }
+          if (pos.includes('w')) {
+            const rawLeft = startL + dx;
+            const snappedLeft = snap(rawLeft);
+            const rightEdge = startL + startW;
+            newW = Math.max(MIN_SIZE, rightEdge - snappedLeft);
+            newL = rightEdge - newW;
+          }
+          if (pos.includes('n')) {
+            const rawTop = startT + dy;
+            const snappedTop = snap(rawTop);
+            const bottomEdge = startT + startH;
+            newH = Math.max(MIN_SIZE, bottomEdge - snappedTop);
+            newT = bottomEdge - newH;
+          }
+        } else {
+          if (pos.includes('e')) newW = Math.max(MIN_SIZE, startW + dx);
+          if (pos.includes('s')) newH = Math.max(MIN_SIZE, startH + dy);
+          if (pos.includes('w')) {
+            const delta = Math.min(dx, startW - MIN_SIZE);
+            newL = startL + delta;
+            newW = startW - delta;
+          }
+          if (pos.includes('n')) {
+            const delta = Math.min(dy, startH - MIN_SIZE);
+            newT = startT + delta;
+            newH = startH - delta;
+          }
         }
 
-        el.style.left = newL + 'px';
-        el.style.top = newT + 'px';
-        el.style.width = newW + 'px';
-        el.style.height = newH + 'px';
+        el.style.left = Math.round(newL) + 'px';
+        el.style.top = Math.round(newT) + 'px';
+        el.style.width = Math.round(newW) + 'px';
+        el.style.height = Math.round(newH) + 'px';
+
+        if (dimBadge && SNAP_GRID_ENABLED) {
+          dimBadge.textContent = `${Math.round(newW)} × ${Math.round(newH)} px`;
+          dimBadge.style.left = (moveEvent.clientX - parentRect.left) / totalScale + 'px';
+          dimBadge.style.top = (moveEvent.clientY - parentRect.top) / totalScale + 'px';
+        }
       };
 
       const onMouseUp = async () => {
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
         el.classList.remove('area-resizing');
+
+        if (gridOverlay) gridOverlay.style.display = 'none';
+        if (dimBadge) dimBadge.style.display = 'none';
 
         if (!CURRENT_ROOM) return;
         try {
