@@ -1089,7 +1089,7 @@ input:checked + .slider:before {
 
 .board-hand {
   position: absolute;
-  width: 672px;
+  width: 680px;
   height: 480px;
   background: #228be6;
   border: 10px dashed #666;
@@ -1098,18 +1098,18 @@ input:checked + .slider:before {
   padding: 24px;
 }
 
-#board-hand-1 { top: 134px; left: 134px; }
-#board-hand-2 { top: 134px; left: 940px; }
-#board-hand-3 { top: 134px; left: 1746px; }
-#board-hand-4 { top: 134px; left: 2552px; }
+#board-hand-1 { top: 140px; left: 140px; }
+#board-hand-2 { top: 140px; left: 940px; }
+#board-hand-3 { top: 140px; left: 1740px; }
+#board-hand-4 { top: 140px; left: 2540px; }
 
-#board-hand-5 { top: 960px; left: 134px; }
-#board-hand-6 { top: 960px; right: 134px; }
+#board-hand-5 { top: 960px; left: 140px; }
+#board-hand-6 { top: 960px; left: 2540px; }
 
-#board-hand-7 { bottom: 134px; left: 134px; }
-#board-hand-8 { bottom: 134px; left: 940px; }
-#board-hand-9 { bottom: 134px; left: 1746px; }
-#board-hand-10 { bottom: 134px; left: 2552px; }
+#board-hand-7 { top: 1780px; left: 140px; }
+#board-hand-8 { top: 1780px; left: 940px; }
+#board-hand-9 { top: 1780px; left: 1740px; }
+#board-hand-10 { top: 1780px; left: 2540px; }
 
 #board-center {
   position: absolute;
@@ -1245,7 +1245,11 @@ body.collapse-right .edge-right { display: inline-flex; }
 .resize-handle.ne { top: -8px; right: -8px; width: 20px; height: 20px; cursor: ne-resize; z-index: 10001; }
 .resize-handle.sw { bottom: -8px; left: -8px; width: 20px; height: 20px; cursor: sw-resize; z-index: 10001; }
 .resize-handle.se { bottom: -8px; right: -8px; width: 20px; height: 20px; cursor: se-resize; z-index: 10001; }
-.area-resizing { outline: 2px solid #ff0000 !important; z-index: 10001 !important; }
+.area-resizing {
+  outline: 2px solid #ff0000 !important;
+  outline-offset: -2px !important;
+  z-index: 10001 !important;
+}
 
 /* === Board Resizing === */
 .card.is-board.selected .resize-handle {

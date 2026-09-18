@@ -11534,29 +11534,47 @@ function makeAreaResizable(el, areaId) {
       const startX = e.clientX;
       const startY = e.clientY;
       const startRect = el.getBoundingClientRect();
-      const parentRect = (el.parentElement || field).getBoundingClientRect();
+      const parentEl = el.parentElement || document.getElementById('board-layout') || field;
+      const parentRect = parentEl.getBoundingClientRect();
       const z = typeof zoom !== 'undefined' ? zoom : 1;
-      
-      const bScale = 1.0; 
-      const totalScale = z * bScale;
+      const totalScale = z;
+
+      // 親要素（#board-layout 等）のボーダー幅を取得し、padding-box 起点（グリッド線の原点 (0, 0)）と完全一致させる
+      const parentBorderL = parentEl.clientLeft || 0;
+      const parentBorderT = parentEl.clientTop || 0;
 
       const startW = startRect.width / totalScale;
       const startH = startRect.height / totalScale;
-      const startL = (startRect.left - parentRect.left) / totalScale;
-      const startT = (startRect.top - parentRect.top) / totalScale;
+      const startL = (startRect.left - parentRect.left) / totalScale - parentBorderL;
+      const startT = (startRect.top - parentRect.top) / totalScale - parentBorderT;
+
+      // right/bottom 指定を解除して left/top/width/height に統一
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      el.style.left = `${Math.round(startL)}px`;
+      el.style.top = `${Math.round(startT)}px`;
+      el.style.width = `${Math.round(startW)}px`;
+      el.style.height = `${Math.round(startH)}px`;
 
       el.classList.add('area-resizing');
 
       const gridOverlay = document.getElementById('area-snap-grid-overlay');
       const dimBadge = document.getElementById('resize-dimension-badge');
 
+      const updateBadge = (mx, my, w, h) => {
+        if (!dimBadge || !SNAP_GRID_ENABLED) return;
+        dimBadge.textContent = `${Math.round(w)} × ${Math.round(h)} px`;
+        const badgeX = (mx - parentRect.left) / totalScale - parentBorderL;
+        const badgeY = (my - parentRect.top) / totalScale - parentBorderT;
+        dimBadge.style.left = badgeX + 'px';
+        dimBadge.style.top = badgeY + 'px';
+      };
+
       if (SNAP_GRID_ENABLED) {
         if (gridOverlay) gridOverlay.style.display = 'block';
         if (dimBadge) {
-          dimBadge.textContent = `${Math.round(startW)} × ${Math.round(startH)} px`;
-          dimBadge.style.left = (e.clientX - parentRect.left) / totalScale + 'px';
-          dimBadge.style.top = (e.clientY - parentRect.top) / totalScale + 'px';
           dimBadge.style.display = 'block';
+          updateBadge(e.clientX, e.clientY, startW, startH);
         }
       }
 
@@ -11564,39 +11582,53 @@ function makeAreaResizable(el, areaId) {
         const dx = (moveEvent.clientX - startX) / totalScale;
         const dy = (moveEvent.clientY - startY) / totalScale;
 
+        const GRID_SIZE = 20;
+        const MIN_SIZE = 60;
+        const snap = (v) => Math.round(v / GRID_SIZE) * GRID_SIZE;
+
         let newL = startL;
         let newT = startT;
         let newW = startW;
         let newH = startH;
 
-        const GRID_SIZE = 20;
-        const MIN_SIZE = 50;
-        const snap = (v) => Math.round(v / GRID_SIZE) * GRID_SIZE;
-
         if (SNAP_GRID_ENABLED) {
+          const alignedL = snap(startL);
+          const alignedT = snap(startT);
+          const alignedW = Math.max(MIN_SIZE, snap(startW));
+          const alignedH = Math.max(MIN_SIZE, snap(startH));
+          const alignedR = alignedL + alignedW;
+          const alignedB = alignedT + alignedH;
+
+          newL = alignedL;
+          newT = alignedT;
+          newW = alignedW;
+          newH = alignedH;
+
           if (pos.includes('e')) {
-            const rawRight = startL + startW + dx;
+            const rawRight = alignedL + alignedW + dx;
             const snappedRight = snap(rawRight);
-            newW = Math.max(MIN_SIZE, snappedRight - startL);
-          }
-          if (pos.includes('s')) {
-            const rawBottom = startT + startH + dy;
-            const snappedBottom = snap(rawBottom);
-            newH = Math.max(MIN_SIZE, snappedBottom - startT);
+            newW = Math.max(MIN_SIZE, snappedRight - alignedL);
+            newL = alignedL;
           }
           if (pos.includes('w')) {
-            const rawLeft = startL + dx;
+            const rawLeft = alignedL + dx;
             const snappedLeft = snap(rawLeft);
-            const rightEdge = startL + startW;
-            newW = Math.max(MIN_SIZE, rightEdge - snappedLeft);
-            newL = rightEdge - newW;
+            const safeLeft = Math.min(snappedLeft, alignedR - MIN_SIZE);
+            newW = alignedR - safeLeft;
+            newL = safeLeft;
+          }
+          if (pos.includes('s')) {
+            const rawBottom = alignedT + alignedH + dy;
+            const snappedBottom = snap(rawBottom);
+            newH = Math.max(MIN_SIZE, snappedBottom - alignedT);
+            newT = alignedT;
           }
           if (pos.includes('n')) {
-            const rawTop = startT + dy;
+            const rawTop = alignedT + dy;
             const snappedTop = snap(rawTop);
-            const bottomEdge = startT + startH;
-            newH = Math.max(MIN_SIZE, bottomEdge - snappedTop);
-            newT = bottomEdge - newH;
+            const safeTop = Math.min(snappedTop, alignedB - MIN_SIZE);
+            newH = alignedB - safeTop;
+            newT = safeTop;
           }
         } else {
           if (pos.includes('e')) newW = Math.max(MIN_SIZE, startW + dx);
@@ -11618,11 +11650,7 @@ function makeAreaResizable(el, areaId) {
         el.style.width = Math.round(newW) + 'px';
         el.style.height = Math.round(newH) + 'px';
 
-        if (dimBadge && SNAP_GRID_ENABLED) {
-          dimBadge.textContent = `${Math.round(newW)} × ${Math.round(newH)} px`;
-          dimBadge.style.left = (moveEvent.clientX - parentRect.left) / totalScale + 'px';
-          dimBadge.style.top = (moveEvent.clientY - parentRect.top) / totalScale + 'px';
-        }
+        updateBadge(moveEvent.clientX, moveEvent.clientY, newW, newH);
       };
 
       const onMouseUp = async () => {
