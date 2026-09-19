@@ -10242,18 +10242,18 @@ function subscribeAreas() {
            el.dataset.areaId = id;
 
            let label = 'エリア';
-
-           if(data.type==='deck-area') label = 'デッキエリア';
-
-           else if(data.type==='hand-area') label = '手札エリア';
-
-           else if(data.type==='discard-area') label = '捨て札エリア';
-
-           el.innerHTML = `<div class="zone-label" data-i18n="zone.deck">${label}</div>`;
-
+           let i18nKey = 'zone.play';
+           if (data.type === 'deck-area') { label = 'デッキエリア'; i18nKey = 'zone.deck'; }
+           else if (data.type === 'hand-area') { label = '手札エリア'; i18nKey = 'zone.hand'; }
+           else if (data.type === 'discard-area') { label = '捨て札エリア'; i18nKey = 'zone.discard'; }
+           else if (data.type === 'special-area') { label = '特殊エリア'; i18nKey = 'zone.special'; }
+           el.innerHTML = `<div class="zone-label" data-i18n="${i18nKey}">${label}</div>`;
            field.appendChild(el);
-
            console.log('[subscribeAreas] 新エリア作成:', id);
+           const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
+           if (isHost) {
+             makeAreaResizable(el, id);
+           }
 
       }
 
@@ -11842,184 +11842,159 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     }
 
   } else {
-
-    areaEl.style.width = '140px';
-
-    areaEl.style.height = '160px';
-
+    if (forceType === 'special-area') {
+      areaEl.style.width = areaEl.style.width || '140px';
+      areaEl.style.height = areaEl.style.height || '200px';
+    } else {
+      areaEl.style.width = areaEl.style.width || '140px';
+      areaEl.style.height = areaEl.style.height || '160px';
+    }
     field.appendChild(areaEl);
-
   }
-
   areaEl.style.position = 'absolute';
 
-
-
-  const typeClasses = ['hand-area', 'deck-area', 'discard-area'];
-
+  const typeClasses = ['hand-area', 'deck-area', 'discard-area', 'special-area'];
   const type = forceType || [...areaEl.classList].find(c => typeClasses.includes(c)) || 'deck-area';
 
-
-
   const mouseMoveHandler = (e) => {
-
     if (!placingArea) return;
-
     const fieldRect = field.getBoundingClientRect();
-
     const mx = e.clientX;
-
     const my = e.clientY;
-
     let z = typeof zoom !== 'undefined' ? zoom : 1;
-
     const w = areaEl.offsetWidth * z;
-
     const h = areaEl.offsetHeight * z;
+    let x = ((mx - fieldRect.left) / z) - (w / z / 2);
+    let y = ((my - fieldRect.top) / z) - (h / z / 2);
 
-    const x = ((mx - fieldRect.left) / z) - (w / z / 2);
-
-    const y = ((my - fieldRect.top) / z) - (h / z / 2);
-
-    areaEl.style.left = x + 'px';
-
-    areaEl.style.top = y + 'px';
-
-
-
-    const checkRect = { l: mx - w/2, t: my - h/2, r: mx + w/2, b: my + h/2 };
-
-    let overlap = false;
-
-    document.querySelectorAll('.hand-area, .deck-area, .discard-area').forEach(other => {
-
-      if (other === areaEl) return;
-
-      const obr = other.getBoundingClientRect();
-
-      const otherRect = { l: obr.left, t: obr.top, r: obr.right, b: obr.bottom };
-
-      if (intersects(checkRect, otherRect)) overlap = true;
-
-    });
-
-
-
-    if (overlap) {
-
-      areaEl.style.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
-
-      placingArea.overlap = true;
-
-    } else {
-
-      areaEl.style.filter = '';
-
-      placingArea.overlap = false;
-
+    if (typeof SNAP_GRID_ENABLED !== 'undefined' && SNAP_GRID_ENABLED) {
+      x = Math.round(x / 20) * 20;
+      y = Math.round(y / 20) * 20;
     }
 
+    areaEl.style.left = x + 'px';
+    areaEl.style.top = y + 'px';
+
+    const checkRect = { l: mx - w/2, t: my - h/2, r: mx + w/2, b: my + h/2 };
+    let overlap = false;
+    document.querySelectorAll('.hand-area, .deck-area, .discard-area, .special-area').forEach(other => {
+      if (other === areaEl) return;
+      const obr = other.getBoundingClientRect();
+      const otherRect = { l: obr.left, t: obr.top, r: obr.right, b: obr.bottom };
+      if (intersects(checkRect, otherRect)) overlap = true;
+    });
+
+    if (overlap) {
+      areaEl.style.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
+      placingArea.overlap = true;
+    } else {
+      areaEl.style.filter = '';
+      placingArea.overlap = false;
+    }
   };
-
-
 
   const clickHandler = async (e) => {
-
     if (!placingArea) return;
-
     e.preventDefault();
-
     e.stopPropagation();
-
     if (placingArea.overlap) return;
 
-
-
     const x = parseFloat(areaEl.style.left);
-
     const y = parseFloat(areaEl.style.top);
-
     const width = parseFloat(areaEl.style.width);
-
     const height = parseFloat(areaEl.style.height);
 
-
-
     document.removeEventListener('mousemove', placingArea.mouseMoveHandler);
-
     document.removeEventListener('click', placingArea.clickHandler);
-
     document.removeEventListener('contextmenu', placingArea.cancelHandler);
-
     delete areaEl.dataset.moving;
-
     placingArea = null;
 
-
-
     areaEl.style.opacity = origOpacity;
-
     areaEl.style.pointerEvents = 'auto';
-
     areaEl.style.filter = '';
 
-    
-
     const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${areaId}`);
-
     try {
-
       await setDoc(docRef, {
-
         isAbsolute: true,
-
         type: type,
-
         x, y,
-
         width, height,
-
         updatedAt: serverTimestamp()
-
       }, { merge: true });
-
     } catch(err) { console.warn(err); }
 
+    const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
+    if (isHost) {
+      makeAreaResizable(areaEl, areaId);
+    }
   };
-
-
 
   const cancelHandler = (e) => {
-
     e.preventDefault();
-
     stopAreaPlacement();
-
   };
 
-
-
   setTimeout(() => {
-
     document.addEventListener('mousemove', mouseMoveHandler);
-
     document.addEventListener('click', clickHandler);
-
     document.addEventListener('contextmenu', cancelHandler);
-
   }, 100);
 
-
-
   placingArea.type = type;
-
   placingArea.mouseMoveHandler = mouseMoveHandler;
-
   placingArea.clickHandler = clickHandler;
-
   placingArea.cancelHandler = cancelHandler;
-
 }
+
+/**
+ * 操作パネルからの動的エリア生成（デッキ、捨て札、特殊）
+ */
+function spawnDynamicArea(type) {
+  if (!CURRENT_ROOM) {
+    alert('ルームに入室してください');
+    return;
+  }
+  stopAreaPlacement();
+
+  const timestamp = Date.now();
+  let typeKey = 'deck';
+  let label = 'デッキエリア';
+  let i18nKey = 'zone.deck';
+  let width = 140;
+  let height = 160;
+
+  if (type === 'discard-area') {
+    typeKey = 'discard';
+    label = '捨て札エリア';
+    i18nKey = 'zone.discard';
+    width = 140;
+    height = 160;
+  } else if (type === 'special-area') {
+    typeKey = 'special';
+    label = '特殊エリア';
+    i18nKey = 'zone.special';
+    width = 140;
+    height = 200;
+  }
+
+  const newAreaId = `dynamic-${typeKey}-${timestamp}`;
+  const newArea = document.createElement('div');
+  newArea.className = `${type} dynamic-area`;
+  newArea.dataset.areaId = newAreaId;
+  newArea.style.width = `${width}px`;
+  newArea.style.height = `${height}px`;
+  newArea.innerHTML = `<div class="zone-label" data-i18n="${i18nKey}">${label}</div>`;
+
+  startAreaPlacement(newArea, true, newAreaId, type);
+}
+
+window.spawnDynamicArea = spawnDynamicArea;
+
+document.getElementById('btn-add-deck-area')?.addEventListener('click', () => spawnDynamicArea('deck-area'));
+document.getElementById('btn-add-discard-area')?.addEventListener('click', () => spawnDynamicArea('discard-area'));
+document.getElementById('btn-add-special-area')?.addEventListener('click', () => spawnDynamicArea('special-area'));
 
 
 

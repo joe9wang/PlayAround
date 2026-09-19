@@ -1265,6 +1265,14 @@ body.collapse-right .edge-right { display: inline-flex; }
   outline: 2px solid #007bff !important;
 }
 
+/* === Dynamic Areas (Deck, Discard, Special) === */
+.dynamic-area {
+  border: 4px dashed rgba(255, 255, 255, 0.7) !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+}
+
 /* === Board Mode Area Resizing (Host Only) === */
 /* ボードモードのエリア用リサイズハンドルを表示・操作可能にする */
 #board-layout > .resize-handle,
