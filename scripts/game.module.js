@@ -321,6 +321,7 @@ function applyOtherOpsUI() {
   if (toggleOtherOpsText) toggleOtherOpsText.textContent = on ? 'ON' : 'OFF';
   applySnapGridUI();
   applyHoverZoomUI();
+  applyRotateSettingsUI();
   if (typeof refreshAllCardsOwnership === 'function') refreshAllCardsOwnership();
 }
 
@@ -424,6 +425,72 @@ toggleHoverZoomInput?.addEventListener('change', async () => {
 });
 
 applyHoverZoomUI();
+
+// ===== カード回転設定（ホスト専用） =====
+let CARD_ROTATE_DIR = localStorage.getItem('pa:cardRotateDir') || 'cw'; // 'cw' (右回り) | 'ccw' (左回り)
+let CARD_ROTATE_ANGLE = parseInt(localStorage.getItem('pa:cardRotateAngle') || '90', 10); // 30 | 45 | 90 | 180
+let CARD_ROTATE_TOGGLE = localStorage.getItem('pa:cardRotateToggle') === '1'; // true (反転あり) | false (なし)
+
+const hostRotateDirSelect = document.getElementById('host-rotate-dir');
+const hostRotateAngleSelect = document.getElementById('host-rotate-angle');
+const toggleRotateToggleInput = document.getElementById('toggle-rotate-toggle');
+const toggleRotateToggleText = document.getElementById('toggle-rotate-toggle-text');
+
+function applyRotateSettingsUI() {
+  if (CURRENT_ROOM_META?.cardRotateDir !== undefined) {
+    CARD_ROTATE_DIR = CURRENT_ROOM_META.cardRotateDir;
+  }
+  if (CURRENT_ROOM_META?.cardRotateAngle !== undefined) {
+    CARD_ROTATE_ANGLE = parseInt(CURRENT_ROOM_META.cardRotateAngle, 10);
+  }
+  if (CURRENT_ROOM_META?.cardRotateToggle !== undefined) {
+    CARD_ROTATE_TOGGLE = !!CURRENT_ROOM_META.cardRotateToggle;
+  }
+
+  if (hostRotateDirSelect) hostRotateDirSelect.value = CARD_ROTATE_DIR;
+  if (hostRotateAngleSelect) hostRotateAngleSelect.value = String(CARD_ROTATE_ANGLE);
+  if (toggleRotateToggleInput) toggleRotateToggleInput.checked = CARD_ROTATE_TOGGLE;
+  if (toggleRotateToggleText) toggleRotateToggleText.textContent = CARD_ROTATE_TOGGLE ? 'ON' : 'OFF';
+}
+
+async function saveRotateSettings(updates) {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (updates.cardRotateDir !== undefined) {
+    CARD_ROTATE_DIR = updates.cardRotateDir;
+    localStorage.setItem('pa:cardRotateDir', CARD_ROTATE_DIR);
+  }
+  if (updates.cardRotateAngle !== undefined) {
+    CARD_ROTATE_ANGLE = updates.cardRotateAngle;
+    localStorage.setItem('pa:cardRotateAngle', String(CARD_ROTATE_ANGLE));
+  }
+  if (updates.cardRotateToggle !== undefined) {
+    CARD_ROTATE_TOGGLE = updates.cardRotateToggle;
+    localStorage.setItem('pa:cardRotateToggle', CARD_ROTATE_TOGGLE ? '1' : '0');
+  }
+  applyRotateSettingsUI();
+  if (isHost) {
+    try {
+      await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), {
+        ...updates,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('saveRotateSettings failed', e);
+    }
+  }
+}
+
+hostRotateDirSelect?.addEventListener('change', () => {
+  saveRotateSettings({ cardRotateDir: hostRotateDirSelect.value });
+});
+hostRotateAngleSelect?.addEventListener('change', () => {
+  saveRotateSettings({ cardRotateAngle: parseInt(hostRotateAngleSelect.value, 10) });
+});
+toggleRotateToggleInput?.addEventListener('change', () => {
+  saveRotateSettings({ cardRotateToggle: !!toggleRotateToggleInput.checked });
+});
+
+applyRotateSettingsUI();
 
 hostCardWInput?.addEventListener('change', () => updateCardSize(hostCardWInput.value, hostCardHInput.value));
 hostCardHInput?.addEventListener('change', () => updateCardSize(hostCardWInput.value, hostCardHInput.value));
@@ -5381,7 +5448,7 @@ function createCardDom(cardId, imageSrc, state) {
     }
   }
 
-  // カードの90°回転（PCダブルクリック／モバイルダブルタップ共通）
+  // カードの回転（PCダブルクリック／モバイルダブルタップ共通）
   async function rotateCards(card) {
     if (!card) return;
     maybeTakeOwnership(card);
@@ -5393,18 +5460,39 @@ function createCardDom(cardId, imageSrc, state) {
       ? Array.from(document.querySelectorAll('.card.selected')) 
       : [card];
 
-    const currentStyle = card.style.transform || '';
-    const match = currentStyle.match(/rotate\((-?\d+(?:\.\d+)?)deg\)/);
-    const current = match ? parseFloat(match[1]) : (typeof state?.rotation === 'number' ? state.rotation : 0);
-    const next = ((current + 270) % 360 + 360) % 360;
+    const dirSign = (CARD_ROTATE_DIR === 'ccw') ? -1 : 1;
+    const angleStep = CARD_ROTATE_ANGLE || 90;
+    const isToggle = CARD_ROTATE_TOGGLE;
+
+    // 複数選択時も主カードのトグル状態を基準に反転
+    const currentToggled = card.dataset.rotateToggled === 'true';
+    const nextToggledState = !currentToggled;
 
     cardsToRotate.forEach(c => {
       maybeTakeOwnership(c);
       if (!canOperateCard(c, 'rotate')) return;
       if (c.classList.contains('numcounter')) return;
 
-      const cId = c.dataset.cardId;
       const cStyle = c.style.transform || '';
+      const match = cStyle.match(/rotate\((-?\d+(?:\.\d+)?)deg\)/);
+      const current = match ? parseFloat(match[1]) : (typeof state?.rotation === 'number' ? state.rotation : 0);
+
+      let next;
+      if (isToggle) {
+        if (nextToggledState) {
+          // 1回目：設定方向に回転（タップ）
+          next = ((current + dirSign * angleStep) % 360 + 360) % 360;
+        } else {
+          // 2回目：反対方向に回転して戻す（アンタップ）
+          next = ((current - dirSign * angleStep) % 360 + 360) % 360;
+        }
+        c.dataset.rotateToggled = nextToggledState ? 'true' : 'false';
+      } else {
+        next = ((current + dirSign * angleStep) % 360 + 360) % 360;
+        c.dataset.rotateToggled = 'false';
+      }
+
+      const cId = c.dataset.cardId;
       const matchScale = cStyle.match(/scale\(([^)]+)\)/);
       const currentScale = matchScale ? matchScale[1] : 1;
 
@@ -5530,6 +5618,9 @@ function applyCardState(card, data) {
 
 
   const rot = (typeof data.rotation === 'number') ? data.rotation : 0;
+  if (rot === 0) {
+    card.dataset.rotateToggled = 'false';
+  }
 
   const scaleLevel = (typeof data.scaleLevel === 'number') ? data.scaleLevel : 0;
 
@@ -6929,6 +7020,7 @@ window.resetMyCardRotation = async function () {
     if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
     if (el.classList.contains('memo')) continue;
     el.style.transform = 'rotate(0deg)';
+    el.dataset.rotateToggled = 'false';
     batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { rotation: 0 });
     if (++count >= 450) { await batch.commit(); count = 0; }
   }
@@ -6949,6 +7041,7 @@ window.resetSelectedRotation = async function () {
     if (!id) continue;
 
     el.style.transform = 'rotate(0deg)';
+    el.dataset.rotateToggled = 'false';
     batch.update(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`), { rotation: 0 });
     if (++count >= 450) { await batch.commit(); count = 0; }
   }

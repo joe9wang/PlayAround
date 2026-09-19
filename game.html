@@ -317,6 +317,41 @@
           </div>
 
           <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
+            <div style="font-size:12px;color:#555;margin-bottom:8px;font-weight:bold;" data-i18n="side.rotateSection">カード回転設定</div>
+
+            <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div style="font-size:12px;color:#555;" data-i18n="side.rotateDir">回転方向</div>
+              <select id="host-rotate-dir" style="padding:4px 8px; border:1px solid #ddd; border-radius:6px; font-size:12px; background:#fff; outline:none; cursor:pointer;">
+                <option value="cw" data-i18n="side.rotateDirCW">右回り（時計）</option>
+                <option value="ccw" data-i18n="side.rotateDirCCW">左回り（反時計）</option>
+              </select>
+            </div>
+
+            <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div style="font-size:12px;color:#555;" data-i18n="side.rotateAngle">回転量</div>
+              <select id="host-rotate-angle" style="padding:4px 8px; border:1px solid #ddd; border-radius:6px; font-size:12px; background:#fff; outline:none; cursor:pointer;">
+                <option value="90">90度（標準）</option>
+                <option value="45">45度</option>
+                <option value="30">30度</option>
+                <option value="180">180度</option>
+              </select>
+            </div>
+
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <div style="font-size:12px;color:#555;" data-i18n="side.rotateToggle" title="1回目で回転し、2回目で元の角度に戻る往復動作（タップ/アンタップ）">
+                回転反転
+              </div>
+              <div class="row" style="align-items:center; gap:8px;">
+                <span id="toggle-rotate-toggle-text" style="font-size:11px; font-weight:bold; color:#777;">OFF</span>
+                <label class="switch" title="ONにすると、1回目で回転し2回目で元に戻る往復動作になります（タップ/アンタップに便利）">
+                  <input id="toggle-rotate-toggle" type="checkbox">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
             <div style="font-size:12px;color:#555;margin-bottom:6px;">カード基本サイズ (px)</div>
             <div class="row" style="gap:10px; align-items:center;">
               <div class="row" style="align-items:center; gap:4px; flex:1;">
