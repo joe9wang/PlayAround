@@ -109,7 +109,7 @@ const I18N = {
         "side.discardList": "🔍 捨て札一覧",
         "side.deleteMine": "🗑 全カード<br>削除",
         "side.deleteSelected": "🗑 選択カード<br>削除",
-        "side.sendSelectedBack": "⇊ 選択カードを最背面",
+        "side.sendSelectedBack": "⇊ 選択カードを最背面に",
         "side.numCounter": "🔢 数値カウンター",
         "side.plus1": "➕1",
         "side.plus10": "➕10",
@@ -138,8 +138,8 @@ const I18N = {
         "game.addPiece.sub": "（画像サイズ維持）",
         "game.addBoard": "🏁 ボードを追加",
         "game.addBoard.sub": "（画像サイズ維持・最背面）",
-        "side.BackImage": "🖼 全カードの<br>ウラ画像",
-        "side.BackImageSelected": "🖼 選択カードの<br>ウラ画像",
+        "side.BackImage": "🖼 全カードの<br>ウラ画像設定",
+        "side.BackImageSelected": "🖼 選択カードの<br>ウラ画像設定",
 
         // --- Zones ---
         "zone.special": "特殊エリア",
@@ -339,8 +339,8 @@ const I18N = {
         "game.addPiece.sub": "(Original size)",
         "game.addBoard": "🏁 Add Board",
         "game.addBoard.sub": "(Original size, background)",
-        "side.BackImage": "🖼 All Cards<br>Back Image",
-        "side.BackImageSelected": "🖼 Selected Card<br>Back Image",
+        "side.BackImage": "🖼 All Cards<br>Back Image Settings",
+        "side.BackImageSelected": "🖼 Selected Card<br>Back Image Settings",
 
         // --- Zones ---
         "zone.special": "Special",
