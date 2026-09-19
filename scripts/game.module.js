@@ -313,9 +313,12 @@ const hostCardHInput = document.getElementById('host-card-h');
 
 function applyOtherOpsUI() {
   const on = !!(CURRENT_ROOM_META?.allowOthersMove || CURRENT_ROOM_META?.allowOtherOps);
+  document.body.classList.toggle('allow-other-ops', on);
   if (toggleOtherOpsInput) toggleOtherOpsInput.checked = on;
   if (toggleOtherOpsText) toggleOtherOpsText.textContent = on ? 'ON' : 'OFF';
   applySnapGridUI();
+  applyHoverZoomUI();
+  if (typeof refreshAllCardsOwnership === 'function') refreshAllCardsOwnership();
 }
 
 function applyCardSizeUI() {
@@ -390,6 +393,34 @@ toggleSnapGridInput?.addEventListener('change', () => {
   localStorage.setItem('pa:snapGrid', SNAP_GRID_ENABLED ? '1' : '0');
   applySnapGridUI();
 });
+
+// ===== ホバー時カード拡大（ホスト専用） =====
+let HOVER_ZOOM_ENABLED = localStorage.getItem('pa:hoverZoom') !== '0'; // デフォルト ON (true)
+const toggleHoverZoomInput = document.getElementById('toggle-hover-zoom');
+const toggleHoverZoomText = document.getElementById('toggle-hover-zoom-text');
+
+function applyHoverZoomUI() {
+  if (CURRENT_ROOM_META?.cardHoverZoom !== undefined) {
+    HOVER_ZOOM_ENABLED = !!CURRENT_ROOM_META.cardHoverZoom;
+  }
+  if (toggleHoverZoomInput) toggleHoverZoomInput.checked = HOVER_ZOOM_ENABLED;
+  if (toggleHoverZoomText) toggleHoverZoomText.textContent = HOVER_ZOOM_ENABLED ? 'ON' : 'OFF';
+  document.body.classList.toggle('hover-zoom-enabled', HOVER_ZOOM_ENABLED);
+}
+
+toggleHoverZoomInput?.addEventListener('change', async () => {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  HOVER_ZOOM_ENABLED = !!toggleHoverZoomInput.checked;
+  localStorage.setItem('pa:hoverZoom', HOVER_ZOOM_ENABLED ? '1' : '0');
+  applyHoverZoomUI();
+  if (isHost) {
+    try {
+      await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { cardHoverZoom: HOVER_ZOOM_ENABLED, updatedAt: serverTimestamp() }, { merge: true });
+    } catch (e) { console.warn('toggle cardHoverZoom failed', e); }
+  }
+});
+
+applyHoverZoomUI();
 
 hostCardWInput?.addEventListener('change', () => updateCardSize(hostCardWInput.value, hostCardHInput.value));
 hostCardHInput?.addEventListener('change', () => updateCardSize(hostCardWInput.value, hostCardHInput.value));
@@ -2035,6 +2066,35 @@ function canOperateCard(cardEl, kind) {
   }
 
   return false;
+}
+
+// === カードのカーソル・所持者状態の動的同期 ===
+function updateCardCursor(cardEl) {
+  if (!cardEl) return;
+  if (cardEl.classList.contains('dice') || cardEl.dataset.type === 'dice') {
+    cardEl.style.cursor = 'pointer';
+    return;
+  }
+  const isMine = isMyCard(cardEl);
+  if (isMine) {
+    if (cardEl.getAttribute('data-owner') !== 'me') {
+      cardEl.setAttribute('data-owner', 'me');
+    }
+  } else {
+    if (cardEl.dataset.ownerSeat && cardEl.getAttribute('data-owner') !== 'other') {
+      cardEl.setAttribute('data-owner', 'other');
+    }
+  }
+
+  const canMove = canOperateCard(cardEl, 'move');
+  cardEl.style.cursor = canMove ? 'grab' : 'not-allowed';
+}
+
+function refreshAllCardsOwnership() {
+  const cards = document.querySelectorAll('#game-field .card, #field .card');
+  cards.forEach(card => {
+    updateCardCursor(card);
+  });
 }
 
 
@@ -3885,6 +3945,15 @@ function stopHeartbeat() { if (heartbeatTimer) { clearInterval(heartbeatTimer); 
 
 const field = document.getElementById("field");
 
+if (field) {
+  field.addEventListener('mouseover', (e) => {
+    const card = e.target.closest('.card');
+    if (card && typeof updateCardCursor === 'function') {
+      updateCardCursor(card);
+    }
+  });
+}
+
 const container = document.getElementById("container");
 
 const previewImg = document.getElementById("preview-img");
@@ -4203,6 +4272,8 @@ function startSession(roomId, playerId) {
   updateEndRoomButtonVisibility();
 
   updateSessionIndicator();
+
+  if (typeof refreshAllCardsOwnership === 'function') refreshAllCardsOwnership();
 
   if (lobby) lobby.style.display = 'none';
 
@@ -4667,6 +4738,7 @@ function subscribeCards() {
     if (!isInitialLoadDone) {
       isInitialLoadDone = true;
       hideLoadingOverlay();
+      if (typeof refreshAllCardsOwnership === 'function') refreshAllCardsOwnership();
     }
   });
 }
@@ -5016,6 +5088,7 @@ function createCardDom(cardId, imageSrc, state) {
   card.dataset.ownerSeat = state?.ownerSeat ? String(state.ownerSeat) : '';
   card.dataset.activeOperator = state?.activeOperator || '';
   card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
+  if (typeof updateCardCursor === 'function') updateCardCursor(card);
 
 
 
@@ -5211,6 +5284,10 @@ function createCardDom(cardId, imageSrc, state) {
 
 
 
+
+  card.addEventListener("mouseenter", () => {
+    if (typeof updateCardCursor === 'function') updateCardCursor(card);
+  });
 
   card.addEventListener("click", e => {
     e.stopPropagation();
@@ -5424,6 +5501,7 @@ function applyCardState(card, data) {
   card.dataset.ownerSeat = (data.ownerSeat != null) ? String(data.ownerSeat) : '';
   card.dataset.activeOperator = data.activeOperator || '';
   card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
+  if (typeof updateCardCursor === 'function') updateCardCursor(card);
 
   // ★ 自分が現在ドラッグ中のカード、または直近にローカルで位置・重なり更新したカードは、
   // リモートからの古いスナップショット座標・zIndexで上書きされないよう保護する
@@ -6342,8 +6420,12 @@ function makeDraggable(card) {
       document.removeEventListener("mouseup", onUp);
       
       selectedCards.forEach(c => {
-        c.style.cursor = "grab";
         c.dataset.isDragging = 'false';
+        if (typeof updateCardCursor === 'function') {
+          updateCardCursor(c);
+        } else {
+          c.style.cursor = "grab";
+        }
       });
 
       // ★ ドラッグ終了時に改めて最前面zIndexを再計算・再割り当てし、

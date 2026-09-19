@@ -494,7 +494,7 @@ input:checked + .slider:before {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   touch-action: none;
-  transition: border .2s;
+  transition: border .2s, scale .15s ease, box-shadow .15s ease;
   z-index: 300;
   transform-origin: 50% 50%;
 }
@@ -502,6 +502,29 @@ input:checked + .slider:before {
 .card[data-owner="other"] {
   cursor: not-allowed;
   opacity: .95;
+}
+
+/* ホストが「他プレイヤーのカード操作」を許可している場合は他人のカードでも掴める */
+body.allow-other-ops .card[data-owner="other"] {
+  cursor: grab;
+}
+
+/* 観戦者はすべてのカード操作不可 */
+body.is-spectator .card {
+  cursor: not-allowed !important;
+}
+
+/* ホバー時カード拡大（ホスト専用トグルでONの時のみ有効） */
+body.hover-zoom-enabled .card:not(.is-board):not(.memo):not(.note):not(.dice):not([data-is-dragging="true"]):hover {
+  scale: 1.08;
+  z-index: 25000 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+body.hover-zoom-enabled .card.selected:not(.is-board):not(.memo):not(.note):not(.dice):not([data-is-dragging="true"]):hover {
+  scale: 1.08;
+  z-index: 25000 !important;
+  box-shadow: 0 0 14px rgba(255, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.35) !important;
 }
 
 .card img {
