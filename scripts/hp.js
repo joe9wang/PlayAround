@@ -127,6 +127,7 @@ export function renderHPPanel(){
             updatedAt: serverTimestamp(),
             updatedBy: myUid
           }, { merge: true });
+          ctx.postLog?.('hpCounter', `HPを ${n} に変更しました`);
         } catch (e) {
           renderHPPanel();
         }

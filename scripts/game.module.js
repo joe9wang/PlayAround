@@ -322,6 +322,7 @@ function applyOtherOpsUI() {
   applySnapGridUI();
   applyHoverZoomUI();
   applyRotateSettingsUI();
+  applyChatLogSettingsUI();
   if (typeof refreshAllCardsOwnership === 'function') refreshAllCardsOwnership();
 }
 
@@ -1001,7 +1002,7 @@ async function saveToSlot(slot) {
 
     // ★セーブ完了ログ
 
-    postLog(`SLOT ${slot} に ${cards.length} 枚保存しました`);
+    postLog('saveLoad', `SLOT ${slot} に ${cards.length} 枚保存しました`);
 
   } catch (e) {
 
@@ -1121,7 +1122,7 @@ async function loadFromSlot(slot) {
 
     // ★ロード完了ログ
 
-    postLog(`SLOT ${slot} から ${snap.size} 枚ロードしました`);
+    postLog('saveLoad', `SLOT ${slot} から ${snap.size} 枚ロードしました`);
 
   } catch (e) {
 
@@ -1393,7 +1394,7 @@ async function loadOfficialSet(type) {
     }
 
     if (n > 0) await batch.commit();
-    postLog(`公式セット「${type}」をロードしました`);
+    postLog('saveLoad', `公式セット「${type}」をロードしました`);
   } catch (e) {
     console.error(e);
     alert('公式セットのロードに失敗しました');
@@ -3507,17 +3508,12 @@ function updateAuthIndicator(user) {
 
 
 initHP({
-
   db, doc, setDoc, onSnapshot, serverTimestamp, ensureAuthReady,
-
   document, alert: (m) => alert(m),
-
+  postLog,
   getState: () => ({
-
     CURRENT_ROOM, CURRENT_PLAYER, CURRENT_UID, CURRENT_ROOM_META, currentSeatMap
-
   })
-
 });
 
 
@@ -4553,14 +4549,152 @@ async function postChat(text) {
 
 
 
-async function postLog(text) {
+// ===== チャット＆ログ設定 =====
+const DEFAULT_LOG_SETTINGS = {
+  timeFormat: 'minute', // 'minute' | 'second' | 'millisecond'
+  cardAdd: true,
+  saveLoad: true,
+  search: true,
+  cardFlip: true,
+  shuffle: true,
+  cardSelect: false,
+  sendBack: true,
+  cardCollect: true,
+  backImage: true,
+  diceCoin: true,
+  cardRotate: false,
+  cardDelete: true,
+  hpCounter: true,
+};
+
+const LOG_SETTING_KEYS = [
+  'cardAdd',
+  'saveLoad',
+  'search',
+  'cardFlip',
+  'shuffle',
+  'cardSelect',
+  'sendBack',
+  'cardCollect',
+  'backImage',
+  'diceCoin',
+  'cardRotate',
+  'cardDelete',
+  'hpCounter',
+];
+
+function isLogEnabled(category) {
+  if (!category || category === 'general') return true;
+  const settings = CURRENT_ROOM_META?.logSettings || DEFAULT_LOG_SETTINGS;
+  if (settings[category] !== undefined) {
+    return !!settings[category];
+  }
+  return DEFAULT_LOG_SETTINGS[category] !== undefined ? !!DEFAULT_LOG_SETTINGS[category] : true;
+}
+
+function formatLogTimestamp(date, format) {
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  if (format === 'second') {
+    const ss = String(date.getSeconds()).padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
+  }
+  if (format === 'millisecond') {
+    const ss = String(date.getSeconds()).padStart(2, '0');
+    const ms = String(Math.floor(date.getMilliseconds() / 10)).padStart(2, '0');
+    return `${hh}:${mm}:${ss}.${ms}`;
+  }
+  return `${hh}:${mm}`;
+}
+
+function updateDisplayedChatTimestamps() {
+  const fmt = CURRENT_ROOM_META?.logSettings?.timeFormat || 'minute';
+  const heads = document.querySelectorAll('#chat-log .chat-head');
+  heads.forEach(head => {
+    const ts = parseInt(head.dataset.timestamp, 10);
+    if (!isNaN(ts)) {
+      const d = new Date(ts);
+      const who = head.dataset.who || '';
+      head.textContent = `[${formatLogTimestamp(d, fmt)}] ${who}`;
+    }
+  });
+}
+
+function applyChatLogSettingsUI() {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  const settings = { ...DEFAULT_LOG_SETTINGS, ...(CURRENT_ROOM_META?.logSettings || {}) };
+
+  // ロールバッジと注記
+  const roleBadge = document.getElementById('log-settings-role-badge');
+  const guestHint = document.getElementById('log-settings-guest-hint');
+  if (roleBadge) {
+    if (isHost) {
+      roleBadge.textContent = t('logSettings.roleHost');
+      roleBadge.style.background = '#fef3c7';
+      roleBadge.style.color = '#b45309';
+      roleBadge.style.border = '1px solid #fde68a';
+    } else {
+      roleBadge.textContent = t('logSettings.roleGuest');
+      roleBadge.style.background = '#f1f5f9';
+      roleBadge.style.color = '#64748b';
+      roleBadge.style.border = '1px solid #e2e8f0';
+    }
+  }
+  if (guestHint) {
+    guestHint.style.display = isHost ? 'none' : 'block';
+  }
+
+  // 時間形式ラジオ
+  const timeRadios = document.querySelectorAll('input[name="log-time-format"]');
+  timeRadios.forEach(radio => {
+    radio.checked = (radio.value === (settings.timeFormat || 'minute'));
+    radio.disabled = !isHost;
+  });
+
+  // イベント別チェックボックス
+  LOG_SETTING_KEYS.forEach(k => {
+    const el = document.getElementById(`log-opt-${k}`);
+    if (el) {
+      el.checked = (settings[k] !== undefined) ? !!settings[k] : !!DEFAULT_LOG_SETTINGS[k];
+      el.disabled = !isHost;
+    }
+  });
+
+  updateDisplayedChatTimestamps();
+}
+
+async function saveChatLogSettings(updates) {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (!isHost || !CURRENT_ROOM) return;
+  const currentSettings = { ...DEFAULT_LOG_SETTINGS, ...(CURRENT_ROOM_META?.logSettings || {}) };
+  const newSettings = { ...currentSettings, ...updates };
+  try {
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), {
+      logSettings: newSettings,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } catch (e) {
+    console.warn('saveChatLogSettings failed', e);
+  }
+}
+
+async function postLog(categoryOrText, maybeText) {
+  let category = 'general';
+  let text = '';
+  if (maybeText !== undefined) {
+    category = categoryOrText;
+    text = maybeText;
+  } else {
+    text = categoryOrText;
+  }
 
   if (!text || !CURRENT_ROOM || !CURRENT_PLAYER) return;
+  if (!isLogEnabled(category)) return;
 
   try {
-
     const payload = {
       type: 'log',
+      category,
       text: String(text),
       seat: CURRENT_PLAYER,
       name: myDisplayName(),
@@ -4569,119 +4703,100 @@ async function postLog(text) {
     if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
     await addDoc(collection(db, `rooms/${CURRENT_ROOM}/chat`), payload);
-
   } catch (e) {
-
     console.warn('log failed', e);
-
     if (e?.code === 'permission-denied') {
-
       appendSystemLine('操作ログの書き込みが許可されていません（権限）');
-
     }
-
   }
-
 }
-
-
 
 function bindChatUIOnce() {
-
   if (chatUIBound) return;
-
   const input = document.getElementById('chat-input');
-
   const send = document.getElementById('chat-send');
 
-
-
   // 送信ボタン
-
   send?.addEventListener('click', async () => {
-
     const text = (input?.value || '').trim();
-
     if (!text) return;
-
     await postChat(text);
-
     if (input) input.value = '';
-
   });
-
-
 
   // Enter 送信（Shift+Enter で改行）
-
   input?.addEventListener('keydown', (e) => {
-
     if (e.key === 'Enter' && !e.shiftKey) {
-
       e.preventDefault();
-
       send?.click();
-
     }
-
   });
 
+  // 設定モーダルバインド
+  const btnSettings = document.getElementById('btn-chat-log-settings');
+  const modalSettings = document.getElementById('chat-log-settings-modal');
+  const btnSettingsClose = document.getElementById('btn-chat-log-settings-close');
+  const btnSettingsOk = document.getElementById('btn-chat-log-settings-ok');
 
+  btnSettings?.addEventListener('click', () => {
+    applyChatLogSettingsUI();
+    if (modalSettings) modalSettings.style.display = 'flex';
+  });
+
+  const closeModal = () => {
+    if (modalSettings) modalSettings.style.display = 'none';
+  };
+  btnSettingsClose?.addEventListener('click', closeModal);
+  btnSettingsOk?.addEventListener('click', closeModal);
+  modalSettings?.addEventListener('click', (e) => {
+    if (e.target === modalSettings) closeModal();
+  });
+
+  // ラジオ変更
+  document.querySelectorAll('input[name="log-time-format"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (radio.checked) {
+        saveChatLogSettings({ timeFormat: radio.value });
+      }
+    });
+  });
+
+  // チェックボックス変更
+  LOG_SETTING_KEYS.forEach(k => {
+    const el = document.getElementById(`log-opt-${k}`);
+    el?.addEventListener('change', () => {
+      saveChatLogSettings({ [k]: !!el.checked });
+    });
+  });
 
   chatUIBound = true;
-
 }
 
-
-
 function renderChatDoc(d) {
-
   const data = d.data() || {};
-
   const wrap = document.createElement('div');
-
   wrap.className = (data.type === 'log') ? 'log' : 'chat';
-
   wrap.style.margin = '4px 0';
 
-
-
   const t = data.createdAt?.toDate?.() ? data.createdAt.toDate() : new Date();
-
-  const hh = String(t.getHours()).padStart(2, '0');
-
-  const mm = String(t.getMinutes()).padStart(2, '0');
-
-
+  const who = data.name || (typeof data.seat === 'number' ? `SEAT${data.seat}` : '');
+  const fmt = CURRENT_ROOM_META?.logSettings?.timeFormat || 'minute';
 
   const head = document.createElement('div');
-
+  head.className = 'chat-head';
+  head.dataset.timestamp = String(t.getTime());
+  head.dataset.who = who;
   head.style.fontSize = '11px';
-
   head.style.color = (data.type === 'log') ? '#888' : '#666';
-
-  // ログでもプレイヤー名を表示（name が無ければ seat から P番号を推定）
-
-  const who = data.name || (typeof data.seat === 'number' ? `SEAT${data.seat}` : '');
-
-  head.textContent = `[${hh}:${mm}] ${who}`;
-
-
+  head.textContent = `[${formatLogTimestamp(t, fmt)}] ${who}`;
 
   const body = document.createElement('div');
-
   body.style.whiteSpace = 'pre-wrap';
-
   body.textContent = data.text || '';
 
-
-
   wrap.appendChild(head);
-
   wrap.appendChild(body);
-
   return wrap;
-
 }
 
 
@@ -4968,7 +5083,12 @@ function applyCardSelection(card) {
     }
     updateSelectedCount();
   }
+  const wasAlreadySelected = card.classList.contains('selected') && selectedCard === card;
   selectedCard = card;
+  if (!wasAlreadySelected && isLogEnabled('cardSelect')) {
+    const cardName = card.dataset.name || (card.querySelector('img')?.alt) || 'カード';
+    postLog('cardSelect', `${cardName} を選択しました`);
+  }
 
   const isToken = card.classList.contains('token');
   if (isToken) {
@@ -5321,7 +5441,7 @@ function createCardDom(cardId, imageSrc, state) {
         input.value = n;
 
         updateCardBatched(cardId, { count: n });
-
+        postLog('hpCounter', `数値カウンターを ${n} に変更しました`);
       };
 
       input.addEventListener('change', () => commit(parseInt(input.value, 10)));
@@ -5435,6 +5555,7 @@ function createCardDom(cardId, imageSrc, state) {
 
       updateCardBatched(cId, { faceUp: nextFaceUp });
     });
+    postLog('cardFlip', `${cardsToFlip.length}枚のカードを${nextFaceUp ? 'オモテ' : 'ウラ'}にしました`);
 
     if (selectedCard && (selectedCard === card || cardsToFlip.includes(selectedCard))) {
       const isUp = selectedCard.dataset.faceUp === 'true';
@@ -5499,6 +5620,7 @@ function createCardDom(cardId, imageSrc, state) {
       c.style.transform = `rotate(${next}deg) scale(${currentScale})`;
       updateCardBatched(cId, { rotation: next });
     });
+    postLog('cardRotate', `${cardsToRotate.length}枚のカードを回転させました`);
   }
 
   card._rotateCards = () => rotateCards(card);
@@ -6358,7 +6480,7 @@ async function processQueue() {
 
     if (totalUploaded > 0) {
 
-      postLog(`画像を${totalUploaded}枚読み込みました`);
+      postLog('cardAdd', `画像を${totalUploaded}枚読み込みました`);
 
     }
 
@@ -6988,6 +7110,7 @@ window.faceDownAll = async function () {
   }
   if (count > 0) await batch.commit();
   setPreview();
+  postLog('cardFlip', '自分のカードをすべて裏向きにしました');
 }
 
 
@@ -7008,6 +7131,7 @@ window.faceUpAll = async function () {
     if (++count >= 450) { await batch.commit(); count = 0; }
   }
   if (count > 0) await batch.commit();
+  postLog('cardFlip', '自分のカードをすべて表向きにしました');
 }
 
 
@@ -7025,6 +7149,7 @@ window.resetMyCardRotation = async function () {
     if (++count >= 450) { await batch.commit(); count = 0; }
   }
   if (count > 0) await batch.commit();
+  postLog('cardRotate', '自分の全カードの向きをリセットしました');
 };
 
 window.resetSelectedRotation = async function () {
@@ -7046,6 +7171,7 @@ window.resetSelectedRotation = async function () {
     if (++count >= 450) { await batch.commit(); count = 0; }
   }
   if (count > 0) await batch.commit();
+  postLog('cardRotate', '選択カードの向きをリセットしました');
 };
 
 
@@ -7122,7 +7248,7 @@ window.spawnNumberCounter = async function () {
 
     });
 
-
+    postLog('hpCounter', '数値カウンターを配置しました');
 
   } catch (e) {
 
@@ -7260,7 +7386,7 @@ window.rollD6 = async function () {
 
     });
 
-    postLog(`6面ダイスを振りました → ${val}`);
+    postLog('diceCoin', `6面ダイスを振りました → ${val}`);
 
   } catch (e) {
 
@@ -7415,7 +7541,7 @@ window.rollD10 = async function () {
 
     await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
 
-    postLog(`10面ダイスを振りました → ${val}`);
+    postLog('diceCoin', `10面ダイスを振りました → ${val}`);
 
   } catch (e) {
 
@@ -7471,7 +7597,7 @@ window.rollD20 = async function () {
 
     await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
 
-    postLog(`20面ダイスを振りました → ${val}`);
+    postLog('diceCoin', `20面ダイスを振りました → ${val}`);
 
   } catch (e) {
 
@@ -7523,7 +7649,7 @@ window.rollD4 = async function () {
 
     await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
 
-    postLog(`4面ダイスを振りました → ${val}`);
+    postLog('diceCoin', `4面ダイスを振りました → ${val}`);
 
   } catch (e) {
 
@@ -7575,7 +7701,7 @@ window.rollD100 = async function () {
 
     await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
 
-    postLog(`100面ダイスを振りました → ${val}`);
+    postLog('diceCoin', `100面ダイスを振りました → ${val}`);
 
   } catch (e) {
 
@@ -7637,7 +7763,7 @@ window.flipCoin = async function () {
 
     await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
 
-    postLog(`コイントス → ${faceJP}`);
+    postLog('diceCoin', `コイントス → ${faceJP}`);
 
   } catch (e) {
 
@@ -7909,6 +8035,7 @@ window.spawnCounter = async function (label) {
     if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
     await addDoc(baseCol, payload);
+    postLog('hpCounter', `カウンター（${label}）を配置しました`);
 
   } catch (e) {
 
@@ -8087,7 +8214,7 @@ window.deleteMyCards = async function () {
 
     alert(`削除しました（${removedIds.length}枚）`);
 
-    postLog('自分のカードを全削除しました');
+    postLog('cardDelete', '自分のカードを全削除しました');
 
   } catch (e) {
 
@@ -8229,7 +8356,7 @@ window.confirmCollectMyCardsToDeck = async function () {
 
   await collectMyCardsToDeck(); // 既存の本体を呼ぶ
 
-  postLog('自分のカードをデッキに集めました');
+  postLog('cardCollect', '自分のカードをデッキにまとめました');
 
 };
 
@@ -8332,7 +8459,7 @@ window.deleteSelectedMine = async function () {
     if (window.previewImg) { setPreview(); }
     updateSelectedCount();
 
-    postLog(`選択中のカード ${mine.length} 枚を削除しました`);
+    postLog('cardDelete', `選択中のカード ${mine.length} 枚を削除しました`);
 
 
 
@@ -8450,7 +8577,7 @@ window.sendSelectedToBack = async function () {
 
 
 
-    postLog(`選択中のカード ${mine.length} 枚を最背面に送りました`);
+    postLog('sendBack', `選択中のカード ${mine.length} 枚を最背面に送りました`);
 
   } catch (e) {
 
@@ -8551,7 +8678,7 @@ window.openMyCardsDialog = function () {
 
         // ★一覧から選択したログ
 
-        postLog(`一覧から選択しました`);
+        postLog('search', `一覧から選択しました`);
 
         closeMyCardsDialog();
 
@@ -8746,7 +8873,7 @@ window.openMyDeckCardsDialog = function () {
 
         // ★デッキ一覧から選択したログ
 
-        postLog(`デッキ一覧からカードを選択しました`);
+        postLog('search', `デッキ一覧からカードを選択しました`);
 
         closeMyCardsDialog();
 
@@ -8885,7 +9012,7 @@ window.openMyDiscardCardsDialog = function () {
 
         // ★捨て札一覧から選択したログ
 
-        postLog(`捨て札一覧からカードを選択しました`);
+        postLog('search', `捨て札一覧からカードを選択しました`);
 
         closeMyCardsDialog();
 
@@ -8962,7 +9089,7 @@ window.shuffleDecks = async function () {
 
   updateOverlapBadges(); //一括移動のあとに最新化
 
-  postLog('デッキをシャッフルしました');
+  postLog('shuffle', 'デッキをシャッフルしました');
 
 };
 
@@ -9056,7 +9183,7 @@ window.collectSelectedCards = async function () {
 
   updateOverlapBadges();
 
-  postLog(`${targets.length}枚の選択カードをまとめました`);
+  postLog('cardCollect', `${targets.length}枚の選択カードをまとめました`);
 
 };
 
@@ -9105,7 +9232,7 @@ window.shuffleSelectedCards = async function () {
   }
   if (count > 0) await batch.commit();
   updateOverlapBadges();
-  postLog(`${targets.length}枚の選択カードをシャッフルしました`);
+  postLog('shuffle', `${targets.length}枚の選択カードをシャッフルしました`);
 };
 
 
@@ -9902,7 +10029,7 @@ async function deleteMyCardsSilently() {
 
     // ログだけは残す（部屋が未クローズのうちに）
 
-    try { postLog('退室に伴い自分のカードを自動削除しました'); } catch (_) { }
+    try { postLog('cardDelete', '退室に伴い自分のカードを自動削除しました'); } catch (_) { }
 
   } catch (_) { /* サイレント運用のため握りつぶす */ }
 
@@ -9981,6 +10108,7 @@ function openBackImagePicker(onlySelected = false) {
           backImageUrl: url,
           updatedAt: serverTimestamp()
         });
+        postLog('backImage', '選択カードのウラ画像を設定しました');
       } else {
         // 全マイカード用パス
         const path = `rooms/${CURRENT_ROOM}/seats/${CURRENT_PLAYER}/card-back.jpg`;
@@ -10015,6 +10143,7 @@ function openBackImagePicker(onlySelected = false) {
         }
 
         refreshCardBacksForSeat(CURRENT_PLAYER);
+        postLog('backImage', '全カードのウラ画像を設定しました');
       }
 
     } catch (err) {

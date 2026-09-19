@@ -332,6 +332,33 @@ input:checked + .slider {
 input:checked + .slider:before {
   transform: translateX(22px);
 }
+.switch input:disabled + .slider {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Compact switch for settings modals */
+.switch--sm {
+  width: 32px;
+  height: 18px;
+}
+.switch--sm .slider {
+  border-radius: 18px;
+}
+.switch--sm .slider:before {
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+}
+.switch--sm input:checked + .slider:before {
+  transform: translateX(14px);
+}
+
+.mini-settings-btn:hover {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
 
 #sidebar button.danger {
   background: #c62828;
