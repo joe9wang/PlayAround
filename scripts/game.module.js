@@ -291,9 +291,12 @@ const seatButtons = Array.from(document.querySelectorAll('.seat-grid:not(#create
 const sessionIndicator = document.getElementById('session-indicator');
 const authIndicator = document.getElementById('auth-indicator');
 
-
-
-
+// ===== Core Session & Room State =====
+let CURRENT_ROOM = null;
+let CURRENT_ROOM_META = null;
+let unsubscribeRoomDoc = null;
+let CURRENT_PLAYER = null; // 1..4
+let CURRENT_UID = null;
 
 // Host-only toggle: 他プレイヤーのカード操作
 
@@ -787,15 +790,6 @@ applyCollapseState();
 
 // pendingPatches: パス→patch を一時保持するMap
 
-let CURRENT_ROOM = null;
-
-let CURRENT_ROOM_META = null;
-
-let unsubscribeRoomDoc = null;
-
-let CURRENT_PLAYER = null; // 1..4
-
-let CURRENT_UID = null;
 
 
 
