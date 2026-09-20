@@ -3139,7 +3139,204 @@ function applyFieldModeLayout() {
       });
     }
   }
+
+  // カードモードの場合、スプリッター（境界リサイズハンドル）を配置および比率適用
+  if (mode === 'card') {
+    if (CURRENT_ROOM_META?.cardLayoutRatios) {
+      applyCardLayoutRatios(CURRENT_ROOM_META.cardLayoutRatios);
+    }
+    setupCardLayoutSplitters();
+  }
 }
+
+// === カードゲームモード用 レイアウト比率管理 & 境界スプリッター ===
+let currentCardLayoutRatios = {
+  col1: 16.6,
+  col3: 16.6,
+  handH: 25.0,
+  discardH: 50.0
+};
+
+/**
+ * カードモードの全プレイヤーエリアにCSS変数でグリッド比率を一括適用
+ */
+function applyCardLayoutRatios(ratios) {
+  if (!ratios) return;
+  currentCardLayoutRatios = {
+    col1: (typeof ratios.col1 === 'number') ? ratios.col1 : 16.6,
+    col3: (typeof ratios.col3 === 'number') ? ratios.col3 : 16.6,
+    handH: (typeof ratios.handH === 'number') ? ratios.handH : 25.0,
+    discardH: (typeof ratios.discardH === 'number') ? ratios.discardH : 50.0
+  };
+
+  const fieldEl = document.getElementById('field');
+  if (!fieldEl) return;
+
+  const { col1, col3, handH, discardH } = currentCardLayoutRatios;
+  const upperH = 100 - handH;
+  const row1 = (upperH * (discardH / 100)).toFixed(2);
+  const row2 = (upperH * (1 - discardH / 100)).toFixed(2);
+  const row3 = handH.toFixed(2);
+
+  fieldEl.style.setProperty('--card-col-1', `${col1.toFixed(2)}%`);
+  fieldEl.style.setProperty('--card-col-2', `1fr`);
+  fieldEl.style.setProperty('--card-col-3', `${col3.toFixed(2)}%`);
+  fieldEl.style.setProperty('--card-row-1', `${row1}%`);
+  fieldEl.style.setProperty('--card-row-2', `${row2}%`);
+  fieldEl.style.setProperty('--card-row-3', `${row3}%`);
+}
+
+/**
+ * 各プレイヤーエリア（SEAT1〜10）に境界スプリッターハンドルを生成・配置
+ */
+function setupCardLayoutSplitters() {
+  const playerAreas = document.querySelectorAll('.player-area');
+  if (!playerAreas.length) return;
+
+  playerAreas.forEach(playerArea => {
+    if (playerArea.dataset.splittersInit === 'true') return;
+    playerArea.dataset.splittersInit = 'true';
+
+    const specialArea = playerArea.querySelector('.special-area');
+    const playArea = playerArea.querySelector('.main-play-area');
+    const handArea = playerArea.querySelector('.hand-area');
+    const discardArea = playerArea.querySelector('.discard-area');
+
+    // 1. 特殊エリアとプレイエリアの境界 (左右ドラッグ)
+    if (specialArea) {
+      const hSpecial = document.createElement('div');
+      hSpecial.className = 'card-split-handle split-col split-col-special';
+      hSpecial.title = '特殊エリアの幅を調整';
+      specialArea.appendChild(hSpecial);
+      bindSplitterDrag(hSpecial, playerArea, 'col-special');
+    }
+
+    // 2. プレイエリアと手札エリアの境界 (上下ドラッグ)
+    if (handArea) {
+      const hHand = document.createElement('div');
+      hHand.className = 'card-split-handle split-row split-row-hand';
+      hHand.title = '手札エリアの高さを調整';
+      handArea.appendChild(hHand);
+      bindSplitterDrag(hHand, playerArea, 'row-hand');
+    }
+
+    // 3. プレイエリアと右側（捨て札・デッキ）の境界 (左右ドラッグ)
+    if (playArea) {
+      const hSide = document.createElement('div');
+      hSide.className = 'card-split-handle split-col split-col-side';
+      hSide.title = 'サイドエリアの幅を調整';
+      playArea.appendChild(hSide);
+      bindSplitterDrag(hSide, playerArea, 'col-side');
+    }
+
+    // 4. 捨て札エリアとデッキエリアの境界 (上下ドラッグ)
+    if (discardArea) {
+      const hSideRow = document.createElement('div');
+      hSideRow.className = 'card-split-handle split-row split-row-side';
+      hSideRow.title = '捨て札/デッキの高さを調整';
+      discardArea.appendChild(hSideRow);
+      bindSplitterDrag(hSideRow, playerArea, 'row-side');
+    }
+  });
+}
+
+/**
+ * スプリッターハンドルのドラッグ操作と比率更新・Firestore同期
+ */
+function bindSplitterDrag(handle, playerArea, type) {
+  const onStart = (e) => {
+    const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
+    if (!isHost) return;
+
+    if (e.type === 'mousedown' && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    handle.classList.add('is-dragging');
+    document.body.classList.add('is-resizing-splitter');
+
+    const areaRect = playerArea.getBoundingClientRect();
+    const z = typeof zoom !== 'undefined' ? zoom : 1;
+    const areaW = areaRect.width / z;
+    const areaH = areaRect.height / z;
+
+    const discardArea = playerArea.querySelector('.discard-area');
+    const deckArea = playerArea.querySelector('.deck-area');
+    let sideTotalH = 0;
+    let sideTop = 0;
+    if (type === 'row-side' && discardArea && deckArea) {
+      const dRect = discardArea.getBoundingClientRect();
+      const kRect = deckArea.getBoundingClientRect();
+      sideTop = dRect.top;
+      sideTotalH = (kRect.bottom - dRect.top) / z;
+    }
+
+    let tempRatios = { ...currentCardLayoutRatios };
+
+    const onMove = (moveEvt) => {
+      moveEvt.preventDefault();
+      const clientX = moveEvt.touches ? moveEvt.touches[0].clientX : moveEvt.clientX;
+      const clientY = moveEvt.touches ? moveEvt.touches[0].clientY : moveEvt.clientY;
+
+      if (type === 'col-special') {
+        const offsetPx = (clientX - areaRect.left) / z;
+        let pct = (offsetPx / areaW) * 100;
+        pct = Math.max(6, Math.min(35, pct)); // 6%〜35%
+        tempRatios.col1 = Math.round(pct * 10) / 10;
+      } else if (type === 'col-side') {
+        const offsetPx = (areaRect.right - clientX) / z;
+        let pct = (offsetPx / areaW) * 100;
+        pct = Math.max(8, Math.min(35, pct)); // 8%〜35%
+        tempRatios.col3 = Math.round(pct * 10) / 10;
+      } else if (type === 'row-hand') {
+        const offsetPx = (areaRect.bottom - clientY) / z;
+        let pct = (offsetPx / areaH) * 100;
+        pct = Math.max(12, Math.min(45, pct)); // 12%〜45%
+        tempRatios.handH = Math.round(pct * 10) / 10;
+      } else if (type === 'row-side') {
+        if (sideTotalH > 0) {
+          const offsetPx = (clientY - sideTop) / z;
+          let pct = (offsetPx / sideTotalH) * 100;
+          pct = Math.max(15, Math.min(85, pct)); // 15%〜85%
+          tempRatios.discardH = Math.round(pct * 10) / 10;
+        }
+      }
+
+      applyCardLayoutRatios(tempRatios);
+    };
+
+    const onEnd = async () => {
+      handle.classList.remove('is-dragging');
+      document.body.classList.remove('is-resizing-splitter');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+
+      // ホストのみ Firestore rooms/{roomId} に保存し全プレイヤーにリアルタイム同期
+      if (CURRENT_ROOM && isHost) {
+        try {
+          const roomRef = doc(db, `rooms/${CURRENT_ROOM}`);
+          await updateDoc(roomRef, {
+            cardLayoutRatios: tempRatios,
+            updatedAt: serverTimestamp()
+          });
+        } catch (err) {
+          console.warn('[Splitter] Failed to save cardLayoutRatios:', err);
+        }
+      }
+    };
+
+    document.addEventListener('mousemove', onMove, { passive: false });
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+  };
+
+  handle.addEventListener('mousedown', onStart);
+  handle.addEventListener('touchstart', onStart, { passive: false });
+}
+
 
 // ===============================
 
@@ -3819,6 +4016,12 @@ function loadSeatStatus(rid) {
     if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
 
     startHostWatch(); // 追加: ロビー中も空室監視/自動削除を回す
+
+    // カードモードのエリア比率の同期およびスプリッターハンドルの初期化
+    if (CURRENT_ROOM_META?.cardLayoutRatios) {
+      applyCardLayoutRatios(CURRENT_ROOM_META.cardLayoutRatios);
+    }
+    setupCardLayoutSplitters();
 
     renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); updateLeaveRoomButtonVisibility(); renderHPPanel();
 
