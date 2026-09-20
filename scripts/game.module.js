@@ -3053,6 +3053,9 @@ function renderFieldLabels() {
 
 // ===============================
 
+// エリア背景画像キャッシュ (ルーム更新やハートビートで上書きされないよう保護)
+const areaBackgroundImages = new Map(); // areaId -> { imageUrl, fitMode }
+
 // roomMeta.fieldMode に応じて DOM を切替え。
 
 function applyFieldModeLayout() {
@@ -3075,17 +3078,28 @@ function applyFieldModeLayout() {
     boardLayoutEl.classList.toggle('layout-standard', layout === 'standard');
     boardLayoutEl.classList.toggle('layout-playonly', layout === 'playonly');
     
-    // Chess などのプレイエリア背景画像の設定
+    // Chess などのプレイエリア背景画像の設定（カスタム画像が設定されていない場合のみデフォルトを適用）
     const boardPlayEl = document.getElementById('board-play');
     if (boardPlayEl) {
-      if (m === 'chess') {
-        boardPlayEl.style.backgroundImage = "url('image/Chess/ChessBoard.png')";
-        boardPlayEl.style.backgroundSize = "contain";
-        boardPlayEl.style.backgroundRepeat = "no-repeat";
-        boardPlayEl.style.backgroundPosition = "center";
-        // チェス盤は正方形なので、アスペクト比を維持するためのスタイルが必要かもしれません
+      const customAreaBg = areaBackgroundImages.get('board-play');
+      const hasCustomBg = !!customAreaBg?.imageUrl || boardPlayEl.classList.contains('has-bg-image') || (boardPlayEl.style.backgroundImage && !boardPlayEl.style.backgroundImage.includes('ChessBoard.png'));
+      if (hasCustomBg) {
+        // カスタム背景画像が設定されている場合は保護し、必要であれば復元
+        if (customAreaBg?.imageUrl && !boardPlayEl.style.backgroundImage) {
+          boardPlayEl.style.backgroundImage = `url(${customAreaBg.imageUrl})`;
+          boardPlayEl.style.backgroundSize = (customAreaBg.fitMode === 'contain') ? 'contain' : '100% 100%';
+          boardPlayEl.style.backgroundPosition = 'center';
+          boardPlayEl.style.backgroundRepeat = 'no-repeat';
+        }
       } else {
-        boardPlayEl.style.backgroundImage = "";
+        if (m === 'chess') {
+          boardPlayEl.style.backgroundImage = "url('image/Chess/ChessBoard.png')";
+          boardPlayEl.style.backgroundSize = "contain";
+          boardPlayEl.style.backgroundRepeat = "no-repeat";
+          boardPlayEl.style.backgroundPosition = "center";
+        } else {
+          boardPlayEl.style.backgroundImage = "";
+        }
       }
     }
   }
@@ -10571,6 +10585,8 @@ function subscribeAreas() {
 
       if (change.type === 'removed') {
 
+        areaBackgroundImages.delete(id);
+
         if (el.classList.contains('dynamic-area')) {
 
           console.warn('[subscribeAreas] removed → el.remove() id=', id);
@@ -10643,6 +10659,8 @@ function subscribeAreas() {
 
       if (!data.imageUrl) {
 
+        areaBackgroundImages.delete(id);
+
         el.style.backgroundImage = '';
 
         el.style.backgroundSize = '';
@@ -10668,6 +10686,8 @@ function subscribeAreas() {
         }
 
       } else {
+
+        areaBackgroundImages.set(id, { imageUrl: data.imageUrl, fitMode: data.fitMode });
 
         el.style.backgroundImage = `url(${data.imageUrl})`;
 
