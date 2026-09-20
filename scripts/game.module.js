@@ -498,10 +498,11 @@ hostCardHInput?.addEventListener('change', () => updateCardSize(hostCardWInput.v
 
 let CURRENT_LAYOUT_SELECTION = 'standard';
 window.selectLayoutOption = function(type) {
-  CURRENT_LAYOUT_SELECTION = type;
+  const normType = (type === 'standard') ? 'standard1' : (type === 'simple') ? 'simple1' : (type || 'standard1');
+  CURRENT_LAYOUT_SELECTION = normType;
   const opts = document.querySelectorAll('#field-layout-modal .layout-option');
   opts.forEach(opt => {
-    const isActive = opt.id === `layout-opt-${type}`;
+    const isActive = opt.id === `layout-opt-${normType}`;
     opt.classList.toggle('active', isActive);
     
     // 枠線の色を更新
@@ -543,13 +544,18 @@ btnModeCard?.addEventListener('click', () => {
   if (!isHost) { alert('ホスト専用機能です。'); return; }
   
   PENDING_FIELD_MODE = 'card';
-  const currentLayout = CURRENT_ROOM_META?.fieldLayout || 'standard';
+  const currentLayout = CURRENT_ROOM_META?.fieldLayout || 'standard1';
   window.selectLayoutOption(currentLayout);
 
-  const simpleImg = document.getElementById('layout-img-simple');
-  const standardImg = document.getElementById('layout-img-standard');
-  if (simpleImg) simpleImg.src = 'image/Field_simple_type.png';
-  if (standardImg) standardImg.src = 'image/Field_standard_type.png';
+  // 全6種を表示
+  document.querySelectorAll('#field-layout-modal .layout-option').forEach(opt => {
+    opt.style.display = '';
+  });
+
+  const simpleImg = document.getElementById('layout-img-simple1');
+  const standardImg = document.getElementById('layout-img-standard1');
+  if (simpleImg) simpleImg.src = 'image/Field_simple1_type.png';
+  if (standardImg) standardImg.src = 'image/Field_standard1_type.png';
 
   const modal = document.getElementById('field-layout-modal');
   if (modal) modal.style.display = 'flex';
@@ -563,8 +569,14 @@ btnModeBoard?.addEventListener('click', () => {
   const currentLayout = CURRENT_ROOM_META?.fieldLayout || 'standard';
   window.selectLayoutOption(currentLayout);
 
-  const simpleImg = document.getElementById('layout-img-simple');
-  const standardImg = document.getElementById('layout-img-standard');
+  // ボードモードではスタンダード1とシンプル1のみ表示し、画像をboard用に切り替え
+  document.querySelectorAll('#field-layout-modal .layout-option').forEach(opt => {
+    const isBasic = (opt.id === 'layout-opt-standard1' || opt.id === 'layout-opt-simple1');
+    opt.style.display = isBasic ? '' : 'none';
+  });
+
+  const simpleImg = document.getElementById('layout-img-simple1');
+  const standardImg = document.getElementById('layout-img-standard1');
   if (simpleImg) simpleImg.src = 'image/board simple.png';
   if (standardImg) standardImg.src = 'image/board standard.png';
 
@@ -589,7 +601,11 @@ document.getElementById('field-layout-ok')?.addEventListener('click', async () =
 
   try {
     await clearAreas();
-    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { fieldMode: PENDING_FIELD_MODE, fieldLayout: CURRENT_LAYOUT_SELECTION, updatedAt: serverTimestamp() }, { merge: true });
+    let sel = CURRENT_LAYOUT_SELECTION || 'standard1';
+    if (PENDING_FIELD_MODE === 'board') {
+      sel = (sel === 'simple1' || sel === 'simple') ? 'simple' : 'standard';
+    }
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { fieldMode: PENDING_FIELD_MODE, fieldLayout: sel, updatedAt: serverTimestamp() }, { merge: true });
   } catch (e) {
     console.error(e);
   }
@@ -2814,147 +2830,84 @@ function renderSeatAvailability() {
 // ===== area colors (no change in write count; low frequency)
 
 // 特殊エリア(special)・捨て札(discard)を追加
-
 const DEFAULT_AREA_COLORS = {
-
   deck: '#ff9900',
-
+  deck2: '#ff9900',
   main: '#22dd88',
-
   hand: '#228be6',
-
   special: '#9c27b0',
-
+  special2: '#9c27b0',
   discard: '#cc6666'
-
 };
 
-
-
-
-
 function getSeatAreaColor(seat, zone) {
-
   const ac = currentSeatMap[seat]?.areaColors || {};
-
   return ac[zone] || DEFAULT_AREA_COLORS[zone];
-
 }
 
 function renderAreaColors() {
-
   const currentSeats = Object.keys(currentSeatMap).map(Number);
-
   const seatsToCheck = currentSeats.length > 0 ? currentSeats : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
   for (const seat of seatsToCheck) {
-
     const root = document.querySelector(`.player-${seat}`);
-
     if (!root) continue;
 
-
-
     const deck = root.querySelector('.deck-area');
-
+    const deck2 = root.querySelector('.deck2-area');
     const main = root.querySelector('.main-play-area');
-
     const hand = root.querySelector('.hand-area');
-
     const special = root.querySelector('.special-area');
-
+    const special2 = root.querySelector('.special2-area');
     const discard = root.querySelector('.discard-area');
 
-
-
     if (deck) deck.style.backgroundColor = getSeatAreaColor(seat, 'deck');
-
+    if (deck2) deck2.style.backgroundColor = getSeatAreaColor(seat, 'deck2');
     if (main) main.style.backgroundColor = getSeatAreaColor(seat, 'main');
-
     if (hand) hand.style.backgroundColor = getSeatAreaColor(seat, 'hand');
-
     if (special) special.style.backgroundColor = getSeatAreaColor(seat, 'special');
-
+    if (special2) special2.style.backgroundColor = getSeatAreaColor(seat, 'special2');
     if (discard) discard.style.backgroundColor = getSeatAreaColor(seat, 'discard');
-
-
-
   }
-
 }
 
 async function triggerAreaColorPicker(el, seat, key) {
-
   if (seat !== CURRENT_PLAYER) return;
-
   if (!CURRENT_ROOM) return;
 
-
-
   const input = document.createElement('input');
-
   input.type = 'color';
-
   input.value = getSeatAreaColor(seat, key);
-
   input.style.position = 'fixed';
-
   input.style.left = '-9999px';
-
   document.body.appendChild(input);
 
-
-
   input.addEventListener('change', async () => {
-
     const picked = input.value;
-
     el.style.background = picked;
-
     const prev = (currentSeatMap[seat]?.areaColors) || {};
-
     const next = { ...prev, [key]: picked };
-
     updateSeatBatched(seat, { areaColors: next, updatedAt: serverTimestamp() });
-
     input.remove();
-
   }, { once: true });
 
-
-
   input.click();
-
 }
 
-
-
 function bindAreaColorHandlers() {
-
   const currentSeats = Object.keys(currentSeatMap).map(Number);
-
   const seatsToCheck = currentSeats.length > 0 ? currentSeats : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
   for (const seat of seatsToCheck) {
-
     const root = document.querySelector(`.player-${seat}`);
-
     if (!root) continue;
 
-
-
     [
-
       { el: root.querySelector('.deck-area'), key: 'deck' },
-
+      { el: root.querySelector('.deck2-area'), key: 'deck2' },
       { el: root.querySelector('.main-play-area'), key: 'main' },
-
       { el: root.querySelector('.hand-area'), key: 'hand' },
-
       { el: root.querySelector('.special-area'), key: 'special' },
-
+      { el: root.querySelector('.special2-area'), key: 'special2' },
       { el: root.querySelector('.discard-area'), key: 'discard' },
-
     ].forEach(({ el, key }) => {
 
       if (!el || el.__colorHandlerBound) return;
@@ -3074,9 +3027,10 @@ function applyFieldModeLayout() {
   // ボードレイアウトへのクラス適用
   const boardLayoutEl = document.getElementById('board-layout');
   if (boardLayoutEl) {
-    boardLayoutEl.classList.toggle('layout-simple', layout === 'simple');
-    boardLayoutEl.classList.toggle('layout-standard', layout === 'standard');
-    boardLayoutEl.classList.toggle('layout-playonly', layout === 'playonly');
+    const boardNormLayout = (layout === 'standard1') ? 'standard' : (layout === 'simple1') ? 'simple' : layout;
+    boardLayoutEl.classList.toggle('layout-simple', boardNormLayout === 'simple');
+    boardLayoutEl.classList.toggle('layout-standard', boardNormLayout === 'standard');
+    boardLayoutEl.classList.toggle('layout-playonly', boardNormLayout === 'playonly');
     
     // Chess などのプレイエリア背景画像の設定（カスタム画像が設定されていない場合のみデフォルトを適用）
     const boardPlayEl = document.getElementById('board-play');
@@ -3110,8 +3064,17 @@ function applyFieldModeLayout() {
     if (el) {
       el.style.display = (mode === 'card' && i <= pc) ? '' : 'none';
       if (mode === 'card') {
-        el.classList.toggle('layout-simple', layout === 'simple');
-        el.classList.toggle('layout-standard', layout === 'standard');
+        const normLayout = (layout === 'standard') ? 'standard1' : (layout === 'simple') ? 'simple1' : layout;
+        el.classList.toggle('layout-standard1', normLayout === 'standard1');
+        el.classList.toggle('layout-standard2', normLayout === 'standard2');
+        el.classList.toggle('layout-simple1', normLayout === 'simple1');
+        el.classList.toggle('layout-simple2', normLayout === 'simple2');
+        el.classList.toggle('layout-custom1', normLayout === 'custom1');
+        el.classList.toggle('layout-custom2', normLayout === 'custom2');
+
+        // backwards compatibility
+        el.classList.toggle('layout-simple', normLayout === 'simple1');
+        el.classList.toggle('layout-standard', normLayout === 'standard1');
       }
     }
   }
@@ -3400,7 +3363,7 @@ async function generateBoardPreview() {
 
     // 2. 描画対象エリアの収集（フィールド内の要素に限定）
     const selectors = [
-      '.player-area', '.shared-play-area', '.deck-area', '.discard-area', '.special-area', 
+      '.player-area', '.shared-play-area', '.deck-area', '.deck2-area', '.discard-area', '.special-area', '.special2-area', 
       '.hand-area', '.main-play-area', '.zone', '.zone-area', '.field-background',
       '#board-play', '#board-layout', '.board-hand', '.center-deck', '.center-discard', '#board-center',
       '[class*="hand-area"]', '[class*="play-area"]', '[class*="player-slot"]'
@@ -6718,7 +6681,7 @@ async function processQueue() {
 
 
 
-          const isSimple = CURRENT_ROOM_META?.fieldLayout === 'simple';
+          const isSimple = (CURRENT_ROOM_META?.fieldLayout === 'simple' || CURRENT_ROOM_META?.fieldLayout === 'simple1');
           const isPiece = (kind === 'piece');
           const isBoard = (kind === 'board');
           const isToken = isPiece || isBoard;
@@ -10920,9 +10883,11 @@ function subscribeAreas() {
            let label = 'エリア';
            let i18nKey = 'zone.play';
            if (data.type === 'deck-area') { label = 'デッキエリア'; i18nKey = 'zone.deck'; }
+           else if (data.type === 'deck2-area') { label = 'デッキエリア2'; i18nKey = 'zone.deck2'; }
            else if (data.type === 'hand-area') { label = '手札エリア'; i18nKey = 'zone.hand'; }
            else if (data.type === 'discard-area') { label = '捨て札エリア'; i18nKey = 'zone.discard'; }
            else if (data.type === 'special-area') { label = '特殊エリア'; i18nKey = 'zone.special'; }
+           else if (data.type === 'special2-area') { label = '特殊エリア2'; i18nKey = 'zone.special2'; }
            el.innerHTML = `<div class="zone-label" data-i18n="${i18nKey}">${label}</div>`;
            field.appendChild(el);
            console.log('[subscribeAreas] 新エリア作成:', id);
@@ -11540,15 +11505,10 @@ function bindAreaContextMenuOnce() {
 
 
   const targetAreaSelectors = [
-
     // カードゲームモード
-
-    '.play-area', '.main-play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area',
-
+    '.play-area', '.main-play-area', '.discard-area', '.deck-area', '.deck2-area', '.special-area', '.special2-area', '.hand-area',
     // ボードゲームモード
-
     '#board-play', '.board-hand', '.center-deck', '.center-discard'
-
   ];
 
 
@@ -11637,7 +11597,7 @@ function bindAreaContextMenuOnce() {
 
     // 実際に保存するキーは対象のメインエリア名 (.play-area など)
 
-    const mainSelectors = ['.main-play-area', '.discard-area', '.deck-area', '.special-area', '.hand-area'];
+    const mainSelectors = ['.main-play-area', '.discard-area', '.deck-area', '.deck2-area', '.special-area', '.special2-area', '.hand-area'];
 
     const foundSel = mainSelectors.find(sel => area.classList.contains(sel.slice(1)));
 

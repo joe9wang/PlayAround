@@ -144,13 +144,26 @@ const I18N = {
 
         // --- Zones ---
         "zone.special": "特殊エリア",
+        "zone.special1": "特殊エリア1",
+        "zone.special2": "特殊エリア2",
         "zone.play": "プレイエリア",
         "zone.discard": "捨て札エリア",
         "zone.deck": "デッキエリア",
+        "zone.deck1": "デッキエリア1",
+        "zone.deck2": "デッキエリア2",
         "zone.hand": "手札エリア",
         "zone.play.shared": "プレイエリア（共有）",
         "zone.deck.shared": "デッキエリア（共有）",
         "zone.discard.shared": "捨て札エリア（共有）",
+
+        // --- Field Layouts ---
+        "layout.modalTitle": "フィールド構成を選択",
+        "layout.standard1": "スタンダード1",
+        "layout.standard2": "スタンダード2",
+        "layout.simple1": "シンプル1",
+        "layout.simple2": "シンプル2",
+        "layout.custom1": "カスタム1",
+        "layout.custom2": "カスタム2",
 
         // --- Area Image Fit Modal ---
         "areaFit.title": "エリア画像の設定",
@@ -357,13 +370,26 @@ const I18N = {
 
         // --- Zones ---
         "zone.special": "Special",
+        "zone.special1": "Special 1",
+        "zone.special2": "Special 2",
         "zone.play": "Play area",
         "zone.discard": "Discard",
         "zone.deck": "Deck",
+        "zone.deck1": "Deck 1",
+        "zone.deck2": "Deck 2",
         "zone.hand": "Hand",
         "zone.play.shared": "Shared play area",
         "zone.deck.shared": "Shared deck area",
         "zone.discard.shared": "Shared discard area",
+
+        // --- Field Layouts ---
+        "layout.modalTitle": "Choose Field Layout",
+        "layout.standard1": "Standard 1",
+        "layout.standard2": "Standard 2",
+        "layout.simple1": "Simple 1",
+        "layout.simple2": "Simple 2",
+        "layout.custom1": "Custom 1",
+        "layout.custom2": "Custom 2",
 
         // --- Area Image Fit Modal ---
         "areaFit.title": "Area Image Settings",

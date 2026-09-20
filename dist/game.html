@@ -27,20 +27,25 @@
   <meta property="og:site_name" content="BatriTable">
   <meta property="og:title" content="BatriTable — オンラインボード＆カードゲーム">
   <meta property="og:description" content="BatriTableは、画像を使って最大4人で遊べるオンラインのボード＆カードゲーム。ルームを作成して友だちと手軽に遊べます。">
-  <meta property="og:url" content="https://www.batritable.com/game.html">
-  <meta property="og:image" content="https://www.batritable.com/assets/ogp.jpg">
+  <meta property="og:url" content="https://batritable.com/game.html">
+  <meta property="og:image" content="https://batritable.com/assets/ogp.png">
+  <meta property="og:image:secure_url" content="https://batritable.com/assets/ogp.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="BatriTable バトライテーブル">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="BatriTable — オンラインボード＆カードゲーム">
   <meta name="twitter:description" content="画像を使って最大4人で遊べるオンラインのボード＆カードゲーム。ルーム作成して友だちと手軽に遊べます。">
-  <meta name="twitter:image" content="https://www.batritable.com/assets/ogp.jpg">
+  <meta name="twitter:image" content="https://batritable.com/assets/ogp.png">
   <title>
     BatriTable
   </title>
   <meta content="width=device-width, initial-scale=1" name="viewport" />
 
-  <link rel="stylesheet" href="assets/game.css">
+  <link rel="stylesheet" href="assets/game.css?v=20260916-3">
 
 
 </head>
@@ -156,6 +161,15 @@
         </div>
       </details>
 
+      <!-- Selection Section -->
+      <details class="ops-section">
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">選択</summary>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <button id="btn-multi-select" class="sl-btn" style="flex:1; margin:0;" onclick="toggleMultiSelectMode()">複数選択</button>
+          <span id="selected-cards-count-badge" style="font-size:12px; font-weight:bold; color:#888; background:#f5f5f5; border:1px solid #ddd; border-radius:12px; padding:3px 8px; white-space:nowrap;">選択中: 0枚</span>
+        </div>
+      </details>
+
       <!-- Save/Load: compact two-up row -->
       <details class="ops-section">
         <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">マイセット</summary>
@@ -165,26 +179,34 @@
         </div>
       </details>
       <details class="ops-section">
-        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">マイカード<br>
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">カード<br>
           <span style="font-size:12px;color:#666;font-weight:normal;">(ダブルクリックで回転、右クリックで裏表)</span>
         </summary>
+        <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack" style="margin-top:4px;">⬇ 選択カードを最背面に</button>
         <div class="sl-row" role="group" aria-label="Face up/down">
           <button class="sl-btn" onclick="faceDownAll()" data-i18n="side.faceDown">🂠 全て裏に</button>
           <button class="sl-btn" onclick="faceUpAll()" data-i18n="side.faceUp">🂡 全て表に</button>
         </div>
-        <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing">↻ 全カード向きリセット</button>
-        <button class="sl-btn" onclick="resetSelectedRotation()" data-i18n="side.resetSelectedFacing">↻
-          選択カード向きリセット</button>
-        <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle">🌀 デッキエリアをシャッフル</button>
-        <button class="sl-btn" onclick="shuffleSelectedCards()" data-i18n="side.shuffleSelected">🌀 選択カードをシャッフル</button>
-        <button class="sl-btn" onclick="sendSelectedToBack()" data-i18n="side.sendSelectedBack">⬇ 選択カードを最背面に</button>
-        <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect">❖ 全カードをデッキに集める</button>
-        <button class="sl-btn" onclick="collectSelectedCards()" data-i18n="side.collectSelected">❖ 選択カードをまとめる</button>
-        <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage">🖼 全カードのウラ画像</button>
-        <button class="sl-btn" onclick="openBackImagePicker(true)" data-i18n="side.BackImageSelected">🖼
-          選択カードのウラ画像</button>
-        <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine">🗑 全カード削除</button>
-        <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected">🗑 選択カード削除</button>
+        <div class="sl-row" role="group" aria-label="Reset Facing">
+          <button class="sl-btn" onclick="resetMyCardRotation()" data-i18n="side.resetFacing"><span>↻ 全カード<br>向きリセット</span></button>
+          <button class="sl-btn" onclick="resetSelectedRotation()" data-i18n="side.resetSelectedFacing"><span>↻ 選択カード<br>向きリセット</span></button>
+        </div>
+        <div class="sl-row" role="group" aria-label="Shuffle">
+          <button class="sl-btn" onclick="shuffleDecks()" data-i18n="side.shuffle"><span>🌀 デッキエリアを<br>シャッフル</span></button>
+          <button class="sl-btn" onclick="shuffleSelectedCards()" data-i18n="side.shuffleSelected"><span>🌀 選択カードを<br>シャッフル</span></button>
+        </div>
+        <div class="sl-row" role="group" aria-label="Collect Cards">
+          <button class="sl-btn" onclick="confirmCollectMyCardsToDeck()" data-i18n="side.collect"><span>❖ 全カードを<br>デッキにまとめる</span></button>
+          <button class="sl-btn" onclick="collectSelectedCards()" data-i18n="side.collectSelected"><span>❖ 選択カードを<br>まとめる</span></button>
+        </div>
+        <div class="sl-row" role="group" aria-label="Back Image">
+          <button class="sl-btn" onclick="openBackImagePicker(false)" data-i18n="side.BackImage"><span>🖼 全カードの<br>ウラ画像設定</span></button>
+          <button class="sl-btn" onclick="openBackImagePicker(true)" data-i18n="side.BackImageSelected"><span>🖼 選択カードの<br>ウラ画像設定</span></button>
+        </div>
+        <div class="sl-row" role="group" aria-label="Delete Cards">
+          <button class="sl-btn" onclick="deleteMyCards()" data-i18n="side.deleteMine"><span>🗑 全カード<br>削除</span></button>
+          <button class="sl-btn" onclick="deleteSelectedMine()" data-i18n="side.deleteSelected"><span>🗑 選択カード<br>削除</span></button>
+        </div>
 
       </details>
       <details class="ops-section">
@@ -236,6 +258,16 @@
         <button class="sl-btn" onclick="spawnNote()">📒 ノート作成</button>
       </details>
 
+      <details class="ops-section" id="field-ops-section">
+        <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">
+          <span data-i18n="side.fieldSection">フィールド</span><br>
+          <span style="font-size:12px;color:#666;font-weight:normal;" data-i18n="side.fieldHelp">(クリックで配置、右クリックで操作)</span>
+        </summary>
+        <button id="btn-add-deck-area" class="sl-btn" data-i18n="side.addDeck">🗂 デッキエリア追加</button>
+        <button id="btn-add-discard-area" class="sl-btn" data-i18n="side.addDiscard">🗑 捨て札エリア追加</button>
+        <button id="btn-add-special-area" class="sl-btn" data-i18n="side.addSpecial">✨ 特殊エリア追加</button>
+      </details>
+
       <!-- 非表示のファイル入力（画像選択ダイアログ用） -->
       <input id="card-back-input" type="file" accept="image/*" style="display:none">
 
@@ -258,6 +290,67 @@
             </div>
           </div>
 
+          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+            <div style="font-size:12px;color:#555;">
+              サイズ調整メモリ
+            </div>
+            <div class="row" style="align-items:center; gap:8px;">
+              <span id="toggle-snap-grid-text" style="font-size:11px; font-weight:bold; color:#777;">ON</span>
+              <label class="switch" title="ONにすると、エリアリサイズ時にマス目メモリが表示され自動でスナップします">
+                <input id="toggle-snap-grid" type="checkbox" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+            <div style="font-size:12px;color:#555;" data-i18n="side.hoverZoom">
+              ホバー時カード拡大
+            </div>
+            <div class="row" style="align-items:center; gap:8px;">
+              <span id="toggle-hover-zoom-text" style="font-size:11px; font-weight:bold; color:#777;">ON</span>
+              <label class="switch" title="ONにすると、カードにマウスを乗せたときに少し拡大されて見やすくなります">
+                <input id="toggle-hover-zoom" type="checkbox" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
+            <div style="font-size:12px;color:#555;margin-bottom:8px;font-weight:bold;" data-i18n="side.rotateSection">カード回転設定</div>
+
+            <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div style="font-size:12px;color:#555;" data-i18n="side.rotateDir">回転方向</div>
+              <select id="host-rotate-dir" style="padding:4px 8px; border:1px solid #ddd; border-radius:6px; font-size:12px; background:#fff; outline:none; cursor:pointer;">
+                <option value="cw" data-i18n="side.rotateDirCW">右回り（時計）</option>
+                <option value="ccw" data-i18n="side.rotateDirCCW">左回り（反時計）</option>
+              </select>
+            </div>
+
+            <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div style="font-size:12px;color:#555;" data-i18n="side.rotateAngle">回転量</div>
+              <select id="host-rotate-angle" style="padding:4px 8px; border:1px solid #ddd; border-radius:6px; font-size:12px; background:#fff; outline:none; cursor:pointer;">
+                <option value="90">90度（標準）</option>
+                <option value="45">45度</option>
+                <option value="30">30度</option>
+                <option value="180">180度</option>
+              </select>
+            </div>
+
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <div style="font-size:12px;color:#555;" data-i18n="side.rotateToggle" title="1回目で回転し、2回目で元の角度に戻る往復動作（タップ/アンタップ）">
+                回転反転
+              </div>
+              <div class="row" style="align-items:center; gap:8px;">
+                <span id="toggle-rotate-toggle-text" style="font-size:11px; font-weight:bold; color:#777;">OFF</span>
+                <label class="switch" title="ONにすると、1回目で回転し2回目で元に戻る往復動作になります（タップ/アンタップに便利）">
+                  <input id="toggle-rotate-toggle" type="checkbox">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
           <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
             <div style="font-size:12px;color:#555;margin-bottom:6px;">カード基本サイズ (px)</div>
             <div class="row" style="gap:10px; align-items:center;">
@@ -276,14 +369,19 @@
 
           <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
             <div style="font-size:12px;color:#555;margin-bottom:4px;">フィールド全体</div>
-            <button class="sl-btn" onclick="clearAllCardsConfirm()" style="color:#d32f2f; margin-bottom:6px;">🔥
+            <button class="sl-btn" onclick="clearAllCardsConfirm()" style="color:#d32f2f;">🔥
               全カード/オブジェクト削除</button>
             <button class="sl-btn" id="host-otherops-save-btn">設定を保存</button>
           </div>
 
           <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
+            <div style="font-size:12px;color:#555;margin-bottom:6px;">プレイ人数</div>
+            <button class="sl-btn" id="host-change-player-count-btn">👥 人数変更（現在: <span id="host-current-player-count">4</span>人）</button>
+          </div>
+
+          <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
             <div style="font-size:12px;color:#555;margin-bottom:4px;">モード変更</div>
-            <div class="row" style="gap:8px;">
+            <div class="row" style="gap:8px; margin-bottom:10px;">
               <button class="sl-btn" id="btn-mode-card" style="flex:1;">カードゲーム</button>
               <button class="sl-btn" id="btn-mode-board" style="flex:1;">ボードゲーム</button>
             </div>
@@ -317,9 +415,14 @@
 
     <!-- ===== ログ＆チャット（操作パネルとは分離） ===== -->
     <div id="chat-wrap" style="flex:1 0 0%; display:flex; flex-direction:column; min-height:0;">
-      <h2 class="panel-title panel-title--left" style="margin-top:14px;">
-        <span class="panel-title__text">チャット & ログ</span>
-      </h2>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+        <h2 class="panel-title panel-title--left" style="margin:0;">
+          <span class="panel-title__text" data-i18n="chat.title">チャット & ログ</span>
+        </h2>
+        <button id="btn-chat-log-settings" type="button" class="mini-settings-btn" title="ログ設定" style="display:inline-flex; width:auto; flex:0 0 auto; white-space:nowrap; align-items:center; gap:4px; padding:3px 8px; font-size:11px; font-weight:bold; border:1px solid #ddd; border-radius:6px; background:#fff; cursor:pointer; color:#555; transition:all 0.15s ease;">
+          <span>⚙️</span><span data-i18n="logSettings.btn">設定</span>
+        </button>
+      </div>
       <section id="chat-panel"
         style="margin-top:8px; padding:8px; border:1px solid #e5e5e5;
                     border-radius:10px; background:#fafafa; display:flex; flex-direction:column; min-height:0; flex:1 1 auto;">
@@ -355,6 +458,12 @@
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
+        <div class="special2-area">
+          <div class="zone-label" data-i18n="zone.special2">特殊エリア2</div>
+        </div>
+        <div class="deck2-area">
+          <div class="zone-label" data-i18n="zone.deck2">デッキエリア2</div>
+        </div>
         <div class="main-play-area">
           <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
         </div>
@@ -375,6 +484,12 @@
         </div>
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
+        </div>
+        <div class="special2-area">
+          <div class="zone-label" data-i18n="zone.special2">特殊エリア2</div>
+        </div>
+        <div class="deck2-area">
+          <div class="zone-label" data-i18n="zone.deck2">デッキエリア2</div>
         </div>
         <div class="main-play-area">
           <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
@@ -397,6 +512,12 @@
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
+        <div class="special2-area">
+          <div class="zone-label" data-i18n="zone.special2">特殊エリア2</div>
+        </div>
+        <div class="deck2-area">
+          <div class="zone-label" data-i18n="zone.deck2">デッキエリア2</div>
+        </div>
         <div class="main-play-area">
           <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
         </div>
@@ -417,6 +538,12 @@
         </div>
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
+        </div>
+        <div class="special2-area">
+          <div class="zone-label" data-i18n="zone.special2">特殊エリア2</div>
+        </div>
+        <div class="deck2-area">
+          <div class="zone-label" data-i18n="zone.deck2">デッキエリア2</div>
         </div>
         <div class="main-play-area">
           <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
@@ -439,6 +566,12 @@
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
+        <div class="special2-area">
+          <div class="zone-label" data-i18n="zone.special2">特殊エリア2</div>
+        </div>
+        <div class="deck2-area">
+          <div class="zone-label" data-i18n="zone.deck2">デッキエリア2</div>
+        </div>
         <div class="main-play-area">
           <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
         </div>
@@ -459,6 +592,12 @@
         </div>
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
+        </div>
+        <div class="special2-area">
+          <div class="zone-label" data-i18n="zone.special2">特殊エリア2</div>
+        </div>
+        <div class="deck2-area">
+          <div class="zone-label" data-i18n="zone.deck2">デッキエリア2</div>
         </div>
         <div class="main-play-area">
           <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
@@ -481,6 +620,12 @@
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
+        <div class="special2-area">
+          <div class="zone-label" data-i18n="zone.special2">特殊エリア2</div>
+        </div>
+        <div class="deck2-area">
+          <div class="zone-label" data-i18n="zone.deck2">デッキエリア2</div>
+        </div>
         <div class="main-play-area">
           <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
         </div>
@@ -501,6 +646,12 @@
         </div>
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
+        </div>
+        <div class="special2-area">
+          <div class="zone-label" data-i18n="zone.special2">特殊エリア2</div>
+        </div>
+        <div class="deck2-area">
+          <div class="zone-label" data-i18n="zone.deck2">デッキエリア2</div>
         </div>
         <div class="main-play-area">
           <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
@@ -523,6 +674,12 @@
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
+        <div class="special2-area">
+          <div class="zone-label" data-i18n="zone.special2">特殊エリア2</div>
+        </div>
+        <div class="deck2-area">
+          <div class="zone-label" data-i18n="zone.deck2">デッキエリア2</div>
+        </div>
         <div class="main-play-area">
           <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
         </div>
@@ -544,6 +701,12 @@
         <div class="special-area">
           <div class="zone-label" data-i18n="zone.special">特殊エリア</div>
         </div>
+        <div class="special2-area">
+          <div class="zone-label" data-i18n="zone.special2">特殊エリア2</div>
+        </div>
+        <div class="deck2-area">
+          <div class="zone-label" data-i18n="zone.deck2">デッキエリア2</div>
+        </div>
         <div class="main-play-area">
           <div class="zone-label" data-i18n="zone.play">プレイエリア</div>
         </div>
@@ -557,6 +720,8 @@
           <div class="zone-label" data-i18n="zone.hand">手札エリア</div>
         </div>
       </div>
+      <div id="area-snap-grid-overlay"></div>
+      <div id="resize-dimension-badge"></div>
       <div id="board-layout">
         <div id="board-play">
           <div class="zone-label" data-i18n="zone.play.shared">プレイエリア（共有）</div>
@@ -688,34 +853,74 @@
 
         <div id="sl-tab-content-myset" class="sl-tab-pane active">
           <div class="sl-grid" id="sl-grid">
-            <button class="slot-item-btn" data-slot="1"><span class="slot-label">マイセット1</span>
+            <button class="slot-item-btn" data-slot="1">
+              <div class="slot-header">
+                <span class="slot-label">マイセット1</span>
+                <span class="slot-custom-name"></span>
+              </div>
               <div class="slot-preview" data-slot="1"></div>
             </button>
-            <button class="slot-item-btn" data-slot="2"><span class="slot-label">マイセット2</span>
+            <button class="slot-item-btn" data-slot="2">
+              <div class="slot-header">
+                <span class="slot-label">マイセット2</span>
+                <span class="slot-custom-name"></span>
+              </div>
               <div class="slot-preview" data-slot="2"></div>
             </button>
-            <button class="slot-item-btn" data-slot="3"><span class="slot-label">マイセット3</span>
+            <button class="slot-item-btn" data-slot="3">
+              <div class="slot-header">
+                <span class="slot-label">マイセット3</span>
+                <span class="slot-custom-name"></span>
+              </div>
               <div class="slot-preview" data-slot="3"></div>
             </button>
-            <button class="slot-item-btn" data-slot="4"><span class="slot-label">マイセット4</span>
+            <button class="slot-item-btn" data-slot="4">
+              <div class="slot-header">
+                <span class="slot-label">マイセット4</span>
+                <span class="slot-custom-name"></span>
+              </div>
               <div class="slot-preview" data-slot="4"></div>
             </button>
-            <button class="slot-item-btn" data-slot="5"><span class="slot-label">マイセット5</span>
+            <button class="slot-item-btn" data-slot="5">
+              <div class="slot-header">
+                <span class="slot-label">マイセット5</span>
+                <span class="slot-custom-name"></span>
+              </div>
               <div class="slot-preview" data-slot="5"></div>
             </button>
-            <button class="slot-item-btn" data-slot="6"><span class="slot-label">マイセット6</span>
+            <button class="slot-item-btn" data-slot="6">
+              <div class="slot-header">
+                <span class="slot-label">マイセット6</span>
+                <span class="slot-custom-name"></span>
+              </div>
               <div class="slot-preview" data-slot="6"></div>
             </button>
-            <button class="slot-item-btn" data-slot="7"><span class="slot-label">マイセット7</span>
+            <button class="slot-item-btn" data-slot="7">
+              <div class="slot-header">
+                <span class="slot-label">マイセット7</span>
+                <span class="slot-custom-name"></span>
+              </div>
               <div class="slot-preview" data-slot="7"></div>
             </button>
-            <button class="slot-item-btn" data-slot="8"><span class="slot-label">マイセット8</span>
+            <button class="slot-item-btn" data-slot="8">
+              <div class="slot-header">
+                <span class="slot-label">マイセット8</span>
+                <span class="slot-custom-name"></span>
+              </div>
               <div class="slot-preview" data-slot="8"></div>
             </button>
-            <button class="slot-item-btn" data-slot="9"><span class="slot-label">マイセット9</span>
+            <button class="slot-item-btn" data-slot="9">
+              <div class="slot-header">
+                <span class="slot-label">マイセット9</span>
+                <span class="slot-custom-name"></span>
+              </div>
               <div class="slot-preview" data-slot="9"></div>
             </button>
-            <button class="slot-item-btn" data-slot="10"><span class="slot-label">マイセット10</span>
+            <button class="slot-item-btn" data-slot="10">
+              <div class="slot-header">
+                <span class="slot-label">マイセット10</span>
+                <span class="slot-custom-name"></span>
+              </div>
               <div class="slot-preview" data-slot="10"></div>
             </button>
           </div>
@@ -756,6 +961,26 @@
 
 
 
+  <!-- プレイ人数変更モーダル（ホスト専用） -->
+  <div id="player-count-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+    <div
+      style="background:#fff; padding:22px 20px; border-radius:14px; max-width:90%; width:340px; box-shadow:0 8px 32px rgba(0,0,0,.35);">
+      <div style="font-weight:700; font-size:16px; margin-bottom:6px; color:#333;">プレイ人数の変更</div>
+      <p style="font-size:12px; color:#666; margin:0 0 16px; line-height:1.4;">
+        人数に合わせて、Seat数・手札数・カードフィールドが更新されます。<br>
+        <span style="font-size:11px; color:#888;">※減らした席のプレイヤーは自動で観戦者に戻ります。</span>
+      </p>
+      <div id="player-count-options" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin-bottom:20px;">
+        <!-- JSで1人〜10人のボタンを生成 -->
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button id="player-count-cancel" class="btn secondary" style="padding:6px 14px; font-size:13px;">キャンセル</button>
+        <button id="player-count-apply" class="btn primary" style="padding:6px 16px; font-size:13px; background:#0078d7; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600;">変更を適用</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 座席選択モーダル -->
   <div id="seat-select-modal"
     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
@@ -772,43 +997,224 @@
     </div>
   </div>
 
+  <!-- チャット＆ログ設定モーダル -->
+  <div id="chat-log-settings-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:20000; align-items:center; justify-content:center; backdrop-filter:blur(2px);">
+    <div style="background:#fff; padding:24px; border-radius:16px; width:520px; max-width:92%; max-height:85vh; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,0.3); display:flex; flex-direction:column; gap:16px;">
+      
+      <!-- ヘッダー -->
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">📋</span>
+          <span style="font-weight:bold; font-size:16px; color:#222;" data-i18n="logSettings.title">チャット＆ログ設定</span>
+          <span id="log-settings-role-badge" style="font-size:11px; padding:2px 8px; border-radius:12px; font-weight:bold; background:#e0f2fe; color:#0284c7;">👑 ホスト</span>
+        </div>
+        <button id="btn-chat-log-settings-close" type="button" style="border:none; background:none; font-size:20px; cursor:pointer; color:#888; line-height:1; padding:2px 6px;">✕</button>
+      </div>
+
+      <div id="log-settings-guest-hint" style="display:none; font-size:11px; color:#b45309; background:#fef3c7; border:1px solid #fde68a; border-radius:6px; padding:6px 10px;" data-i18n="logSettings.guestHint">
+        ※ ゲストは閲覧のみ可能です。設定変更はホストのみ行えます。
+      </div>
+
+      <!-- 時間表示形式 -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+        <div style="font-size:13px; font-weight:bold; color:#334155; margin-bottom:8px;" data-i18n="logSettings.timeFormat">
+          ログの時間表示形式
+        </div>
+        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer; color:#475569;">
+            <input type="radio" name="log-time-format" value="minute" checked>
+            <span data-i18n="logSettings.timeMinute">時分 (12:34)</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer; color:#475569;">
+            <input type="radio" name="log-time-format" value="second">
+            <span data-i18n="logSettings.timeSecond">時分秒 (12:34:56)</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer; color:#475569;">
+            <input type="radio" name="log-time-format" value="millisecond">
+            <span data-i18n="logSettings.timeMillisecond">時分秒.コンマ (12:34:56.78)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- イベント別ログ表示 ON/OFF -->
+      <div>
+        <div style="font-size:13px; font-weight:bold; color:#334155; margin-bottom:8px;" data-i18n="logSettings.eventsTitle">
+          イベント別ログ表示
+        </div>
+        
+        <div id="log-settings-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:6px 16px;">
+          <!-- 画像読み込み -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.cardAdd">画像読み込み・カード追加</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-cardAdd" checked><span class="slider round"></span></label>
+          </div>
+          <!-- マイセット保存・読込 -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.saveLoad">マイセットのセーブ・ロード</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-saveLoad" checked><span class="slider round"></span></label>
+          </div>
+          <!-- 検索実行 -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.search">検索・一覧の実行</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-search" checked><span class="slider round"></span></label>
+          </div>
+          <!-- カードをウラ/オモテにする -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.cardFlip">カードのウラ/オモテ反転</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-cardFlip" checked><span class="slider round"></span></label>
+          </div>
+          <!-- シャッフルする -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.shuffle">シャッフル実行</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-shuffle" checked><span class="slider round"></span></label>
+          </div>
+          <!-- カードを選択する（かるた用） -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;" title="かるたプレイ時に誰が先にカードを取ったか判定できます">
+            <span style="font-size:12px; color:#475569; display:flex; align-items:center; gap:4px;">
+              <span data-i18n="logSettings.cardSelect">カードの選択（かるた用）</span>
+              <span style="font-size:9px; color:#0284c7; background:#e0f2fe; padding:1px 4px; border-radius:4px; font-weight:bold;">かるた</span>
+            </span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-cardSelect"><span class="slider round"></span></label>
+          </div>
+          <!-- 選択カードを最背面 -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.sendBack">選択カードを最背面に送る</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-sendBack" checked><span class="slider round"></span></label>
+          </div>
+          <!-- カードをまとめる -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.cardCollect">カードをまとめる</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-cardCollect" checked><span class="slider round"></span></label>
+          </div>
+          <!-- ウラ画像設定 -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.backImage">ウラ画像の設定</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-backImage" checked><span class="slider round"></span></label>
+          </div>
+          <!-- ダイス・コイントス -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.diceCoin">ダイス・コイントス</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-diceCoin" checked><span class="slider round"></span></label>
+          </div>
+          <!-- カード回転 -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.cardRotate">カードの回転・タップ</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-cardRotate"><span class="slider round"></span></label>
+          </div>
+          <!-- カード削除 -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.cardDelete">カードの削除</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-cardDelete" checked><span class="slider round"></span></label>
+          </div>
+          <!-- HP・カウンター変更 -->
+          <div class="log-setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px; color:#475569;" data-i18n="logSettings.hpCounter">HP・数値カウンター変更</span>
+            <label class="switch switch--sm"><input type="checkbox" id="log-opt-hpCounter" checked><span class="slider round"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- フッター -->
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
+        <button id="btn-chat-log-settings-ok" class="btn secondary" style="padding:6px 16px; font-size:13px;" data-i18n="common.close">閉じる</button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- フィールド構成選択モーダル -->
   <div id="field-layout-modal"
     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:20000; align-items:center; justify-content:center;">
     <div class="layout-modal-card"
-      style="background:#fff; padding:32px; border-radius:24px; width:720px; max-width:95%; box-shadow:0 12px 48px rgba(0,0,0,0.4); text-align:center;">
-      <div style="font-weight:800; font-size:24px; margin-bottom:24px; letter-spacing:1px; color:#333;">フィールド構成を選択</div>
+      style="background:#fff; padding:32px; border-radius:24px; width:840px; max-width:95%; max-height:90vh; overflow-y:auto; box-shadow:0 12px 48px rgba(0,0,0,0.4); text-align:center;">
+      <div style="font-weight:800; font-size:24px; margin-bottom:24px; letter-spacing:1px; color:#333;" data-i18n="layout.modalTitle">フィールド構成を選択</div>
 
-      <div style="display:flex; gap:24px; justify-content:center; margin-bottom:32px;">
-        <!-- シンプル -->
-        <div class="layout-option" id="layout-opt-simple" style="flex:1; cursor:pointer;"
-          onclick="selectLayoutOption('simple')">
+      <div class="layout-options-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px; justify-content:center; margin-bottom:32px;">
+        <!-- スタンダード1 -->
+        <div class="layout-option active" id="layout-opt-standard1" style="cursor:pointer;"
+          onclick="selectLayoutOption('standard1')">
           <div class="layout-preview-wrap"
-            style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
-            <img id="layout-img-simple" src="image/Field_simple_type.png" alt="Simple"
-              style="width:100%; display:block;" />
-            <div class="selection-overlay"
-              style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
-          </div>
-          <div class="layout-label"
-            style="margin-top:12px; font-weight:800; font-size:20px; color:#555; transition:0.3s;">シンプル</div>
-        </div>
-        <!-- スタンダード -->
-        <div class="layout-option active" id="layout-opt-standard" style="flex:1; cursor:pointer;"
-          onclick="selectLayoutOption('standard')">
-          <div class="layout-preview-wrap"
-            style="border:4px solid #2d8; border-radius:16px; overflow:hidden; transition:0.3s; position:relative;">
-            <img id="layout-img-standard" src="image/Field_standard_type.png" alt="Standard"
-              style="width:100%; display:block;" />
+            style="border:4px solid #2d8; border-radius:16px; overflow:hidden; transition:0.3s; position:relative; aspect-ratio:16/10; background:#f4f4f4;">
+            <img id="layout-img-standard1" src="image/Field_standard1_type.png" alt="Standard 1"
+              style="width:100%; height:100%; object-fit:contain; display:block;" />
             <div class="selection-overlay"
               style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:1; transition:0.3s;"></div>
           </div>
           <div class="layout-label"
-            style="margin-top:12px; font-weight:800; font-size:20px; color:#2d8; transition:0.3s;">スタンダード</div>
+            style="margin-top:10px; font-weight:800; font-size:18px; color:#2d8; transition:0.3s;" data-i18n="layout.standard1">スタンダード1</div>
+        </div>
+
+        <!-- スタンダード2 -->
+        <div class="layout-option" id="layout-opt-standard2" style="cursor:pointer;"
+          onclick="selectLayoutOption('standard2')">
+          <div class="layout-preview-wrap"
+            style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative; aspect-ratio:16/10; background:#f4f4f4;">
+            <img id="layout-img-standard2" src="image/Field_standard2_type.png" alt="Standard 2"
+              style="width:100%; height:100%; object-fit:contain; display:block;" />
+            <div class="selection-overlay"
+              style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
+          </div>
+          <div class="layout-label"
+            style="margin-top:10px; font-weight:800; font-size:18px; color:#555; transition:0.3s;" data-i18n="layout.standard2">スタンダード2</div>
+        </div>
+
+        <!-- シンプル1 -->
+        <div class="layout-option" id="layout-opt-simple1" style="cursor:pointer;"
+          onclick="selectLayoutOption('simple1')">
+          <div class="layout-preview-wrap"
+            style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative; aspect-ratio:16/10; background:#f4f4f4;">
+            <img id="layout-img-simple1" src="image/Field_simple1_type.png" alt="Simple 1"
+              style="width:100%; height:100%; object-fit:contain; display:block;" />
+            <div class="selection-overlay"
+              style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
+          </div>
+          <div class="layout-label"
+            style="margin-top:10px; font-weight:800; font-size:18px; color:#555; transition:0.3s;" data-i18n="layout.simple1">シンプル1</div>
+        </div>
+
+        <!-- シンプル2 -->
+        <div class="layout-option" id="layout-opt-simple2" style="cursor:pointer;"
+          onclick="selectLayoutOption('simple2')">
+          <div class="layout-preview-wrap"
+            style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative; aspect-ratio:16/10; background:#f4f4f4;">
+            <img id="layout-img-simple2" src="image/Field_simple2_type.png" alt="Simple 2"
+              style="width:100%; height:100%; object-fit:contain; display:block;" />
+            <div class="selection-overlay"
+              style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
+          </div>
+          <div class="layout-label"
+            style="margin-top:10px; font-weight:800; font-size:18px; color:#555; transition:0.3s;" data-i18n="layout.simple2">シンプル2</div>
+        </div>
+
+        <!-- カスタム1 -->
+        <div class="layout-option" id="layout-opt-custom1" style="cursor:pointer;"
+          onclick="selectLayoutOption('custom1')">
+          <div class="layout-preview-wrap"
+            style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative; aspect-ratio:16/10; background:#f4f4f4;">
+            <img id="layout-img-custom1" src="image/Field_custom1_type.png" alt="Custom 1"
+              style="width:100%; height:100%; object-fit:contain; display:block;" />
+            <div class="selection-overlay"
+              style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
+          </div>
+          <div class="layout-label"
+            style="margin-top:10px; font-weight:800; font-size:18px; color:#555; transition:0.3s;" data-i18n="layout.custom1">カスタム1</div>
+        </div>
+
+        <!-- カスタム2 -->
+        <div class="layout-option" id="layout-opt-custom2" style="cursor:pointer;"
+          onclick="selectLayoutOption('custom2')">
+          <div class="layout-preview-wrap"
+            style="border:4px solid #eee; border-radius:16px; overflow:hidden; transition:0.3s; position:relative; aspect-ratio:16/10; background:#f4f4f4;">
+            <img id="layout-img-custom2" src="image/Field_custom2_type.png" alt="Custom 2"
+              style="width:100%; height:100%; object-fit:contain; display:block;" />
+            <div class="selection-overlay"
+              style="position:absolute; inset:0; background:rgba(46,204,113,0.1); opacity:0; transition:0.3s;"></div>
+          </div>
+          <div class="layout-label"
+            style="margin-top:10px; font-weight:800; font-size:18px; color:#555; transition:0.3s;" data-i18n="layout.custom2">カスタム2</div>
         </div>
       </div>
-
-
 
       <div style="display:flex; justify-content:center; gap:20px;">
         <button id="field-layout-cancel" class="btn secondary"
@@ -870,6 +1276,75 @@
   </div>
   <!-- Hidden file input for area background -->
   <input type="file" id="area-bg-file" accept="image/*" style="display: none;" />
+
+  <!-- === Area Image Fit Selection Modal === -->
+  <div id="area-image-fit-modal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 20000; align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+    <div class="area-fit-modal-container">
+      
+      <!-- ヘッダー -->
+      <div class="area-fit-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">🖼</span>
+          <span style="font-weight: bold; font-size: 16px; color: #222;" data-i18n="areaFit.title">エリア画像の設定</span>
+          <span id="area-fit-target-name" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: bold; background: #e0f2fe; color: #0284c7;">手札エリア</span>
+        </div>
+        <button id="btn-area-fit-close" type="button" class="area-fit-close-btn" aria-label="閉じる">✕</button>
+      </div>
+
+      <!-- 画像情報 & プレビュー -->
+      <div class="area-fit-preview-card">
+        <div class="area-fit-thumb-wrap">
+          <img id="area-fit-preview-img" src="" alt="preview" />
+        </div>
+        <div class="area-fit-info">
+          <div class="area-fit-info-row">
+            <span class="area-fit-info-label" data-i18n="areaFit.imgSize">選択した画像:</span>
+            <span id="area-fit-img-size" class="area-fit-info-val">-- × -- px</span>
+          </div>
+          <div class="area-fit-info-row">
+            <span class="area-fit-info-label" data-i18n="areaFit.areaSize">現在のエリアサイズ:</span>
+            <span id="area-fit-area-size" class="area-fit-info-val">-- × -- px</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 選択肢 -->
+      <div class="area-fit-options">
+        <!-- 選択肢1: 現在のエリアサイズに合わせる -->
+        <button type="button" id="btn-area-fit-current" class="area-fit-option-btn">
+          <div class="area-fit-opt-icon">📐</div>
+          <div class="area-fit-opt-content">
+            <div class="area-fit-opt-title" data-i18n="areaFit.fitCurrentTitle">現在のエリアサイズに合わせる</div>
+            <div class="area-fit-opt-desc" data-i18n="areaFit.fitCurrentDesc">
+              現在のエリアのサイズに合うように画像が出現します。画像の縦横比も現在のエリアのサイズに合わせます。
+            </div>
+          </div>
+        </button>
+
+        <!-- 選択肢2: 画像のサイズに合わせる -->
+        <button type="button" id="btn-area-fit-image" class="area-fit-option-btn">
+          <div class="area-fit-opt-icon">🖼️</div>
+          <div class="area-fit-opt-content">
+            <div class="area-fit-opt-title" data-i18n="areaFit.fitImageTitle">画像のサイズに合わせる</div>
+            <div class="area-fit-opt-desc" data-i18n="areaFit.fitImageDesc">
+              手札エリアが画像のサイズと全く同じ形状になります。
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- ローディング/通知メッセージ -->
+      <div id="area-fit-status-msg" style="display: none; font-size: 13px; color: #0284c7; text-align: center; font-weight: bold; padding: 4px;">
+        ⏳ 画像をアップロード中...
+      </div>
+
+      <!-- 下部ボタン -->
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
+        <button id="btn-area-fit-cancel" type="button" class="btn secondary" style="padding: 6px 16px; font-size: 13px;" data-i18n="areaFit.cancel">キャンセル</button>
+      </div>
+    </div>
+  </div>
 
   <!-- === Note Context Menu === -->
   <div id="note-context-menu" class="area-context-menu" style="display: none; position: absolute; z-index: 10002;">

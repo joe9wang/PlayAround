@@ -428,29 +428,201 @@ input:checked + .slider:before {
   box-sizing: border-box;
   display: grid;
   /* スタンダード（デフォルト）のグリッド構成: CSS変数で動的リサイズ可能 */
-  grid-template-columns: var(--card-col-1, var(--special-w)) var(--card-col-2, 10fr) var(--card-col-3, 2fr);
+  grid-template-columns: var(--card-col-1, var(--special-w, 16.6%)) var(--card-col-2, 1fr) var(--card-col-3, 16.6%);
   grid-template-rows: var(--card-row-1, 1.5fr) var(--card-row-2, 1.5fr) var(--card-row-3, 1fr);
   gap: 6px;
   min-width: 0;
 }
 
-/* === シンプルレイアウト適用時 === */
+/* === 追加エリア（初期状態は非表示） === */
+.special2-area,
+.deck2-area {
+  display: none !important;
+}
+
+/* === 1. スタンダード1（旧スタンダード） === */
+.player-area.layout-standard1,
+.player-area.layout-standard {
+  grid-template-columns: var(--card-col-1, var(--special-w, 16.6%)) var(--card-col-2, 1fr) var(--card-col-3, 16.6%);
+  grid-template-rows: var(--card-row-1, 1.5fr) var(--card-row-2, 1.5fr) var(--card-row-3, 1fr);
+}
+.player-area.layout-standard1 .special-area,
+.player-area.layout-standard .special-area {
+  grid-column: 1 / 2;
+  grid-row: 1 / 4;
+}
+.player-area.layout-standard1 .main-play-area,
+.player-area.layout-standard .main-play-area {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+}
+.player-area.layout-standard1 .discard-area,
+.player-area.layout-standard .discard-area {
+  grid-column: 3 / 4;
+  grid-row: 1 / 2;
+}
+.player-area.layout-standard1 .deck-area,
+.player-area.layout-standard .deck-area {
+  grid-column: 3 / 4;
+  grid-row: 2 / 3;
+}
+.player-area.layout-standard1 .hand-area,
+.player-area.layout-standard .hand-area {
+  grid-column: 2 / 4;
+  grid-row: 3 / 4;
+}
+
+/* === 2. スタンダード2 === */
+.player-area.layout-standard2 {
+  grid-template-columns: var(--card-col-1, var(--special-w, 16.6%)) var(--card-col-2, 1fr) var(--card-col-3, 16.6%);
+  grid-template-rows: var(--card-row-1, 1.5fr) var(--card-row-2, 1.5fr) var(--card-row-3, 1fr);
+}
+.player-area.layout-standard2 .special-area {
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+}
+.player-area.layout-standard2 .main-play-area {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+}
+.player-area.layout-standard2 .deck-area {
+  grid-column: 3 / 4;
+  grid-row: 1 / 2;
+}
+.player-area.layout-standard2 .discard-area {
+  grid-column: 3 / 4;
+  grid-row: 2 / 3;
+}
+.player-area.layout-standard2 .hand-area {
+  grid-column: 1 / 4;
+  grid-row: 3 / 4;
+}
+
+/* === 3. シンプル1（旧シンプル） === */
+.player-area.layout-simple1,
 .player-area.layout-simple {
   grid-template-columns: 1fr;
   grid-template-rows: 3fr 1fr; /* メイン 75% / 手札 25% */
 }
+.player-area.layout-simple1 .special-area,
+.player-area.layout-simple1 .discard-area,
+.player-area.layout-simple1 .deck-area,
+.player-area.layout-simple1 .special2-area,
+.player-area.layout-simple1 .deck2-area,
 .player-area.layout-simple .special-area,
 .player-area.layout-simple .discard-area,
-.player-area.layout-simple .deck-area {
+.player-area.layout-simple .deck-area,
+.player-area.layout-simple .special2-area,
+.player-area.layout-simple .deck2-area {
   display: none !important;
 }
+.player-area.layout-simple1 .main-play-area,
 .player-area.layout-simple .main-play-area {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
 }
+.player-area.layout-simple1 .hand-area,
 .player-area.layout-simple .hand-area {
   grid-column: 1 / 2;
   grid-row: 2 / 3;
+}
+
+/* === 4. シンプル2 === */
+.player-area.layout-simple2 {
+  grid-template-columns: 1fr var(--card-col-3, 16.6%);
+  grid-template-rows: calc(var(--card-row-1, 1.5fr) + var(--card-row-2, 1.5fr)) var(--card-row-3, 1fr);
+}
+.player-area.layout-simple2 .main-play-area {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+}
+.player-area.layout-simple2 .deck-area {
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+}
+.player-area.layout-simple2 .hand-area {
+  grid-column: 1 / 3;
+  grid-row: 2 / 3;
+}
+.player-area.layout-simple2 .special-area,
+.player-area.layout-simple2 .discard-area,
+.player-area.layout-simple2 .special2-area,
+.player-area.layout-simple2 .deck2-area {
+  display: none !important;
+}
+
+/* === 5. カスタム1 === */
+.player-area.layout-custom1 {
+  grid-template-columns: var(--card-col-1, var(--special-w, 16.6%)) var(--card-col-2, 1fr) var(--card-col-3, 16.6%);
+  grid-template-rows: var(--card-row-1, 1.5fr) var(--card-row-2, 1.5fr) var(--card-row-3, 1fr);
+}
+.player-area.layout-custom1 .special-area {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+}
+.player-area.layout-custom1 .special2-area {
+  display: block !important;
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+}
+.player-area.layout-custom1 .main-play-area {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+}
+.player-area.layout-custom1 .deck-area {
+  grid-column: 3 / 4;
+  grid-row: 1 / 2;
+}
+.player-area.layout-custom1 .discard-area {
+  grid-column: 3 / 4;
+  grid-row: 2 / 3;
+}
+.player-area.layout-custom1 .hand-area {
+  grid-column: 1 / 4;
+  grid-row: 3 / 4;
+}
+.player-area.layout-custom1 .deck2-area {
+  display: none !important;
+}
+.player-area.layout-custom1 .special-area .zone-label::after {
+  content: "1";
+}
+
+/* === 6. カスタム2 === */
+.player-area.layout-custom2 {
+  grid-template-columns: var(--card-col-1, var(--special-w, 16.6%)) var(--card-col-2, 1fr) var(--card-col-3, 16.6%);
+  grid-template-rows: var(--card-row-1, 1.5fr) var(--card-row-2, 1.5fr) var(--card-row-3, 1fr);
+}
+.player-area.layout-custom2 .special-area {
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+}
+.player-area.layout-custom2 .deck2-area {
+  display: block !important;
+  grid-column: 1 / 2;
+  grid-row: 3 / 4;
+}
+.player-area.layout-custom2 .main-play-area {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+}
+.player-area.layout-custom2 .deck-area {
+  grid-column: 3 / 4;
+  grid-row: 1 / 2;
+}
+.player-area.layout-custom2 .discard-area {
+  grid-column: 3 / 4;
+  grid-row: 2 / 3;
+}
+.player-area.layout-custom2 .hand-area {
+  grid-column: 2 / 4;
+  grid-row: 3 / 4;
+}
+.player-area.layout-custom2 .special2-area {
+  display: none !important;
+}
+.player-area.layout-custom2 .deck-area .zone-label::after {
+  content: "1";
 }
 
 .lobby-links {
@@ -467,7 +639,8 @@ input:checked + .slider:before {
   text-decoration: underline;
 }
 
-.special-area {
+.special-area,
+.special2-area {
   grid-column: 1 / 2;
   grid-row: 1 / 4;
   background: #9c27b0;
@@ -496,7 +669,8 @@ input:checked + .slider:before {
   min-width: 0;
 }
 
-.deck-area {
+.deck-area,
+.deck2-area {
   grid-column: 3 / 4;
   grid-row: 2 / 3;
   background: #f90;
@@ -946,9 +1120,11 @@ body.hover-zoom-enabled .card.selected:not(.is-board):not(.memo):not(.note):not(
 }
 
 .deck-area,
+.deck2-area,
 .main-play-area,
 .hand-area,
 .special-area,
+.special2-area,
 .discard-area {
   cursor: default;
 }
@@ -2272,8 +2448,10 @@ body.is-spectator #spectator-banner { display: block; }
 .main-play-area.has-bg-image,
 .hand-area.has-bg-image,
 .deck-area.has-bg-image,
+.deck2-area.has-bg-image,
 .discard-area.has-bg-image,
 .special-area.has-bg-image,
+.special2-area.has-bg-image,
 .dynamic-area.has-bg-image {
   background-color: transparent !important;
 }
@@ -2302,7 +2480,9 @@ body.is-spectator #spectator-banner { display: block; }
 
 /* ホストでない場合やシンプルレイアウト適用時は非表示 */
 body:not(.is-host) .card-split-handle,
-.player-area.layout-simple .card-split-handle {
+.player-area.layout-simple .card-split-handle,
+.player-area.layout-simple1 .card-split-handle,
+.player-area.layout-simple2 .card-split-handle {
   display: none !important;
 }
 
@@ -2332,6 +2512,15 @@ body:not(.is-host) .card-split-handle,
 }
 .card-split-handle.split-row-side {
   bottom: -10px; /* 捨て札エリアとデッキエリアのgap(6px)の中央に配置 */
+}
+
+/* スタンダード2, カスタム1, カスタム2では右側上部がデッキ、下部が捨て札になるため、
+   discardArea に付いている上下スプリッターを top: -10px に切り替えて境界線に合わせる */
+.player-area.layout-standard2 .card-split-handle.split-row-side,
+.player-area.layout-custom1 .card-split-handle.split-row-side,
+.player-area.layout-custom2 .card-split-handle.split-row-side {
+  top: -10px;
+  bottom: auto;
 }
 
 /* ホバー時およびドラッグ時の視覚フィードバック（既存 resize-handle 風の半透明ハイライト） */

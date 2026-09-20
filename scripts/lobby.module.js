@@ -158,7 +158,11 @@ async function init() {
   });
 
   document.getElementById('field-layout-ok')?.addEventListener('click', () => {
-    executeRoomCreation(CURRENT_LAYOUT_SELECTION || 'standard');
+    let sel = CURRENT_LAYOUT_SELECTION || 'standard1';
+    if (CREATE_FIELD_MODE === 'board') {
+      sel = (sel === 'simple1' || sel === 'simple') ? 'simple' : 'standard';
+    }
+    executeRoomCreation(sel);
   });
   document.getElementById('field-layout-cancel')?.addEventListener('click', () => {
     document.getElementById('field-layout-modal').style.display = 'none';
@@ -229,10 +233,11 @@ window.selectOfficialOption = function(type) {
 };
 
 window.selectLayoutOption = function(type) {
-  CURRENT_LAYOUT_SELECTION = type;
+  const normType = (type === 'standard') ? 'standard1' : (type === 'simple') ? 'simple1' : (type || 'standard1');
+  CURRENT_LAYOUT_SELECTION = normType;
   const opts = document.querySelectorAll('.layout-option');
   opts.forEach(opt => {
-    const isActive = opt.id === `layout-opt-${type}`;
+    const isActive = opt.id === `layout-opt-${normType}`;
     opt.classList.toggle('active', isActive);
     
     // 枠線の色を更新
@@ -246,6 +251,9 @@ window.selectLayoutOption = function(type) {
     if (label) {
       label.style.color = isActive ? '#2d8' : '#555';
     }
+
+    const overlay = opt.querySelector('.selection-overlay');
+    if (overlay) overlay.style.opacity = isActive ? '1' : '0';
   });
 };
 
@@ -274,23 +282,30 @@ function showLayoutModal() {
     return;
   }
   if (CREATE_FIELD_MODE === 'card' || CREATE_FIELD_MODE === 'board') {
-    const simpleImg = document.getElementById('layout-img-simple');
-    const standardImg = document.getElementById('layout-img-standard');
+    const isBoard = (CREATE_FIELD_MODE === 'board');
+    // 全オプションまたはボード用2種を表示制御
+    document.querySelectorAll('#field-layout-modal .layout-option').forEach(opt => {
+      const isBasic = (opt.id === 'layout-opt-standard1' || opt.id === 'layout-opt-simple1');
+      opt.style.display = (!isBoard || isBasic) ? '' : 'none';
+    });
+
+    const simpleImg = document.getElementById('layout-img-simple1');
+    const standardImg = document.getElementById('layout-img-standard1');
     if (simpleImg && standardImg) {
-      if (CREATE_FIELD_MODE === 'card') {
-        simpleImg.src = 'image/Field_simple_type.png';
-        standardImg.src = 'image/Field_standard_type.png';
-      } else {
+      if (isBoard) {
         simpleImg.src = 'image/board simple.png';
         standardImg.src = 'image/board standard.png';
+      } else {
+        simpleImg.src = 'image/Field_simple1_type.png';
+        standardImg.src = 'image/Field_standard1_type.png';
       }
     }
-    window.selectLayoutOption('standard');
+    window.selectLayoutOption('standard1');
     document.getElementById('field-layout-modal').style.display = 'flex';
   } else if (CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess') {
     executeRoomCreation(CREATE_FIELD_MODE === 'trump' ? 'simple' : 'playonly');
   } else {
-    executeRoomCreation('standard');
+    executeRoomCreation('standard1');
   }
 }
 
