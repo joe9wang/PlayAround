@@ -11789,6 +11789,12 @@ function bindAreaContextMenuOnce() {
     pendingAreaImageFile = file;
     pendingAreaTargetId = targetId;
 
+    const m = CURRENT_ROOM_META?.fieldMode;
+    const isCardMode = (!m || m === 'card' || document.getElementById('field')?.classList.contains('mode-card'));
+    if (btnAreaFitImage) {
+      btnAreaFitImage.style.display = isCardMode ? 'none' : 'flex';
+    }
+
     const areaEl = currentTargetAreaElement || getCurrentTargetAreaElement();
     pendingAreaCurrentW = areaEl ? Math.round(areaEl.offsetWidth) : 0;
     pendingAreaCurrentH = areaEl ? Math.round(areaEl.offsetHeight) : 0;
@@ -11883,15 +11889,28 @@ function bindAreaContextMenuOnce() {
     }
   }
 
-  // ファイル選択時: モーダルを開いてサイズ調整を選択
-  fileInput.addEventListener('change', (e) => {
+  // ファイル選択時: カードモードなら自動でエリアサイズに合わせ、ボードモードならモーダルを表示
+  fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file || !CURRENT_ROOM || !currentTargetAreaId) return;
 
+    const targetId = currentTargetAreaId;
     // 同じファイルを選べるようにリセット
     fileInput.value = '';
 
-    openAreaImageFitModal(file, currentTargetAreaId);
+    const m = CURRENT_ROOM_META?.fieldMode;
+    const isCardMode = (!m || m === 'card' || document.getElementById('field')?.classList.contains('mode-card'));
+
+    if (isCardMode) {
+      // カードゲームモード時は一択のためモーダルを開かず、勝手に現在のエリアサイズに合わせて即座に適用
+      pendingAreaImageFile = file;
+      pendingAreaTargetId = targetId;
+      appendSystemLine(`エリア画像をアップロード中... (${getAreaDisplayName(targetId)})`);
+      await applyAreaImageFit('fill');
+    } else {
+      // ボードゲームモード等の時はモーダルを開いて選択させる
+      openAreaImageFitModal(file, targetId);
+    }
   });
 
   // モーダルボタンイベント登録
