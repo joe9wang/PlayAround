@@ -3177,7 +3177,14 @@ async function generateBoardPreview() {
     const fieldRect = field.getBoundingClientRect();
     const zoomVal = typeof zoom !== 'undefined' ? zoom : 1;
 
-    // 1. 全体の背景色の決定（上質なフェルト調のカードテーブルグリーンを基調）
+    // CSS background-image からURL文字列を抽出するヘルパー
+    const extractUrlFromBg = (bgStr) => {
+      if (!bgStr || bgStr === 'none') return null;
+      const m = bgStr.match(/url\(['"]?(.*?)['"]?\)/i);
+      return m ? m[1] : null;
+    };
+
+    // 1. 全体のベース背景色の決定
     let tableBg = '#1a3f2b';
     if (field.style.backgroundColor && field.style.backgroundColor !== 'transparent') {
       tableBg = field.style.backgroundColor;
@@ -3192,9 +3199,6 @@ async function generateBoardPreview() {
         }
       }
     }
-
-    ctx.fillStyle = tableBg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // 2. 描画対象エリアの収集（フィールド内の要素に限定）
     const selectors = [
@@ -3272,9 +3276,59 @@ async function generateBoardPreview() {
     const offsetX = -minX * scale;
     const offsetY = -minY * scale;
 
-    // エリア描画
+    // 3. 画像の事前プリロード処理（CORS対応で一括ロード）
+    const imageCache = new Map();
+    const loadImg = (url) => {
+      if (!url) return Promise.resolve(null);
+      if (imageCache.has(url)) return Promise.resolve(imageCache.get(url));
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => { imageCache.set(url, img); resolve(img); };
+        img.onerror = () => {
+          console.warn('[Preview] 画像プリロード失敗:', url);
+          resolve(null);
+        };
+        img.src = url;
+      });
+    };
+
+    const urlsToLoad = new Set();
+
+    // エリアの背景画像を収集（プレイエリアの世界地図、手札エリアの木目調など）
+    validAreas.forEach(({ el }) => {
+      const customBg = (typeof areaBackgroundImages !== 'undefined') ? areaBackgroundImages.get(el.id) : null;
+      const bgUrl = customBg?.imageUrl || extractUrlFromBg(el.style.backgroundImage) || extractUrlFromBg(window.getComputedStyle(el).backgroundImage);
+      if (bgUrl) urlsToLoad.add(bgUrl);
+    });
+
+    // カードの画像を収集（表画像・裏面画像）
+    cardEls.forEach(el => {
+      if (el.dataset.faceUp === 'true') {
+        const imgEl = el.querySelector('img');
+        if (imgEl && imgEl.src) urlsToLoad.add(imgEl.src);
+      } else {
+        const backUrl = el.dataset.backImageUrl || extractUrlFromBg(el.style.backgroundImage);
+        if (backUrl) urlsToLoad.add(backUrl);
+      }
+    });
+
+    // 並行して画像ロード完了を待機（最大2.5秒でタイムアウトして進行）
+    await Promise.race([
+      Promise.all(Array.from(urlsToLoad).map(url => loadImg(url))),
+      new Promise(resolve => setTimeout(resolve, 2500))
+    ]);
+
+    // 4. 全体ベース背景の描画
+    ctx.fillStyle = tableBg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 5. エリア描画（面積の大きい順＝土台・背景から順に重ねて描画）
+    validAreas.sort((a, b) => (b.pos.w * b.pos.h) - (a.pos.w * a.pos.h));
+
     validAreas.forEach(({ el, pos }) => {
-      const isPlayerArea = el.classList.contains('player-area');
+      const isPlayerArea = el.classList.contains('player-area') || el.classList.contains('board-hand');
+      const isPlayOnlyArea = (el.id === 'board-play' || el.id === 'board-layout');
       const style = window.getComputedStyle(el);
       const drawX = Math.round(pos.l * scale + offsetX);
       const drawY = Math.round(pos.t * scale + offsetY);
@@ -3282,22 +3336,95 @@ async function generateBoardPreview() {
       const drawH = Math.round(pos.h * scale);
       if (drawW < 1 || drawH < 1) return;
 
-      if (isPlayerArea) {
-        // プレイヤー枠：落ち着いたマット調の背景と上品な枠線
+      const customBg = (typeof areaBackgroundImages !== 'undefined') ? areaBackgroundImages.get(el.id) : null;
+      const bgUrl = customBg?.imageUrl || extractUrlFromBg(el.style.backgroundImage) || extractUrlFromBg(style.backgroundImage);
+      const loadedBgImg = bgUrl ? imageCache.get(bgUrl) : null;
+
+      if (loadedBgImg && loadedBgImg.complete && loadedBgImg.naturalWidth > 0) {
+        // 背景画像が存在する場合（木目調の手札枠、世界地図のプレイエリアなど）
+        ctx.save();
+        if (isPlayerArea && ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(drawX, drawY, drawW, drawH, Math.max(2, Math.round(6 * scale)));
+          ctx.clip();
+        }
+        try {
+          ctx.drawImage(loadedBgImg, drawX, drawY, drawW, drawH);
+        } catch (e) {
+          console.warn('[Preview] drawImage failed for area bg:', e);
+        }
+        ctx.restore();
+
+        // プレイヤー枠線
+        if (isPlayerArea) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+          ctx.lineWidth = 1;
+          if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(drawX, drawY, drawW, drawH, Math.max(2, Math.round(6 * scale)));
+            ctx.stroke();
+          } else {
+            ctx.strokeRect(drawX, drawY, drawW, drawH);
+          }
+        }
+      } else if (isPlayerArea) {
+        // 画像無しのプレイヤー枠：落ち着いたマット調の背景と上品な枠線
         ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
         ctx.fillRect(drawX, drawY, drawW, drawH);
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
         ctx.lineWidth = 1;
         ctx.strokeRect(drawX, drawY, drawW, drawH);
+      } else if (!isPlayOnlyArea) {
+        const bgColor = style.backgroundColor;
+        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+          ctx.fillStyle = bgColor;
+          ctx.fillRect(drawX, drawY, drawW, drawH);
+        }
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(drawX, drawY, drawW, drawH);
+      }
 
-        // SEAT番号バッジ
-        const seatMatch = el.className.match(/player-(\d+)/);
+      // ゾーンラベル（「イベントカード」「トレンドカード」など）の描画
+      const zoneLabelEl = el.querySelector('.zone-label') || (el.classList.contains('zone-label') ? el : null);
+      if (zoneLabelEl && zoneLabelEl.textContent.trim()) {
+        const labelText = zoneLabelEl.textContent.trim();
+        const labelZRect = zoneLabelEl.getBoundingClientRect();
+        const lPos = {
+          l: (labelZRect.left - fieldRect.left) / zoomVal,
+          t: (labelZRect.top - fieldRect.top) / zoomVal,
+          w: labelZRect.width / zoomVal,
+          h: labelZRect.height / zoomVal
+        };
+        const lx = Math.round(lPos.l * scale + offsetX);
+        const ly = Math.round(lPos.t * scale + offsetY);
+        const lw = Math.round(lPos.w * scale);
+        const lh = Math.round(lPos.h * scale);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(lx, ly, lw, lh, 2);
+          ctx.fill();
+        } else {
+          ctx.fillRect(lx, ly, lw, lh);
+        }
+        ctx.fillStyle = '#1e293b';
+        ctx.font = `bold ${Math.max(7, Math.round(9 * scale))}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(labelText, lx + lw / 2, ly + lh / 2, lw * 0.95);
+      }
+
+      // SEAT番号バッジ（プレイヤー枠の場合）
+      if (isPlayerArea) {
+        const seatMatch = el.className.match(/player-(\d+)/) || el.id?.match(/board-hand-(\d+)/);
         if (seatMatch) {
           const seatText = `SEAT ${seatMatch[1]}`;
-          ctx.font = `bold ${Math.max(8, Math.round(10 * scale))}px sans-serif`;
+          ctx.font = `bold ${Math.max(7, Math.round(9 * scale))}px sans-serif`;
           const textMetrics = ctx.measureText(seatText);
-          const padX = 5;
-          const badgeH = Math.max(12, Math.round(15 * scale));
+          const padX = 4;
+          const badgeH = Math.max(10, Math.round(13 * scale));
           const badgeW = textMetrics.width + padX * 2;
           ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
           if (ctx.roundRect) {
@@ -3312,21 +3439,10 @@ async function generateBoardPreview() {
           ctx.textBaseline = 'middle';
           ctx.fillText(seatText, drawX + 3 + padX, drawY + 3 + badgeH / 2);
         }
-      } else {
-        const bgColor = style.backgroundColor;
-        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
-          ctx.fillStyle = bgColor;
-          ctx.fillRect(drawX, drawY, drawW, drawH);
-        }
-
-        // ゾーンの区切り線（にじみのない1pxの整った境界線）
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(drawX, drawY, drawW, drawH);
       }
     });
 
-    // カード描画
+    // 6. カード描画
     cardEls.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
 
     cardEls.forEach(el => {
@@ -3338,6 +3454,7 @@ async function generateBoardPreview() {
       if (drawW < 1 || drawH < 1) return;
 
       const cardRadius = Math.max(1, Math.round(3 * scale));
+      const isNoteIcon = el.classList.contains('note-icon');
 
       // ソフトシャドウ
       ctx.save();
@@ -3349,15 +3466,15 @@ async function generateBoardPreview() {
       if (ctx.roundRect) {
         ctx.beginPath();
         ctx.roundRect(drawX, drawY, drawW, drawH, cardRadius);
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = isNoteIcon ? '#fff8cb' : '#ffffff';
         ctx.fill();
       } else {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = isNoteIcon ? '#fff8cb' : '#ffffff';
         ctx.fillRect(drawX, drawY, drawW, drawH);
       }
       ctx.restore();
 
-      // カード本体描画
+      // カード本体クリッピング
       ctx.save();
       if (ctx.roundRect) {
         ctx.beginPath();
@@ -3365,11 +3482,36 @@ async function generateBoardPreview() {
         ctx.clip();
       }
 
-      if (el.dataset.faceUp === 'true') {
+      if (isNoteIcon) {
+        // ノートアイコン（付箋メモ）の描画
+        const grad = ctx.createLinearGradient(drawX, drawY, drawX + drawW, drawY + drawH);
+        grad.addColorStop(0, '#fff8cb');
+        grad.addColorStop(1, '#ffe58a');
+        ctx.fillStyle = grad;
+        ctx.fillRect(drawX, drawY, drawW, drawH);
+
+        // オレンジクリップ
+        ctx.fillStyle = '#f5a33b';
+        const clipW = Math.round(drawW * 0.5);
+        const clipH = Math.max(2, Math.round(drawH * 0.15));
+        ctx.fillRect(drawX + (drawW - clipW) / 2, drawY, clipW, clipH);
+
+        // 横罫線
+        ctx.strokeStyle = 'rgba(59, 48, 39, 0.35)';
+        ctx.lineWidth = 1;
+        const lineY1 = drawY + Math.round(drawH * 0.4);
+        const lineY2 = drawY + Math.round(drawH * 0.6);
+        ctx.beginPath();
+        ctx.moveTo(drawX + drawW * 0.2, lineY1); ctx.lineTo(drawX + drawW * 0.8, lineY1);
+        ctx.moveTo(drawX + drawW * 0.2, lineY2); ctx.lineTo(drawX + drawW * 0.8, lineY2);
+        ctx.stroke();
+      } else if (el.dataset.faceUp === 'true') {
         const img = el.querySelector('img');
-        if (img && img.complete && img.naturalWidth > 0) {
+        const loadedImg = (img && img.src) ? imageCache.get(img.src) : null;
+        const targetImg = (loadedImg && loadedImg.complete && loadedImg.naturalWidth > 0) ? loadedImg : (img && img.complete && img.naturalWidth > 0 ? img : null);
+        if (targetImg) {
           try {
-            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            ctx.drawImage(targetImg, drawX, drawY, drawW, drawH);
           } catch (e) {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(drawX, drawY, drawW, drawH);
@@ -3379,19 +3521,31 @@ async function generateBoardPreview() {
           ctx.fillRect(drawX, drawY, drawW, drawH);
         }
       } else {
-        // 洗練されたカード裏面（ダークネイビー + 微細なゴールド枠）
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(drawX, drawY, drawW, drawH);
-        if (drawW > 8 && drawH > 10) {
-          ctx.strokeStyle = 'rgba(212, 175, 55, 0.45)';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(drawX + 2, drawY + 2, drawW - 4, drawH - 4);
+        // 裏向きカード（裏面画像が設定されている場合は画像を描画）
+        const backUrl = el.dataset.backImageUrl || extractUrlFromBg(el.style.backgroundImage);
+        const backImg = backUrl ? imageCache.get(backUrl) : null;
+        if (backImg && backImg.complete && backImg.naturalWidth > 0) {
+          try {
+            ctx.drawImage(backImg, drawX, drawY, drawW, drawH);
+          } catch (e) {
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(drawX, drawY, drawW, drawH);
+          }
+        } else {
+          // 画像がない場合のフォールバック（ダークネイビー + 微細なゴールド枠）
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(drawX, drawY, drawW, drawH);
+          if (drawW > 8 && drawH > 10) {
+            ctx.strokeStyle = 'rgba(212, 175, 55, 0.45)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(drawX + 2, drawY + 2, drawW - 4, drawH - 4);
+          }
         }
       }
       ctx.restore();
 
       // カード外枠
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+      ctx.strokeStyle = isNoteIcon ? '#3b3027' : 'rgba(0, 0, 0, 0.25)';
       ctx.lineWidth = 1;
       if (ctx.roundRect) {
         ctx.beginPath();
@@ -3424,9 +3578,15 @@ async function generateBoardPreview() {
     console.log(`[Preview] 生成完了 (エリア:${validAreas.length}, カード:${cardEls.length})`);
     
     // WebP はブロックノイズが無く圧縮効率が極めて高い (非対応環境は高画質JPEG 0.92)
-    let dataUrl = canvas.toDataURL('image/webp', 0.92);
-    if (!dataUrl || !dataUrl.startsWith('data:image/webp')) {
-      dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    let dataUrl = null;
+    try {
+      dataUrl = canvas.toDataURL('image/webp', 0.92);
+      if (!dataUrl || !dataUrl.startsWith('data:image/webp')) {
+        dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      }
+    } catch (taintErr) {
+      console.warn('[Preview] Canvas tainted during export, returning null:', taintErr);
+      return null;
     }
     return dataUrl;
   } catch (e) {
