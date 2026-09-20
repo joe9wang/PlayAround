@@ -1162,6 +1162,75 @@
   <!-- Hidden file input for area background -->
   <input type="file" id="area-bg-file" accept="image/*" style="display: none;" />
 
+  <!-- === Area Image Fit Selection Modal === -->
+  <div id="area-image-fit-modal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 20000; align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+    <div class="area-fit-modal-container">
+      
+      <!-- ヘッダー -->
+      <div class="area-fit-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">🖼</span>
+          <span style="font-weight: bold; font-size: 16px; color: #222;" data-i18n="areaFit.title">エリア画像の設定</span>
+          <span id="area-fit-target-name" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: bold; background: #e0f2fe; color: #0284c7;">手札エリア</span>
+        </div>
+        <button id="btn-area-fit-close" type="button" class="area-fit-close-btn" aria-label="閉じる">✕</button>
+      </div>
+
+      <!-- 画像情報 & プレビュー -->
+      <div class="area-fit-preview-card">
+        <div class="area-fit-thumb-wrap">
+          <img id="area-fit-preview-img" src="" alt="preview" />
+        </div>
+        <div class="area-fit-info">
+          <div class="area-fit-info-row">
+            <span class="area-fit-info-label" data-i18n="areaFit.imgSize">選択した画像:</span>
+            <span id="area-fit-img-size" class="area-fit-info-val">-- × -- px</span>
+          </div>
+          <div class="area-fit-info-row">
+            <span class="area-fit-info-label" data-i18n="areaFit.areaSize">現在のエリアサイズ:</span>
+            <span id="area-fit-area-size" class="area-fit-info-val">-- × -- px</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 選択肢 -->
+      <div class="area-fit-options">
+        <!-- 選択肢1: 現在のエリアサイズに合わせる -->
+        <button type="button" id="btn-area-fit-current" class="area-fit-option-btn">
+          <div class="area-fit-opt-icon">📐</div>
+          <div class="area-fit-opt-content">
+            <div class="area-fit-opt-title" data-i18n="areaFit.fitCurrentTitle">現在のエリアサイズに合わせる</div>
+            <div class="area-fit-opt-desc" data-i18n="areaFit.fitCurrentDesc">
+              現在のエリアのサイズに合うように画像が出現します。画像の縦横比も現在のエリアのサイズに合わせます。
+            </div>
+          </div>
+        </button>
+
+        <!-- 選択肢2: 画像のサイズに合わせる -->
+        <button type="button" id="btn-area-fit-image" class="area-fit-option-btn">
+          <div class="area-fit-opt-icon">🖼️</div>
+          <div class="area-fit-opt-content">
+            <div class="area-fit-opt-title" data-i18n="areaFit.fitImageTitle">画像のサイズに合わせる</div>
+            <div class="area-fit-opt-desc" data-i18n="areaFit.fitImageDesc">
+              手札エリアが画像のサイズと全く同じ形状になります。
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- ローディング/通知メッセージ -->
+      <div id="area-fit-status-msg" style="display: none; font-size: 13px; color: #0284c7; text-align: center; font-weight: bold; padding: 4px;">
+        ⏳ 画像をアップロード中...
+      </div>
+
+      <!-- 下部ボタン -->
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
+        <button id="btn-area-fit-cancel" type="button" class="btn secondary" style="padding: 6px 16px; font-size: 13px;" data-i18n="areaFit.cancel">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
   <!-- === Note Context Menu === -->
   <div id="note-context-menu" class="area-context-menu" style="display: none; position: absolute; z-index: 10002;">
     <ul>

@@ -10587,6 +10587,26 @@ function subscribeAreas() {
 
           el.style.backgroundRepeat = '';
 
+          el.style.width = '';
+
+          el.style.height = '';
+
+          el.classList.remove('has-bg-image');
+
+          if (id === 'board-play') {
+
+            const layout = el.parentElement;
+
+            if (layout && layout.id === 'board-layout') {
+
+              layout.style.border = '';
+
+              layout.style.background = '';
+
+            }
+
+          }
+
         }
 
         return;
@@ -10631,15 +10651,47 @@ function subscribeAreas() {
 
         el.style.backgroundRepeat = '';
 
+        el.classList.remove('has-bg-image');
+
+        if (id === 'board-play') {
+
+          const layout = el.parentElement;
+
+          if (layout && layout.id === 'board-layout') {
+
+            layout.style.border = '';
+
+            layout.style.background = '';
+
+          }
+
+        }
+
       } else {
 
         el.style.backgroundImage = `url(${data.imageUrl})`;
 
-        el.style.backgroundSize = 'contain';
+        el.style.backgroundSize = (data.fitMode === 'contain') ? 'contain' : '100% 100%';
 
         el.style.backgroundPosition = 'center';
 
         el.style.backgroundRepeat = 'no-repeat';
+
+        el.classList.add('has-bg-image');
+
+        if (id === 'board-play') {
+
+          const layout = el.parentElement;
+
+          if (layout && layout.id === 'board-layout') {
+
+            layout.style.border = 'none';
+
+            layout.style.background = 'transparent';
+
+          }
+
+        }
 
       }
 
@@ -10659,60 +10711,110 @@ function subscribeAreas() {
 
       el.style.setProperty('--area-mult-y', multY);
 
-
-
       // Position & Scale sync
-      if (data.isAbsolute || data.x !== undefined || data.width !== undefined) {
+      const isAbsoluteArea = !!(data.isAbsolute || data.x !== undefined || id.includes('dynamic') || el.parentElement === field || el.closest('#board-layout') || el.classList.contains('board-hand'));
+
+      if (isAbsoluteArea) {
+
         el.dataset.areaId = id; 
+
         
+
         // 以前は field 直下へ移動させていたが、board-layout 内に留めても position:absolute ならOK。
+
         // ただし座標計算が field 基準なので、親を field に統一する方が安全。
+
         if (el.parentElement !== field && (data.isAbsolute || id.includes('dynamic'))) {
+
           el.style.width = el.offsetWidth + 'px';
+
           el.style.height = el.offsetHeight + 'px';
+
           field.appendChild(el);
+
         }
+
+
 
         el.style.position = 'absolute';
 
+
+
         // z-index を動的に設定（100: プレイエリア系 / 200: サブエリア系）。ボード(10000〜)やカード(20000〜)より背面を維持。
+
         const isPlayType = (id.includes('main-play-area') || id.includes('board-play'));
+
         el.style.zIndex = isPlayType ? (Z_BACK_BASE + 100) : (Z_BACK_BASE + 200);
+
         
+
         if (data.x !== undefined) el.style.left = data.x + 'px';
+
         if (data.y !== undefined) el.style.top = data.y + 'px';
+
         
+
         // サイズ適用（倍率 multX/multY はリサイズ操作で width/height 自体に取り込まれる運用も可能だが、
+
         // 既存の multX/multY も考慮して適用する）
+
         if (data.width !== undefined) el.style.width = (data.width * multX) + 'px';
+
         if (data.height !== undefined) el.style.height = (data.height * multY) + 'px';
 
+
+
         // board-play の場合は親の #board-layout も同期する
+
         if (id === 'board-play') {
+
           const layout = el.parentElement;
+
           if (layout && layout.id === 'board-layout') {
+
             if (data.width !== undefined) layout.style.width = data.width + 'px';
+
             if (data.height !== undefined) layout.style.height = data.height + 'px';
+
             if (data.x !== undefined) layout.style.left = data.x + 'px';
+
             if (data.y !== undefined) layout.style.top = data.y + 'px';
+
           }
+
         }
 
-      } else {
-        // グリッド等に属している場合、実測のピクセル幅（ベース）を計り、正確に倍率を掛けます。
-        el.style.width = '';
-        el.style.height = '';
-        
-        const baseW = el.offsetWidth;
-        const baseH = el.offsetHeight;
-        
-        if (multX !== 1) el.style.width = (baseW * multX) + 'px';
-        if (multY !== 1) el.style.height = (baseH * multY) + 'px';
-        
-        el.classList.add('auto-scale-area');
-      }
 
-      
+
+      } else {
+
+        // グリッド等に属している場合（カードモードの手札エリアやプレイエリア等）
+        if (data.width !== undefined) {
+          el.style.width = (data.width * multX) + 'px';
+        } else {
+          el.style.width = '';
+        }
+        if (data.height !== undefined) {
+          el.style.height = (data.height * multY) + 'px';
+        } else {
+          el.style.height = '';
+        }
+
+        const baseW = el.offsetWidth;
+
+        const baseH = el.offsetHeight;
+
+        
+
+        if (data.width === undefined && multX !== 1) el.style.width = (baseW * multX) + 'px';
+
+        if (data.height === undefined && multY !== 1) el.style.height = (baseH * multY) + 'px';
+
+        
+
+        el.classList.add('auto-scale-area');
+
+      }
 
       // テキストなどが歪まないように、単一の全体スケール(拡大/縮小)のみtransformで処理
 
@@ -11456,62 +11558,169 @@ function bindAreaContextMenuOnce() {
 
 
 
-  // ファイル選択時: アップロードしてFirestoreに書き込み
+  // === エリア画像サイズ選択モーダル関連 ===
+  const modalAreaFit = document.getElementById('area-image-fit-modal');
+  const btnAreaFitClose = document.getElementById('btn-area-fit-close');
+  const btnAreaFitCancel = document.getElementById('btn-area-fit-cancel');
+  const btnAreaFitCurrent = document.getElementById('btn-area-fit-current');
+  const btnAreaFitImage = document.getElementById('btn-area-fit-image');
+  const areaFitPreviewImg = document.getElementById('area-fit-preview-img');
+  const areaFitImgSize = document.getElementById('area-fit-img-size');
+  const areaFitAreaSize = document.getElementById('area-fit-area-size');
+  const areaFitTargetName = document.getElementById('area-fit-target-name');
+  const areaFitStatusMsg = document.getElementById('area-fit-status-msg');
 
-  fileInput.addEventListener('change', async (e) => {
+  let pendingAreaImageFile = null;
+  let pendingAreaTargetId = null;
+  let pendingAreaNaturalW = 0;
+  let pendingAreaNaturalH = 0;
+  let pendingAreaCurrentW = 0;
+  let pendingAreaCurrentH = 0;
+  let pendingAreaPreviewUrl = null;
+  let isAreaUploading = false;
 
-    const file = e.target.files[0];
+  function closeAreaImageFitModal() {
+    if (pendingAreaPreviewUrl) {
+      URL.revokeObjectURL(pendingAreaPreviewUrl);
+      pendingAreaPreviewUrl = null;
+    }
+    pendingAreaImageFile = null;
+    pendingAreaTargetId = null;
+    isAreaUploading = false;
+    if (modalAreaFit) modalAreaFit.style.display = 'none';
+    if (areaFitPreviewImg) areaFitPreviewImg.src = '';
+    if (areaFitStatusMsg) areaFitStatusMsg.style.display = 'none';
+    if (btnAreaFitCurrent) btnAreaFitCurrent.disabled = false;
+    if (btnAreaFitImage) btnAreaFitImage.disabled = false;
+  }
 
-    if (!file || !CURRENT_ROOM || !currentTargetAreaId) return;
+  function getAreaDisplayName(areaId) {
+    if (!areaId) return 'エリア';
+    if (areaId.includes('hand')) return '手札エリア';
+    if (areaId.includes('main') || areaId.includes('play')) return 'プレイエリア';
+    if (areaId.includes('deck')) return 'デッキエリア';
+    if (areaId.includes('discard')) return '捨て札エリア';
+    if (areaId.includes('special')) return '特殊エリア';
+    return areaId;
+  }
 
+  function openAreaImageFitModal(file, targetId) {
+    if (!file || !targetId) return;
+    pendingAreaImageFile = file;
+    pendingAreaTargetId = targetId;
 
+    const areaEl = currentTargetAreaElement || getCurrentTargetAreaElement();
+    pendingAreaCurrentW = areaEl ? Math.round(areaEl.offsetWidth) : 0;
+    pendingAreaCurrentH = areaEl ? Math.round(areaEl.offsetHeight) : 0;
 
-    // 同じファイルを選べるようにリセット
+    pendingAreaPreviewUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      pendingAreaNaturalW = img.naturalWidth || 0;
+      pendingAreaNaturalH = img.naturalHeight || 0;
 
-    fileInput.value = '';
+      if (areaFitPreviewImg) areaFitPreviewImg.src = pendingAreaPreviewUrl;
+      if (areaFitImgSize) areaFitImgSize.textContent = `${pendingAreaNaturalW} × ${pendingAreaNaturalH} px`;
+      if (areaFitAreaSize) areaFitAreaSize.textContent = `${pendingAreaCurrentW} × ${pendingAreaCurrentH} px`;
+      if (areaFitTargetName) areaFitTargetName.textContent = getAreaDisplayName(targetId);
+      if (areaFitStatusMsg) areaFitStatusMsg.style.display = 'none';
+      if (btnAreaFitCurrent) btnAreaFitCurrent.disabled = false;
+      if (btnAreaFitImage) btnAreaFitImage.disabled = false;
 
+      if (modalAreaFit) modalAreaFit.style.display = 'flex';
+    };
+    img.onerror = () => {
+      alert('画像の読み込みに失敗しました。');
+      closeAreaImageFitModal();
+    };
+    img.src = pendingAreaPreviewUrl;
+  }
 
+  async function applyAreaImageFit(fitMode) {
+    if (isAreaUploading || !pendingAreaImageFile || !CURRENT_ROOM || !pendingAreaTargetId) return;
+
+    isAreaUploading = true;
+    if (areaFitStatusMsg) areaFitStatusMsg.style.display = 'block';
+    if (btnAreaFitCurrent) btnAreaFitCurrent.disabled = true;
+    if (btnAreaFitImage) btnAreaFitImage.disabled = true;
 
     try {
-
+      const file = pendingAreaImageFile;
+      const targetId = pendingAreaTargetId;
       const extMatch = file.name.match(/\.[0-9a-z]+$/i);
-
       const ext = extMatch ? extMatch[0].toLowerCase() : '.jpg';
-
-      const storagePath = `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}_${Date.now()}${ext}`;
-
-
+      const storagePath = `rooms/${CURRENT_ROOM}/areas/${targetId}_${Date.now()}${ext}`;
 
       const sref = ref(storage, storagePath);
-
       await uploadBytes(sref, file);
-
       const url = await getDownloadURL(sref);
 
+      const areaDocRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${targetId}`);
 
+      if (fitMode === 'fill') {
+        // 現在のエリアサイズに合わせる (縦横比もエリアサイズに適合)
+        await setDoc(areaDocRef, {
+          imageUrl: url,
+          fitMode: 'fill',
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } else if (fitMode === 'natural') {
+        // 画像のサイズに合わせる (エリア寸法を画像サイズに完全一致)
+        const updateData = {
+          imageUrl: url,
+          fitMode: 'natural',
+          width: pendingAreaNaturalW,
+          height: pendingAreaNaturalH,
+          updatedAt: serverTimestamp()
+        };
 
-      await setDoc(doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`), {
+        if (targetId.startsWith('board-') || targetId.startsWith('dynamic-')) {
+          updateData.isAbsolute = true;
+        }
 
-        imageUrl: url,
+        await setDoc(areaDocRef, updateData, { merge: true });
 
-        updatedAt: serverTimestamp()
+        // board-play の場合はボードレイアウトの全体寸法も同期
+        if (targetId === 'board-play') {
+          await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), {
+            boardWidth: pendingAreaNaturalW,
+            boardHeight: pendingAreaNaturalH,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+      }
 
-      });
-
-
-
-      // ログ出力
-
-      appendSystemLine(`エリア画像を更新しました (${currentTargetAreaId})`);
-
+      appendSystemLine(`エリア画像を更新しました (${getAreaDisplayName(targetId)})`);
+      closeAreaImageFitModal();
     } catch (err) {
-
       console.error('Area BG upload failed:', err);
-
       appendSystemLine('画像のアップロードに失敗しました。');
-
+      alert('画像のアップロードに失敗しました。');
+      if (areaFitStatusMsg) areaFitStatusMsg.style.display = 'none';
+      if (btnAreaFitCurrent) btnAreaFitCurrent.disabled = false;
+      if (btnAreaFitImage) btnAreaFitImage.disabled = false;
+      isAreaUploading = false;
     }
+  }
 
+  // ファイル選択時: モーダルを開いてサイズ調整を選択
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file || !CURRENT_ROOM || !currentTargetAreaId) return;
+
+    // 同じファイルを選べるようにリセット
+    fileInput.value = '';
+
+    openAreaImageFitModal(file, currentTargetAreaId);
+  });
+
+  // モーダルボタンイベント登録
+  btnAreaFitCurrent?.addEventListener('click', () => applyAreaImageFit('fill'));
+  btnAreaFitImage?.addEventListener('click', () => applyAreaImageFit('natural'));
+  btnAreaFitClose?.addEventListener('click', closeAreaImageFitModal);
+  btnAreaFitCancel?.addEventListener('click', closeAreaImageFitModal);
+  modalAreaFit?.addEventListener('click', (e) => {
+    if (e.target === modalAreaFit) closeAreaImageFitModal();
   });
 
 

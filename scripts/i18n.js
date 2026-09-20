@@ -151,6 +151,17 @@ const I18N = {
         "zone.deck.shared": "デッキエリア（共有）",
         "zone.discard.shared": "捨て札エリア（共有）",
 
+        // --- Area Image Fit Modal ---
+        "areaFit.title": "エリア画像の設定",
+        "areaFit.imgSize": "選択した画像:",
+        "areaFit.areaSize": "現在のエリアサイズ:",
+        "areaFit.fitCurrentTitle": "現在のエリアサイズに合わせる",
+        "areaFit.fitCurrentDesc": "現在のエリアのサイズに合うように画像が出現します。画像の縦横比も現在のエリアのサイズに合わせます。",
+        "areaFit.fitImageTitle": "画像のサイズに合わせる",
+        "areaFit.fitImageDesc": "手札エリアが画像のサイズと全く同じ形状になります。",
+        "areaFit.cancel": "キャンセル",
+        "areaFit.uploading": "⏳ 画像をアップロード中...",
+
         // --- Preview / Misc ---
         "preview.title": "選択中のカード",
         "preview.toggle": "選択中のカードの表示/非表示",
@@ -351,6 +362,17 @@ const I18N = {
         "zone.play.shared": "Shared play area",
         "zone.deck.shared": "Shared deck area",
         "zone.discard.shared": "Shared discard area",
+
+        // --- Area Image Fit Modal ---
+        "areaFit.title": "Area Image Settings",
+        "areaFit.imgSize": "Selected image:",
+        "areaFit.areaSize": "Current area size:",
+        "areaFit.fitCurrentTitle": "Fit to Current Area Size",
+        "areaFit.fitCurrentDesc": "The image appears sized to fit the current area size, conforming to its aspect ratio.",
+        "areaFit.fitImageTitle": "Fit Area to Image Size",
+        "areaFit.fitImageDesc": "The area changes to the exact same size and shape as the image.",
+        "areaFit.cancel": "Cancel",
+        "areaFit.uploading": "⏳ Uploading image...",
 
         // --- Preview / Misc ---
         "preview.title": "Selected card",
