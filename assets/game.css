@@ -1200,9 +1200,10 @@ body.hover-zoom-enabled .card.selected:not(.is-board):not(.memo):not(.note):not(
   margin: 0;
 }
 
-/* Firefox */
+/* Firefox & 標準 */
 .nc-input[type=number] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .card.token {
