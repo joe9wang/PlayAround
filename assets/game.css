@@ -355,6 +355,13 @@ input:checked + .slider:before {
   transform: translateX(14px);
 }
 
+.mini-settings-btn {
+  width: auto !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+}
+
 .mini-settings-btn:hover {
   background: #f1f5f9 !important;
   border-color: #cbd5e1 !important;
