@@ -502,7 +502,7 @@ input:checked + .slider:before {
 .player-area.layout-simple1,
 .player-area.layout-simple {
   grid-template-columns: 1fr;
-  grid-template-rows: 3fr 1fr; /* メイン 75% / 手札 25% */
+  grid-template-rows: calc(var(--card-row-1, 1.5fr) + var(--card-row-2, 1.5fr)) var(--card-row-3, 1fr);
 }
 .player-area.layout-simple1 .special-area,
 .player-area.layout-simple1 .discard-area,
@@ -558,12 +558,18 @@ input:checked + .slider:before {
 }
 .player-area.layout-custom1 .special-area {
   grid-column: 1 / 2;
-  grid-row: 1 / 2;
+  grid-row: 1 / 3;
+  align-self: start;
+  height: var(--custom1-special1-h, 50%);
+  width: 100%;
 }
 .player-area.layout-custom1 .special2-area {
   display: block !important;
   grid-column: 1 / 2;
-  grid-row: 2 / 3;
+  grid-row: 1 / 3;
+  align-self: end;
+  height: calc(100% - var(--custom1-special1-h, 50%) - 6px);
+  width: 100%;
 }
 .player-area.layout-custom1 .main-play-area {
   grid-column: 2 / 3;
@@ -595,12 +601,18 @@ input:checked + .slider:before {
 }
 .player-area.layout-custom2 .special-area {
   grid-column: 1 / 2;
-  grid-row: 1 / 3;
+  grid-row: 1 / 4;
+  align-self: start;
+  height: var(--custom2-special-h, 65%);
+  width: 100%;
 }
 .player-area.layout-custom2 .deck2-area {
   display: block !important;
   grid-column: 1 / 2;
-  grid-row: 3 / 4;
+  grid-row: 1 / 4;
+  align-self: end;
+  height: calc(100% - var(--custom2-special-h, 65%) - 6px);
+  width: 100%;
 }
 .player-area.layout-custom2 .main-play-area {
   grid-column: 2 / 3;
@@ -2478,12 +2490,38 @@ body.is-spectator #spectator-banner { display: block; }
   -webkit-user-select: none;
 }
 
-/* ホストでない場合やシンプルレイアウト適用時は非表示 */
-body:not(.is-host) .card-split-handle,
-.player-area.layout-simple .card-split-handle,
-.player-area.layout-simple1 .card-split-handle,
-.player-area.layout-simple2 .card-split-handle {
+/* ホストでない場合はすべてのハンドルを非表示 */
+body:not(.is-host) .card-split-handle {
   display: none !important;
+}
+
+/* シンプルレイアウト時のスプリッター制限:
+   シンプル1では手札境界のみ有効、他は非表示
+   シンプル2では手札境界と右側サイド幅境界のみ有効、他は非表示 */
+.player-area.layout-simple1 .card-split-handle:not(.split-row-hand),
+.player-area.layout-simple .card-split-handle:not(.split-row-hand) {
+  display: none !important;
+}
+
+.player-area.layout-simple2 .card-split-handle:not(.split-row-hand):not(.split-col-side) {
+  display: none !important;
+}
+
+/* デフォルトではカスタム用の上下スプリッターは非表示 */
+.card-split-handle.split-row-custom1,
+.card-split-handle.split-row-custom2 {
+  display: none;
+  bottom: -10px;
+  top: auto;
+}
+
+/* カスタム1・カスタム2でのみ対応するスプリッターを表示 */
+.player-area.layout-custom1 .card-split-handle.split-row-custom1 {
+  display: block;
+}
+
+.player-area.layout-custom2 .card-split-handle.split-row-custom2 {
+  display: block;
 }
 
 /* 左右ドラッグ（垂直の仕切り線） */

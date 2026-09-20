@@ -3117,7 +3117,9 @@ let currentCardLayoutRatios = {
   col1: 16.6,
   col3: 16.6,
   handH: 25.0,
-  discardH: 50.0
+  discardH: 50.0,
+  custom1Special1H: 50.0,
+  custom2SpecialH: 65.0
 };
 
 /**
@@ -3126,16 +3128,18 @@ let currentCardLayoutRatios = {
 function applyCardLayoutRatios(ratios) {
   if (!ratios) return;
   currentCardLayoutRatios = {
-    col1: (typeof ratios.col1 === 'number') ? ratios.col1 : 16.6,
-    col3: (typeof ratios.col3 === 'number') ? ratios.col3 : 16.6,
-    handH: (typeof ratios.handH === 'number') ? ratios.handH : 25.0,
-    discardH: (typeof ratios.discardH === 'number') ? ratios.discardH : 50.0
+    col1: (typeof ratios.col1 === 'number') ? ratios.col1 : (currentCardLayoutRatios.col1 ?? 16.6),
+    col3: (typeof ratios.col3 === 'number') ? ratios.col3 : (currentCardLayoutRatios.col3 ?? 16.6),
+    handH: (typeof ratios.handH === 'number') ? ratios.handH : (currentCardLayoutRatios.handH ?? 25.0),
+    discardH: (typeof ratios.discardH === 'number') ? ratios.discardH : (currentCardLayoutRatios.discardH ?? 50.0),
+    custom1Special1H: (typeof ratios.custom1Special1H === 'number') ? ratios.custom1Special1H : (currentCardLayoutRatios.custom1Special1H ?? 50.0),
+    custom2SpecialH: (typeof ratios.custom2SpecialH === 'number') ? ratios.custom2SpecialH : (currentCardLayoutRatios.custom2SpecialH ?? 65.0)
   };
 
   const fieldEl = document.getElementById('field');
   if (!fieldEl) return;
 
-  const { col1, col3, handH, discardH } = currentCardLayoutRatios;
+  const { col1, col3, handH, discardH, custom1Special1H, custom2SpecialH } = currentCardLayoutRatios;
   const upperH = 100 - handH;
   const row1 = (upperH * (discardH / 100)).toFixed(2);
   const row2 = (upperH * (1 - discardH / 100)).toFixed(2);
@@ -3148,6 +3152,8 @@ function applyCardLayoutRatios(ratios) {
   fieldEl.style.setProperty('--card-row-1', `${row1}fr`);
   fieldEl.style.setProperty('--card-row-2', `${row2}fr`);
   fieldEl.style.setProperty('--card-row-3', `${row3}fr`);
+  fieldEl.style.setProperty('--custom1-special1-h', `${custom1Special1H.toFixed(2)}%`);
+  fieldEl.style.setProperty('--custom2-special-h', `${custom2SpecialH.toFixed(2)}%`);
 }
 
 /**
@@ -3162,6 +3168,8 @@ function setupCardLayoutSplitters() {
     playerArea.dataset.splittersInit = 'true';
 
     const specialArea = playerArea.querySelector('.special-area');
+    const special2Area = playerArea.querySelector('.special2-area');
+    const deck2Area = playerArea.querySelector('.deck2-area');
     const playArea = playerArea.querySelector('.main-play-area');
     const handArea = playerArea.querySelector('.hand-area');
     const discardArea = playerArea.querySelector('.discard-area');
@@ -3173,6 +3181,38 @@ function setupCardLayoutSplitters() {
       hSpecial.title = '特殊エリアの幅を調整';
       specialArea.appendChild(hSpecial);
       bindSplitterDrag(hSpecial, playerArea, 'col-special');
+
+      // カスタム1用: 特殊1と特殊2の境界 (上下ドラッグ)
+      const hCustom1Row = document.createElement('div');
+      hCustom1Row.className = 'card-split-handle split-row split-row-custom1';
+      hCustom1Row.title = '特殊1/特殊2の高さを調整';
+      specialArea.appendChild(hCustom1Row);
+      bindSplitterDrag(hCustom1Row, playerArea, 'row-custom1');
+
+      // カスタム2用: 特殊とデッキ2の境界 (上下ドラッグ)
+      const hCustom2Row = document.createElement('div');
+      hCustom2Row.className = 'card-split-handle split-row split-row-custom2';
+      hCustom2Row.title = '特殊/デッキ2の高さを調整';
+      specialArea.appendChild(hCustom2Row);
+      bindSplitterDrag(hCustom2Row, playerArea, 'row-custom2');
+    }
+
+    // 1b. 特殊2エリアの右境界 (左右ドラッグ)
+    if (special2Area) {
+      const hSpecial2Col = document.createElement('div');
+      hSpecial2Col.className = 'card-split-handle split-col split-col-special';
+      hSpecial2Col.title = '特殊エリアの幅を調整';
+      special2Area.appendChild(hSpecial2Col);
+      bindSplitterDrag(hSpecial2Col, playerArea, 'col-special');
+    }
+
+    // 1c. デッキ2エリアの右境界 (左右ドラッグ)
+    if (deck2Area) {
+      const hDeck2Col = document.createElement('div');
+      hDeck2Col.className = 'card-split-handle split-col split-col-special';
+      hDeck2Col.title = '特殊/デッキ2エリアの幅を調整';
+      deck2Area.appendChild(hDeck2Col);
+      bindSplitterDrag(hDeck2Col, playerArea, 'col-special');
     }
 
     // 2. プレイエリアと手札エリアの境界 (上下ドラッグ)
@@ -3231,8 +3271,36 @@ function bindSplitterDrag(handle, playerArea, type) {
     if (type === 'row-side' && discardArea && deckArea) {
       const dRect = discardArea.getBoundingClientRect();
       const kRect = deckArea.getBoundingClientRect();
-      sideTop = dRect.top;
-      sideTotalH = (kRect.bottom - dRect.top) / z;
+      const topY = Math.min(dRect.top, kRect.top);
+      const bottomY = Math.max(dRect.bottom, kRect.bottom);
+      sideTop = topY;
+      sideTotalH = (bottomY - topY) / z;
+    }
+
+    let custom1TotalH = 0;
+    let custom1Top = 0;
+    if (type === 'row-custom1') {
+      const s1 = playerArea.querySelector('.special-area');
+      const s2 = playerArea.querySelector('.special2-area');
+      if (s1 && s2) {
+        const r1 = s1.getBoundingClientRect();
+        const r2 = s2.getBoundingClientRect();
+        custom1Top = r1.top;
+        custom1TotalH = (r2.bottom - r1.top) / z;
+      }
+    }
+
+    let custom2TotalH = 0;
+    let custom2Top = 0;
+    if (type === 'row-custom2') {
+      const s = playerArea.querySelector('.special-area');
+      const d = playerArea.querySelector('.deck2-area');
+      if (s && d) {
+        const r1 = s.getBoundingClientRect();
+        const r2 = d.getBoundingClientRect();
+        custom2Top = r1.top;
+        custom2TotalH = (r2.bottom - r1.top) / z;
+      }
     }
 
     let tempRatios = { ...currentCardLayoutRatios };
@@ -3263,6 +3331,20 @@ function bindSplitterDrag(handle, playerArea, type) {
           let pct = (offsetPx / sideTotalH) * 100;
           pct = Math.max(15, Math.min(85, pct)); // 15%〜85%
           tempRatios.discardH = Math.round(pct * 10) / 10;
+        }
+      } else if (type === 'row-custom1') {
+        if (custom1TotalH > 0) {
+          const offsetPx = (clientY - custom1Top) / z;
+          let pct = (offsetPx / custom1TotalH) * 100;
+          pct = Math.max(15, Math.min(85, pct)); // 15%〜85%
+          tempRatios.custom1Special1H = Math.round(pct * 10) / 10;
+        }
+      } else if (type === 'row-custom2') {
+        if (custom2TotalH > 0) {
+          const offsetPx = (clientY - custom2Top) / z;
+          let pct = (offsetPx / custom2TotalH) * 100;
+          pct = Math.max(25, Math.min(85, pct)); // 25%〜85%
+          tempRatios.custom2SpecialH = Math.round(pct * 10) / 10;
         }
       }
 
