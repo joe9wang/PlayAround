@@ -3119,7 +3119,9 @@ let currentCardLayoutRatios = {
   handH: 25.0,
   discardH: 50.0,
   custom1Special1H: 50.0,
-  custom2SpecialH: 65.0
+  custom2SpecialH: 65.0,
+  playerAreaW: null,
+  playerAreaH: null
 };
 
 /**
@@ -3133,13 +3135,15 @@ function applyCardLayoutRatios(ratios) {
     handH: (typeof ratios.handH === 'number') ? ratios.handH : (currentCardLayoutRatios.handH ?? 25.0),
     discardH: (typeof ratios.discardH === 'number') ? ratios.discardH : (currentCardLayoutRatios.discardH ?? 50.0),
     custom1Special1H: (typeof ratios.custom1Special1H === 'number') ? ratios.custom1Special1H : (currentCardLayoutRatios.custom1Special1H ?? 50.0),
-    custom2SpecialH: (typeof ratios.custom2SpecialH === 'number') ? ratios.custom2SpecialH : (currentCardLayoutRatios.custom2SpecialH ?? 65.0)
+    custom2SpecialH: (typeof ratios.custom2SpecialH === 'number') ? ratios.custom2SpecialH : (currentCardLayoutRatios.custom2SpecialH ?? 65.0),
+    playerAreaW: (ratios.playerAreaW === null) ? null : ((typeof ratios.playerAreaW === 'number' && ratios.playerAreaW > 0) ? ratios.playerAreaW : (currentCardLayoutRatios.playerAreaW ?? null)),
+    playerAreaH: (ratios.playerAreaH === null) ? null : ((typeof ratios.playerAreaH === 'number' && ratios.playerAreaH > 0) ? ratios.playerAreaH : (currentCardLayoutRatios.playerAreaH ?? null))
   };
 
   const fieldEl = document.getElementById('field');
   if (!fieldEl) return;
 
-  const { col1, col3, handH, discardH, custom1Special1H, custom2SpecialH } = currentCardLayoutRatios;
+  const { col1, col3, handH, discardH, custom1Special1H, custom2SpecialH, playerAreaW, playerAreaH } = currentCardLayoutRatios;
   const upperH = 100 - handH;
   const row1 = (upperH * (discardH / 100)).toFixed(2);
   const row2 = (upperH * (1 - discardH / 100)).toFixed(2);
@@ -3154,6 +3158,18 @@ function applyCardLayoutRatios(ratios) {
   fieldEl.style.setProperty('--card-row-3', `${row3}fr`);
   fieldEl.style.setProperty('--custom1-special1-h', `${custom1Special1H.toFixed(2)}%`);
   fieldEl.style.setProperty('--custom2-special-h', `${custom2SpecialH.toFixed(2)}%`);
+
+  if (playerAreaW && playerAreaW > 0) {
+    fieldEl.style.setProperty('--player-area-w', `${playerAreaW}px`);
+  } else {
+    fieldEl.style.removeProperty('--player-area-w');
+  }
+
+  if (playerAreaH && playerAreaH > 0) {
+    fieldEl.style.setProperty('--player-area-h', `${playerAreaH}px`);
+  } else {
+    fieldEl.style.removeProperty('--player-area-h');
+  }
 }
 
 /**
@@ -3241,6 +3257,21 @@ function setupCardLayoutSplitters() {
       discardArea.appendChild(hSideRow);
       bindSplitterDrag(hSideRow, playerArea, 'row-side');
     }
+
+    // 5. プレイヤーエリア外枠ハンドル（上・下・左・右：全座席一括連動サイズ変更）
+    const outerDirs = [
+      { dir: 'top', cls: 'handle-top', title: 'プレイヤーエリア全体の高さを調整（ダブルクリックでリセット）' },
+      { dir: 'bottom', cls: 'handle-bottom', title: 'プレイヤーエリア全体の高さを調整（ダブルクリックでリセット）' },
+      { dir: 'left', cls: 'handle-left', title: 'プレイヤーエリア全体の幅を調整（ダブルクリックでリセット）' },
+      { dir: 'right', cls: 'handle-right', title: 'プレイヤーエリア全体の幅を調整（ダブルクリックでリセット）' }
+    ];
+    outerDirs.forEach(({ dir, cls, title }) => {
+      const hOuter = document.createElement('div');
+      hOuter.className = `player-outer-handle ${cls}`;
+      hOuter.title = title;
+      playerArea.appendChild(hOuter);
+      bindPlayerAreaOuterHandleDrag(hOuter, playerArea, dir);
+    });
   });
 }
 
@@ -3369,6 +3400,117 @@ function bindSplitterDrag(handle, playerArea, type) {
           });
         } catch (err) {
           console.warn('[Splitter] Failed to save cardLayoutRatios:', err);
+        }
+      }
+    };
+
+    document.addEventListener('mousemove', onMove, { passive: false });
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+  };
+
+  handle.addEventListener('mousedown', onStart);
+  handle.addEventListener('touchstart', onStart, { passive: false });
+}
+
+/**
+ * プレイヤーエリア外枠ハンドルのドラッグ操作（全座席一括サイズ変更 & Firestore同期）
+ */
+function bindPlayerAreaOuterHandleDrag(handle, playerArea, direction) {
+  // ダブルクリックでデフォルトサイズにリセット
+  handle.addEventListener('dblclick', async (e) => {
+    const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
+    if (!isHost) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const tempRatios = {
+      ...currentCardLayoutRatios,
+      playerAreaW: null,
+      playerAreaH: null
+    };
+    applyCardLayoutRatios(tempRatios);
+
+    if (CURRENT_ROOM) {
+      try {
+        const roomRef = doc(db, `rooms/${CURRENT_ROOM}`);
+        await updateDoc(roomRef, {
+          cardLayoutRatios: tempRatios,
+          updatedAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.warn('[OuterHandle] Failed to reset cardLayoutRatios:', err);
+      }
+    }
+  });
+
+  const onStart = (e) => {
+    const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
+    if (!isHost) return;
+
+    if (e.type === 'mousedown' && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    handle.classList.add('is-dragging');
+    document.body.classList.add('is-resizing-splitter');
+
+    const areaRect = playerArea.getBoundingClientRect();
+    const z = typeof zoom !== 'undefined' ? zoom : 1;
+    const startW = areaRect.width / z;
+    const startH = areaRect.height / z;
+    const startClientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const startClientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    let tempRatios = { ...currentCardLayoutRatios };
+
+    const onMove = (moveEvt) => {
+      moveEvt.preventDefault();
+      const clientX = moveEvt.touches ? moveEvt.touches[0].clientX : moveEvt.clientX;
+      const clientY = moveEvt.touches ? moveEvt.touches[0].clientY : moveEvt.clientY;
+
+      const deltaX = (clientX - startClientX) / z;
+      const deltaY = (clientY - startClientY) / z;
+
+      if (direction === 'right') {
+        let w = Math.round(startW + deltaX);
+        w = Math.max(350, Math.min(3000, w));
+        tempRatios.playerAreaW = w;
+      } else if (direction === 'left') {
+        let w = Math.round(startW - deltaX);
+        w = Math.max(350, Math.min(3000, w));
+        tempRatios.playerAreaW = w;
+      } else if (direction === 'bottom') {
+        let h = Math.round(startH + deltaY);
+        h = Math.max(200, Math.min(2000, h));
+        tempRatios.playerAreaH = h;
+      } else if (direction === 'top') {
+        let h = Math.round(startH - deltaY);
+        h = Math.max(200, Math.min(2000, h));
+        tempRatios.playerAreaH = h;
+      }
+
+      applyCardLayoutRatios(tempRatios);
+    };
+
+    const onEnd = async () => {
+      handle.classList.remove('is-dragging');
+      document.body.classList.remove('is-resizing-splitter');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+
+      if (CURRENT_ROOM && isHost) {
+        try {
+          const roomRef = doc(db, `rooms/${CURRENT_ROOM}`);
+          await updateDoc(roomRef, {
+            cardLayoutRatios: tempRatios,
+            updatedAt: serverTimestamp()
+          });
+        } catch (err) {
+          console.warn('[OuterHandle] Failed to save cardLayoutRatios:', err);
         }
       }
     };
