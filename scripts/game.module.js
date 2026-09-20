@@ -3181,9 +3181,10 @@ function applyCardLayoutRatios(ratios) {
   fieldEl.style.setProperty('--card-col-1', `${col1.toFixed(2)}%`);
   fieldEl.style.setProperty('--card-col-2', `1fr`);
   fieldEl.style.setProperty('--card-col-3', `${col3.toFixed(2)}%`);
-  fieldEl.style.setProperty('--card-row-1', `${row1}%`);
-  fieldEl.style.setProperty('--card-row-2', `${row2}%`);
-  fieldEl.style.setProperty('--card-row-3', `${row3}%`);
+  // % ではなく fr 単位を使用することで、gap(12px)とborder(10px)を自動控除して枠内に完全収容し、点線枠を覆い隠さない
+  fieldEl.style.setProperty('--card-row-1', `${row1}fr`);
+  fieldEl.style.setProperty('--card-row-2', `${row2}fr`);
+  fieldEl.style.setProperty('--card-row-3', `${row3}fr`);
 }
 
 /**
