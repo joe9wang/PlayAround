@@ -157,6 +157,9 @@
           <div class="row" id="create-btn-row" style="margin-top:auto; padding-top:16px; justify-content:flex-end;">
             <button class="btn" data-i18n="create.createBtn" id="create-room-btn">作成</button>
           </div>
+          <div id="guest-create-limit-badge" style="font-size:12px; color:#666; margin-top:8px; text-align:right; line-height:1.4;">
+            <span id="guest-limit-badge-text" data-i18n="create.limit.badgeNotice">💡 ゲストは24時間に1回まで作成可能（ログインで無制限）</span>
+          </div>
         </section>
       </div>
       <div class="lobby-credit">BatriTable — © 2026 SOLVENTER</div>
@@ -301,11 +304,33 @@
       <div data-i18n="create.anonWarning.title" style="font-weight:800; font-size:20px; margin-bottom:16px; color:#e64a5a;">⚠️ 注意</div>
       <div data-i18n="create.anonWarning.message" style="margin-bottom:24px; font-size:16px; line-height:1.6; color:#333;">
         ログインしていない場合は、<br>
-        ルームは作成後24時間で削除されます。
+        ルームは作成後24時間で削除されます。<br>
+        <span style="font-size:13px; color:#e64a5a; font-weight:bold;">※ ゲストのルーム作成は24時間に1回までとなります。</span>
       </div>
       <div style="display:flex; justify-content:center; gap:16px;">
         <button id="anon-warning-cancel" class="btn secondary" data-i18n="create.anonWarning.cancel" style="padding:10px 24px; font-weight:700;">戻る</button>
         <button id="anon-warning-ok" class="btn" data-i18n="create.anonWarning.ok" style="padding:10px 32px; font-weight:800;">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ゲスト（未ログイン）向けルーム作成制限（24時間に1回）モーダル -->
+  <div id="guest-limit-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:21000; align-items:center; justify-content:center;">
+    <div class="layout-modal-card"
+      style="background:#fff; padding:32px; border-radius:24px; width:500px; max-width:92%; box-shadow:0 12px 48px rgba(0,0,0,0.4); text-align:center;">
+      <div data-i18n="create.limit.title" style="font-weight:800; font-size:20px; margin-bottom:16px; color:#e64a5a;">⚠️ ルーム作成制限（24時間に1回）</div>
+      <div data-i18n="create.limit.message" style="margin-bottom:16px; font-size:15px; line-height:1.6; color:#333;">
+        ゲスト（未ログイン）でのルーム作成は24時間に1回までとなっています。<br>
+        続けてルームを作成・開催するには、無料アカウントへのログインまたは新規登録を行ってください。<br><br>
+        <span style="font-size:13px; color:#555;">※ ログインすると、ルーム作成の回数制限がなくなり、作成したルームも保存されます。</span>
+      </div>
+      <div id="guest-limit-timer-wrap" style="margin-bottom:24px; padding:10px 18px; background:#fff3f4; border:1px solid #fcc; border-radius:12px; display:inline-block;">
+        <span style="font-weight:700; color:#e64a5a; font-size:14px;" id="guest-limit-timer-text">次回作成可能まで：あと --時間--分</span>
+      </div>
+      <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+        <button id="guest-limit-cancel" class="btn secondary" data-i18n="create.limit.cancel" style="padding:10px 24px; font-weight:700;">閉じる</button>
+        <button id="guest-limit-login-btn" class="btn" data-i18n="create.limit.loginBtn" style="padding:10px 32px; font-weight:800; background:#0a7;">ログイン / 新規登録へ</button>
       </div>
     </div>
   </div>

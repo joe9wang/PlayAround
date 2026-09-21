@@ -134,6 +134,7 @@ async function init() {
     }
     updateAuthIndicator(user);
     updateStartButtonState();
+    updateGuestLimitUI();
   });
 
   onIdTokenChanged(auth, async (user) => {
@@ -187,7 +188,16 @@ async function init() {
     document.getElementById('anon-warning-modal').style.display = 'none';
   });
 
+  document.getElementById('guest-limit-cancel')?.addEventListener('click', () => {
+    document.getElementById('guest-limit-modal').style.display = 'none';
+  });
+  document.getElementById('guest-limit-login-btn')?.addEventListener('click', () => {
+    window.location.href = './login.html';
+  });
+
   updateModePickButtons();
+  updateGuestLimitUI();
+  setInterval(updateGuestLimitUI, 60000); // 1分毎に残り時間を自動更新
 }
 
 function updateStartButtonState() {
@@ -257,6 +267,83 @@ window.selectLayoutOption = function(type) {
   });
 };
 
+// === ゲスト（未ログイン）向けルーム作成制限（24時間に1回） ===
+const GUEST_ROOM_LIMIT_MS = 24 * 60 * 60 * 1000; // 24時間
+
+/**
+ * ゲストユーザーの作成制限状態を取得
+ * @returns {Promise<{ isLimited: boolean, remainingMs: number, formattedRemaining: string }>}
+ */
+async function getGuestCreateLimitStatus() {
+  const user = auth.currentUser;
+  // ログイン済み（非匿名）ユーザーは回数制限なし
+  if (user && !user.isAnonymous) {
+    return { isLimited: false, remainingMs: 0, formattedRemaining: '' };
+  }
+
+  let lastCreatedAt = 0;
+
+  // 1. localStorage から確認
+  const localStr = localStorage.getItem('pa:last-guest-room-created-at');
+  if (localStr) {
+    const t = parseInt(localStr, 10);
+    if (!isNaN(t) && t > lastCreatedAt) {
+      lastCreatedAt = t;
+    }
+  }
+
+  // 2. 匿名ユーザーの Firestore レコード（users/{uid}）から確認
+  if (user && user.isAnonymous) {
+    try {
+      const uSnap = await getDoc(doc(db, `users/${user.uid}`));
+      if (uSnap.exists()) {
+        const d = uSnap.data();
+        const firestoreTime = d.lastRoomCreatedAt?.toMillis ? d.lastRoomCreatedAt.toMillis() : (d.lastRoomCreatedAt || 0);
+        if (firestoreTime > lastCreatedAt) {
+          lastCreatedAt = firestoreTime;
+          localStorage.setItem('pa:last-guest-room-created-at', lastCreatedAt.toString());
+        }
+      }
+    } catch (err) {
+      console.warn('[Limit] Firestore check failed:', err);
+    }
+  }
+
+  if (lastCreatedAt > 0) {
+    const elapsed = Date.now() - lastCreatedAt;
+    if (elapsed < GUEST_ROOM_LIMIT_MS) {
+      const remainingMs = GUEST_ROOM_LIMIT_MS - elapsed;
+      const hours = Math.floor(remainingMs / (60 * 60 * 1000));
+      const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+      const formattedRemaining = `${hours}時間${minutes}分`;
+      return { isLimited: true, remainingMs, formattedRemaining };
+    }
+  }
+
+  return { isLimited: false, remainingMs: 0, formattedRemaining: '' };
+}
+
+/**
+ * ゲスト作成制限案内バッジのUI更新
+ */
+async function updateGuestLimitUI() {
+  const badgeText = document.getElementById('guest-limit-badge-text');
+  if (!badgeText) return;
+
+  const user = auth.currentUser;
+  if (user && !user.isAnonymous) {
+    badgeText.innerHTML = `<span style="color:#0a7; font-weight:600;">✨ ログイン中：ルーム作成は無制限です</span>`;
+    return;
+  }
+
+  const status = await getGuestCreateLimitStatus();
+  if (status.isLimited) {
+    badgeText.innerHTML = `<span style="color:#e64a5a; font-weight:700;">⚠️ 本日のゲスト作成枠を使用済み（次回可能: あと${status.formattedRemaining}）</span><br><a href="./login.html" style="color:#0a7; font-weight:700; text-decoration:underline; margin-left:4px;">ログインして無制限に作成</a>`;
+  } else {
+    badgeText.innerHTML = `<span>${t('create.limit.badgeNotice') || '💡 ゲストは24時間に1回まで作成可能（ログインで無制限）'}</span>`;
+  }
+}
+
 async function handleCreateRoom() {
   await ensureAuthReady();
   TEMP_CREATE_ROOM_ID = (newRoomIdInput.value || '').trim();
@@ -268,7 +355,19 @@ async function handleCreateRoom() {
   // Store name
   localStorage.setItem('pa:last-player-name', TEMP_CREATE_CREATOR_NAME);
 
+  // ゲスト作成制限チェック
   if (auth.currentUser?.isAnonymous) {
+    const limitStatus = await getGuestCreateLimitStatus();
+    if (limitStatus.isLimited) {
+      const timerEl = document.getElementById('guest-limit-timer-text');
+      if (timerEl) {
+        timerEl.textContent = `次回作成可能まで：あと ${limitStatus.formattedRemaining}`;
+      }
+      document.getElementById('guest-limit-modal').style.display = 'flex';
+      updateGuestLimitUI();
+      return;
+    }
+
     document.getElementById('anon-warning-modal').style.display = 'flex';
   } else {
     showLayoutModal();
@@ -391,9 +490,20 @@ async function executeRoomCreation(layoutType) {
       roomName: id, // デフォルトはID
     };
 
-    // 匿名ユーザー（ゲスト）の場合のみ、24時間で削除される有効期限を設定
+    // 匿名ユーザー（ゲスト）の場合のみ、24時間で削除される有効期限を設定 & 24時間作成制限のタイムスタンプ記録
     if (auth.currentUser?.isAnonymous) {
       payload.expiresAt = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+      const nowMs = Date.now();
+      localStorage.setItem('pa:last-guest-room-created-at', nowMs.toString());
+      try {
+        await setDoc(doc(db, `users/${uid}`), {
+          lastRoomCreatedAt: serverTimestamp(),
+          isAnonymous: true,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } catch (err) {
+        console.warn('[Limit] Failed to save lastRoomCreatedAt to users doc:', err);
+      }
     } else {
       // ログイン済みユーザーの場合は期限を設けない（もし既存ルームの上書きなら明示的に削除）
       payload.expiresAt = null;
