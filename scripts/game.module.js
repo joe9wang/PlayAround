@@ -2326,6 +2326,10 @@ function setPreview(src) {
 
     previewImg.style.display = 'none';
 
+    if (previewInfo) {
+      previewInfo.textContent = '';
+    }
+
     if (typeof previewZoom !== 'undefined') {
 
       previewImg.style.transform = '';
@@ -5673,9 +5677,9 @@ function applyCardSelection(card) {
   const ownerPlayerNum = card.dataset.ownerSeat ? `SEAT${card.dataset.ownerSeat}` : '?';
   if (isToken) {
     const t = card.querySelector('.token-input')?.value || '';
-    previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || '?'}\n内容: ${t ? t.slice(0, 200) : '(未記入)'}`;
+    previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum}\n内容: ${t ? t.slice(0, 200) : '(未記入)'}`;
   } else {
-    previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || '?'}`;
+    previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum}`;
   }
 }
 
@@ -9313,7 +9317,7 @@ async function focusCardById(cardId, additive = false, skipPreview = false) {
 
     const ownerPlayerNum = el.dataset.ownerSeat ? `SEAT${el.dataset.ownerSeat}` : '?';
 
-    previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} / あなた: P${CURRENT_PLAYER || "?"}`;
+    previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum}`;
 
   }
 
