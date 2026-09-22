@@ -14,6 +14,7 @@ const I18N = {
         "lobby.welcome": "バトライテーブルへようこそ！",
         "auth.login": "Googleでログイン",
         "auth.loginBtn": "ログインする",
+        "auth.rejoinCreatedRoom": "🚪 作成したルームに入る",
         "auth.logout": "ログアウト",
         "app.mypage": "マイページ",
         "mypage.profile": "プロフィール",
@@ -247,6 +248,7 @@ const I18N = {
 
         "auth.login": "Sign in with Google",
         "auth.loginBtn": "Sign in",
+        "auth.rejoinCreatedRoom": "🚪 Enter Created Room",
         "auth.logout": "Sign out",
         "app.mypage": "My Page",
         "mypage.profile": "Profile",

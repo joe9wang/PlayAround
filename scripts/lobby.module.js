@@ -115,7 +115,7 @@ async function init() {
       
       // 匿名ログイン時は「ログイン」ボタンのみ表示し、ログアウト／マイページは隠す
       if (user.isAnonymous) {
-        authFormArea.style.display = 'block';
+        authFormArea.style.display = 'flex';
         authLoggedinArea.style.display = 'none';
       } else {
         authFormArea.style.display = 'none';
@@ -127,7 +127,7 @@ async function init() {
       if (!playerNameInput.value) playerNameInput.value = localStorage.getItem('pa:last-player-name') || '';
     } else {
       CURRENT_UID = null;
-      authFormArea.style.display = 'block';
+      authFormArea.style.display = 'flex';
       authLoggedinArea.style.display = 'none';
       // Auto anonymous sign-in if not logged in
       try { await signInAnonymously(auth); } catch (e) { console.error('Auth error', e); }
@@ -135,6 +135,7 @@ async function init() {
     updateAuthIndicator(user);
     updateStartButtonState();
     updateGuestLimitUI();
+    checkCreatedRoomRejoinable(user);
   });
 
   onIdTokenChanged(auth, async (user) => {
@@ -197,7 +198,11 @@ async function init() {
 
   updateModePickButtons();
   updateGuestLimitUI();
-  setInterval(updateGuestLimitUI, 60000); // 1分毎に残り時間を自動更新
+  checkCreatedRoomRejoinable(auth.currentUser);
+  setInterval(() => {
+    updateGuestLimitUI();
+    checkCreatedRoomRejoinable(auth.currentUser);
+  }, 60000); // 1分毎に残り時間・再入室ボタンを自動更新
 }
 
 function updateStartButtonState() {
@@ -342,6 +347,71 @@ async function updateGuestLimitUI() {
     badgeText.innerHTML = `<span style="color:#e64a5a; font-weight:700;">⚠️ 本日の未ログイン作成枠を使用済み（次回可能: あと${status.formattedRemaining}）</span><br><a href="./login.html" style="color:#0a7; font-weight:700; text-decoration:underline; margin-left:4px;">${linkText}</a>`;
   } else {
     badgeText.innerHTML = `<span>${t('create.limit.badgeNotice') || '💡 未ログインでの作成は24時間に1回まで（ログインで作成）'}</span>`;
+  }
+}
+
+/**
+ * 未ログインユーザーが作成した有効なルームがあるか確認し、「作成したルームに入る」ボタンを制御
+ */
+async function checkCreatedRoomRejoinable(user) {
+  const rejoinBtn = document.getElementById('rejoin-created-room-btn');
+  if (!rejoinBtn) return;
+
+  if (!user || !user.isAnonymous) {
+    rejoinBtn.style.display = 'none';
+    return;
+  }
+
+  let roomId = localStorage.getItem('pa:last-created-room-id');
+  if (!roomId && user.uid) {
+    try {
+      const uSnap = await getDoc(doc(db, `users/${user.uid}`));
+      if (uSnap.exists() && uSnap.data().lastCreatedRoomId) {
+        roomId = uSnap.data().lastCreatedRoomId;
+        localStorage.setItem('pa:last-created-room-id', roomId);
+      }
+    } catch (e) {
+      console.warn('[Rejoin] Check users doc failed:', e);
+    }
+  }
+
+  if (!roomId) {
+    rejoinBtn.style.display = 'none';
+    return;
+  }
+
+  try {
+    const rSnap = await getDoc(doc(db, `rooms/${roomId}`));
+    if (!rSnap.exists()) {
+      localStorage.removeItem('pa:last-created-room-id');
+      rejoinBtn.style.display = 'none';
+      return;
+    }
+
+    const rData = rSnap.data();
+    if (rData.roomClosed || rData.hostUid !== user.uid) {
+      localStorage.removeItem('pa:last-created-room-id');
+      rejoinBtn.style.display = 'none';
+      return;
+    }
+
+    if (rData.expiresAt) {
+      const expMillis = rData.expiresAt.toMillis ? rData.expiresAt.toMillis() : rData.expiresAt;
+      if (expMillis <= Date.now()) {
+        localStorage.removeItem('pa:last-created-room-id');
+        rejoinBtn.style.display = 'none';
+        return;
+      }
+    }
+
+    // 有効なルームが存在する
+    rejoinBtn.style.display = 'inline-flex';
+    rejoinBtn.onclick = () => {
+      window.location.href = `game.html?id=${encodeURIComponent(roomId)}`;
+    };
+  } catch (err) {
+    console.warn('[Rejoin] Check room doc failed:', err);
+    rejoinBtn.style.display = 'none';
   }
 }
 
@@ -496,9 +566,11 @@ async function executeRoomCreation(layoutType) {
       payload.expiresAt = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
       const nowMs = Date.now();
       localStorage.setItem('pa:last-guest-room-created-at', nowMs.toString());
+      localStorage.setItem('pa:last-created-room-id', id);
       try {
         await setDoc(doc(db, `users/${uid}`), {
           lastRoomCreatedAt: serverTimestamp(),
+          lastCreatedRoomId: id,
           isAnonymous: true,
           updatedAt: serverTimestamp()
         }, { merge: true });

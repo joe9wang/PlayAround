@@ -75,9 +75,11 @@
     <div class="lobby-card">
       <div class="lobby-title" data-i18n="lobby.welcome">バトライテーブルへようこそ！</div>
       <div class="lobby-auth" id="lobby-auth-area">
-        <div id="auth-form-area" class="auth-buttons" style="text-align:center;">
+        <div id="auth-form-area" class="auth-buttons" style="display:flex; justify-content:center; gap:10px; align-items:center; flex-wrap:wrap;">
           <button class="btn secondary" id="login-go-btn" style="padding:8px 16px;"
             onclick="location.href='./login.html'" data-i18n="auth.loginBtn">ログインする</button>
+          <button class="btn" id="rejoin-created-room-btn" style="padding:8px 18px; display:none; background:#0a7; font-weight:700; align-items:center; gap:6px;"
+            type="button" data-i18n="auth.rejoinCreatedRoom">🚪 作成したルームに入る</button>
         </div>
         <div id="auth-loggedin-area" style="display:none;">
           <div class="auth-user-info">
