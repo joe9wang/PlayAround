@@ -451,21 +451,32 @@ async function handleCreateRoom() {
   } else {
     // ログイン済みユーザーのルーム保持数上限チェック（無料10部屋 / プレミアム100部屋）
     const user = auth.currentUser;
+    console.log('[RoomLimit] Checking room limit for user:', user?.uid, 'email:', user?.email);
     if (user) {
       try {
         const pStatus = await fetchPremiumStatus(user.uid);
+        console.log('[RoomLimit] fetchPremiumStatus result:', pStatus);
         IS_PREMIUM = pStatus.premium;
         const limits = getLimits(IS_PREMIUM);
         const maxActiveRooms = limits.maxActiveRooms || 10;
+        console.log('[RoomLimit] limits:', limits, 'maxActiveRooms:', maxActiveRooms);
 
         const myRooms = await fetchMyActiveRooms(user.uid);
+        console.log('[RoomLimit] fetchMyActiveRooms result count:', myRooms.length, myRooms);
+
         if (myRooms.length >= maxActiveRooms) {
+          console.log('[RoomLimit] Limit reached! Opening manage modal. Active:', myRooms.length, 'Max:', maxActiveRooms);
           openRoomLimitManageModal(myRooms, maxActiveRooms);
           return;
+        } else {
+          console.log('[RoomLimit] Rooms under limit (' + myRooms.length + ' < ' + maxActiveRooms + '). Proceeding.');
         }
       } catch (err) {
-        console.warn('[RoomLimit] Check failed:', err);
+        console.error('[RoomLimit] Check failed with exception:', err);
+        alert('[RoomLimit Error] ' + err.message);
       }
+    } else {
+      console.warn('[RoomLimit] auth.currentUser is null in else block!');
     }
     showLayoutModal();
   }
@@ -475,6 +486,7 @@ async function handleCreateRoom() {
  * ユーザーがホストしているアクティブなルーム一覧を取得
  */
 async function fetchMyActiveRooms(uid) {
+  console.log('[RoomLimit] fetchMyActiveRooms called with uid:', uid);
   if (!uid) return [];
   try {
     const q = query(
@@ -482,17 +494,26 @@ async function fetchMyActiveRooms(uid) {
       where('hostUid', '==', uid),
       limit(100)
     );
+    console.log('[RoomLimit] Executing getDocs query...');
     const snap = await getDocs(q);
-    return snap.docs
+    console.log('[RoomLimit] Raw docs count from Firestore:', snap.docs.length);
+    const activeRooms = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
-      .filter(d => d.roomClosed !== true)
+      .filter(d => {
+        const isClosed = (d.roomClosed === true);
+        if (isClosed) console.log('[RoomLimit] Filtered out closed room:', d.id);
+        return !isClosed;
+      })
       .sort((a, b) => {
         const timeA = a.updatedAt?.toMillis?.() || 0;
         const timeB = b.updatedAt?.toMillis?.() || 0;
         return timeB - timeA;
       });
+    console.log('[RoomLimit] Active rooms count:', activeRooms.length);
+    return activeRooms;
   } catch (e) {
     console.error('[RoomLimit] fetchMyActiveRooms error:', e);
+    alert('[RoomLimit fetch error] ' + e.message);
     return [];
   }
 }
@@ -501,8 +522,13 @@ async function fetchMyActiveRooms(uid) {
  * ルーム保持数上限（整理・削除）モーダルを表示・制御
  */
 function openRoomLimitManageModal(currentRooms, maxRooms) {
+  console.log('[RoomLimit] openRoomLimitManageModal called with count:', currentRooms.length, 'max:', maxRooms);
   const modal = document.getElementById('room-limit-manage-modal');
-  if (!modal) return;
+  if (!modal) {
+    console.error('[RoomLimit] room-limit-manage-modal DOM element NOT FOUND!');
+    alert('[RoomLimit Error] Modal element not found in HTML!');
+    return;
+  }
 
   const countEl = document.getElementById('limit-modal-count');
   const listEl = document.getElementById('limit-room-list');
