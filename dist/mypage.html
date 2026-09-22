@@ -590,7 +590,7 @@
         <div class="kv">
           <div class="avatar" id="avatar">P</div>
           <div>
-            <div><strong id="displayName">Player</strong> <span id="premium-badge-inline" style="display: none;"></span></div>
+            <div style="display:flex; align-items:center; gap:8px;"><strong id="displayName">Player</strong> <span id="premium-badge-inline" style="display: none;"></span></div>
             <div style="margin-top: 8px;">
               <button class="small-btn" id="changeAvatarBtn" style="font-size: 12px;">アイコンを変更</button>
             </div>
@@ -601,7 +601,7 @@
     </section>
 
     <!-- プレミアムステータス -->
-    <section aria-labelledby="sec-premium" style="display: none;">
+    <section aria-labelledby="sec-premium">
       <h2 id="sec-premium" data-i18n="premium.status">プレミアムステータス</h2>
       <div class="premium-section" id="premium-section">
         <div class="premium-info" id="premium-info">
@@ -1453,20 +1453,25 @@
           premiumBadgeInline.innerHTML = isPremium
             ? '<span class="premium-badge">✨ Premium</span>'
             : '';
+          premiumBadgeInline.style.display = isPremium ? 'inline-flex' : 'none';
         }
 
         // プレミアムセクション
         if (isPremium) {
           premiumSection.classList.add('is-premium');
           premiumInfo.innerHTML = `
-            <div class="label">✨ プレミアム会員</div>
-            <div class="premium-since">登録日: ${since ? since.toLocaleDateString() : '—'}</div>
-            <button class="btn-premium-register" id="btn-premium-portal" style="margin-top: 8px;">
-              サブスクリプションを管理
+            <div class="label" style="font-weight:700; font-size:16px; color:#7c3aed; margin-bottom:4px;">✨ プレミアム会員</div>
+            <div class="premium-since" style="font-size:13px; color:#666; margin-bottom:10px;">登録日: ${since ? since.toLocaleDateString() : '—'}</div>
+            <button class="btn-premium-register" id="btn-premium-portal" style="margin-top: 4px; background:#7c3aed; color:#fff; border:none; padding:8px 18px; border-radius:8px; font-weight:700; cursor:pointer;">
+              サブスクリプションを管理（解約・お支払い方法変更）
             </button>
           `;
 
-          document.getElementById('btn-premium-portal').addEventListener('click', async () => {
+          document.getElementById('btn-premium-portal').addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            const oldText = btn.textContent;
+            btn.textContent = '移動中...';
             try {
               const idToken = await auth.currentUser.getIdToken();
               const res = await fetch('/api/create-portal-session', {
@@ -1479,22 +1484,32 @@
                 window.location.href = data.url;
               } else {
                 alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+                btn.disabled = false;
+                btn.textContent = oldText;
               }
             } catch (e) {
               console.error(e);
               alert('通信エラーが発生しました。');
+              btn.disabled = false;
+              btn.textContent = oldText;
             }
           });
         } else {
           premiumSection.classList.remove('is-premium');
           premiumInfo.innerHTML = `
-            <button class="btn-premium-register" id="btn-premium-register">
-              プレミアムに登録
-            </button>
-            <span class="premium-hint">特別な機能が使えます。<a href="https://batritable.com/plans.html" style="color: #7c3aed; text-decoration: underline;">詳細はこちら</a></span>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <button class="btn-premium-register" id="btn-premium-register" style="background:linear-gradient(135deg, #7c3aed, #a855f7); color:#fff; border:none; padding:10px 22px; border-radius:8px; font-weight:800; cursor:pointer; font-size:14px; box-shadow:0 4px 12px rgba(124,58,237,0.3);">
+                ✨ プレミアムに登録（月額 500 円）
+              </button>
+              <span class="premium-hint" style="font-size:13px; color:#666;">ルーム上限100部屋、画像20MBなど特別な機能が使えます。<a href="./plans.html" style="color: #7c3aed; text-decoration: underline; margin-left:4px; font-weight:600;">プラン詳細はこちら</a></span>
+            </div>
           `;
 
-          document.getElementById('btn-premium-register').addEventListener('click', async () => {
+          document.getElementById('btn-premium-register').addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            const oldText = btn.textContent;
+            btn.textContent = '決済画面へ移動中...';
             try {
               const idToken = await auth.currentUser.getIdToken();
               const res = await fetch('/api/create-checkout-session', {
@@ -1507,10 +1522,14 @@
                 window.location.href = data.url;
               } else {
                 alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+                btn.disabled = false;
+                btn.textContent = oldText;
               }
             } catch (e) {
               console.error(e);
               alert('通信エラーが発生しました。');
+              btn.disabled = false;
+              btn.textContent = oldText;
             }
           });
         }
@@ -1535,6 +1554,14 @@
       refreshMyRooms().catch(console.error);
       // プレミアムステータスを取得・表示
       renderPremiumUI(user.uid).catch(console.error);
+
+      // 決済完了リダイレクト直後の判定
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('session_id')) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        alert('✨ プレミアム会員へのご登録ありがとうございます！\nプレミアム機能が有効化されました。');
+        setTimeout(() => renderPremiumUI(user.uid), 2000);
+      }
     });
 
 
