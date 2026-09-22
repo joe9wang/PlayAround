@@ -14,6 +14,7 @@ export const LIMITS = {
         maxImageMB: 1,
         saveSlots: 0,
         roomSaveSlots: 0,
+        maxActiveRooms: 10,
     },
     PREMIUM: {
         roomsPerDay: Infinity,
@@ -21,6 +22,7 @@ export const LIMITS = {
         maxImageMB: 20,
         saveSlots: 10,
         roomSaveSlots: 10,
+        maxActiveRooms: 100,
     }
 };
 

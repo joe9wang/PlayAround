@@ -35,6 +35,86 @@
       width: 100%;
       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
+    /* ▼ ルーム制限モーダル用マイルームカード */
+    .room-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      box-shadow: 0 2px 6px rgba(0,0,0,.04);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .room-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    }
+    .room-card-thumb {
+      aspect-ratio: 16 / 9;
+      background: #1a3f2b;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .room-card-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .room-card-body {
+      padding: 10px 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .room-card-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin: 0;
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .room-card-meta {
+      font-size: 11px;
+      color: #666;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .room-card-stats {
+      font-size: 11px;
+      color: #555;
+    }
+    .room-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .btn-delete-room {
+      flex: 1;
+      text-align: center;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #fff;
+      color: #e53e3e;
+      border: 1px solid #fed7d7;
+      transition: background .2s, color .2s;
+    }
+    .btn-delete-room:hover {
+      background: #e53e3e;
+      color: #fff;
+    }
   </style>
 </head>
 
@@ -334,6 +414,50 @@
         <button id="guest-limit-cancel" class="btn secondary" data-i18n="create.limit.cancel" style="padding:10px 24px; font-weight:700;">閉じる</button>
         <button id="guest-limit-login-btn" class="btn" data-i18n="create.limit.loginBtn" style="padding:10px 32px; font-weight:800; background:#0a7;">ログイン / 新規登録へ</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ログインユーザー向けルーム保持数上限（マイルーム整理・削除）モーダル -->
+  <div id="room-limit-manage-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:21000; align-items:center; justify-content:center;">
+    <div class="layout-modal-card"
+      style="background:#fff; padding:28px; border-radius:24px; width:780px; max-width:94%; max-height:88vh; box-shadow:0 12px 48px rgba(0,0,0,0.4); display:flex; flex-direction:column; text-align:center;">
+      
+      <!-- タイトルと説明 -->
+      <div data-i18n="roomLimit.modalTitle" style="font-weight:800; font-size:22px; margin-bottom:10px; color:#e64a5a;">
+        ⚠️ ルーム保持数の上限
+      </div>
+      <div data-i18n="roomLimit.desc" style="margin-bottom:14px; font-size:14px; line-height:1.6; color:#444;">
+        同時に保持できるルーム数の上限に達しています。<br>新しいルームを作成するには、不要なルームを削除して空きを作ってください。<br><span style="font-size:13px; color:#e64a5a; font-weight:700;">※ 新規作成には残り9部屋以下にする必要があります</span>
+      </div>
+
+      <!-- ステータスバー（件数カウント ＆ プレミアム誘導） -->
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 16px; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <div style="font-weight:700; font-size:14px; color:#333;">
+          <span data-i18n="roomLimit.currentCount">現在のルーム数</span>: 
+          <span id="limit-modal-count" style="color:#e64a5a; font-size:16px; font-weight:800;">-- / --部屋</span>
+        </div>
+        <div>
+          <a href="./plans.html" target="_blank" style="font-size:13px; color:#7c3aed; font-weight:700; text-decoration:underline;" data-i18n="roomLimit.premiumHint">
+            ✨ プレミアム会員なら最大100部屋まで同時に管理できます
+          </a>
+        </div>
+      </div>
+
+      <!-- マイルーム一覧リスト（スクロール領域） -->
+      <div id="limit-room-list" style="overflow-y:auto; flex:1; min-height:180px; max-height:420px; display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:14px; padding:4px 4px 14px 4px;">
+        <!-- JSで生成される -->
+      </div>
+      <div id="limit-room-empty" style="display:none; padding:40px 20px; color:#888; font-size:14px;" data-i18n="roomLimit.empty">
+        保持しているルームはありません
+      </div>
+
+      <!-- 下部アクションボタン -->
+      <div style="display:flex; justify-content:center; gap:16px; margin-top:14px; padding-top:14px; border-top:1px solid #eee; flex-wrap:wrap;">
+        <button id="room-limit-close-btn" class="btn secondary" data-i18n="roomLimit.closeBtn" style="padding:10px 24px; font-weight:700;">閉じる</button>
+        <button id="room-limit-continue-btn" class="btn" data-i18n="roomLimit.continueBtn" style="padding:10px 32px; font-weight:800; background:#0a7; opacity:0.5; cursor:not-allowed;" disabled>作成を続ける</button>
+      </div>
+
     </div>
   </div>
 

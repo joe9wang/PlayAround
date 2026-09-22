@@ -9,10 +9,10 @@ import {
   onIdTokenChanged, getIdToken,
   doc, setDoc, getDoc, updateDoc,
   serverTimestamp, collection,
-  query, getDocs, writeBatch, Timestamp
+  query, getDocs, writeBatch, Timestamp, where, limit
 } from './firebase.init.js';
 
-import { getLimits } from './premium.js';
+import { getLimits, fetchPremiumStatus } from './premium.js';
 import { t, initI18n, applyI18n } from './i18n.js';
 import { sha256Hex } from './utils.js';
 
@@ -194,6 +194,14 @@ async function init() {
   });
   document.getElementById('guest-limit-login-btn')?.addEventListener('click', () => {
     window.location.href = './login.html';
+  });
+
+  document.getElementById('room-limit-close-btn')?.addEventListener('click', () => {
+    document.getElementById('room-limit-manage-modal').style.display = 'none';
+  });
+  document.getElementById('room-limit-continue-btn')?.addEventListener('click', () => {
+    document.getElementById('room-limit-manage-modal').style.display = 'none';
+    showLayoutModal();
   });
 
   updateModePickButtons();
@@ -441,8 +449,160 @@ async function handleCreateRoom() {
 
     document.getElementById('anon-warning-modal').style.display = 'flex';
   } else {
+    // ログイン済みユーザーのルーム保持数上限チェック（無料10部屋 / プレミアム100部屋）
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        const pStatus = await fetchPremiumStatus(user.uid);
+        IS_PREMIUM = pStatus.premium;
+        const limits = getLimits(IS_PREMIUM);
+        const maxActiveRooms = limits.maxActiveRooms || 10;
+
+        const myRooms = await fetchMyActiveRooms(user.uid);
+        if (myRooms.length >= maxActiveRooms) {
+          openRoomLimitManageModal(myRooms, maxActiveRooms);
+          return;
+        }
+      } catch (err) {
+        console.warn('[RoomLimit] Check failed:', err);
+      }
+    }
     showLayoutModal();
   }
+}
+
+/**
+ * ユーザーがホストしているアクティブなルーム一覧を取得
+ */
+async function fetchMyActiveRooms(uid) {
+  if (!uid) return [];
+  try {
+    const q = query(
+      collection(db, 'rooms'),
+      where('hostUid', '==', uid),
+      limit(100)
+    );
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(d => d.roomClosed !== true)
+      .sort((a, b) => {
+        const timeA = a.updatedAt?.toMillis?.() || 0;
+        const timeB = b.updatedAt?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+  } catch (e) {
+    console.error('[RoomLimit] fetchMyActiveRooms error:', e);
+    return [];
+  }
+}
+
+/**
+ * ルーム保持数上限（整理・削除）モーダルを表示・制御
+ */
+function openRoomLimitManageModal(currentRooms, maxRooms) {
+  const modal = document.getElementById('room-limit-manage-modal');
+  if (!modal) return;
+
+  const countEl = document.getElementById('limit-modal-count');
+  const listEl = document.getElementById('limit-room-list');
+  const emptyEl = document.getElementById('limit-room-empty');
+  const continueBtn = document.getElementById('room-limit-continue-btn');
+
+  let activeRooms = [...currentRooms];
+
+  function renderList() {
+    const count = activeRooms.length;
+    if (countEl) {
+      countEl.textContent = `${count} / ${maxRooms}部屋`;
+      countEl.style.color = (count >= maxRooms) ? '#e64a5a' : '#0a7';
+    }
+
+    if (continueBtn) {
+      if (count < maxRooms) {
+        // 上限未満になったので作成可能
+        continueBtn.disabled = false;
+        continueBtn.style.opacity = '1';
+        continueBtn.style.cursor = 'pointer';
+        continueBtn.textContent = `${t('roomLimit.continueBtn') || '作成を続ける'}（空きあり）`;
+      } else {
+        continueBtn.disabled = true;
+        continueBtn.style.opacity = '0.5';
+        continueBtn.style.cursor = 'not-allowed';
+        continueBtn.textContent = t('roomLimit.continueBtn') || '作成を続ける';
+      }
+    }
+
+    if (count === 0) {
+      listEl.innerHTML = '';
+      if (emptyEl) emptyEl.style.display = 'block';
+      return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    let html = '';
+    activeRooms.forEach(d => {
+      const roomId = d.id;
+      const roomName = d.roomName || `ルーム: ${roomId}`;
+      const updatedAt = d.updatedAt?.toDate?.().toLocaleDateString() || '-';
+      const cardsCount = d.cardsCount || 0;
+      const chatCount = d.chatCount || 0;
+      const thumb = d.previewUrl || '';
+
+      html += `
+        <div class="room-card" data-id="${roomId}">
+          <div class="room-card-thumb">
+            ${thumb ? `<img src="${thumb}" alt="Preview">` : '<div style="color:#aaa;font-size:12px;font-weight:700;">BatriTable</div>'}
+          </div>
+          <div class="room-card-body">
+            <div class="room-card-title" title="${roomName}">${roomName}</div>
+            <div class="room-card-meta">
+              <div>ID: ${roomId}</div>
+              <div>更新: ${updatedAt}</div>
+            </div>
+            <div class="room-card-stats">
+              📝 ${cardsCount}枚 / 💬 ${chatCount}件
+            </div>
+            <div class="room-card-actions">
+              <button class="btn-delete-room" data-id="${roomId}">削除</button>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    listEl.innerHTML = html;
+  }
+
+  // 削除ボタンのイベントハンドラ
+  listEl.onclick = async (e) => {
+    const delBtn = e.target.closest('.btn-delete-room');
+    if (!delBtn) return;
+    const roomId = delBtn.dataset.id;
+    if (!roomId) return;
+
+    const confirmMsg = t('roomLimit.deleteConfirm') || 'このルームを完全に削除しますか？\n（元に戻すことはできません）';
+    if (!confirm(confirmMsg)) return;
+
+    delBtn.disabled = true;
+    delBtn.textContent = '削除中...';
+
+    try {
+      await updateDoc(doc(db, `rooms/${roomId}`), {
+        roomClosed: true,
+        updatedAt: serverTimestamp()
+      });
+      activeRooms = activeRooms.filter(r => r.id !== roomId);
+      renderList();
+    } catch (err) {
+      console.error('[RoomLimit] Delete failed:', err);
+      alert('削除に失敗しました: ' + err.message);
+      delBtn.disabled = false;
+      delBtn.textContent = '削除';
+    }
+  };
+
+  renderList();
+  modal.style.display = 'flex';
 }
 
 function showLayoutModal() {

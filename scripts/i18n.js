@@ -65,6 +65,17 @@ const I18N = {
         "create.limit.badgeCooldown": "⚠️ 本日の未ログイン作成枠を使用済みです",
         "create.limit.badgeLoginLink": "ログインして作成",
 
+        // --- Room Limit Manage Modal ---
+        "roomLimit.modalTitle": "⚠️ ルーム保持数の上限",
+        "roomLimit.desc": "同時に保持できるルーム数の上限に達しています。<br>新しいルームを作成するには、不要なルームを削除して空きを作ってください。<br><span style='font-size:13px; color:#e64a5a; font-weight:700;'>※ 新規作成には残り9部屋以下にする必要があります</span>",
+        "roomLimit.currentCount": "現在のルーム数",
+        "roomLimit.deleteConfirm": "このルームを完全に削除しますか？\n（元に戻すことはできません）",
+        "roomLimit.continueBtn": "作成を続ける",
+        "roomLimit.closeBtn": "閉じる",
+        "roomLimit.premiumHint": "✨ プレミアム会員なら最大100部屋まで同時に管理できます",
+        "roomLimit.empty": "保持しているルームはありません",
+        "roomLimit.deleted": "ルームを削除しました",
+
         // --- Side / Panel / Buttons ---
         "side.panel": "操作パネル",
         "side.panel.toggle": "操作パネルの表示/非表示",
@@ -298,6 +309,17 @@ const I18N = {
         "create.limit.badgeNotice": "💡 Creation while not logged in is limited to once per 24h (Log in to create)",
         "create.limit.badgeCooldown": "⚠️ Today's creation limit reached for non-logged-in users",
         "create.limit.badgeLoginLink": "Log in to create",
+
+        // --- Room Limit Manage Modal ---
+        "roomLimit.modalTitle": "⚠️ Room Storage Limit",
+        "roomLimit.desc": "You have reached the maximum number of active rooms.<br>Please delete unneeded rooms to free up space.<br><span style='font-size:13px; color:#e64a5a; font-weight:700;'>※ Must be 9 or fewer to create a new room</span>",
+        "roomLimit.currentCount": "Current Rooms",
+        "roomLimit.deleteConfirm": "Are you sure you want to delete this room completely?\n(This action cannot be undone)",
+        "roomLimit.continueBtn": "Continue Creation",
+        "roomLimit.closeBtn": "Close",
+        "roomLimit.premiumHint": "✨ Premium members can manage up to 100 rooms simultaneously",
+        "roomLimit.empty": "No active rooms found",
+        "roomLimit.deleted": "Room deleted",
 
         // --- Side / Panel / Buttons ---
         "side.panel": "Control Panel",
