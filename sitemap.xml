@@ -15,6 +15,13 @@
     <priority>0.8</priority>
   </url>
 
+  <!-- プラン比較 -->
+  <url>
+    <loc>https://www.batritable.com/plans.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
   <!-- 遊び方 -->
   <url>
     <loc>https://www.batritable.com/howto.html</loc>

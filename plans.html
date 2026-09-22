@@ -44,11 +44,20 @@
         /* ── ヘッダー ── */
         header {
             background: var(--surface);
-            padding: 14px 24px;
+            padding: 12px 24px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 20px;
             border-bottom: 1px solid rgba(255, 255, 255, .06);
+            flex-wrap: wrap;
+        }
+
+        header .brand-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: inherit;
         }
 
         header img {
@@ -59,25 +68,89 @@
 
         header .brand-name {
             font-weight: 800;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
+            letter-spacing: 0.02em;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-nav a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: color .2s;
+        }
+
+        .header-nav a:hover {
+            color: #fff;
+        }
+
+        .header-nav a.active {
+            color: #a855f7;
+            font-weight: 700;
         }
 
         header .spacer {
             flex: 1;
         }
 
-        header a.back {
-            color: var(--muted);
-            text-decoration: none;
-            font-size: .9rem;
-            padding: 6px 14px;
-            border: 1px solid rgba(255, 255, 255, .12);
-            border-radius: 8px;
-            transition: background .2s;
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        header a.back:hover {
+        .header-link {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border: 1px solid rgba(255, 255, 255, .15);
+            border-radius: 8px;
+            transition: all .2s;
+        }
+
+        .header-link:hover {
+            color: #fff;
             background: rgba(255, 255, 255, .06);
+            border-color: rgba(255, 255, 255, .25);
+        }
+
+        .btn-header-play {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, .3);
+            transition: transform .15s, box-shadow .2s;
+        }
+
+        .btn-header-play:hover {
+            box-shadow: 0 6px 18px rgba(34, 197, 94, .45);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 680px) {
+            header {
+                padding: 10px 16px;
+                gap: 12px;
+            }
+            .header-nav {
+                order: 3;
+                width: 100%;
+                overflow-x: auto;
+                gap: 12px;
+                padding-top: 4px;
+            }
         }
 
         /* ── メイン ── */
@@ -326,10 +399,21 @@
 
 <body>
     <header>
-        <img src="/BatriTable-icon.png?v=3" alt="BatriTable">
-        <span class="brand-name">BatriTable</span>
+        <a href="/index.html" class="brand-link">
+            <img src="/BatriTable-icon.png?v=3" alt="BatriTable">
+            <span class="brand-name">BatriTable</span>
+        </a>
+        <nav class="header-nav">
+            <a href="/index.html">ホーム</a>
+            <a href="/lobby.html">ロビー</a>
+            <a href="/howto.html">遊び方</a>
+            <a href="/plans.html" class="active">プラン</a>
+        </nav>
         <div class="spacer"></div>
-        <a class="back" href="/index.html">← ホームへ戻る</a>
+        <div class="header-actions">
+            <a id="header-user-btn" class="header-link" href="/login.html">ログイン</a>
+            <a class="btn-header-play" href="/lobby.html">▶ プレイする</a>
+        </div>
     </header>
 
     <main>
@@ -469,38 +553,24 @@
                 <strong style="font-size: 1.2rem; color: #fff; letter-spacing: 0.05em;">BatriTable</strong>
             </div>
             <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.8rem;">
-                © 2025 SOLVENTER
+                © 2026 SOLVENTER
             </div>
         </div>
     </footer>
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-        import {
-            getAuth, onAuthStateChanged,
-            setPersistence, browserLocalPersistence
-        } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "__NEXT_PUBLIC_FIREBASE_API_KEY__",
-            authDomain: "__NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN__",
-            projectId: "__NEXT_PUBLIC_FIREBASE_PROJECT_ID__",
-            storageBucket: "__NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET__",
-            messagingSenderId: "__NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID__",
-            appId: "__NEXT_PUBLIC_FIREBASE_APP_ID__"
-        };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        await setPersistence(auth, browserLocalPersistence);
+        import { auth, db, doc, getDoc, onAuthStateChanged } from "./scripts/firebase.init.js";
 
         let currentUser = null;
         let isPremium = false;
 
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
+            const userBtn = document.getElementById('header-user-btn');
             if (user && !user.isAnonymous) {
+                if (userBtn) {
+                    userBtn.textContent = 'マイページ';
+                    userBtn.href = '/mypage.html';
+                }
                 try {
                     const docRef = doc(db, 'users', user.uid);
                     const snap = await getDoc(docRef);
@@ -514,6 +584,10 @@
                 }
             } else {
                 isPremium = false;
+                if (userBtn) {
+                    userBtn.textContent = 'ログイン';
+                    userBtn.href = '/login.html';
+                }
             }
         });
 
