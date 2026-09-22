@@ -28,13 +28,16 @@ module.exports = async function handler(req, res) {
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         const uid = decodedToken.uid;
 
-        // Create Stripe Checkout Session
-        const session = await stripe.checkout.sessions.create({
+        // Check if user already has a Stripe customer ID
+        const userDoc = await db.collection('users').doc(uid).get();
+        const existingCustomerId = userDoc.exists ? userDoc.data().stripeCustomerId : null;
+
+        const sessionParams = {
             payment_method_types: ['card'],
             mode: 'subscription',
             line_items: [
                 {
-                    price: process.env.STRIPE_PRICE_ID, // 300 JPY / mo
+                    price: process.env.STRIPE_PRICE_ID, // 500 JPY / mo
                     quantity: 1,
                 },
             ],
@@ -43,7 +46,17 @@ module.exports = async function handler(req, res) {
             metadata: {
                 firebaseUID: uid, // We need this in webhook to update firestore
             },
-        });
+            allow_promotion_codes: true,
+        };
+
+        if (existingCustomerId) {
+            sessionParams.customer = existingCustomerId;
+        } else if (decodedToken.email) {
+            sessionParams.customer_email = decodedToken.email;
+        }
+
+        // Create Stripe Checkout Session
+        const session = await stripe.checkout.sessions.create(sessionParams);
 
         res.status(200).json({ url: session.url });
     } catch (error) {

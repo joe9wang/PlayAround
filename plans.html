@@ -351,9 +351,9 @@
             <div class="plan-card premium">
                 <div class="plan-name">BatriTable ✨ PREMIUM</div>
                 <div class="plan-desc">すべての機能を制限なくお使いいただけます</div>
-                <div class="plan-price">月々 <strong>300</strong> <span class="unit">円（税込）</span></div>
+                <div class="plan-price">月々 <strong>500</strong> <span class="unit">円（税込）</span></div>
                 <div class="plan-price-note">いつでもキャンセル可能</div>
-                <a class="btn-plan accent" href="/game.html" id="btn-subscribe">このプランにする</a>
+                <a class="btn-plan accent" href="#" id="btn-subscribe">このプランにする</a>
             </div>
         </div>
 
@@ -365,7 +365,7 @@
                     <th>機能</th>
                     <th>BASIC<br><span style="font-weight:400;font-size:.8rem;color:var(--muted)">無料</span></th>
                     <th class="premium-col">PREMIUM<br><span
-                            style="font-weight:400;font-size:.8rem;color:var(--accent)">月額300円</span></th>
+                            style="font-weight:400;font-size:.8rem;color:var(--accent)">月額500円</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -378,6 +378,11 @@
                     <td>ルーム作成回数</td>
                     <td><span class="val">1日5回まで</span></td>
                     <td class="premium-col"><span class="val">無制限</span></td>
+                </tr>
+                <tr>
+                    <td>同時保持ルーム数</td>
+                    <td><span class="val">最大10部屋</span></td>
+                    <td class="premium-col"><span class="val">最大100部屋</span></td>
                 </tr>
                 <tr>
                     <td>カード生成枚数（1ルームあたり）</td>
@@ -501,6 +506,8 @@
                     const snap = await getDoc(docRef);
                     if (snap.exists() && snap.data().premium === true) {
                         isPremium = true;
+                        const subBtn = document.getElementById('btn-subscribe');
+                        if (subBtn) subBtn.textContent = 'サブスクリプションを管理';
                     }
                 } catch (e) {
                     console.error('Premium check failed:', e);
@@ -514,7 +521,8 @@
             e.preventDefault();
 
             if (!currentUser || currentUser.isAnonymous) {
-                alert('ログインが必要です。ゲーム画面またはマイページからログインしてください。');
+                alert('プレミアムへの登録にはログインが必要です。ログイン画面へ移動します。');
+                window.location.href = './login.html';
                 return;
             }
 

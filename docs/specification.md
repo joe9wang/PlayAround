@@ -749,13 +749,16 @@ users/{uid}
 **処理フロー**: トークン検証 → ルーム存在確認 → 存在しないならルーム新規作成 / 既存なら全席不在（60秒以上経過）チェック → seats(1-8席)/cards 初期化 → hostUid 更新
 
 ### `POST /api/create-checkout-session`
-Stripe 決済のチェックアウトセッションを作成（サブスクリプション）。
+Stripe 決済のチェックアウトセッションを作成（プレミアムプラン: 月額500円の定期課金サブスクリプション）。Firebase IDトークンを検証し、決済完了後は `mypage.html?session_id={CHECKOUT_SESSION_ID}` へリダイレクト。
 
 ### `POST /api/create-portal-session`
-ユーザーの Stripe カスタマーポータルセッションを作成。
+ユーザーの Stripe カスタマーポータルセッションを作成。マイページの「サブスクリプションを管理」から呼び出し、ユーザーが自らプランの解約や支払方法変更を行えるStripeポータルへリダイレクト。
 
 ### `POST /api/stripe-webhook`
-Stripe からの Webhook を処理し、Firestore のユーザー権限（プレミアムステータス）を更新。
+Stripe からの Webhook を処理し、Firestore（`users/{uid}`）のプレミアム権限を自動更新。
+- `checkout.session.completed`: `premium: true`, `stripeCustomerId`, `stripeSubscriptionId` を保存。
+- `customer.subscription.deleted`: `premium: false` に更新（解約処理）。
+- `customer.subscription.updated`: サブスクリプション状態の変更を同期。
 
 
 ---

@@ -91,6 +91,27 @@ module.exports = async function handler(req, res) {
                 }
                 break;
             }
+            case 'customer.subscription.updated': {
+                const subscription = event.data.object;
+                const customerId = subscription.customer;
+                const isActive = (subscription.status === 'active' || subscription.status === 'trialing');
+
+                const usersRef = db.collection('users');
+                const snapshot = await usersRef.where('stripeCustomerId', '==', customerId).get();
+                if (!snapshot.empty) {
+                    const batch = db.batch();
+                    snapshot.forEach(doc => {
+                        console.log(`Updating premium for user ${doc.id} to ${isActive} (status: ${subscription.status})`);
+                        batch.update(doc.ref, {
+                            premium: isActive,
+                            stripeSubscriptionId: subscription.id,
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        });
+                    });
+                    await batch.commit();
+                }
+                break;
+            }
             default:
                 console.log(`Unhandled event type ${event.type}`);
         }
