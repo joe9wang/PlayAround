@@ -60,9 +60,9 @@ const I18N = {
         "create.limit.message": "未ログイン状態でのルーム作成は24時間に1回までとなっています。<br>続けてルームを作成・開催するには、無料アカウントへのログインまたは新規登録を行ってください。<br><br><span style='font-size:13px; color:#555;'>※ ログインすると、ルーム作成の回数制限がなくなり、作成したルームも保存されます。</span>",
         "create.limit.loginBtn": "ログイン / 新規登録へ",
         "create.limit.cancel": "閉じる",
-        "create.limit.badgeNotice": "💡 未ログインでの作成は24時間に1回まで（ログインで無制限）",
+        "create.limit.badgeNotice": "💡 未ログインでの作成は24時間に1回まで（ログインで作成）",
         "create.limit.badgeCooldown": "⚠️ 本日の未ログイン作成枠を使用済みです",
-        "create.limit.badgeLoginLink": "ログインして無制限に作成",
+        "create.limit.badgeLoginLink": "ログインして作成",
 
         // --- Side / Panel / Buttons ---
         "side.panel": "操作パネル",
@@ -293,9 +293,9 @@ const I18N = {
         "create.limit.message": "Room creation while not logged in is limited to once per 24 hours.<br>To create more rooms, please log in or sign up for a free account.<br><br><span style='font-size:13px; color:#555;'>※ Logged-in users have unlimited room creations and saved rooms.</span>",
         "create.limit.loginBtn": "Log In / Sign Up",
         "create.limit.cancel": "Close",
-        "create.limit.badgeNotice": "💡 Creation while not logged in is limited to once per 24h (Unlimited with login)",
+        "create.limit.badgeNotice": "💡 Creation while not logged in is limited to once per 24h (Log in to create)",
         "create.limit.badgeCooldown": "⚠️ Today's creation limit reached for non-logged-in users",
-        "create.limit.badgeLoginLink": "Log in to create unlimited",
+        "create.limit.badgeLoginLink": "Log in to create",
 
         // --- Side / Panel / Buttons ---
         "side.panel": "Control Panel",

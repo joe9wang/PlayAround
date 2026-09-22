@@ -338,9 +338,10 @@ async function updateGuestLimitUI() {
 
   const status = await getGuestCreateLimitStatus();
   if (status.isLimited) {
-    badgeText.innerHTML = `<span style="color:#e64a5a; font-weight:700;">⚠️ 本日の未ログイン作成枠を使用済み（次回可能: あと${status.formattedRemaining}）</span><br><a href="./login.html" style="color:#0a7; font-weight:700; text-decoration:underline; margin-left:4px;">ログインして無制限に作成</a>`;
+    const linkText = t('create.limit.badgeLoginLink') || 'ログインして作成';
+    badgeText.innerHTML = `<span style="color:#e64a5a; font-weight:700;">⚠️ 本日の未ログイン作成枠を使用済み（次回可能: あと${status.formattedRemaining}）</span><br><a href="./login.html" style="color:#0a7; font-weight:700; text-decoration:underline; margin-left:4px;">${linkText}</a>`;
   } else {
-    badgeText.innerHTML = `<span>${t('create.limit.badgeNotice') || '💡 未ログインでの作成は24時間に1回まで（ログインで無制限）'}</span>`;
+    badgeText.innerHTML = `<span>${t('create.limit.badgeNotice') || '💡 未ログインでの作成は24時間に1回まで（ログインで作成）'}</span>`;
   }
 }
 
