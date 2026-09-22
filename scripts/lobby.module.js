@@ -345,7 +345,7 @@ async function updateGuestLimitUI() {
 
   const user = auth.currentUser;
   if (user && !user.isAnonymous) {
-    badgeText.innerHTML = `<span style="color:#0a7; font-weight:600;">✨ ログイン中：ルーム作成は無制限です</span>`;
+    badgeText.innerHTML = `<span style="color:#0a7; font-weight:600;">${t('create.limit.loggedIn') || '✨ ログイン中'}</span>`;
     return;
   }
 
