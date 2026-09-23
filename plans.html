@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <title>プラン - BatriTable</title>
-    <meta name="description" content="BatriTableのプラン比較。無料プランとプレミアムプランの機能を比較できます。">
+    <meta name="description" content="BatriTableのプラン比較。登録不要のTRIAL、無料会員のBASIC、そして制限なく楽しめるPREMIUMプランの機能を比較できます。">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="/favicon.ico" rel="icon" sizes="any" />
     <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
@@ -60,7 +60,7 @@
         }
 
         main {
-            max-width: 960px;
+            max-width: 1060px;
             margin: 0 auto;
             width: 100%;
             padding: 32px 12px 64px;
@@ -69,7 +69,7 @@
         /* ── 見出し ── */
         .page-header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 44px;
         }
 
         .page-title {
@@ -87,19 +87,22 @@
             margin: 0;
         }
 
-        /* ── プランカード ── */
+        /* ── プランカード（3列並び） ── */
         .cards {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 28px;
-            margin-bottom: 60px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 22px;
+            margin-bottom: 64px;
             align-items: stretch;
         }
 
-        @media (max-width: 680px) {
+        @media (max-width: 920px) {
             .cards {
                 grid-template-columns: 1fr;
                 gap: 24px;
+                max-width: 440px;
+                margin-left: auto;
+                margin-right: auto;
             }
         }
 
@@ -107,13 +110,14 @@
             background: var(--card);
             border: 1px solid #e2e8f0;
             border-radius: 20px;
-            padding: 38px 32px;
+            padding: 34px 26px;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
             box-shadow: 0 4px 20px rgba(0, 0, 0, .04);
             transition: transform .2s ease, box-shadow .2s ease;
+            position: relative;
         }
 
         .plan-card:hover {
@@ -126,7 +130,6 @@
             background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);
             border: 2px solid #a855f7;
             box-shadow: 0 10px 36px rgba(168, 85, 247, .18);
-            position: relative;
         }
 
         .plan-card.premium:hover {
@@ -136,22 +139,23 @@
 
         .badge-recommended {
             position: absolute;
-            top: -14px;
+            top: -13px;
             left: 50%;
             transform: translateX(-50%);
             background: linear-gradient(135deg, #9333ea, #a855f7);
             color: #fff;
             font-size: .8rem;
             font-weight: 800;
-            padding: 5px 20px;
+            padding: 4px 18px;
             border-radius: 9999px;
             letter-spacing: .06em;
             box-shadow: 0 4px 14px rgba(147, 51, 234, .4);
+            white-space: nowrap;
         }
 
         .plan-name {
             font-weight: 800;
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             margin-bottom: 8px;
             color: #1e293b;
         }
@@ -161,15 +165,15 @@
         }
 
         .plan-desc {
-            font-size: .9rem;
+            font-size: .88rem;
             color: var(--muted);
-            margin-bottom: 24px;
-            min-height: 42px;
+            margin-bottom: 20px;
+            min-height: 40px;
             line-height: 1.5;
         }
 
         .plan-price {
-            font-size: 3rem;
+            font-size: 2.6rem;
             font-weight: 900;
             line-height: 1;
             margin-bottom: 6px;
@@ -181,17 +185,58 @@
         }
 
         .plan-price .unit {
-            font-size: 1rem;
+            font-size: .95rem;
             font-weight: 600;
             color: var(--muted);
             margin-left: 4px;
         }
 
         .plan-price-note {
-            font-size: .85rem;
+            font-size: .82rem;
             color: #94a3b8;
-            margin-bottom: 28px;
-            height: 20px;
+            margin-bottom: 22px;
+            height: 18px;
+        }
+
+        /* カード内の特徴箇条書き */
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 26px;
+            width: 100%;
+            text-align: left;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 18px;
+            flex-grow: 1;
+        }
+
+        .plan-features li {
+            font-size: .88rem;
+            color: #334155;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .plan-features li .ico-check {
+            color: #10b981;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .plan-features li .ico-cross {
+            color: #cbd5e1;
+            flex-shrink: 0;
+        }
+
+        .plan-card.premium .plan-features li {
+            color: #1e1b4b;
+            font-weight: 600;
+        }
+
+        .plan-card.premium .plan-features li .ico-check {
+            color: #7e22ce;
         }
 
         .btn-plan {
@@ -199,22 +244,33 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            max-width: 280px;
-            padding: 14px 32px;
+            padding: 13px 24px;
             border-radius: 12px;
             font-weight: 800;
-            font-size: 1rem;
+            font-size: .95rem;
             text-decoration: none;
             cursor: pointer;
             border: none;
             transition: all .2s ease;
             box-sizing: border-box;
+            margin-top: auto;
         }
 
         .btn-plan.current {
             background: #f1f5f9;
             color: #64748b;
             cursor: default;
+        }
+
+        .btn-plan.outline {
+            background: #ffffff;
+            color: #1e293b;
+            border: 1.5px solid #cbd5e1;
+        }
+
+        .btn-plan.outline:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
         }
 
         .btn-plan.accent {
@@ -234,7 +290,7 @@
 
         /* ── 比較テーブル ── */
         .compare-section {
-            margin-bottom: 60px;
+            margin-bottom: 64px;
         }
 
         .compare-title {
@@ -250,34 +306,35 @@
             border-radius: 18px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 4px 20px rgba(0, 0, 0, .05);
-            overflow: hidden;
+            overflow-x: auto;
         }
 
         .compare-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
+            min-width: 640px;
         }
 
         .compare-table th,
         .compare-table td {
-            padding: 16px 20px;
+            padding: 16px 18px;
             text-align: center;
             border-bottom: 1px solid #f1f5f9;
-            font-size: .95rem;
+            font-size: .92rem;
         }
 
         .compare-table thead th {
             background: #f8fafc;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: .95rem;
             color: #334155;
             border-bottom: 1px solid #e2e8f0;
         }
 
         .compare-table thead th:first-child {
             text-align: left;
-            width: 44%;
+            width: 34%;
         }
 
         .compare-table thead th.premium-col {
@@ -303,7 +360,7 @@
 
         .compare-table .check {
             color: #10b981;
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             font-weight: 800;
         }
 
@@ -372,91 +429,138 @@
                 <p class="page-subtitle">あなたに合ったプランを選びましょう</p>
             </div>
 
-            <!-- プランカード -->
+            <!-- プランカード（3プラン並び） -->
             <div class="cards">
-                <!-- 無料プラン -->
+                <!-- 1. トライアル（登録不要） -->
                 <div class="plan-card">
-                    <div class="plan-name">BatriTable BASIC</div>
-                    <div class="plan-desc">基本機能をすべて無料でお楽しみいただけます</div>
+                    <div class="plan-name">TRIAL (トライアル)</div>
+                    <div class="plan-desc">登録不要ですぐにお試しプレイ</div>
                     <div class="plan-price">無料</div>
-                    <div class="plan-price-note">&nbsp;</div>
-                    <span class="btn-plan current">現在のプラン</span>
+                    <div class="plan-price-note">アカウント登録不要</div>
+                    <ul class="plan-features">
+                        <li><span class="ico-check">✔</span> ルーム作成 1日3回まで</li>
+                        <li><span class="ico-check">✔</span> ルーム入室（参加）は無制限</li>
+                        <li><span class="ico-check">✔</span> カード生成 1人200枚</li>
+                        <li><span class="ico-cross">✕</span> ルーム保存（24時間で削除）</li>
+                        <li><span class="ico-cross">✕</span> マイセット保存なし</li>
+                    </ul>
+                    <div id="action-trial" style="width:100%;">
+                        <span class="btn-plan current">現在の状態</span>
+                    </div>
                 </div>
 
-                <!-- プレミアムプラン -->
+                <!-- 2. ベーシック（無料会員登録） -->
+                <div class="plan-card">
+                    <div class="plan-name">BASIC (ベーシック)</div>
+                    <div class="plan-desc">無料登録で枠拡大＆保存機能</div>
+                    <div class="plan-price">無料</div>
+                    <div class="plan-price-note">Google / メールで簡単登録</div>
+                    <ul class="plan-features">
+                        <li><span class="ico-check">✔</span> ルーム作成 1日10回まで</li>
+                        <li><span class="ico-check">✔</span> ルーム入室（参加）は無制限</li>
+                        <li><span class="ico-check">✔</span> マイルーム保存 最大10部屋</li>
+                        <li><span class="ico-check">✔</span> マイセット保存 10スロット</li>
+                        <li><span class="ico-check">✔</span> カード生成 1人200枚 / 1MB</li>
+                    </ul>
+                    <div id="action-basic" style="width:100%;">
+                        <a href="./login.html" class="btn-plan outline">無料登録 / ログイン</a>
+                    </div>
+                </div>
+
+                <!-- 3. プレミアム（有料サブスク） -->
                 <div class="plan-card premium">
                     <div class="badge-recommended">おすすめ</div>
-                    <div class="plan-name">BatriTable ✨ PREMIUM</div>
-                    <div class="plan-desc">ルーム保持数100部屋、画像20MBなど制限なくお使いいただけます</div>
+                    <div class="plan-name">PREMIUM (プレミアム)</div>
+                    <div class="plan-desc">制限なしで快適に使い倒す</div>
                     <div class="plan-price">月々 <strong>500</strong> <span class="unit">円（税込）</span></div>
                     <div class="plan-price-note">いつでもキャンセル可能</div>
-                    <a class="btn-plan accent" href="#" id="btn-subscribe">このプランにする</a>
+                    <ul class="plan-features">
+                        <li><span class="ico-check">✔</span> ルーム作成・開催 <strong>無制限</strong></li>
+                        <li><span class="ico-check">✔</span> マイルーム保存 <strong>最大100部屋</strong></li>
+                        <li><span class="ico-check">✔</span> マイセット保存 <strong>100スロット</strong></li>
+                        <li><span class="ico-check">✔</span> カード生成 <strong>1000枚 / 10MB</strong></li>
+                        <li><span class="ico-check">✔</span> <strong>完全広告非表示＆デザイン変更</strong></li>
+                    </ul>
+                    <div id="action-premium" style="width:100%;">
+                        <a class="btn-plan accent" href="#" id="btn-subscribe">このプランにする</a>
+                    </div>
                 </div>
             </div>
 
-            <!-- 比較テーブル -->
+            <!-- 比較テーブル（3列構成） -->
             <div class="compare-section">
-                <h2 class="compare-title">プランの比較</h2>
+                <h2 class="compare-title">機能の比較</h2>
                 <div class="table-wrapper">
                     <table class="compare-table">
                         <thead>
                             <tr>
-                                <th>機能</th>
-                                <th>BASIC<br><span style="font-weight:400;font-size:.85rem;color:var(--muted)">無料</span></th>
+                                <th>機能・特典</th>
+                                <th>TRIAL<br><span style="font-weight:400;font-size:.82rem;color:var(--muted)">登録不要 (無料)</span></th>
+                                <th>BASIC<br><span style="font-weight:400;font-size:.82rem;color:var(--muted)">無料会員 (ログイン)</span></th>
                                 <th class="premium-col">PREMIUM<br><span
-                                        style="font-weight:600;font-size:.85rem;color:#7e22ce">月額500円</span></th>
+                                        style="font-weight:700;font-size:.82rem;color:#7e22ce">月額500円</span></th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>基本機能（ルーム作成・カード操作）</td>
-                                <td><span class="check">✔</span></td>
-                                <td class="premium-col"><span class="check">✔</span></td>
+                                <td>料金</td>
+                                <td><span class="val">無料</span></td>
+                                <td><span class="val">無料</span></td>
+                                <td class="premium-col"><span class="val" style="color:#7e22ce;">月額 500 円（税込）</span></td>
                             </tr>
                             <tr>
-                                <td>ルーム作成回数</td>
-                                <td><span class="val">1日5回まで</span></td>
-                                <td class="premium-col"><span class="val">無制限</span></td>
+                                <td>基本ゲーム機能（ルーム作成・カード操作）</td>
+                                <td><span class="check">✔ 使用可能</span></td>
+                                <td><span class="check">✔ 使用可能</span></td>
+                                <td class="premium-col"><span class="check">✔ 使用可能</span></td>
                             </tr>
                             <tr>
-                                <td>同時保持ルーム数</td>
+                                <td>ルーム入室（ゲスト参加）</td>
+                                <td><span class="val">回数制限なし</span></td>
+                                <td><span class="val">回数制限なし</span></td>
+                                <td class="premium-col"><span class="val">回数制限なし</span></td>
+                            </tr>
+                            <tr>
+                                <td>ルーム作成（ホスト開催）</td>
+                                <td><span class="val">1日3回まで</span></td>
+                                <td><span class="val">1日10回まで</span></td>
+                                <td class="premium-col"><span class="val" style="color:#7e22ce;">無制限</span></td>
+                            </tr>
+                            <tr>
+                                <td>マイルーム保持・保存</td>
+                                <td><span class="val" style="color:#94a3b8;">なし（24時間で削除）</span></td>
                                 <td><span class="val">最大10部屋</span></td>
-                                <td class="premium-col"><span class="val">最大100部屋</span></td>
+                                <td class="premium-col"><span class="val" style="color:#7e22ce;">最大100部屋</span></td>
                             </tr>
                             <tr>
-                                <td>カード生成枚数（1ルームあたり）</td>
-                                <td><span class="val">100枚</span></td>
-                                <td class="premium-col"><span class="val">500枚</span></td>
-                            </tr>
-                            <tr>
-                                <td>画像アップロードサイズ</td>
-                                <td><span class="val">1MB / 枚</span></td>
-                                <td class="premium-col"><span class="val">20MB / 枚</span></td>
-                            </tr>
-                            <tr>
-                                <td>カードリスト保存</td>
+                                <td>マイセット保存枠</td>
                                 <td><span class="cross">✕</span></td>
-                                <td class="premium-col"><span class="val">10スロット</span></td>
+                                <td><span class="val">10スロット</span></td>
+                                <td class="premium-col"><span class="val" style="color:#7e22ce;">100スロット</span></td>
                             </tr>
                             <tr>
-                                <td>ルーム保存</td>
-                                <td><span class="cross">✕</span></td>
-                                <td class="premium-col"><span class="val">10スロット</span></td>
+                                <td>カード等の生成上限（1人あたり）</td>
+                                <td><span class="val">200枚</span></td>
+                                <td><span class="val">200枚</span></td>
+                                <td class="premium-col"><span class="val" style="color:#7e22ce;">1,000枚</span></td>
                             </tr>
                             <tr>
-                                <td>カード裏面デザイン変更</td>
-                                <td><span class="cross">✕</span></td>
-                                <td class="premium-col"><span class="check">✔</span></td>
+                                <td>画像1枚あたりの容量上限</td>
+                                <td><span class="val">1MB</span></td>
+                                <td><span class="val">1MB</span></td>
+                                <td class="premium-col"><span class="val" style="color:#7e22ce;">10MB</span></td>
                             </tr>
                             <tr>
-                                <td>フィールドデザイン変更</td>
+                                <td>デザインカスタマイズ（裏面・盤面）</td>
                                 <td><span class="cross">✕</span></td>
-                                <td class="premium-col"><span class="check">✔</span></td>
+                                <td><span class="cross">✕</span></td>
+                                <td class="premium-col"><span class="check">✔ 自由に変更可能</span></td>
                             </tr>
                             <tr>
                                 <td>広告表示</td>
-                                <td><span class="val">あり</span></td>
-                                <td class="premium-col"><span class="val">非表示</span></td>
+                                <td><span class="val">表示あり</span></td>
+                                <td><span class="val">表示あり</span></td>
+                                <td class="premium-col"><span class="val" style="color:#7e22ce; font-weight:800;">完全非表示</span></td>
                             </tr>
                         </tbody>
                     </table>
@@ -468,18 +572,23 @@
                 <h2 class="faq-title">よくある質問</h2>
 
                 <div class="faq-item">
-                    <div class="faq-q">Q. 無料プランでも遊べますか？</div>
-                    <div class="faq-a">はい、基本的なゲーム機能はすべて無料でご利用いただけます。ルーム作成、カードのアップロード・操作、チャットなど、ゲームプレイに必要な機能は無料プランに含まれています。</div>
+                    <div class="faq-q">Q. TRIAL（登録不要）でも友達と遊べますか？</div>
+                    <div class="faq-a">はい、URLを共有するだけで登録不要ですぐに遊べます。入室する側の参加者は全員回数制限なく何回でも参加可能です。</div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q">Q. BASIC（無料会員）とTRIALの違いは何ですか？</div>
+                    <div class="faq-a">Googleアカウントまたはメールアドレスで無料登録すると、ルーム作成が1日3回から10回に増え、作ったルーム（最大10部屋）やよく使うマイセット（10スロット）を保存できるようになります。</div>
                 </div>
 
                 <div class="faq-item">
                     <div class="faq-q">Q. プレミアムプランはいつでも解約できますか？</div>
-                    <div class="faq-a">はい、いつでもマイページからキャンセルすることができます。キャンセル後も、現在の請求期間が終了するまでプレミアム機能をご利用いただけます。</div>
+                    <div class="faq-a">はい、マイページからいつでもワンクリックでキャンセルできます。キャンセル後も、現在の請求期間が終了するまでプレミアム機能をご利用いただけます。</div>
                 </div>
 
                 <div class="faq-item">
                     <div class="faq-q">Q. 支払い方法は何がありますか？</div>
-                    <div class="faq-a">クレジットカード（Visa / Mastercard / American Express / JCB等）でのお支払いに対応しています。決済はStripeを通じて安全に処理されます。</div>
+                    <div class="faq-a">クレジットカード（Visa / Mastercard / American Express / JCB等）に対応しています。決済はStripeを通じて安全に処理されます。</div>
                 </div>
 
                 <div class="faq-item">
@@ -522,24 +631,49 @@
 
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
+            const actionTrial = document.getElementById('action-trial');
+            const actionBasic = document.getElementById('action-basic');
+            const actionPremium = document.getElementById('action-premium');
+
             if (user && !user.isAnonymous) {
+                // ログイン中
                 try {
                     const docRef = doc(db, 'users', user.uid);
                     const snap = await getDoc(docRef);
                     if (snap.exists() && snap.data().premium === true) {
                         isPremium = true;
-                        const subBtn = document.getElementById('btn-subscribe');
-                        if (subBtn) subBtn.textContent = 'サブスクリプションを管理';
                     }
                 } catch (e) {
                     console.error('Premium check failed:', e);
                 }
+
+                if (isPremium) {
+                    // プレミアム会員
+                    if (actionTrial) actionTrial.innerHTML = '<span class="btn-plan outline" style="color:#94a3b8; border-color:#e2e8f0; cursor:default;">利用可能</span>';
+                    if (actionBasic) actionBasic.innerHTML = '<span class="btn-plan outline" style="color:#94a3b8; border-color:#e2e8f0; cursor:default;">利用可能</span>';
+                    if (actionPremium) actionPremium.innerHTML = '<a class="btn-plan accent" href="#" id="btn-subscribe">サブスクリプションを管理</a>';
+                } else {
+                    // ベーシック会員（無料ログイン中）
+                    if (actionTrial) actionTrial.innerHTML = '<a href="./lobby.html" class="btn-plan outline">プレイする</a>';
+                    if (actionBasic) actionBasic.innerHTML = '<span class="btn-plan current">現在のプラン</span>';
+                    if (actionPremium) actionPremium.innerHTML = '<a class="btn-plan accent" href="#" id="btn-subscribe">このプランにする</a>';
+                }
             } else {
+                // 未ログイン（トライアル状態）
                 isPremium = false;
+                if (actionTrial) actionTrial.innerHTML = '<span class="btn-plan current">現在の状態</span>';
+                if (actionBasic) actionBasic.innerHTML = '<a href="./login.html" class="btn-plan outline">無料登録 / ログイン</a>';
+                if (actionPremium) actionPremium.innerHTML = '<a class="btn-plan accent" href="#" id="btn-subscribe">このプランにする</a>';
+            }
+
+            // イベントリスナーの再紐付け
+            const subBtn = document.getElementById('btn-subscribe');
+            if (subBtn) {
+                subBtn.addEventListener('click', handleSubscribeClick);
             }
         });
 
-        document.getElementById('btn-subscribe').addEventListener('click', async (e) => {
+        async function handleSubscribeClick(e) {
             e.preventDefault();
 
             if (!currentUser || currentUser.isAnonymous) {
@@ -577,7 +711,7 @@
                 btn.textContent = originalText;
                 btn.style.pointerEvents = 'auto';
             }
-        });
+        }
     </script>
 </body>
 
