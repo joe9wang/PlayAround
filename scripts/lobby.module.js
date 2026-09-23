@@ -26,6 +26,12 @@ let TEMP_CREATE_CREATOR_NAME = '';
 let CURRENT_LAYOUT_SELECTION = 'standard';
 let CURRENT_OFFICIAL_SELECTION = 'trump';
 
+function getTodayDateString() {
+  const now = new Date();
+  const jst = new Date(now.getTime() + (9 * 60 - now.getTimezoneOffset()) * 60000);
+  return jst.toISOString().slice(0, 10);
+}
+
 // === DOM Elements ===
 const loginGoBtn = document.getElementById('login-go-btn');
 const logoutBtn = document.getElementById('logout-google');
@@ -219,6 +225,10 @@ async function init() {
     showLayoutModal();
   });
 
+  document.getElementById('basic-limit-close-btn')?.addEventListener('click', () => {
+    document.getElementById('basic-daily-limit-modal').style.display = 'none';
+  });
+
   updateModePickButtons();
   updateGuestLimitUI();
   checkCreatedRoomRejoinable(auth.currentUser);
@@ -369,7 +379,7 @@ async function updateGuestLimitUI() {
     const linkText = t('create.limit.badgeLoginLink') || 'ログインして作成';
     badgeText.innerHTML = `<span style="color:#e64a5a; font-weight:700;">⚠️ 本日の未ログイン作成枠を使用済み（次回可能: あと${status.formattedRemaining}）</span><br><a href="./login.html" style="color:#0a7; font-weight:700; text-decoration:underline; margin-left:4px;">${linkText}</a>`;
   } else {
-    badgeText.innerHTML = `<span>${t('create.limit.badgeNotice') || '💡 未ログインでの作成は24時間に1回まで（ログインで作成）'}</span>`;
+    badgeText.innerHTML = `<span>${t('create.limit.badgeNotice') || '💡 未ログイン（TRIAL）は1日1回まで（無料登録で1日10回＆ルーム保存）'}</span>`;
   }
 }
 
@@ -464,19 +474,35 @@ async function handleCreateRoom() {
 
     document.getElementById('anon-warning-modal').style.display = 'flex';
   } else {
-    // ログイン済みユーザーのルーム保持数上限チェック（無料10部屋 / プレミアム100部屋）
+    // ログイン済みユーザーの制限チェック
     const user = auth.currentUser;
     if (user) {
       try {
         const pStatus = await fetchPremiumStatus(user.uid);
         IS_PREMIUM = pStatus.premium;
         const limits = getLimits(IS_PREMIUM);
-        const maxActiveRooms = limits.maxActiveRooms || 10;
 
+        // 1. ルーム保持数上限チェック（無料10部屋 / プレミアム100部屋）
+        const maxActiveRooms = limits.maxActiveRooms || 10;
         const myRooms = await fetchMyActiveRooms(user.uid);
         if (myRooms.length >= maxActiveRooms) {
           openRoomLimitManageModal(myRooms, maxActiveRooms);
           return;
+        }
+
+        // 2. BASICユーザーの1日作成回数チェック（1日10回まで）
+        if (!IS_PREMIUM) {
+          const todayStr = getTodayDateString();
+          const userDoc = await getDoc(doc(db, `users/${user.uid}`));
+          const uData = userDoc.exists() ? userDoc.data() : {};
+          const dailyCreations = uData.dailyCreations || {};
+          const countToday = (dailyCreations.date === todayStr) ? (dailyCreations.count || 0) : 0;
+          if (countToday >= (limits.roomsPerDay || 10)) {
+            const basicModal = document.getElementById('basic-daily-limit-modal');
+            if (basicModal) basicModal.style.display = 'flex';
+            else alert('本日のルーム作成上限（1日10回）に達しました。\nプレミアムプランで無制限に作成可能です。');
+            return;
+          }
         }
       } catch (err) {
         console.warn('[RoomLimit] Check failed:', err);
@@ -758,6 +784,27 @@ async function executeRoomCreation(layoutType) {
     }
 
     await setDoc(roomRef, payload, { merge: true });
+
+    // BASICユーザーの場合、1日の作成回数をインクリメント
+    if (!auth.currentUser?.isAnonymous && !IS_PREMIUM) {
+      const todayStr = getTodayDateString();
+      try {
+        const uRef = doc(db, `users/${uid}`);
+        const uSnap = await getDoc(uRef);
+        const uData = uSnap.exists() ? uSnap.data() : {};
+        const curDaily = uData.dailyCreations || {};
+        const newCount = (curDaily.date === todayStr) ? (curDaily.count || 0) + 1 : 1;
+        await setDoc(uRef, {
+          dailyCreations: {
+            date: todayStr,
+            count: newCount,
+            lastCreatedAt: serverTimestamp()
+          }
+        }, { merge: true });
+      } catch (err) {
+        console.warn('[Limit] Failed to update dailyCreations:', err);
+      }
+    }
     
     // Reset room state (stub from game.module.js logic)
     // Note: resetRoomState is complex, but on creation it's often fine to just overwrite.

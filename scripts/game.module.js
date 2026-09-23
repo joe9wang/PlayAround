@@ -940,16 +940,18 @@ async function saveToSlot(slot) {
 
 
 
-  // ===== カードリスト保存: プレミアム限定 =====
-
-  if (!IS_PREMIUM) {
-
-    console.warn('[DEBUG saveToSlot] BLOCKED by premium gate. IS_PREMIUM =', IS_PREMIUM);
-
-    alert('カードリスト保存はプレミアム会員限定の機能です。');
-
+  // ===== マイセット保存: 権限チェック =====
+  if (auth.currentUser?.isAnonymous) {
+    console.warn('[DEBUG saveToSlot] BLOCKED: anonymous user.');
+    alert('マイセット保存機能は無料アカウント登録（BASIC）またはプレミアム会員（PREMIUM）限定です。\nアカウント登録を行うと10スロットまで保存可能になります。');
     return;
+  }
 
+  const limits = getLimits(IS_PREMIUM);
+  const maxSlots = limits.saveSlots || 10;
+  if (slot > maxSlots) {
+    alert(`マイセット保存スロットの上限（${maxSlots}スロット）を超えています。${IS_PREMIUM ? '' : '\nプレミアムプランに加入すると100スロットまで拡張されます。'}`);
+    return;
   }
 
 
@@ -1184,8 +1186,9 @@ function openSaveLoadDialog(mode) {
     title.textContent = (mode === 'save') ? '保存先を選択' : 'ロードするセットを選択';
   }
 
-  // プレビューの更新
-  updateSlotPreviews();
+  // ページ初期化とプレビュー更新
+  SL_CURRENT_PAGE = 0;
+  updateSLPageUI();
 
   modal.style.display = 'flex';
 }
@@ -1207,6 +1210,53 @@ function switchSLTab(target) {
   modal.querySelectorAll('.sl-tab-pane').forEach(pane => {
     pane.style.display = (pane.id === `sl-tab-content-${target}`) ? 'block' : 'none';
   });
+}
+
+let SL_CURRENT_PAGE = 0; // 0..9 (0: 1..10, 1: 11..20, ..., 9: 91..100)
+
+function updateSLPageUI() {
+  const prevBtn = document.getElementById('sl-prev-page');
+  const nextBtn = document.getElementById('sl-next-page');
+  const indicator = document.getElementById('sl-page-indicator');
+  const start = SL_CURRENT_PAGE * 10 + 1;
+  const end = start + 9;
+
+  if (indicator) {
+    indicator.textContent = `スロット ${start} 〜 ${end}` + (IS_PREMIUM ? ' / 全100' : ' (BASIC: 10枠)');
+  }
+  if (prevBtn) {
+    prevBtn.disabled = (SL_CURRENT_PAGE === 0);
+    prevBtn.style.opacity = (SL_CURRENT_PAGE === 0) ? '0.4' : '1';
+  }
+  if (nextBtn) {
+    if (!IS_PREMIUM) {
+      nextBtn.disabled = true;
+      nextBtn.style.opacity = '0.4';
+      nextBtn.title = 'スロット11以降はプレミアム会員限定です';
+    } else {
+      nextBtn.disabled = (SL_CURRENT_PAGE >= 9);
+      nextBtn.style.opacity = (SL_CURRENT_PAGE >= 9) ? '0.4' : '1';
+      nextBtn.title = '';
+    }
+  }
+
+  // 10個のボタンの slot 番号とラベルを更新
+  const buttons = document.querySelectorAll('#sl-tab-content-myset .slot-item-btn:not(.official-btn)');
+  buttons.forEach((btn, i) => {
+    const slot = start + i;
+    btn.dataset.slot = slot;
+    const label = btn.querySelector('.slot-label');
+    if (label) label.textContent = `マイセット${slot}`;
+    const customName = btn.querySelector('.slot-custom-name');
+    if (customName) customName.textContent = '';
+    const preview = btn.querySelector('.slot-preview');
+    if (preview) {
+      preview.dataset.slot = slot;
+      preview.innerHTML = '<span class="empty">読み込み中…</span>';
+    }
+  });
+
+  updateSlotPreviews();
 }
 
 window.openSaveLoadDialog = openSaveLoadDialog;
@@ -1232,6 +1282,24 @@ window.openSaveLoadDialog = openSaveLoadDialog;
   // タブ切り替え
   modal.querySelectorAll('.sl-tab').forEach(btn => {
     btn.addEventListener('click', () => switchSLTab(btn.dataset.target));
+  });
+
+  // マイセット 10スロット単位のページ切り替え
+  document.getElementById('sl-prev-page')?.addEventListener('click', () => {
+    if (SL_CURRENT_PAGE > 0) {
+      SL_CURRENT_PAGE--;
+      updateSLPageUI();
+    }
+  });
+  document.getElementById('sl-next-page')?.addEventListener('click', () => {
+    if (!IS_PREMIUM) {
+      alert('スロット11以降の利用はプレミアム会員限定です。\nプランページよりご登録ください。');
+      return;
+    }
+    if (SL_CURRENT_PAGE < 9) {
+      SL_CURRENT_PAGE++;
+      updateSLPageUI();
+    }
   });
 
   // スロット選択（マイセット統合ボタン）
@@ -6787,7 +6855,7 @@ function handleFiles(files, kind = 'card') {
 
     const remaining = Math.max(0, limits.cardsPerRoom - currentCount - fileQueue.length);
 
-    alert(`カード枚数の上限（${limits.cardsPerRoom}枚）を超えます。\n追加可能: ${remaining}枚${IS_PREMIUM ? '' : '\nプレミアム会員は500枚まで利用可能です。'}`);
+    alert(`カード枚数の上限（${limits.cardsPerRoom}枚）を超えます。\n追加可能: ${remaining}枚${IS_PREMIUM ? '' : '\nプレミアム会員は1,000枚まで利用可能です。'}`);
 
     // 上限まで追加可能な分だけ入れる
 
@@ -10620,15 +10688,7 @@ function openBackImagePicker(onlySelected = false) {
   }
   backImageOnlySelected = onlySelected;
 
-  // ===== カード裏面デザイン: プレミアム限定 =====
-
-  if (!IS_PREMIUM) {
-
-    alert('カード裏面デザインの変更はプレミアム会員限定の機能です。');
-
-    return;
-
-  }
+  // ===== カード裏面デザイン: 全プラン利用可能 =====
 
   const input = document.getElementById('card-back-input');
 
@@ -12034,15 +12094,7 @@ function bindAreaContextMenuOnce() {
 
     ctxMenu.style.display = 'none';
 
-    // ===== フィールドデザイン: プレミアム限定 =====
-
-    if (!IS_PREMIUM) {
-
-      alert('フィールドデザインの変更はプレミアム会員限定の機能です。');
-
-      return;
-
-    }
+    // ===== フィールドデザイン: 全プラン利用可能 =====
 
     fileInput.click();
 

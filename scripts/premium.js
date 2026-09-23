@@ -9,19 +9,19 @@ import { db, doc, getDoc, onSnapshot } from './firebase.init.js';
 // ===== プレミアム / 非課金 制限定数 =====
 export const LIMITS = {
     FREE: {
-        roomsPerDay: 5,
-        cardsPerRoom: 100,
+        roomsPerDay: 10,
+        cardsPerRoom: 200,
         maxImageMB: 1,
-        saveSlots: 0,
-        roomSaveSlots: 0,
+        saveSlots: 10,
+        roomSaveSlots: 10,
         maxActiveRooms: 10,
     },
     PREMIUM: {
         roomsPerDay: Infinity,
-        cardsPerRoom: 500,
+        cardsPerRoom: 1000,
         maxImageMB: 20,
-        saveSlots: 10,
-        roomSaveSlots: 10,
+        saveSlots: 100,
+        roomSaveSlots: 100,
         maxActiveRooms: 100,
     }
 };

@@ -633,198 +633,18 @@
 
       <!-- ▼ マイセット タブ（旧：セーブデータ） -->
       <div id="tab-my-sets" class="tab-content">
+        <!-- ページネーションコントロール -->
+        <div id="myset-pagination" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding:10px 16px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button id="myset-prev-btn" class="small-btn" style="padding:6px 14px; font-weight:700; cursor:pointer;" disabled>◀ 前の10件</button>
+            <button id="myset-next-btn" class="small-btn" style="padding:6px 14px; font-weight:700; cursor:pointer;">次の10件 ▶</button>
+          </div>
+          <span id="myset-page-indicator" style="font-weight:700; font-size:14px; color:#334155;">スロット 1 〜 10</span>
+          <div id="myset-tier-hint" style="font-size:12px; color:#64748b;">BASIC: 最大10スロット（プレミアムなら100スロット）</div>
+        </div>
+
         <ul class="plain" id="saveList">
-        <!-- ▼スロット1 -->
-        <li class="item">
-          <div>
-            <div>
-              <strong>マイセット1</strong><span class="count" id="slot1-count">(0枚)</span>
-            </div>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px; color: #777;">セット名:</span><input type="text" id="slot1-name" class="slot-name-edit" data-slot="1" value="" style="border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; width: 140px; font-size: 14px;" placeholder="未設定"></div>
-            <div class="muted" id="slot1-updated" style="margin-top: 4px;">最終更新: -</div>
-            <div class="thumbs" id="slot1-thumbs"><span class="empty">空き</span></div>
-            <div class="slot-list" id="slot1-list">
-              <div class="thumbs-grid" id="slot1-list-grid"></div>
-            </div>
-          </div>
-          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
-            <a class="small-btn slot-list-btn" href="#" data-slot="1" style="text-align:center;">一覧</a>
-            <a class="small-btn slot-edit-btn" href="#" data-slot="1" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
-            <button class="small-btn slot-delete-btn" type="button" data-slot="1" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
-          </div>
-        </li>
-        <!-- ▼スロット2 -->
-        <li class="item">
-          <div>
-            <div>
-              <strong>マイセット2</strong><span class="count" id="slot2-count">(0枚)</span>
-            </div>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px; color: #777;">セット名:</span><input type="text" id="slot2-name" class="slot-name-edit" data-slot="2" value="" style="border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; width: 140px; font-size: 14px;" placeholder="未設定"></div>
-            <div class="muted" id="slot2-updated" style="margin-top: 4px;">最終更新: -</div>
-            <div class="thumbs" id="slot2-thumbs"><span class="empty">空き</span></div>
-            <div class="slot-list" id="slot2-list">
-              <div class="thumbs-grid" id="slot2-list-grid"></div>
-            </div>
-          </div>
-          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
-            <a class="small-btn slot-list-btn" href="#" data-slot="2" style="text-align:center;">一覧</a>
-            <a class="small-btn slot-edit-btn" href="#" data-slot="2" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
-            <button class="small-btn slot-delete-btn" type="button" data-slot="2" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
-          </div>
-        </li>
-        <!-- ▼スロット3 -->
-        <li class="item">
-          <div>
-            <div>
-              <strong>マイセット3</strong><span class="count" id="slot3-count">(0枚)</span>
-            </div>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px; color: #777;">セット名:</span><input type="text" id="slot3-name" class="slot-name-edit" data-slot="3" value="" style="border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; width: 140px; font-size: 14px;" placeholder="未設定"></div>
-            <div class="muted" id="slot3-updated" style="margin-top: 4px;">最終更新: -</div>
-            <div class="thumbs" id="slot3-thumbs"><span class="empty">空き</span></div>
-            <div class="slot-list" id="slot3-list">
-              <div class="thumbs-grid" id="slot3-list-grid"></div>
-            </div>
-          </div>
-          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
-            <a class="small-btn slot-list-btn" href="#" data-slot="3" style="text-align:center;">一覧</a>
-            <a class="small-btn slot-edit-btn" href="#" data-slot="3" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
-            <button class="small-btn slot-delete-btn" type="button" data-slot="3" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
-          </div>
-        </li>
-        <!-- ▼スロット4 -->
-        <li class="item">
-          <div>
-            <div>
-              <strong>マイセット4</strong><span class="count" id="slot4-count">(0枚)</span>
-            </div>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px; color: #777;">セット名:</span><input type="text" id="slot4-name" class="slot-name-edit" data-slot="4" value="" style="border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; width: 140px; font-size: 14px;" placeholder="未設定"></div>
-            <div class="muted" id="slot4-updated" style="margin-top: 4px;">最終更新: -</div>
-            <div class="thumbs" id="slot4-thumbs"><span class="empty">空き</span></div>
-            <div class="slot-list" id="slot4-list">
-              <div class="thumbs-grid" id="slot4-list-grid"></div>
-            </div>
-          </div>
-          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
-            <a class="small-btn slot-list-btn" href="#" data-slot="4" style="text-align:center;">一覧</a>
-            <a class="small-btn slot-edit-btn" href="#" data-slot="4" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
-            <button class="small-btn slot-delete-btn" type="button" data-slot="4" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
-          </div>
-        </li>
-        <!-- ▼スロット5 -->
-        <li class="item">
-          <div>
-            <div>
-              <strong>マイセット5</strong><span class="count" id="slot5-count">(0枚)</span>
-            </div>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px; color: #777;">セット名:</span><input type="text" id="slot5-name" class="slot-name-edit" data-slot="5" value="" style="border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; width: 140px; font-size: 14px;" placeholder="未設定"></div>
-            <div class="muted" id="slot5-updated" style="margin-top: 4px;">最終更新: -</div>
-            <div class="thumbs" id="slot5-thumbs"><span class="empty">空き</span></div>
-            <div class="slot-list" id="slot5-list">
-              <div class="thumbs-grid" id="slot5-list-grid"></div>
-            </div>
-          </div>
-          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
-            <a class="small-btn slot-list-btn" href="#" data-slot="5" style="text-align:center;">一覧</a>
-            <a class="small-btn slot-edit-btn" href="#" data-slot="5" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
-            <button class="small-btn slot-delete-btn" type="button" data-slot="5" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
-          </div>
-        </li>
-        <!-- ▼スロット6 -->
-        <li class="item">
-          <div>
-            <div>
-              <strong>マイセット6</strong><span class="count" id="slot6-count">(0枚)</span>
-            </div>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px; color: #777;">セット名:</span><input type="text" id="slot6-name" class="slot-name-edit" data-slot="6" value="" style="border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; width: 140px; font-size: 14px;" placeholder="未設定"></div>
-            <div class="muted" id="slot6-updated" style="margin-top: 4px;">最終更新: -</div>
-            <div class="thumbs" id="slot6-thumbs"><span class="empty">空き</span></div>
-            <div class="slot-list" id="slot6-list">
-              <div class="thumbs-grid" id="slot6-list-grid"></div>
-            </div>
-          </div>
-          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
-            <a class="small-btn slot-list-btn" href="#" data-slot="6" style="text-align:center;">一覧</a>
-            <a class="small-btn slot-edit-btn" href="#" data-slot="6" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
-            <button class="small-btn slot-delete-btn" type="button" data-slot="6" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
-          </div>
-        </li>
-        <!-- ▼スロット7 -->
-        <li class="item">
-          <div>
-            <div>
-              <strong>マイセット7</strong><span class="count" id="slot7-count">(0枚)</span>
-            </div>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px; color: #777;">セット名:</span><input type="text" id="slot7-name" class="slot-name-edit" data-slot="7" value="" style="border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; width: 140px; font-size: 14px;" placeholder="未設定"></div>
-            <div class="muted" id="slot7-updated" style="margin-top: 4px;">最終更新: -</div>
-            <div class="thumbs" id="slot7-thumbs"><span class="empty">空き</span></div>
-            <div class="slot-list" id="slot7-list">
-              <div class="thumbs-grid" id="slot7-list-grid"></div>
-            </div>
-          </div>
-          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
-            <a class="small-btn slot-list-btn" href="#" data-slot="7" style="text-align:center;">一覧</a>
-            <a class="small-btn slot-edit-btn" href="#" data-slot="7" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
-            <button class="small-btn slot-delete-btn" type="button" data-slot="7" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
-          </div>
-        </li>
-        <!-- ▼スロット8 -->
-        <li class="item">
-          <div>
-            <div>
-              <strong>マイセット8</strong><span class="count" id="slot8-count">(0枚)</span>
-            </div>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px; color: #777;">セット名:</span><input type="text" id="slot8-name" class="slot-name-edit" data-slot="8" value="" style="border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; width: 140px; font-size: 14px;" placeholder="未設定"></div>
-            <div class="muted" id="slot8-updated" style="margin-top: 4px;">最終更新: -</div>
-            <div class="thumbs" id="slot8-thumbs"><span class="empty">空き</span></div>
-            <div class="slot-list" id="slot8-list">
-              <div class="thumbs-grid" id="slot8-list-grid"></div>
-            </div>
-          </div>
-          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
-            <a class="small-btn slot-list-btn" href="#" data-slot="8" style="text-align:center;">一覧</a>
-            <a class="small-btn slot-edit-btn" href="#" data-slot="8" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
-            <button class="small-btn slot-delete-btn" type="button" data-slot="8" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
-          </div>
-        </li>
-        <!-- ▼スロット9 -->
-        <li class="item">
-          <div>
-            <div>
-              <strong>マイセット9</strong><span class="count" id="slot9-count">(0枚)</span>
-            </div>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px; color: #777;">セット名:</span><input type="text" id="slot9-name" class="slot-name-edit" data-slot="9" value="" style="border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; width: 140px; font-size: 14px;" placeholder="未設定"></div>
-            <div class="muted" id="slot9-updated" style="margin-top: 4px;">最終更新: -</div>
-            <div class="thumbs" id="slot9-thumbs"><span class="empty">空き</span></div>
-            <div class="slot-list" id="slot9-list">
-              <div class="thumbs-grid" id="slot9-list-grid"></div>
-            </div>
-          </div>
-          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
-            <a class="small-btn slot-list-btn" href="#" data-slot="9" style="text-align:center;">一覧</a>
-            <a class="small-btn slot-edit-btn" href="#" data-slot="9" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
-            <button class="small-btn slot-delete-btn" type="button" data-slot="9" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
-          </div>
-        </li>
-        <!-- ▼スロット10 -->
-        <li class="item">
-          <div>
-            <div>
-              <strong>マイセット10</strong><span class="count" id="slot10-count">(0枚)</span>
-            </div>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px; color: #777;">セット名:</span><input type="text" id="slot10-name" class="slot-name-edit" data-slot="10" value="" style="border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; width: 140px; font-size: 14px;" placeholder="未設定"></div>
-            <div class="muted" id="slot10-updated" style="margin-top: 4px;">最終更新: -</div>
-            <div class="thumbs" id="slot10-thumbs"><span class="empty">空き</span></div>
-            <div class="slot-list" id="slot10-list">
-              <div class="thumbs-grid" id="slot10-list-grid"></div>
-            </div>
-          </div>
-          <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
-            <a class="small-btn slot-list-btn" href="#" data-slot="10" style="text-align:center;">一覧</a>
-            <a class="small-btn slot-edit-btn" href="#" data-slot="10" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
-            <button class="small-btn slot-delete-btn" type="button" data-slot="10" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer;">削除</button>
-          </div>
-        </li>
-      </ul>
+        </ul>
       </div>
     </section>
 
@@ -910,6 +730,8 @@
 
     // ===== セーブデータ表示（サムネ&一覧） =====
     let CURRENT_UID = null;
+    let IS_USER_PREMIUM = false;
+    let currentMySetPage = 0; // 0..9 (0: 1..10, 1: 11..20, ..., 9: 91..100)
     const slPath = (slot) => `users/${CURRENT_UID}/saves/slot${slot}`;
 
     // ===== マイルーム表示 =====
@@ -1079,11 +901,88 @@
       }
     }
 
+    function updateMySetPaginationUI() {
+      const prevBtn = document.getElementById('myset-prev-btn');
+      const nextBtn = document.getElementById('myset-next-btn');
+      const indicator = document.getElementById('myset-page-indicator');
+      const hint = document.getElementById('myset-tier-hint');
+
+      const start = currentMySetPage * 10 + 1;
+      const end = start + 9;
+
+      if (indicator) {
+        indicator.textContent = `スロット ${start} 〜 ${end}` + (IS_USER_PREMIUM ? ' / 全100' : ' (BASIC: 10枠)');
+      }
+
+      if (hint) {
+        hint.innerHTML = IS_USER_PREMIUM
+          ? '<span style="color:#7c3aed; font-weight:700;">✨ プレミアム会員（最大100スロット）</span>'
+          : '<span style="color:#64748b;">BASIC会員: 最大10スロット（<a href="./plans.html" style="color:#7c3aed; text-decoration:underline;">プレミアム</a>で100スロットに拡張）</span>';
+      }
+
+      if (prevBtn) {
+        prevBtn.disabled = (currentMySetPage === 0);
+        prevBtn.style.opacity = (currentMySetPage === 0) ? '0.4' : '1';
+      }
+
+      if (nextBtn) {
+        if (!IS_USER_PREMIUM) {
+          nextBtn.disabled = true;
+          nextBtn.style.opacity = '0.4';
+          nextBtn.title = 'スロット11以降はプレミアム会員限定です';
+        } else {
+          nextBtn.disabled = (currentMySetPage >= 9);
+          nextBtn.style.opacity = (currentMySetPage >= 9) ? '0.4' : '1';
+          nextBtn.title = '';
+        }
+      }
+    }
+
+    function renderSaveListSkeleton() {
+      const listEl = document.getElementById('saveList');
+      if (!listEl) return;
+      const start = currentMySetPage * 10 + 1;
+      const end = start + 9;
+      let html = '';
+      for (let slot = start; slot <= end; slot++) {
+        html += `
+          <li class="item" data-slot="${slot}">
+            <div>
+              <div>
+                <strong>マイセット${slot}</strong><span class="count" id="slot${slot}-count">(0枚)</span>
+              </div>
+              <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: #777;">セット名:</span>
+                <input type="text" id="slot${slot}-name" class="slot-name-edit" data-slot="${slot}" value="" style="border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; width: 140px; font-size: 14px;" placeholder="未設定">
+              </div>
+              <div class="muted" id="slot${slot}-updated" style="margin-top: 4px;">最終更新: -</div>
+              <div class="thumbs" id="slot${slot}-thumbs"><span class="empty">空き</span></div>
+              <div class="slot-list" id="slot${slot}-list">
+                <div class="thumbs-grid" id="slot${slot}-list-grid"></div>
+              </div>
+            </div>
+            <div class="right" style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+              <a class="small-btn slot-list-btn" href="#" data-slot="${slot}" style="text-align:center; display:none;">一覧</a>
+              <a class="small-btn slot-edit-btn" href="#" data-slot="${slot}" style="text-align:center; background:#f0f7ff; border-color:#93c5fd; color:#1d4ed8;">編集</a>
+              <button class="small-btn slot-delete-btn" type="button" data-slot="${slot}" style="border-color:#fed7d7; color:#e53e3e; background:#fffafa; cursor:pointer; display:none;">削除</button>
+            </div>
+          </li>
+        `;
+      }
+      listEl.innerHTML = html;
+    }
+
     async function refreshSaveSlots() {
-      const SLOTS = Array.from({ length: 10 }, (_, i) => i + 1);
+      const start = currentMySetPage * 10 + 1;
+      const end = start + 9;
+      const SLOTS = Array.from({ length: 10 }, (_, i) => start + i);
+
+      updateMySetPaginationUI();
+      renderSaveListSkeleton();
+
       for (const slot of SLOTS) {
         const { count, updatedAt, name } = await fetchSlotMeta(slot);
-        const itemEl = document.querySelector(`#saveList li:nth-child(${slot})`);
+        const itemEl = document.querySelector(`#saveList li[data-slot="${slot}"]`);
         if (!itemEl) continue;
 
         const nEl = document.getElementById(`slot${slot}-name`);
@@ -1109,40 +1008,10 @@
           if (uEl) uEl.textContent = '最終更新: -';
           if (tEl) renderThumbs(tEl, [], 0);
           if (bEl) bEl.style.display = 'none';
-          if (eEl) eEl.style.display = 'inline-block'; // 空スロットでも編集（カード追加）可能
+          if (eEl) eEl.style.display = 'inline-block';
           if (dEl) dEl.style.display = 'none';
         }
       }
-    }
-
-    async function toggleSlotList(slot) {
-      const wrap = document.getElementById(`slot${slot}-list`);
-      const grid = document.getElementById(`slot${slot}-list-grid`);
-      if (!wrap || !grid) return;
-      const willOpen = (wrap.style.display !== 'block');
-      // 他のスロットは閉じる
-      const SLOTS = Array.from({ length: 10 }, (_, i) => i + 1);
-      for (const s of SLOTS) {
-        const w = document.getElementById(`slot${s}-list`);
-        if (w) w.style.display = 'none';
-      }
-      if (!willOpen) return;
-      wrap.style.display = 'block';
-      grid.innerHTML = '';
-      const items = await fetchSlotData(slot);
-      if (items.length === 0) {
-        grid.innerHTML = '<div class="muted">アイテムはありません</div>';
-        return;
-      }
-      items.forEach(d => {
-        const u = d.imageUrl || d.fullUrl || '';
-        if (!u) return;
-        const img = document.createElement('img');
-        img.loading = 'lazy';
-        img.decoding = 'async';
-        img.src = u;
-        grid.appendChild(img);
-      });
     }
 
     // マイセット名変更のイベント委譲
@@ -1191,6 +1060,24 @@
         e.preventDefault();
         const slot = parseInt(delBtn.dataset.slot, 10);
         if (slot) await deleteSlot(slot, delBtn);
+      }
+    });
+
+    document.getElementById('myset-prev-btn')?.addEventListener('click', async () => {
+      if (currentMySetPage > 0) {
+        currentMySetPage--;
+        await refreshSaveSlots();
+      }
+    });
+
+    document.getElementById('myset-next-btn')?.addEventListener('click', async () => {
+      if (!IS_USER_PREMIUM) {
+        alert('スロット11以降の利用はプレミアム会員限定です。\nプランページよりご登録ください。');
+        return;
+      }
+      if (currentMySetPage < 9) {
+        currentMySetPage++;
+        await refreshSaveSlots();
       }
     });
 
@@ -1448,6 +1335,8 @@
         const data = snap.exists() ? (snap.data() || {}) : {};
         const isPremium = !!data.premium;
         const since = data.premiumSince?.toDate?.() || null;
+        IS_USER_PREMIUM = isPremium;
+        updateMySetPaginationUI();
 
         // インラインバッジ（名前の横）
         if (premiumBadgeInline) {
