@@ -56,76 +56,87 @@ module.exports = async (req, res) => {
     const db = admin.firestore();
     const auth = admin.auth();
     const now = admin.firestore.Timestamp.now();
+    const nowMs = Date.now();
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-    console.log('[Cleanup] Starting hourly cleanup...');
+    console.log('[Cleanup] Starting cleanup job...');
 
-    // 1. 期限切れのルームを検索 (expiresAt < now)
+    // 1. 期限切れのルームを検索 (expiresAt < now) して削除
     const expiredRoomsSnap = await db.collection('rooms')
       .where('expiresAt', '<', now)
-      .limit(100) // 一度に処理する上限を設定
+      .limit(100)
       .get();
 
-    if (expiredRoomsSnap.empty) {
-      console.log('[Cleanup] No expired rooms found.');
-      res.status(200).json({ ok: true, message: 'No expired rooms.' });
-      return;
-    }
-
     const deletedRoomIds = [];
-    const hostUidsToCheck = new Set();
-
-    for (const doc of expiredRoomsSnap.docs) {
-      const data = doc.data();
-      const roomId = doc.id;
-      
-      console.log(`[Cleanup] Deleting room: ${roomId}`);
-      await deleteRoomHard(db, roomId);
-      deletedRoomIds.push(roomId);
-
-      // ホストが匿名ユーザーだった場合、UIDを記録
-      if (data.hostIsAnonymous === true && data.hostUid) {
-        hostUidsToCheck.add(data.hostUid);
+    if (!expiredRoomsSnap.empty) {
+      for (const doc of expiredRoomsSnap.docs) {
+        const roomId = doc.id;
+        console.log(`[Cleanup] Deleting expired room: ${roomId}`);
+        await deleteRoomHard(db, roomId);
+        deletedRoomIds.push(roomId);
       }
     }
 
-    // 2. 匿名アカウントの掃除
-    const deletedUserUids = [];
-    for (const uid of hostUidsToCheck) {
-      // そのUIDが他に「有効な（期限切れでない）」ルームを持っているか確認
-      const otherRoomsSnap = await db.collection('rooms')
-        .where('hostUid', '==', uid)
-        .limit(1)
-        .get();
-
-      if (otherRoomsSnap.empty) {
-        // 他にルームがなければアカウントを削除
-        console.log(`[Cleanup] Deleting anonymous user: ${uid}`);
-        
-        try {
-          // Firebase Auth から削除
-          await auth.deleteUser(uid).catch(e => {
-            if (e.code === 'auth/user-not-found') return; // 既にない場合は無視
-            throw e;
-          });
-
-          // Firestore のユーザーデータも削除
-          await db.doc(`users/${uid}`).delete();
-          
-          deletedUserUids.push(uid);
-        } catch (err) {
-          console.warn(`[Cleanup] Failed to delete user ${uid}:`, err.message);
+    // 2. 現在アクティブな（有効期限内の）ルームの hostUid を収集
+    const activeRoomsSnap = await db.collection('rooms').get();
+    const activeHostUids = new Set();
+    activeRoomsSnap.docs.forEach(doc => {
+      const data = doc.data();
+      const expiresAt = data.expiresAt;
+      // 期限が未来、または無期限（ログインユーザーの部屋など）
+      if (!expiresAt || expiresAt.toMillis() > nowMs) {
+        if (data.hostUid) {
+          activeHostUids.add(data.hostUid);
         }
-      } else {
-        console.log(`[Cleanup] User ${uid} still has active rooms. Skipping account deletion.`);
+      }
+    });
+
+    // 3. 作成後24時間以上経過し、アクティブな部屋を持たない匿名ユーザーを抽出して一括削除
+    const anonUidsToDelete = [];
+    let pageToken;
+    do {
+      const listResult = await auth.listUsers(1000, pageToken);
+      for (const u of listResult.users) {
+        const isAnon = (!u.providerData || u.providerData.length === 0) && !u.email && !u.phoneNumber;
+        if (!isAnon) continue;
+
+        const createdAtMs = new Date(u.metadata.creationTime).getTime();
+        const isOlderThan24h = (nowMs - createdAtMs) > ONE_DAY_MS;
+
+        if (isOlderThan24h && !activeHostUids.has(u.uid)) {
+          anonUidsToDelete.push(u.uid);
+        }
+      }
+      pageToken = listResult.pageToken;
+    } while (pageToken);
+
+    console.log(`[Cleanup] Found ${anonUidsToDelete.length} inactive anonymous users to delete.`);
+
+    let deletedAuthUsersCount = 0;
+    if (anonUidsToDelete.length > 0) {
+      // Firebase Auth から一括削除 (最大1000件ずつ)
+      for (let i = 0; i < anonUidsToDelete.length; i += 1000) {
+        const chunk = anonUidsToDelete.slice(i, i + 1000);
+        const delResult = await auth.deleteUsers(chunk);
+        deletedAuthUsersCount += (delResult.successCount || 0);
+      }
+
+      // Firestore の users/{uid} レコードも一括削除 (最大400件ずつ)
+      for (let i = 0; i < anonUidsToDelete.length; i += 400) {
+        const chunk = anonUidsToDelete.slice(i, i + 400);
+        const batch = db.batch();
+        chunk.forEach(uid => {
+          batch.delete(db.doc(`users/${uid}`));
+        });
+        await batch.commit();
       }
     }
 
     res.status(200).json({
       ok: true,
       deletedRooms: deletedRoomIds.length,
-      deletedUsers: deletedUserUids.length,
-      roomIds: deletedRoomIds,
-      userUids: deletedUserUids
+      deletedRoomIds,
+      deletedAnonymousUsers: deletedAuthUsersCount
     });
 
   } catch (e) {
