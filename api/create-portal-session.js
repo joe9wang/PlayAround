@@ -35,7 +35,23 @@ module.exports = async function handler(req, res) {
 
         const stripeCustomerId = userDoc.data().stripeCustomerId;
         if (!stripeCustomerId) {
-            return res.status(400).json({ error: 'User has no active Stripe subscription.' });
+            return res.status(400).json({ error: 'アクティブなサブスクリプションが見つかりません。' });
+        }
+
+        // Verify customer exists in Stripe (e.g. not a legacy test-mode ID)
+        try {
+            const customer = await stripe.customers.retrieve(stripeCustomerId);
+            if (!customer || customer.deleted) {
+                throw new Error('Customer is deleted');
+            }
+        } catch (custErr) {
+            console.warn(`Customer ${stripeCustomerId} not found in Stripe: ${custErr.message}. Cleaning up Firestore.`);
+            await db.collection('users').doc(uid).update({
+                premium: false,
+                stripeCustomerId: admin.firestore.FieldValue.delete(),
+                stripeSubscriptionId: admin.firestore.FieldValue.delete()
+            });
+            return res.status(400).json({ error: 'Stripeの顧客情報が見つかりませんでした。プランページから再度登録を行ってください。' });
         }
 
         // Create a portal session

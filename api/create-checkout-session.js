@@ -32,6 +32,23 @@ module.exports = async function handler(req, res) {
         const userDoc = await db.collection('users').doc(uid).get();
         const existingCustomerId = userDoc.exists ? userDoc.data().stripeCustomerId : null;
 
+        let validCustomerId = null;
+        if (existingCustomerId) {
+            try {
+                const customer = await stripe.customers.retrieve(existingCustomerId);
+                if (customer && !customer.deleted) {
+                    validCustomerId = existingCustomerId;
+                } else {
+                    console.warn(`Customer ${existingCustomerId} is deleted or invalid in Stripe. Clearing.`);
+                    await db.collection('users').doc(uid).update({ stripeCustomerId: admin.firestore.FieldValue.delete() });
+                }
+            } catch (err) {
+                // 'resource_missing' やテスト/本番キー不一致などの場合
+                console.warn(`Failed to retrieve customer ${existingCustomerId}: ${err.message}. Clearing invalid customer ID.`);
+                await db.collection('users').doc(uid).update({ stripeCustomerId: admin.firestore.FieldValue.delete() });
+            }
+        }
+
         const sessionParams = {
             payment_method_types: ['card'],
             mode: 'subscription',
@@ -49,8 +66,8 @@ module.exports = async function handler(req, res) {
             allow_promotion_codes: true,
         };
 
-        if (existingCustomerId) {
-            sessionParams.customer = existingCustomerId;
+        if (validCustomerId) {
+            sessionParams.customer = validCustomerId;
         } else if (decodedToken.email) {
             sessionParams.customer_email = decodedToken.email;
         }
