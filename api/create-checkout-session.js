@@ -58,8 +58,8 @@ module.exports = async function handler(req, res) {
                     quantity: 1,
                 },
             ],
-            success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.batritable.com'}/mypage.html?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.batritable.com'}/mypage.html`,
+            success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://batritable.com'}/mypage.html?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://batritable.com'}/mypage.html`,
             metadata: {
                 firebaseUID: uid, // We need this in webhook to update firestore
             },

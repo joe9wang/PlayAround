@@ -1387,13 +1387,32 @@
         } else {
           premiumSection.classList.remove('is-premium');
           premiumInfo.innerHTML = `
-            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-              <button class="btn-premium-register" id="btn-premium-register" style="background:linear-gradient(135deg, #7c3aed, #a855f7); color:#fff; border:none; padding:10px 22px; border-radius:8px; font-weight:800; cursor:pointer; font-size:14px; box-shadow:0 4px 12px rgba(124,58,237,0.3);">
-                ✨ プレミアムに登録（月額 500 円）
-              </button>
-              <span class="premium-hint" style="font-size:13px; color:#666;">ルーム上限100部屋、画像20MBなど特別な機能が使えます。<a href="./plans.html" style="color: #7c3aed; text-decoration: underline; margin-left:4px; font-weight:600;">プラン詳細はこちら</a></span>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <button class="btn-premium-register" id="btn-premium-register" style="background:linear-gradient(135deg, #7c3aed, #a855f7); color:#fff; border:none; padding:10px 22px; border-radius:8px; font-weight:800; cursor:pointer; font-size:14px; box-shadow:0 4px 12px rgba(124,58,237,0.3);">
+                  ✨ プレミアムに登録（月額 500 円）
+                </button>
+                <span class="premium-hint" style="font-size:13px; color:#666;">ルーム上限100部屋、画像20MBなど特別な機能が使えます。<a href="./plans.html" style="color: #7c3aed; text-decoration: underline; margin-left:4px; font-weight:600;">プラン詳細はこちら</a></span>
+              </div>
+              <div style="font-size:12px; color:#888;">
+                ※ 決済済みで反映されていない場合は、<button id="btn-sync-premium" style="background:none; border:none; color:#7c3aed; text-decoration:underline; cursor:pointer; padding:0; font-size:12px; font-weight:600;">こちらをクリックして同期</button> してください。
+              </div>
             </div>
           `;
+
+          document.getElementById('btn-sync-premium')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            btn.textContent = '同期中...';
+            const ok = await syncSubscriptionStatus(auth.currentUser);
+            if (ok) {
+              alert('✨ プレミアムステータスが正常に同期されました！');
+            } else {
+              alert('有効なサブスクリプションが見つかりませんでした。数分待ってから再度お試しいただくか、サポートへお問い合わせください。');
+              btn.disabled = false;
+              btn.textContent = 'こちらをクリックして同期';
+            }
+          });
 
           document.getElementById('btn-premium-register').addEventListener('click', async (e) => {
             const btn = e.currentTarget;
@@ -1429,7 +1448,28 @@
       }
     }
 
-    onAuthStateChanged(auth, (user) => {
+    async function syncSubscriptionStatus(user, sessionId = null) {
+      if (!user) return false;
+      try {
+        const idToken = await user.getIdToken();
+        const res = await fetch('/api/sync-subscription', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken, sessionId })
+        });
+        const data = await res.json();
+        if (data && data.premium) {
+          await renderPremiumUI(user.uid);
+          return true;
+        }
+      } catch (err) {
+        console.warn('[mypage] syncSubscriptionStatus error:', err);
+      }
+      await renderPremiumUI(user.uid);
+      return false;
+    }
+
+    onAuthStateChanged(auth, async (user) => {
       // 未ログイン or 匿名ログインなら index に戻す
       if (!user || user.isAnonymous) {
         alert('マイページはログインが必要です。');
@@ -1442,15 +1482,18 @@
       // ログイン済みになったら情報を描画
       refreshSaveSlots().catch(console.error);
       refreshMyRooms().catch(console.error);
-      // プレミアムステータスを取得・表示
-      renderPremiumUI(user.uid).catch(console.error);
 
       // 決済完了リダイレクト直後の判定
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('session_id')) {
+      const sessionId = urlParams.get('session_id');
+      if (sessionId) {
         window.history.replaceState({}, document.title, window.location.pathname);
+        premiumInfo.innerHTML = '<span style="color:#7c3aed; font-weight:700;">🔄 決済ステータスを確認・同期中...</span>';
+        await syncSubscriptionStatus(user, sessionId);
         alert('✨ プレミアム会員へのご登録ありがとうございます！\nプレミアム機能が有効化されました。');
-        setTimeout(() => renderPremiumUI(user.uid), 2000);
+      } else {
+        // 通常のプレミアムステータスを取得・表示
+        renderPremiumUI(user.uid).catch(console.error);
       }
     });
 
