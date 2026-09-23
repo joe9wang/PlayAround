@@ -1764,36 +1764,32 @@ function getPlayerSeatsArray() {
 
 
 
-// === Helper: 他人の手札内かどうか（プレビュー用マスク判定） ===
+// === Helper: 手札領域の判定 & 他人の手札内かどうか（マスク判定） ===
+
+function getCardHandSeat(el) {
+  try {
+    if (!el) return null;
+    const left = parseFloat(el.style.left) || 0;
+    const top = parseFloat(el.style.top) || 0;
+    for (const s of getPlayerSeatsArray()) {
+      const hb = getHandBoundsForSeat(s);
+      if (hb && isCenterInsideRect(left, top, hb, el)) {
+        return s;
+      }
+    }
+  } catch (_) { }
+  return null;
+}
 
 function isOtherPlayersHandCard(el) {
-
   try {
-
     if (!el) return false;
-
+    const handSeat = getCardHandSeat(el);
+    if (handSeat == null) return false;
     const viewerSeat = CURRENT_PLAYER;
-
-    const left = parseFloat(el.style.left) || 0;
-
-    const top = parseFloat(el.style.top) || 0;
-
-    for (const s of getPlayerSeatsArray()) {
-
-      const hb = getHandBoundsForSeat(s);
-
-      if (hb && isCenterInsideRect(left, top, hb)) {
-
-        return String(s) !== String(viewerSeat);
-
-      }
-
-    }
-
+    return String(handSeat) !== String(viewerSeat);
   } catch (_) { }
-
   return false;
-
 }
 
 
@@ -2087,14 +2083,12 @@ logoutBtn?.addEventListener('click', async () => {
 
 
 
-function isCenterInsideRect(x, y, rect) {
-
-  const cx = x + CARD_W / 2;
-
-  const cy = y + CARD_H / 2;
-
+function isCenterInsideRect(x, y, rect, el = null) {
+  const w = el ? (parseFloat(el.style.width) || el.offsetWidth || CARD_W) : CARD_W;
+  const h = el ? (parseFloat(el.style.height) || el.offsetHeight || CARD_H) : CARD_H;
+  const cx = x + w / 2;
+  const cy = y + h / 2;
   return cx >= rect.minX && cx <= rect.minX + rect.width && cy >= rect.minY && cy <= rect.minY + rect.height;
-
 }
 
 
@@ -2201,17 +2195,38 @@ function maybeTakeOwnership(cardEl) {
 // kind: 'move' | 'flip' | 'delete' | 'rotate'
 
 function canOperateCard(cardEl, kind) {
-  if (CURRENT_PLAYER === 'spectator') return false;
+  if (CURRENT_PLAYER == null || CURRENT_PLAYER === 'spectator') return false;
   if (isCardLockedByOther(cardEl)) return false; // 他人が操作中の場合は一切の操作不可
-  if (isMyCard(cardEl)) return true;
 
-  if (allowOperateOthers()) {
-    // 共有ONでも破壊的操作は不可のまま
-    if (kind === 'delete' || kind === 'rotate') return false;
-    return true; // move / flip を許可
+  // 1. 他人の手札内にあるカードは一切の操作不可（覗き見・反転・回転・強奪を完全防止）
+  if (isOtherPlayersHandCard(cardEl)) {
+    return false;
   }
 
-  return false;
+  // 2. 自分の手札内にあるカードは常に全操作可能（移動・表裏・回転・削除）
+  const handSeat = getCardHandSeat(cardEl);
+  if (handSeat != null && String(handSeat) === String(CURRENT_PLAYER)) {
+    return true;
+  }
+
+  // 3. 自分のカード（ownerSeatが自分）の場合
+  if (isMyCard(cardEl)) {
+    return true;
+  }
+
+  // 4. 場の共有カードの場合：
+  // 削除（delete）のみ、明確に他者操作が許可されていない限りブロック
+  if (kind === 'delete') {
+    return allowOperateOthers();
+  }
+
+  // 回転（rotate）、移動（move）、表裏（flip）は場のカードに対して着席プレイヤー全員に許可
+  // （ゲストがダブルクリックでカードを回転できるようにする）
+  if (kind === 'rotate' || kind === 'move' || kind === 'flip') {
+    return true;
+  }
+
+  return allowOperateOthers();
 }
 
 // === カードのカーソル・所持者状態の動的同期 ===
@@ -2221,13 +2236,15 @@ function updateCardCursor(cardEl) {
     cardEl.style.cursor = 'pointer';
     return;
   }
-  const isMine = isMyCard(cardEl);
+  const isOther = isOtherPlayersHandCard(cardEl);
+  const handSeat = getCardHandSeat(cardEl);
+  const isMine = isMyCard(cardEl) || (handSeat != null && String(handSeat) === String(CURRENT_PLAYER));
   if (isMine) {
     if (cardEl.getAttribute('data-owner') !== 'me') {
       cardEl.setAttribute('data-owner', 'me');
     }
   } else {
-    if (cardEl.dataset.ownerSeat && cardEl.getAttribute('data-owner') !== 'other') {
+    if (cardEl.getAttribute('data-owner') !== 'other') {
       cardEl.setAttribute('data-owner', 'other');
     }
   }
@@ -5694,6 +5711,15 @@ window.updateSelectedCount = updateSelectedCount;
 function applyCardSelection(card) {
   if (!card) return;
 
+  if (isOtherPlayersHandCard(card)) {
+    // 他人の手札カードは選択（赤枠・zIndex変更）させず、裏面プレビューのみ表示
+    const seatBack = card.dataset.backImageUrl || '';
+    setPreview(seatBack);
+    const ownerPlayerNum = card.dataset.ownerSeat ? `SEAT${card.dataset.ownerSeat}` : '?';
+    previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum} (手札・非公開)`;
+    return;
+  }
+
   const cardId = card.dataset.cardId;
   const isBoard = card.classList.contains('is-board') || card.dataset.type === 'board';
   const zBase = isBoard ? Z_CENTER_BASE : Z_FRONT_BASE;
@@ -6116,6 +6142,7 @@ function createCardDom(cardId, imageSrc, state) {
   // カードの表裏反転（右クリック／モバイル長押し共通）
   async function flipCards(card) {
     if (!card) return;
+    if (isOtherPlayersHandCard(card)) return;
     maybeTakeOwnership(card);
 
     const isCounter = card.classList.contains('counter');
@@ -6150,13 +6177,14 @@ function createCardDom(cardId, imageSrc, state) {
     if (card.classList.contains('memo')) return;
 
     const isSelected = card.classList.contains('selected');
-    const cardsToFlip = isSelected 
+    const cardsToFlip = (isSelected 
       ? Array.from(document.querySelectorAll('.card.selected')).filter(el => !el.classList.contains('memo'))
-      : [card];
+      : [card]).filter(el => !isOtherPlayersHandCard(el));
 
     const nextFaceUp = !(card.dataset.faceUp === 'true');
 
     cardsToFlip.forEach(c => {
+      if (isOtherPlayersHandCard(c)) return;
       maybeTakeOwnership(c);
       if (!canOperateCard(c, 'flip')) return;
 
@@ -6165,7 +6193,7 @@ function createCardDom(cardId, imageSrc, state) {
       const cId = c.dataset.cardId;
 
       if (imgEl) {
-        if (nextFaceUp) {
+        if (nextFaceUp && !isOtherPlayersHandCard(c)) {
           imgEl.style.display = 'block';
           c.style.backgroundColor = '#fff';
           c.classList.remove('has-back');
@@ -6266,12 +6294,14 @@ function createCardDom(cardId, imageSrc, state) {
   // 右クリックで表裏トグル（PC）
   card.addEventListener("contextmenu", async (e) => {
     e.preventDefault();
+    if (isOtherPlayersHandCard(card)) return;
     await flipCards(card);
   });
 
   // ダブルクリックで90°回転（PC）
   card.addEventListener("dblclick", async (e) => {
     e.stopPropagation();
+    if (isOtherPlayersHandCard(card)) return;
     await rotateCards(card);
   });
 
@@ -6283,6 +6313,7 @@ function createCardDom(cardId, imageSrc, state) {
 
     card.addEventListener('touchstart', (ev) => {
       if (ev.touches.length !== 1) return;
+      if (isOtherPlayersHandCard(card)) return;
       card._lpFired = false;
       clearLP();
       lpTimer = setTimeout(() => {
@@ -6409,7 +6440,12 @@ function applyCardState(card, data) {
       // ノートの場合はCSSのグラデーションを優先するため背景色固定を避ける
     } else {
       const isActuallyCard = !data.type || data.type === 'card';
-      if (data.faceUp || !isActuallyCard) {
+      const isOtherHand = isActuallyCard && (isOtherPlayersHandCard(card) || (() => {
+        const hs = getCardHandSeat(card);
+        return hs != null && String(hs) !== String(CURRENT_PLAYER);
+      })());
+
+      if ((data.faceUp || !isActuallyCard) && !isOtherHand) {
         img.style.display = 'block';
         card.style.backgroundColor = '#fff';
         card.classList.remove('has-back');
@@ -6579,46 +6615,20 @@ function applyCardState(card, data) {
 
 
   try {
-
     const viewerSeat = CURRENT_PLAYER;
-
-    const x = parseFloat(card.style.left) || 0;
-
-    const y = parseFloat(card.style.top) || 0;
-
-    let insideSeat = null;
-
-    for (const s of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
-
-      const hb = getHandBoundsForSeat(s);
-
-      if (hb && isCenterInsideRect(x, y, hb)) { insideSeat = s; break; }
-
-    }
-
+    const insideSeat = getCardHandSeat(card);
     const isActuallyCard = !data.type || data.type === 'card';
     if (insideSeat && String(viewerSeat) !== String(insideSeat) && isActuallyCard) {
-
       const img = card.querySelector('img');
-
       if (img) { img.style.display = 'none'; }
-
       const tokenInput2 = card.querySelector('.token-input');
-
       if (tokenInput2) { tokenInput2.style.display = 'none'; }
-
       applyCardBackStyle(card);
-
       // ★選択中ならプレビューは「カード固有の裏面」
-
       if (selectedCard === card) {
-
         setPreview(card.dataset.backImageUrl || '');
-
       }
-
     }
-
   } catch (_) { }
 
 }
@@ -7302,6 +7312,12 @@ function makeDraggable(card) {
           const y = parseFloat(c.style.top) || 0;
           const zIndex = parseInt(c.style.zIndex) || 1;
           const updateData = { x, y, zIndex, activeOperator: null };
+
+          const handSeat = getCardHandSeat(c);
+          if (handSeat != null) {
+            updateData.ownerSeat = handSeat;
+            c.dataset.ownerSeat = String(handSeat);
+          }
           
           if (c.style.width) {
             updateData.width = Math.round(parseFloat(c.style.width));
@@ -7510,6 +7526,12 @@ function makeDraggable(card) {
           const y = parseFloat(c.style.top) || 0;
           const zIndex = parseInt(c.style.zIndex) || 1;
           const updateData = { x, y, zIndex, activeOperator: null };
+
+          const handSeat = getCardHandSeat(c);
+          if (handSeat != null) {
+            updateData.ownerSeat = handSeat;
+            c.dataset.ownerSeat = String(handSeat);
+          }
           
           if (c.style.width) {
             updateData.width = Math.round(parseFloat(c.style.width));
