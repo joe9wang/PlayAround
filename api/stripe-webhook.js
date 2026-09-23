@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { sendPremiumWelcomeEmail } = require('./_email');
 
 if (!admin.apps.length) {
     admin.initializeApp({
@@ -39,7 +40,6 @@ async function handler(req, res) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     let event;
-
     try {
         event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
     } catch (err) {
@@ -57,13 +57,22 @@ async function handler(req, res) {
 
                 if (firebaseUID) {
                     console.log(`Setting premium for user: ${firebaseUID}`);
+                    const userDoc = await db.collection('users').doc(firebaseUID).get();
+                    const userData = userDoc.exists ? userDoc.data() : {};
+                    const emailToSend = userData.email || session.customer_details?.email;
+
                     await db.collection('users').doc(firebaseUID).set({
                         premium: true,
                         premiumSince: admin.firestore.FieldValue.serverTimestamp(),
                         stripeCustomerId: customerId,
                         stripeSubscriptionId: subscriptionId,
+                        welcomeEmailSent: true,
                         updatedAt: admin.firestore.FieldValue.serverTimestamp()
                     }, { merge: true });
+
+                    if (!userData.welcomeEmailSent && emailToSend) {
+                        sendPremiumWelcomeEmail({ email: emailToSend, displayName: userData.displayName }).catch(console.error);
+                    }
                 } else if (customerId) {
                     // Fallback: look up user by email or customerId
                     try {
@@ -72,13 +81,19 @@ async function handler(req, res) {
                             const snap = await db.collection('users').where('email', '==', customer.email).get();
                             if (!snap.empty) {
                                 for (const doc of snap.docs) {
+                                    const docData = doc.data() || {};
                                     await doc.ref.set({
                                         premium: true,
                                         premiumSince: admin.firestore.FieldValue.serverTimestamp(),
                                         stripeCustomerId: customerId,
                                         stripeSubscriptionId: subscriptionId,
+                                        welcomeEmailSent: true,
                                         updatedAt: admin.firestore.FieldValue.serverTimestamp()
                                     }, { merge: true });
+
+                                    if (!docData.welcomeEmailSent) {
+                                        sendPremiumWelcomeEmail({ email: customer.email, displayName: docData.displayName }).catch(console.error);
+                                    }
                                 }
                             }
                         }

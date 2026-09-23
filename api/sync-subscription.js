@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { sendPremiumWelcomeEmail } = require('./_email');
 
 if (!admin.apps.length) {
     admin.initializeApp({
@@ -34,13 +35,22 @@ module.exports = async function handler(req, res) {
                 const session = await stripe.checkout.sessions.retrieve(sessionId);
                 if (session && (session.payment_status === 'paid' || session.status === 'complete')) {
                     if (session.metadata?.firebaseUID === uid || session.customer_details?.email === email) {
+                        const userDoc = await db.collection('users').doc(uid).get();
+                        const userData = userDoc.exists ? userDoc.data() : {};
+                        const emailToSend = email || userData.email || session.customer_details?.email;
+
                         await db.collection('users').doc(uid).set({
                             premium: true,
                             premiumSince: admin.firestore.FieldValue.serverTimestamp(),
                             stripeCustomerId: session.customer,
                             stripeSubscriptionId: session.subscription,
+                            welcomeEmailSent: true,
                             updatedAt: admin.firestore.FieldValue.serverTimestamp()
                         }, { merge: true });
+
+                        if (!userData.welcomeEmailSent && emailToSend) {
+                            sendPremiumWelcomeEmail({ email: emailToSend, displayName: userData.displayName }).catch(console.error);
+                        }
 
                         return res.status(200).json({ ok: true, premium: true });
                     }
