@@ -2150,26 +2150,19 @@ function rectFromEl(el) {
 
 // === レイアウト安定待ち（中央デッキの矩形が正しく測れるまで待つ） ===
 
-async function waitForBoardDeckRect(maxWaitMs = 1000) {
-
+async function waitForBoardDeckRect(maxWaitMs = 1500) {
   const start = performance.now();
-
   // 2フレーム待ち → 計測 → 必要なら繰り返し
-
   while (performance.now() - start < maxWaitMs) {
-
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    const r = getDeckBoundsForSeat(1); // board/trump は共有デッキ
-
-    if (r && r.width > 0 && r.height > 0) return r;
-
+    const el = document.querySelector('#board-center .center-deck');
+    if (el) {
+      const r = rectFromEl(el);
+      if (r && r.width > 0 && r.height > 0) return r;
+    }
   }
-
   // 最悪でも null 返し（呼び出し側でフォールバック）
-
   return null;
-
 }
 
 
@@ -2300,12 +2293,11 @@ function getHandBoundsForSeat(seat) {
 
 
 function getDeckBoundsForSeat(seat) {
-
   const mode = CURRENT_ROOM_META?.fieldMode;
 
   if (mode === 'board' || mode === 'trump') {
-    // ボードモード時は .board-hand-N を探す
-    const el = document.querySelector(`#board-hand-${seat}`);
+    // 共有レイアウトの中央・デッキエリア
+    const el = document.querySelector('#board-center .center-deck');
     if (el) return rectFromEl(el);
     
     // なければ共有エリアの中央
@@ -8532,6 +8524,15 @@ async function initializeOfficialGame(mode, roomId) {
 }
 
 function centerOfBoardDeck(w, h) {
+  const el = document.querySelector('#board-center .center-deck');
+  if (el) {
+    const r = rectFromEl(el);
+    if (r && r.width > 0 && r.height > 0) {
+      const x = Math.round(r.minX + (r.width - w) / 2);
+      const y = Math.round(r.minY + (r.height - h) / 2);
+      return { x, y };
+    }
+  }
   const r = getDeckBoundsForSeat(1); 
   if (!r) return { x: 0, y: 0 };
   const x = Math.round(r.minX + (r.width - w) / 2);
@@ -8547,6 +8548,8 @@ async function spawnTrumpDeck(roomId) {
   const SUITS = ['spade', 'heart', 'diamond', 'club'];
   const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
+  // ボードおよび中央デッキエリアのレイアウト確定を待機
+  await new Promise(resolve => setTimeout(resolve, 800));
   await waitForBoardDeckRect();
   const { x, y } = centerOfBoardDeck(CARD_W, CARD_H);
   let z = getMaxZIndex(Z_FRONT_BASE) + 1;

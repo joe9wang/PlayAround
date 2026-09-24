@@ -951,3 +951,5 @@ card-game/
 - **手札・デッキ・捨て札エリアの透過塗りつぶし ＆ 破線枠の統一**:
   - `.mode-trump` クラスにおいて、手札エリア（`.board-hand`）、共有デッキ（`.center-deck`）、共有捨て札（`.center-discard`）の背景を `background: transparent !important;`（透明塗りつぶし）に設定。
   - 枠線は他エリアと揃えた `border: 10px dashed #666 !important;`（いつもの破線）を適用し、美しいマット背景を透かしつつ、各エリア境界を明確に表現。
+- **トランプデッキの初期配置位置の適正化**:
+  - ルーム作成時のトランプ初期化処理（`spawnTrumpDeck`）および `getDeckBoundsForSeat` において、手札エリア（`.board-hand-1`）ではなく中央の共有デッキエリア（`#board-center .center-deck`）の座標を正しく取得するよう修正。全54枚のカード束がデッキエリアの真ん中に正確に整列配置されるように改善。
