@@ -4829,12 +4829,7 @@ function bindLifecycleHandlers() {
       if (!CURRENT_ROOM || !CURRENT_PLAYER) return;
 
       // 心拍を止めてから解放（race低減）
-
       try { stopHeartbeat(); } catch (_) { }
-
-      // ★ タブ閉じ時も、できる限り自分のカードを先に消す（非ホストのみ）
-
-      try { await deleteMyCardsSilently(); } catch (_) { }
 
       // できるだけ早く席を解放（非同期ベストエフォート）
 
@@ -10291,11 +10286,6 @@ leaveRoomBtn?.addEventListener('click', async () => {
   leaveRoomBtn.disabled = true; const old = leaveRoomBtn.textContent; leaveRoomBtn.textContent = '退室中…';
 
   try {
-
-    // ★ 先に自分のカードを全削除（非ホストのみ）
-
-    try { await deleteMyCardsSilently(); } catch (_) { }
-
     try { stopHeartbeat(); } catch (_) { }
 
     try {
@@ -10625,73 +10615,14 @@ Object.assign(window, {
 
 
 // === 補助: 現在ホストかどうか ===
-
 function isHostNow() {
-
   const isHostUid = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
-
-  const isHostSeat = !!(CURRENT_ROOM_META?.hostSeat && CURRENT_PLAYER && CURRENT_ROOM_META.hostSeat === CURRENT_PLAYER);
-
-  return !!(CURRENT_ROOM && isHostUid && isHostSeat);
-
+  return !!(CURRENT_ROOM && isHostUid);
 }
 
-
-
-// === サイレント版：自分の全カードを確認なしで削除（UI通知なし） ===
-
+// === サイレント版：自動カード削除は誤消去事故防止のため完全廃止 ===
 async function deleteMyCardsSilently() {
-
-  try {
-
-    if (!CURRENT_ROOM || !CURRENT_UID) return;
-
-    // 非ホストのみ対象
-
-    if (isHostNow()) return;
-
-    const cardsCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
-
-    const snap = await getDocs(query(cardsCol, where('ownerUid', '==', CURRENT_UID)));
-
-    if (snap.empty) return;
-
-    let batch = writeBatch(db), n = 0;
-
-    const removed = [];
-
-    for (const d of snap.docs) {
-
-      batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${d.id}`));
-
-      removed.push(d.id);
-
-      if (++n >= 450) { await batch.commit(); batch = writeBatch(db); n = 0; }
-
-    }
-
-    if (n > 0) await batch.commit();
-
-    // 画面上の残骸も掃除
-
-    for (const id of removed) {
-
-      const el = cardDomMap.get(id);
-
-      if (el) { el.remove(); cardDomMap.delete(id); }
-
-      try { fullImageStore.delete(id); } catch (_) { }
-
-    }
-
-    if (typeof setPreview === 'function') setPreview();
-
-    // ログだけは残す（部屋が未クローズのうちに）
-
-    try { postLog('cardDelete', '退室に伴い自分のカードを自動削除しました'); } catch (_) { }
-
-  } catch (_) { /* サイレント運用のため握りつぶす */ }
-
+  // NOOP: リロードや退室によるカード消失事故を防止するため自動削除は行いません
 }
 
 
