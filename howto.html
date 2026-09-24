@@ -86,15 +86,10 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ====== ヘッダーとコンテナレイアウト（ヘッダーと同一幅・広々ワイド構成） ====== */
-    .site-header {
-      max-width: 1400px;
-      margin: 16px auto 0 !important;
-    }
-
+    /* ====== ヘッダーとコンテナレイアウト（ホームと完全に同一の幅・余白構成） ====== */
     .howto-wrapper {
-      max-width: 1400px;
-      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
       padding: 16px 16px 80px;
       display: flex;
       flex-direction: column;
@@ -1901,7 +1896,7 @@
     </section>
 
     <!-- フッター -->
-    <footer style="background: linear-gradient(135deg, #1e82e0 0%, #1569b8 100%); padding: 40px 32px; border-radius: 16px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.15); margin-top: 12px;">
+    <footer style="background: linear-gradient(135deg, #1e82e0 0%, #1569b8 100%); padding: 40px 32px; border-radius: 14px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.15); margin-top: 12px;">
       <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
         <a href="/terms.html" style="color: #ffffff; text-decoration: none; font-size: 0.88rem; font-weight: 600;">利用規約</a>
         <a href="/privacy.html" style="color: #ffffff; text-decoration: none; font-size: 0.88rem; font-weight: 600;">プライバシーポリシー</a>
@@ -1927,6 +1922,8 @@
     <span>▲</span> 目次へ戻る
   </a>
 
+  <!-- 認証状態スクリプト -->
+  <script type="module" src="./scripts/header-auth.js"></script>
 </body>
 
 </html>

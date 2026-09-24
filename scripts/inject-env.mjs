@@ -8,6 +8,7 @@ const PAGES = ["./index.html", "./game.html", "./lobby.html", "./mypage.html", "
 const JS_MODULES = [
   "./scripts/game.module.js",
   "./scripts/firebase.init.js",
+  "./scripts/header-auth.js",
   "./scripts/state.js",
   "./scripts/i18n.js",
   "./scripts/hp.js",
