@@ -762,6 +762,11 @@ async function executeRoomCreation(layoutType) {
       roomName: id, // デフォルトはID
     };
 
+    if (CREATE_FIELD_MODE === 'chess') {
+      payload.boardWidth = 2400;
+      payload.boardHeight = 2400;
+    }
+
     // 匿名ユーザー（ゲスト）の場合のみ、24時間で削除される有効期限を設定 & 24時間作成制限のタイムスタンプ記録
     if (auth.currentUser?.isAnonymous) {
       payload.expiresAt = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);

@@ -1400,6 +1400,29 @@ body.hover-zoom-enabled .card.selected:not(.is-board):not(.memo):not(.note):not(
   display: none;
 }
 
+/* チェスおよびプレイエリア専用レイアウト（手札・デッキ・捨て札を非表示） */
+#board-layout.layout-playonly #board-center,
+#board-layout.mode-chess #board-center,
+#board-layout.layout-playonly .board-hand,
+#board-layout.mode-chess .board-hand {
+  display: none !important;
+}
+
+/* チェスモードは正方形（2400px × 2400px）にして余分な緑エリアを完全に排除 */
+#board-layout.layout-playonly,
+#board-layout.mode-chess {
+  width: 2400px;
+  height: 2400px;
+  background: transparent !important;
+  border: 4px solid #bbb;
+}
+
+/* チェス盤面のゾーンラベル（プレイエリア（共有））を非表示 */
+#board-layout.mode-chess #board-play > .zone-label,
+#board-layout.layout-playonly #board-play > .zone-label {
+  display: none !important;
+}
+
 .center-deck { background: #f90; border: 4px dashed #666; grid-column: 1; position: relative; }
 .center-discard { background: #cc6666; border: 4px dashed #666; grid-column: 2; position: relative; }
 

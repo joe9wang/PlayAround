@@ -336,12 +336,17 @@ function applyCardSizeUI() {
 }
 
 function applyBoardSizeUI() {
-  const w = CURRENT_ROOM_META?.boardWidth;
-  const h = CURRENT_ROOM_META?.boardHeight;
+  const m = CURRENT_ROOM_META?.fieldMode;
+  let w = CURRENT_ROOM_META?.boardWidth;
+  let h = CURRENT_ROOM_META?.boardHeight;
   const x = CURRENT_ROOM_META?.boardX;
   const y = CURRENT_ROOM_META?.boardY;
   const layout = document.getElementById('board-layout');
   if (layout) {
+    if (m === 'chess' && (w === undefined || w === 3360)) {
+      w = 2400;
+      h = 2400;
+    }
     if (w !== undefined) layout.style.width = w + 'px';
     if (h !== undefined) layout.style.height = h + 'px';
     if (x !== undefined) layout.style.left = x + 'px';
@@ -3120,6 +3125,16 @@ function applyFieldModeLayout() {
     boardLayoutEl.classList.toggle('layout-simple', boardNormLayout === 'simple');
     boardLayoutEl.classList.toggle('layout-standard', boardNormLayout === 'standard');
     boardLayoutEl.classList.toggle('layout-playonly', boardNormLayout === 'playonly');
+    boardLayoutEl.classList.toggle('mode-chess', m === 'chess');
+
+    if (m === 'chess' || boardNormLayout === 'playonly') {
+      if (!CURRENT_ROOM_META?.boardWidth || CURRENT_ROOM_META.boardWidth === 3360) {
+        boardLayoutEl.style.width = '2400px';
+      }
+      if (!CURRENT_ROOM_META?.boardHeight) {
+        boardLayoutEl.style.height = '2400px';
+      }
+    }
     
     // Chess などのプレイエリア背景画像の設定（カスタム画像が設定されていない場合のみデフォルトを適用）
     const boardPlayEl = document.getElementById('board-play');
@@ -3137,7 +3152,7 @@ function applyFieldModeLayout() {
       } else {
         if (m === 'chess') {
           boardPlayEl.style.backgroundImage = "url('image/Chess/ChessBoard.png')";
-          boardPlayEl.style.backgroundSize = "contain";
+          boardPlayEl.style.backgroundSize = "100% 100%";
           boardPlayEl.style.backgroundRepeat = "no-repeat";
           boardPlayEl.style.backgroundPosition = "center";
         } else {
@@ -3168,14 +3183,19 @@ function applyFieldModeLayout() {
     }
   }
 
-  // ボードモードでの手札表示制御 (playonly の場合は非表示)
+  // ボードモードでの手札およびデッキ・捨て札の表示制御 (playonly または chess の場合は非表示)
   if (mode === 'board') {
-    const isPlayOnly = (layout === 'playonly');
+    const isPlayOnly = (layout === 'playonly' || m === 'chess');
     for (let i = 1; i <= 10; i++) {
       const handEl = document.getElementById(`board-hand-${i}`);
       if (handEl) {
         handEl.style.display = (isPlayOnly || i > pc) ? 'none' : 'block';
       }
+    }
+    const centerEl = document.getElementById('board-center');
+    if (centerEl) {
+      const boardNormLayout = (layout === 'standard1') ? 'standard' : (layout === 'simple1') ? 'simple' : layout;
+      centerEl.style.display = (isPlayOnly || boardNormLayout === 'simple') ? 'none' : '';
     }
   }
 
