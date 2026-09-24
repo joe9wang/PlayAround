@@ -2,10 +2,8 @@
 <html lang="ja">
 
 <head>
-
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3590693564400665"
     crossorigin="anonymous"></script>
-
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -13,285 +11,935 @@
   <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
   <link href="/favicon-16.png?v=3" rel="icon" sizes="16x16" type="image/png" />
   <link href="/apple-touch-icon.png?v=3" rel="apple-touch-icon" sizes="180x180" />
-  <title>BatriTable — 遊び方</title>
-  <meta name="description" content="BatriTableの遊び方。ルーム作成からカード操作、各エリア、便利機能、ショートカット、FAQ、トラブルシュートまで詳しく解説。">
+  <title>BatriTable — 遊び方ガイド（ルール・操作・機能解説）</title>
+  <meta name="description" content="BatriTable（バトライテーブル）の公式遊び方ガイド。ルーム作成から参加方法、カード・コマ・ボードの生成、各エリアの役割、ホスト限定機能、セーブ・ロード、FAQ、トラブル対処まで徹底解説。">
   <link rel="canonical" href="https://www.batritable.com/howto.html">
   <meta name="robots" content="index, follow">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="BatriTable">
-  <meta property="og:title" content="BatriTable — 遊び方">
-  <meta property="og:description" content="BatriTableの遊び方。ルーム作成からカード操作、便利機能、FAQ、トラブルシュートまで解説。">
+  <meta property="og:title" content="BatriTable — 遊び方ガイド（ルール・操作・機能解説）">
+  <meta property="og:description" content="BatriTableの公式遊び方ガイド。ルーム作成・参加、カード・コマ・ボードの生成、エリア解説、ホスト設定、セーブ機能、FAQまで詳しく解説。">
   <meta property="og:url" content="https://batritable.com/howto.html">
   <meta property="og:image" content="https://batritable.com/assets/ogp.png">
   <meta property="og:image:secure_url" content="https://batritable.com/assets/ogp.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="BatriTable バトライテーブル">
+  <meta property="og:image:alt" content="BatriTable バトライテーブル 遊び方ガイド">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="BatriTable — 遊び方">
-  <meta name="twitter:description" content="BatriTableの遊び方。ルーム作成からカード操作、便利機能、FAQ、トラブルシュートまで解説。">
+  <meta name="twitter:title" content="BatriTable — 遊び方ガイド">
+  <meta name="twitter:description" content="BatriTableの遊び方ガイド。ルーム作成からカード操作、各エリア、便利機能、FAQまで解説。">
   <meta name="twitter:image" content="https://batritable.com/assets/ogp.png">
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/site.css">
 
   <style>
     :root {
-      --gap: 16px;
-      --radius: 14px;
-      /* index.html と同じカラーパレット */
       --purple: #b350be;
+      --purple-dark: #8e3a9b;
+      --purple-light: #f9f0fb;
       --green: #3cd08e;
+      --green-dark: #218d6a;
+      --green-light: #edfcf5;
       --red: #e64a5a;
+      --red-light: #fef2f2;
       --orange: #f79f27;
+      --orange-light: #fff8eb;
       --blue: #1e82e0;
+      --blue-dark: #1569b8;
+      --blue-light: #eff6ff;
       --ink: #0f172a;
-      --bg: #f6f7fb;
-      --card: #ffffff;
+      --ink-muted: #475569;
+      --ink-subtle: #64748b;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 16px 36px rgba(15, 23, 42, 0.12);
     }
 
     * {
-      box-sizing: border-box
+      box-sizing: border-box;
     }
 
-    html,
-    body {
-      height: 100%
+    html {
+      scroll-behavior: smooth;
     }
 
     body {
       margin: 0;
       background: var(--bg);
       color: var(--ink);
-      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto,
-        "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", Meiryo, sans-serif;
+      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ====== ヘッダー ====== */
-    .site-header {
-      background: linear-gradient(135deg, var(--purple) 0%, #8e3a9b 100%);
-      color: #fff;
-      padding: 0 24px;
-      box-shadow: 0 4px 20px rgba(164, 10, 179, .25);
-    }
-
-    .header-inner {
-      max-width: 1400px;
+    /* ====== コンテナレイアウト（単一カラム・中央揃え） ====== */
+    .howto-wrapper {
+      max-width: 1040px;
       margin: 0 auto;
+      padding: 32px 20px 80px;
       display: flex;
-      align-items: center;
-      gap: 16px;
-      height: 64px;
+      flex-direction: column;
+      gap: 36px;
     }
 
-    .brand {
+    /* ====== ヒーローエリア ====== */
+    .howto-hero {
+      background: linear-gradient(135deg, #2a1140 0%, #4a1968 40%, #1e3a8a 100%);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      padding: 44px 36px;
+      box-shadow: 0 12px 32px rgba(42, 17, 64, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .howto-hero::before {
+      content: "";
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(60, 208, 142, 0.25) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .howto-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #3cd08e;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+
+    .howto-hero h1 {
+      margin: 0 0 12px;
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+    }
+
+    .howto-hero p.lead {
+      margin: 0 0 24px;
+      font-size: 1.05rem;
+      color: #e2e8f0;
+      max-width: 840px;
+      line-height: 1.8;
+    }
+
+    .howto-hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hero-btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    .hero-btn-primary {
+      background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(60, 208, 142, 0.4);
+    }
+
+    .hero-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(60, 208, 142, 0.5);
+    }
+
+    .hero-btn-secondary {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      backdrop-filter: blur(4px);
+    }
+
+    .hero-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    /* ====== 目次カード (Table of Contents) ====== */
+    .toc-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      position: relative;
+    }
+
+    .toc-header {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+
+    .toc-header-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--purple) 0%, var(--blue) 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .toc-header h2 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .toc-badge {
+      margin-left: auto;
+      background: #f1f5f9;
+      color: var(--ink-muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .toc-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      color: var(--ink);
+      transition: all 0.2s ease;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .toc-item:hover {
+      background: #ffffff;
+      border-color: var(--purple);
+      color: var(--purple);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(179, 80, 190, 0.12);
+    }
+
+    .toc-item-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: #e2e8f0;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      flex-shrink: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .toc-item:hover .toc-item-num {
+      background: var(--purple);
+      color: #fff;
+    }
+
+    .toc-item-icon {
+      font-size: 1.15rem;
       flex-shrink: 0;
     }
 
-    .brand h1 {
-      margin: 0;
-      font-size: 1.15rem;
-      letter-spacing: .2px;
-      color: #fff;
+    .toc-item-text {
+      flex: 1;
+      line-height: 1.35;
     }
 
-    .nav {
+    .toc-arrow {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      transition: transform 0.2s;
+    }
+
+    .toc-item:hover .toc-arrow {
+      color: var(--purple);
+      transform: translateX(3px);
+    }
+
+    /* ====== セクションカード ====== */
+    .section-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      scroll-margin-top: 80px;
+      position: relative;
+    }
+
+    .section-header {
       display: flex;
-      gap: 6px;
-      margin-left: 8px;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #f1f5f9;
     }
 
-    .nav a {
+    .section-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
       color: #fff;
-      text-decoration: none;
-      padding: 8px 14px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, .08);
-      backdrop-filter: saturate(140%) blur(2px);
+      background: linear-gradient(135deg, var(--purple) 0%, #702d85 100%);
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px rgba(179, 80, 190, 0.3);
+    }
+
+    .section-title-wrap h2 {
+      margin: 0;
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+
+    .section-title-wrap p {
+      margin: 4px 0 0;
       font-size: 0.9rem;
-      font-weight: 600;
-      transition: background .2s;
+      color: var(--ink-subtle);
     }
 
-    .nav a:hover {
-      background: rgba(255, 255, 255, .18)
+    .section-card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 28px 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #1e293b;
     }
 
-    .header-spacer {
+    .section-card h3::before {
+      content: "";
+      width: 5px;
+      height: 1.15em;
+      background: var(--purple);
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .section-card p {
+      margin: 0 0 16px;
+      color: #334155;
+    }
+
+    /* ====== 3ステップカード ====== */
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      margin: 20px 0;
+    }
+
+    .step-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 22px 24px;
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .step-card:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .step-badge {
+      background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 0.85rem;
+      padding: 6px 14px;
+      border-radius: 999px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      box-shadow: 0 3px 8px rgba(60, 208, 142, 0.35);
+    }
+
+    .step-content {
       flex: 1;
     }
 
-    .header-play-btn {
-      font-size: 0.9rem !important;
-      padding: 8px 20px !important;
-      border-radius: 10px !important;
+    .step-content h4 {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .step-content p {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
+      color: #334155;
+      line-height: 1.7;
+    }
+
+    .step-sublist {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      color: #475569;
+      font-size: 0.92rem;
+    }
+
+    .step-sublist li {
+      margin-bottom: 6px;
+    }
+
+    /* ====== ツール・アイテムカード グリッド ====== */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .tool-item-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .tool-item-card:hover {
+      background: #ffffff;
+      border-color: var(--blue);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(30, 130, 224, 0.1);
+    }
+
+    .tool-item-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tool-item-icon {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+
+    .tool-item-header h4 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .tool-item-desc {
+      font-size: 0.9rem;
+      color: #475569;
+      margin: 0;
+      line-height: 1.65;
+    }
+
+    .tool-item-features {
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px dashed #e2e8f0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tool-pill {
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #e2e8f0;
+      color: #334155;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    /* ====== モードカード ====== */
+    .modes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 18px;
+      margin: 20px 0;
+    }
+
+    .mode-card {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .mode-card:hover {
+      border-color: var(--purple);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mode-card-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      align-self: flex-start;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .mode-card h4 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .mode-card p {
+      margin: 0;
+      font-size: 0.92rem;
+      color: #475569;
+      line-height: 1.65;
+    }
+
+    .mode-list {
+      margin: 6px 0 0;
+      padding-left: 18px;
+      font-size: 0.88rem;
+      color: #334155;
+    }
+
+    .mode-list li {
+      margin-bottom: 4px;
+    }
+
+    /* ====== エリア解説カード ====== */
+    .area-breakdown {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .area-box {
+      border-radius: var(--radius-md);
+      padding: 20px;
+      border: 1px solid transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .area-box.play {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .area-box.hand {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .area-box.deck {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .area-box.discard {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    .area-box.special {
+      background: #faf5ff;
+      border-color: #e9d5ff;
+    }
+
+    .area-box-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .area-box-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .area-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .area-box.play .area-tag { background: #dcfce7; color: #166534; }
+    .area-box.hand .area-tag { background: #dbeafe; color: #1e40af; }
+    .area-box.deck .area-tag { background: #fef3c7; color: #92400e; }
+    .area-box.discard .area-tag { background: #fee2e2; color: #991b1b; }
+    .area-box.special .area-tag { background: #f3e8ff; color: #6b21a8; }
+
+    .area-box-desc {
+      font-size: 0.88rem;
+      color: #334155;
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    /* ====== テーブルスタイル ====== */
+    .styled-table-wrap {
+      overflow-x: auto;
+      margin: 20px 0;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.92rem;
+    }
+
+    .styled-table th {
+      background: #f1f5f9;
+      color: #1e293b;
+      font-weight: 700;
+      padding: 12px 16px;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .styled-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: #334155;
+      line-height: 1.6;
+    }
+
+    .styled-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .styled-table tr:hover td {
+      background: #f8fafc;
+    }
+
+    /* ====== キーキャップスタイル ====== */
+    kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85em;
+      font-weight: 700;
+      color: #1e293b;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-bottom: 2px solid #94a3b8;
+      border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      margin: 0 2px;
+    }
+
+    /* ====== コールアウト・インフォボックス ====== */
+    .callout {
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      margin: 20px 0;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+
+    .callout.tip {
+      background: #edfcf5;
+      border: 1px solid #a7f3d0;
+      color: #064e3b;
+    }
+
+    .callout.info {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e3a8a;
+    }
+
+    .callout.warning {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #78350f;
+    }
+
+    .callout-icon {
+      font-size: 1.35rem;
+      line-height: 1;
       flex-shrink: 0;
     }
 
-    /* レイアウト（ヘッダー下） */
-    .layout {
-      min-height: calc(100dvh - 64px);
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      grid-template-rows: auto auto auto;
-      gap: var(--gap);
-      padding: var(--gap);
+    .callout-body {
+      flex: 1;
     }
 
-    /* メイン（緑の面） */
-    .hero {
-      grid-column: 1;
-      grid-row: 1 / 4;
-      background: var(--green);
-      border-radius: var(--radius);
-      padding: 40px 42px;
-      color: #053021;
-      box-shadow: 0 10px 24px rgba(39, 217, 138, .25);
+    .callout-body strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.98rem;
     }
 
-    .hero h2 {
-      margin: 0 0 6px;
-      font-size: 1.9rem
-    }
-
-    .hero p.lead {
-      margin: 6px 0 22px;
-      font-size: 1.05rem
-    }
-
-    /* 中のカード */
-    .panel {
-      padding: 0;
-      line-height: 1.82;
-      color: #053021;
-    }
-
-    .panel h3 {
-      margin: 32px 0 12px;
-      font-size: 1.25rem;
-      border-bottom: 1px dashed rgba(5, 48, 33, 0.4);
-      padding-bottom: 4px;
-    }
-
-    .panel ul,
-    .panel ol {
-      margin: 0 0 16px 1.2em
-    }
-
-    .panel p {
-      margin: 0 0 16px
-    }
-
-    /* 右上（赤）／右下（橙）カード */
-    .card {
-      border-radius: var(--radius);
-      padding: 22px;
-      color: #fff;
-      box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
-    }
-
-    .card h3 {
-      margin: 0 0 10px
-    }
-
-    .right-top {
-      grid-column: 2;
-      grid-row: 1;
-      background: var(--red)
-    }
-
-    .right-bottom {
-      grid-column: 2;
-      grid-row: 2;
-      background: var(--orange);
-      color: #3d2600
-    }
-
-    /* フッター */
-    footer {
-      grid-column: 1 / -1;
-      grid-row: 4;
-      background: #1e82e0;
-      padding: 40px 32px;
-      border-radius: 14px;
+    /* ====== FAQ & トラブルシュート（アコーディオン） ====== */
+    .faq-list {
       display: flex;
       flex-direction: column;
-      gap: 24px;
-      box-shadow: 0 10px 24px rgba(0,0,0,.15);
-      margin-top: 0px;
+      gap: 12px;
+      margin: 20px 0;
     }
 
-    /* レスポンシブ */
-    @media (max-width: 1000px) {
-      .header-inner {
-        flex-wrap: wrap;
-        height: auto;
-        padding: 12px 0;
-        gap: 10px;
+    .faq-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #ffffff;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .faq-item:hover {
+      border-color: #cbd5e1;
+    }
+
+    .faq-item[open] {
+      border-color: var(--purple);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .faq-question {
+      padding: 16px 20px;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--ink);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      user-select: none;
+      list-style: none;
+    }
+
+    .faq-question::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq-q-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: var(--purple);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .faq-answer {
+      padding: 0 20px 20px 56px;
+      color: #334155;
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .faq-toggle-icon {
+      margin-left: auto;
+      color: #94a3b8;
+      font-size: 1.1rem;
+      transition: transform 0.2s ease;
+    }
+
+    .faq-item[open] .faq-toggle-icon {
+      transform: rotate(180deg);
+      color: var(--purple);
+    }
+
+    /* ====== 画像ラップ ====== */
+    .media-card {
+      margin: 24px 0;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .media-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .media-card-caption {
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      color: var(--ink-subtle);
+      background: #f8fafc;
+      border-top: 1px solid #f1f5f9;
+      text-align: center;
+    }
+
+    /* ====== フローティング目次ジャンプボタン ====== */
+    .back-to-toc {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      z-index: 100;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .back-to-toc:hover {
+      background: var(--purple);
+      transform: translateY(-2px);
+    }
+
+    /* ====== レスポンシブ ====== */
+    @media (max-width: 768px) {
+      .howto-wrapper {
+        padding: 16px 12px 60px;
+        gap: 24px;
       }
 
-      .nav {
-        order: 3;
-        width: 100%;
-        overflow-x: auto;
-        white-space: nowrap;
-        gap: 6px;
-        margin-left: 0;
-        padding-bottom: 4px;
+      .howto-hero {
+        padding: 28px 20px;
       }
 
-      .nav a {
-        padding: 6px 12px;
-        font-size: 0.85rem;
+      .howto-hero h1 {
+        font-size: 1.65rem;
       }
 
-      .header-spacer {
-        display: none;
+      .toc-card {
+        padding: 20px 16px;
       }
 
-      .header-play-btn {
-        margin-left: auto;
+      .toc-grid {
+        grid-template-columns: 1fr;
       }
 
-      .layout {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto auto auto auto;
+      .section-card {
+        padding: 24px 18px;
       }
 
-      .hero {
-        grid-column: 1;
-        grid-row: 1;
+      .section-title-wrap h2 {
+        font-size: 1.3rem;
       }
 
-      .right-top {
-        grid-column: 1;
-        grid-row: 2;
+      .tools-grid,
+      .modes-grid,
+      .area-breakdown {
+        grid-template-columns: 1fr;
       }
 
-      .right-bottom {
-        grid-column: 1;
-        grid-row: 3;
+      .faq-answer {
+        padding-left: 20px;
       }
 
-      footer {
-        grid-column: 1;
-        grid-row: 4;
+      .back-to-toc {
+        bottom: 16px;
+        right: 16px;
+        padding: 8px 14px;
+        font-size: 0.8rem;
       }
     }
   </style>
 </head>
 
 <body>
-  <!-- ヘッダー -->
+  <!-- 共通ヘッダーマウント -->
   <div id="header-mount"></div>
   <script>
     (async () => {
@@ -310,120 +958,970 @@
     })();
   </script>
 
-  <div class="layout">
+  <!-- メインコンテナ -->
+  <div class="howto-wrapper">
 
-    <!-- メイン（緑） -->
-    <main class="hero" role="main">
-      <header>
-        <h2>遊び方</h2>
-        <p class="lead">画像をカード化してオンライン対戦。ここでは、部屋の作り方からカード操作、便利機能、困ったときの対処までまとめて解説します。</p>
-      </header>
+    <!-- ヒーローセクション -->
+    <header class="howto-hero">
+      <div class="howto-hero-badge">📖 BatriTable Official Guide</div>
+      <h1>遊び方・操作ガイド</h1>
+      <p class="lead">
+        BatriTable（バトライテーブル）は、画像をアップロードするだけで誰でも手軽にオリジナルのカードゲーム・ボードゲームをオンライン対戦できるバーチャルテーブルトップです。<br>
+        ルーム作成からカード・コマの操作、各エリアの機能、セーブ・ロード、よくある質問まで分かりやすく解説します。
+      </p>
+      <div class="howto-hero-actions">
+        <a href="/lobby.html" class="hero-btn hero-btn-primary">▶ 今すぐ遊ぶ（ロビーへ）</a>
+        <a href="/plans.html" class="hero-btn hero-btn-secondary">✨ プラン比較を見る</a>
+      </div>
+    </header>
 
-      <section class="panel" aria-labelledby="quickstart">
-        <h3 id="quickstart">クイックスタート（3ステップ）</h3>
-        <ol>
-          <li><strong>ルーム作成：</strong>ホストは、任意のルーム名・番号を決めて共有します。プレイ人数の設定やパスワードの設定もできます。</li>
-          <li><strong>ルーム参加：</strong>ゲストは、自分の席を選んでルームに参加します。</li>
-          <li><strong>画像をカード化してプレイ：</strong>画像をアップロードし、場に出してプレイ開始！</li>
-        </ol>
-        <img src="./assets/QuickStart.png" alt="クイックスタート解説画像"
-          style="max-width: 100%; height: auto; margin: 16px 0; border-radius: 8px;">
+    <!-- 目次（Table of Contents） -->
+    <nav class="toc-card" id="toc" aria-label="遊び方ガイド目次">
+      <div class="toc-header">
+        <div class="toc-header-icon">📑</div>
+        <h2>目次</h2>
+        <span class="toc-badge">全12項目</span>
+      </div>
+      <div class="toc-grid">
+        <a href="#toc-overview" class="toc-item">
+          <span class="toc-item-num">01</span>
+          <span class="toc-item-icon">🚀</span>
+          <span class="toc-item-text">バトライテーブルでできること</span>
+          <span class="toc-arrow">→</span>
+        </a>
+        <a href="#toc-tools" class="toc-item">
+          <span class="toc-item-num">02</span>
+          <span class="toc-item-icon">🧰</span>
+          <span class="toc-item-text">バトライテーブルで使えるもの</span>
+          <span class="toc-arrow">→</span>
+        </a>
+        <a href="#toc-modes" class="toc-item">
+          <span class="toc-item-num">03</span>
+          <span class="toc-item-icon">🎮</span>
+          <span class="toc-item-text">選べるゲームの種類</span>
+          <span class="toc-arrow">→</span>
+        </a>
+        <a href="#toc-areas" class="toc-item">
+          <span class="toc-item-num">04</span>
+          <span class="toc-item-icon">🗺️</span>
+          <span class="toc-item-text">フィールド・エリアについて</span>
+          <span class="toc-arrow">→</span>
+        </a>
+        <a href="#toc-host" class="toc-item">
+          <span class="toc-item-num">05</span>
+          <span class="toc-item-icon">👑</span>
+          <span class="toc-item-text">ホストとしてゲームを遊ぶ場合</span>
+          <span class="toc-arrow">→</span>
+        </a>
+        <a href="#toc-guest" class="toc-item">
+          <span class="toc-item-num">06</span>
+          <span class="toc-item-icon">👥</span>
+          <span class="toc-item-text">ゲストとしてゲームを遊ぶ場合</span>
+          <span class="toc-arrow">→</span>
+        </a>
+        <a href="#toc-create" class="toc-item">
+          <span class="toc-item-num">07</span>
+          <span class="toc-item-icon">🖼️</span>
+          <span class="toc-item-text">カード・コマ・ボードの生成</span>
+          <span class="toc-arrow">→</span>
+        </a>
+        <a href="#toc-room-save" class="toc-item">
+          <span class="toc-item-num">08</span>
+          <span class="toc-item-icon">💾</span>
+          <span class="toc-item-text">ルームのセーブ・ロード</span>
+          <span class="toc-arrow">→</span>
+        </a>
+        <a href="#toc-myset" class="toc-item">
+          <span class="toc-item-num">09</span>
+          <span class="toc-item-icon">🃏</span>
+          <span class="toc-item-text">マイセットのセーブ・ロード</span>
+          <span class="toc-arrow">→</span>
+        </a>
+        <a href="#toc-shortcuts" class="toc-item">
+          <span class="toc-item-num">10</span>
+          <span class="toc-item-icon">⚡</span>
+          <span class="toc-item-text">操作方法一覧 ＆ 小ワザ</span>
+          <span class="toc-arrow">→</span>
+        </a>
+        <a href="#toc-faq" class="toc-item">
+          <span class="toc-item-num">11</span>
+          <span class="toc-item-icon">❓</span>
+          <span class="toc-item-text">よくある質問 (FAQ)</span>
+          <span class="toc-arrow">→</span>
+        </a>
+        <a href="#toc-trouble" class="toc-item">
+          <span class="toc-item-num">12</span>
+          <span class="toc-item-icon">🛠️</span>
+          <span class="toc-item-text">困ったときは（トラブル対処）</span>
+          <span class="toc-arrow">→</span>
+        </a>
+      </div>
+    </nav>
 
-        <h3>カードの基本操作</h3>
-        <ul>
-          <li><strong>ドラッグ (移動)：</strong>カードをつかんで移動させることができます。</li>
-          <li><strong>回転：</strong>カードをダブルクリックすることで、カードが回転します。</li>
-          <li><strong>表裏反転：</strong>カードを右クリックすると瞬時に表裏が反転します。</li>
-          <li><strong>整列／シャッフル：</strong>操作ボタンを押すことで、カードを整列・シャッフルできます。</li>
-          <li><strong>選択表示：</strong>カードをクリックすると、プレビューが拡大表示されます。</li>
-        </ul>
-        <img src="./assets/CardControl.png" alt="カードの基本操作解説画像"
-          style="max-width: 100%; height: auto; margin: 16px 0; border-radius: 8px;">
+    <!-- ==================== 01. バトライテーブルでできること ==================== -->
+    <section class="section-card" id="toc-overview">
+      <div class="section-header">
+        <div class="section-num">01</div>
+        <div class="section-title-wrap">
+          <h2>バトライテーブルでできること</h2>
+          <p>ブラウザだけで誰でも簡単にカードゲーム・ボードゲームをオンラインプレイ</p>
+        </div>
+      </div>
 
-        <h3>各エリアの使い分け</h3>
-        <ul>
-          <li><strong>プレイエリア (中央)：</strong>実際にカードを出して勝負・進行するための共有領域です。</li>
-          <li><strong>デッキエリア (山札)：</strong>自分（または共有）の山札置き場です。整列・シャッフルの中心になります。</li>
-          <li><strong>手札エリア：</strong>自分だけが「表」を見られる領域です。ここにあるカードは、他のプレイヤーの画面では伏せられた状態のまま表示されます。</li>
-          <li><strong>捨て札エリア / 除外エリア：</strong>不要になったカードをまとめる置き場です。</li>
-          <li><strong>特殊エリア：</strong>各モードごとの独自用途（得点、効果、保留など）。</li>
-        </ul>
-        <img src="./assets/Areas.png" alt="各エリアの使い分け解説画像"
-          style="max-width: 100%; height: auto; margin: 16px 0; border-radius: 8px;">
+      <p>
+        BatriTableは、専用アプリのダウンロードや面倒な設定なしで、ブラウザを開くだけで自作のカードや好きなボードゲームを友達と一緒にオンライン対戦できるサービスです。<br>
+        以下の<strong>かんたん3ステップ</strong>で、すぐにゲームを開始できます。
+      </p>
 
-        <h3>より快適に！便利機能</h3>
-        <ul>
-          <li><strong>観戦者 (Spectator) モード：</strong>勝負には参加せず、盤面を見守る機能です。観戦者はカードの操作やHPの増減はできません。</li>
-          <li><strong>カウンター & トークン & ダイス：</strong>カードに数値をのせるカウンター、目印用トークンの生成、ランダムなダイス機能があります。</li>
-          <li><strong>「全カードを集める」：</strong>自分の出しているカードを一瞬でデッキエリアに回収します。</li>
-          <li><strong>独立したズーム管理：</strong>各プレイヤーごとに自由に画面を拡大・縮小（マウスホイール等）できます。</li>
-        </ul>
+      <div class="steps-container">
+        <!-- ステップ1 -->
+        <div class="step-card">
+          <span class="step-badge">ステップ 1</span>
+          <div class="step-content">
+            <h4>ルームの作成 ＆ 友達を招待</h4>
+            <p><strong>ホストとしてルームを作成する場合：</strong></p>
+            <ul class="step-sublist">
+              <li>ロビー画面から「ルームID」「入室パスワード（任意）」「プレイヤー名」「プレイ人数（1〜10人）」「ゲームの種類」を選んでルームを作成します。</li>
+              <li>ルーム作成後にブラウザのアドレスバーに表示される<strong>専用URL</strong>、または<strong>ルームID</strong>を友達に共有するだけで招待完了です。</li>
+            </ul>
+            <p style="margin-top: 10px;"><strong>ゲストとしてルームに参加する場合：</strong></p>
+            <ul class="step-sublist">
+              <li>ホストから共有された<strong>専用URLを開くだけ</strong>で、直接該当ルームの入室画面へアクセスできます。</li>
+              <li>または、ロビー画面の「既存ルームに参加」から、ホストに教えてもらった「ルームID」（設定されている場合はパスワードも）を入力して参加することもできます。</li>
+            </ul>
+          </div>
+        </div>
 
-        <h3>プレミアム会員向け機能 ✨</h3>
-        <ul>
-          <li><strong>カードセットの保存・展開（セーブ機能）：</strong>マイページでアップロードしたカード一式を「スロット」に保存。ゲーム内でいつでも呼び出せます。</li>
-          <li><strong>ルーム状態の保存・復元：</strong>ホストは現在の盤面状態（すべてのカード、HP、チャット履歴等）をまるごと保存し、次回以降に途中からゲームを再開できます。</li>
-        </ul>
+        <!-- ステップ2 -->
+        <div class="step-card">
+          <span class="step-badge">ステップ 2</span>
+          <div class="step-content">
+            <h4>座席の選択 ＆ カード・コマ・ボードの生成</h4>
+            <p>ルームに入室したら、まずは自分が着席する<strong>座席（SEAT1〜10）</strong>を選択します（観戦者として見守ることも可能です）。</p>
+            <p>着席後、画面最上部のアップロードエリアから画像ファイルを読み込むことで、<strong>カード・コマ・ボード</strong>をワンクリックで自由に生成できます。</p>
+          </div>
+        </div>
 
-        <h3>ショートカット & 操作の小ワザ</h3>
-        <ul>
-          <li><strong>マウスホイール：</strong>盤面全体の拡大・縮小（自分だけの視点に適用されます）。</li>
-          <li><strong>背景をドラッグ：</strong>何も掴んでいない状態でマウスをドラッグすると、盤面全体を見渡すようにパン（視点移動）できます。</li>
-          <li><strong>一括削除：</strong>「Ctrl + C」で、自分で出したすべてのカードを一括で削除できます。</li>
-          <li><strong>カードの重なり確認：</strong>重なって見えないカードは、一番手前のカードを選択してプレビューで確認できます。</li>
-        </ul>
-      </section>
-    </main>
+        <!-- ステップ3 -->
+        <div class="step-card">
+          <span class="step-badge">ステップ 3</span>
+          <div class="step-content">
+            <h4>操作パネルやマウスを使って自由に対戦！</h4>
+            <p>マウスのドラッグや操作パネルのボタンを使って、カードの移動、回転、表裏反転、シャッフル、山札まとめなどを自由に行えます。</p>
+            <p>ダイスやカウンター、チャット機能も完備しており、まるで目の前にテーブルがあるかのようにリアルな対戦を楽しめます。</p>
+          </div>
+        </div>
+      </div>
 
-    <!-- 右上カード：FAQ -->
-    <aside class="card right-top" aria-labelledby="faq-title">
-      <h3 id="faq-title">よくある質問</h3>
-      <ul style="margin:0; padding-left:1.1em">
-        <li>インストールは必要？ <br>→ 不要。ブラウザだけでOK。</li>
-        <li>料金は？ <br>→ 基本無料。有料機能は別途案内。</li>
-        <li>スマホ対応？ <br>→ はい、主要ブラウザに対応。</li>
-        <li>手札は他人に見える？ <br>→ いいえ。他プレイヤーには裏のまま表示。</li>
-      </ul>
-    </aside>
+      <div class="media-card">
+        <img src="./assets/QuickStart.png" alt="クイックスタート解説画像" loading="lazy">
+        <div class="media-card-caption">▲ ルーム作成から画像読み込み、カード操作までの全体フロー</div>
+      </div>
+    </section>
 
-    <!-- 右下カード：トラブルシュート -->
-    <aside class="card right-bottom" aria-labelledby="trouble-title">
-      <h3 id="trouble-title" style="color:#3d2600">困ったときは</h3>
-      <ol style="margin:0; padding-left:1.2em; color:#3d2600">
-        <li>画面が重い<br>→タブを減らす／ズーム率を下げる／画像サイズを小さめに</li>
-        <li>カードが見切れる<br>→パンで視点移動、ズームアウト</li>
-        <li>同期がおかしい<br>→再読み込み後に同じルームへ再入室</li>
-        <li>不具合報告<br>→<a href="https://www.batritable.com/contact.html" style="color:#3d2600">お問い合わせ</a></li>
+    <!-- ==================== 02. バトライテーブルで使えるもの ==================== -->
+    <section class="section-card" id="toc-tools">
+      <div class="section-header">
+        <div class="section-num">02</div>
+        <div class="section-title-wrap">
+          <h2>バトライテーブルで使えるもの</h2>
+          <p>ゲームを盛り上げる多彩なオブジェクトと便利ツール</p>
+        </div>
+      </div>
+
+      <p>BatriTableでは、カードだけでなくボードゲームやTRPGの進行に必要な様々なツール・アイテムが標準搭載されています。</p>
+
+      <div class="tools-grid">
+        <!-- カード -->
+        <div class="tool-item-card">
+          <div class="tool-item-header">
+            <span class="tool-item-icon">🃏</span>
+            <h4>カード</h4>
+          </div>
+          <p class="tool-item-desc">
+            ゲームの基本となるカードオブジェクト。画像サイズが自動でカード規定比率（幅120×高さ160px等）に整えられて生成されます。移動・回転・表裏反転・シャッフル・手札秘匿に完全対応。
+          </p>
+          <div class="tool-item-features">
+            <span class="tool-pill">表裏反転</span>
+            <span class="tool-pill">回転</span>
+            <span class="tool-pill">シャッフル</span>
+            <span class="tool-pill">手札プライベート</span>
+          </div>
+        </div>
+
+        <!-- コマ -->
+        <div class="tool-item-card">
+          <div class="tool-item-header">
+            <span class="tool-item-icon">♟</span>
+            <h4>コマ（ピース）</h4>
+          </div>
+          <p class="tool-item-desc">
+            将棋やチェスの駒、プレイヤーの現在地マーカー、トークンなどに最適。画像の元解像度と縦横比を保ったまま生成されます（透過PNG推奨）。盤面の上を自由にスライド移動できます。
+          </p>
+          <div class="tool-item-features">
+            <span class="tool-pill">画像比率維持</span>
+            <span class="tool-pill">自由移動</span>
+            <span class="tool-pill">拡大・縮小</span>
+          </div>
+        </div>
+
+        <!-- ボード -->
+        <div class="tool-item-card">
+          <div class="tool-item-header">
+            <span class="tool-item-icon">🗺️</span>
+            <h4>ボード</h4>
+          </div>
+          <p class="tool-item-desc">
+            すごろくの盤面やカードバトルのプレイマット画像。自動的に他のカードやコマの下層（最背面）に配置されます。右下のハンドルをドラッグして盤面サイズを自在にリサイズ可能です。
+          </p>
+          <div class="tool-item-features">
+            <span class="tool-pill">最背面自動配置</span>
+            <span class="tool-pill">自由リサイズ</span>
+            <span class="tool-pill">プレイマット対応</span>
+          </div>
+        </div>
+
+        <!-- コイン・ダイス -->
+        <div class="tool-item-card">
+          <div class="tool-item-header">
+            <span class="tool-item-icon">🎲</span>
+            <h4>コイン・ダイス</h4>
+          </div>
+          <p class="tool-item-desc">
+            先攻・後攻決めの「コイントス」や、4面・6面・10面・20面・100面ダイスをワンクリックでロール。結果はチャットログにも自動通知されます。クリックまたは右クリックで即座に消去可能。
+          </p>
+          <div class="tool-item-features">
+            <span class="tool-pill">🪙 コイントス</span>
+            <span class="tool-pill">D4 / D6 / D10</span>
+            <span class="tool-pill">D20 / D100</span>
+            <span class="tool-pill">ログ自動通知</span>
+          </div>
+        </div>
+
+        <!-- カウンター -->
+        <div class="tool-item-card">
+          <div class="tool-item-header">
+            <span class="tool-item-icon">🔢</span>
+            <h4>カウンター</h4>
+          </div>
+          <p class="tool-item-desc">
+            数値を直接指定できる「数値カウンター」に加え、カードの上に置ける「+1」「+10」「+50」「+100」および「-1」「-10」「-50」「-100」の加減算トークンをワンクリックで生成できます。
+          </p>
+          <div class="tool-item-features">
+            <span class="tool-pill">数値自由入力</span>
+            <span class="tool-pill">加減算トークン</span>
+            <span class="tool-pill">重なり連動</span>
+          </div>
+        </div>
+
+        <!-- ノート -->
+        <div class="tool-item-card">
+          <div class="tool-item-header">
+            <span class="tool-item-icon">📒</span>
+            <h4>ノート</h4>
+          </div>
+          <p class="tool-item-desc">
+            盤面上に配置できるノートオブジェクト。クリックするとモーダルが開き、テキストや画像の追加・編集が可能です。TRPGのキャラクターシートやハウスルールの共有、長文記録に役立ちます。
+          </p>
+          <div class="tool-item-features">
+            <span class="tool-pill">モーダル編集</span>
+            <span class="tool-pill">画像貼り付け</span>
+            <span class="tool-pill">長文・ルール記録</span>
+          </div>
+        </div>
+
+        <!-- メモ -->
+        <div class="tool-item-card">
+          <div class="tool-item-header">
+            <span class="tool-item-icon">📝</span>
+            <h4>メモ</h4>
+          </div>
+          <p class="tool-item-desc">
+            フィールド上に白い付箋カードを生成し、直接文字を入力できます。右下のつまみをドラッグしてカードの大きさを変更可能。右クリックで文字サイズ拡大・縮小も行えます。
+          </p>
+          <div class="tool-item-features">
+            <span class="tool-pill">テキスト入力</span>
+            <span class="tool-pill">枠リサイズ</span>
+            <span class="tool-pill">文字サイズ変更</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 03. 選べるゲームの種類 ==================== -->
+    <section class="section-card" id="toc-modes">
+      <div class="section-header">
+        <div class="section-num">03</div>
+        <div class="section-title-wrap">
+          <h2>選べるゲームの種類</h2>
+          <p>遊びたいゲームに合わせて選べる3つのゲームモード</p>
+        </div>
+      </div>
+
+      <p>ルーム作成時に、遊ぶゲームに合わせたフィールド構成を選択できます。入室後もホストはモードを変更可能です。</p>
+
+      <div class="modes-grid">
+        <!-- カードゲーム -->
+        <div class="mode-card">
+          <span class="mode-card-badge" style="background:#f3e8ff; color:#7e22ce;">TCG / カード対戦</span>
+          <h4>🃏 カードゲームモード</h4>
+          <p>参加プレイヤー（1〜10人）ごとに独立したエリア（手札・山札・捨て札・特殊・プレイエリア）が割り当てられる対戦向けモードです。</p>
+          <ul class="mode-list">
+            <li><strong>スタンダード1 / 2：</strong>特殊エリアと手札、山札、捨て札がバランスよく配置された本格構成。</li>
+            <li><strong>シンプル1 / 2：</strong>プレイエリアと手札のみのすっきりしたレイアウト。</li>
+            <li><strong>カスタム1 / 2：</strong>特殊エリアが2箇所、または山札が2箇所ある特殊カードゲーム用。</li>
+          </ul>
+        </div>
+
+        <!-- ボードゲーム -->
+        <div class="mode-card">
+          <span class="mode-card-badge" style="background:#e0f2fe; color:#0369a1;">ボドゲ / TRPG</span>
+          <h4>🎲 ボードゲームモード</h4>
+          <p>中央に広大な「共有プレイエリア」（全体1.3倍スケール表示）が広がり、四隅に各プレイヤーの手札エリア、中央に共有山札・捨て札が配置されたモードです。</p>
+          <ul class="mode-list">
+            <li>全員で1つのマップや盤面を見ながらコマを動かすゲームに最適。</li>
+            <li>すごろく、オセロ、カタン風ゲーム、人狼、TRPGセッションなど幅広く対応。</li>
+            <li>手札エリアには他の人に見せたくない非公開情報を安全にキープ。</li>
+          </ul>
+        </div>
+
+        <!-- 一般ゲーム（公式ゲーム） -->
+        <div class="mode-card">
+          <span class="mode-card-badge" style="background:#dcfce7; color:#15803d;">すぐ遊べる公式セット</span>
+          <h4>🂠 一般ゲーム（公式ゲーム）</h4>
+          <p>自分でカード画像を用意しなくても、入室後ワンクリックでセットアップされてすぐに遊べるプリセットゲームです。</p>
+          <ul class="mode-list">
+            <li><strong>トランプ：</strong>ジョーカーを含む54枚のトランプカードが自動配置。大富豪、ポーカー、七並べ、ババ抜き等が即座にプレイ可能。</li>
+            <li><strong>チェス：</strong>チェス盤背景と白黒の駒が初期配置。本格対局が楽しめます。</li>
+            <li><strong>激・麻雀：</strong>90枚のオリジナル麻雀牌カードセット。3×3の役を作って競うスピーディーなゲーム。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 04. フィールド・エリアについて ==================== -->
+    <section class="section-card" id="toc-areas">
+      <div class="section-header">
+        <div class="section-num">04</div>
+        <div class="section-title-wrap">
+          <h2>フィールド・エリアについて</h2>
+          <p>各エリアの役割と、安心の手札プライバシー（秘匿）機能</p>
+        </div>
+      </div>
+
+      <p>
+        BatriTableのフィールドは、ゲームをスムーズに進行できるよう目的別のエリアに分かれています。<br>
+        ホストは各エリアの境界線をドラッグして幅や高さを自由に調整でき、全員の画面へリアルタイムに連動します。
+      </p>
+
+      <div class="area-breakdown">
+        <!-- プレイエリア -->
+        <div class="area-box play">
+          <div class="area-box-header">
+            <h4 class="area-box-title">⚔️ プレイエリア</h4>
+            <span class="area-tag">全員に公開</span>
+          </div>
+          <p class="area-box-desc">
+            実際にカードを出して勝負やバトルを行う主戦場です。カードやコマを自由に並べたり、タップ（回転）して状態を示します。
+          </p>
+        </div>
+
+        <!-- 手札エリア -->
+        <div class="area-box hand">
+          <div class="area-box-header">
+            <h4 class="area-box-title">🔒 手札エリア</h4>
+            <span class="area-tag" style="background:#bfdbfe; color:#1e3a8a;">自分だけ表 / 他人には裏</span>
+          </div>
+          <p class="area-box-desc">
+            <strong>【最重要機能】</strong>自分だけがカードの「表」を見られる完全プライベート領域です。ここにあるカードは、他のプレイヤーや観戦者の画面では<strong>自動的に伏せられた裏面状態</strong>で表示されるため、手札が覗き見される心配がありません。
+          </p>
+        </div>
+
+        <!-- デッキエリア -->
+        <div class="area-box deck">
+          <div class="area-box-header">
+            <h4 class="area-box-title">📚 デッキエリア</h4>
+            <span class="area-tag">山札置き場</span>
+          </div>
+          <p class="area-box-desc">
+            自分（または共有）の山札置き場です。操作パネルから「🌀 デッキエリアをシャッフル」や「❖ 全カードをデッキにまとめる」を実行する際の基準エリアとなります。
+          </p>
+        </div>
+
+        <!-- 捨て札エリア -->
+        <div class="area-box discard">
+          <div class="area-box-header">
+            <h4 class="area-box-title">🗑️ 捨て札エリア</h4>
+            <span class="area-tag">墓地・トラッシュ</span>
+          </div>
+          <p class="area-box-desc">
+            使用済みカードや除外カードをまとめる領域です。操作パネルの「🔍 捨て札一覧」から、いつでも中身をモーダルで確認・回収できます。
+          </p>
+        </div>
+
+        <!-- 特殊エリア -->
+        <div class="area-box special">
+          <div class="area-box-header">
+            <h4 class="area-box-title">✨ 特殊エリア</h4>
+            <span class="area-tag">多目的ゾーン</span>
+          </div>
+          <p class="area-box-desc">
+            スコア計算用の得点置き場、一時キープ置き場、マナ・コスト置き場、ダイスゾーンなど、ゲームの独自ルールに合わせて自由に活用できる多目的領域です。
+          </p>
+        </div>
+      </div>
+
+      <div class="media-card">
+        <img src="./assets/Areas.png" alt="各エリアの使い分け解説画像" loading="lazy">
+        <div class="media-card-caption">▲ 各エリアの配置とカラーリング（カードゲームモード標準構成）</div>
+      </div>
+    </section>
+
+    <!-- ==================== 05. ホストとしてゲームを遊ぶ場合 ==================== -->
+    <section class="section-card" id="toc-host">
+      <div class="section-header">
+        <div class="section-num">05</div>
+        <div class="section-title-wrap">
+          <h2>ホストとしてゲームを遊ぶ場合</h2>
+          <p>ルーム作成方法と、ホスト限定の強力なカスタマイズ権限</p>
+        </div>
+      </div>
+
+      <h3>ルームの作成手順</h3>
+      <ol style="padding-left: 22px; color: #334155; line-height: 1.8;">
+        <li><strong>ロビー画面へアクセス：</strong>トップページまたはヘッダーの「ロビー」をクリックします。</li>
+        <li><strong>新しいルームを作成：</strong>
+          <ul>
+            <li><strong>新しいルームID：</strong>お好きな英数字や合言葉を入力（例: <code>tcg-battle</code>, <code>room123</code>）。</li>
+            <li><strong>入室パスワード（任意）：</strong>特定の人だけで遊びたい場合はパスワードを設定します。</li>
+            <li><strong>プレイヤー名：</strong>ゲーム内で表示される名前を入力します。</li>
+            <li><strong>プレイ人数：</strong>1人〜最大10人まで選択できます。</li>
+            <li><strong>ゲームの種類：</strong>「カードゲーム」「ボードゲーム」「公式ゲーム」から選択。</li>
+          </ul>
+        </li>
+        <li><strong>「作成」ボタンをクリック：</strong>即座にゲームフィールドが立ち上がります。ブラウザのURLを友達に共有して招待しましょう！</li>
       </ol>
-    </aside>
+
+      <h3>ホスト限定で設定・操作できること 👑</h3>
+      <p>ホストは、左パネル下部の「ホスト専用」セクションからルーム全体の設定をリアルタイムに変更できます。</p>
+
+      <div class="styled-table-wrap">
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>ホスト設定項目</th>
+              <th>機能と使いどころ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>他プレイヤーのカード操作</strong></td>
+              <td>
+                ONにすると、自分が生成したカードやコマを他のプレイヤーも自由に移動・表裏反転できるようになります。<strong>ボードゲームモードで共通の備品やコマを動かす際に必須</strong>の設定です。
+              </td>
+            </tr>
+            <tr>
+              <td><strong>プレイ人数の動的変更</strong></td>
+              <td>
+                ゲーム開始後でも「👥 人数変更」ボタンから1人〜10人まで即座に変更できます。途中から友達が参加したり退出した際もスムーズに対応可能です。
+              </td>
+            </tr>
+            <tr>
+              <td><strong>カード回転設定</strong></td>
+              <td>
+                回転方向（時計回り／反時計回り）、回転量（90度、45度、30度、180度）を設定可能。さらに「回転反転」をONにすると、1回目の操作でタップ（回転）、2回目の操作でアンタップ（元に戻る）する往復動作に設定できます。
+              </td>
+            </tr>
+            <tr>
+              <td><strong>サイズ調整メモリ ＆ 自動スナップ</strong></td>
+              <td>
+                ONにすると、エリアの境界線をドラッグ調整する際に20px単位の半透明グリッドメモリが表示され、綺麗に吸着（スナップ）します。
+              </td>
+            </tr>
+            <tr>
+              <td><strong>ホバー時カード拡大</strong></td>
+              <td>
+                カードにマウスカーソルを乗せたときに少し拡大（1.08倍）して一時的に最前面へポップアップする機能です。手札や重なったカードが見やすくなります。
+              </td>
+            </tr>
+            <tr>
+              <td><strong>動的エリアの追加</strong></td>
+              <td>
+                操作パネルの「フィールド」から「🗂 デッキエリア」「🗑 捨て札エリア」「✨ 特殊エリア」を好きな場所に何個でも自由に追加・配置できます。
+              </td>
+            </tr>
+            <tr>
+              <td><strong>チャット ＆ ログ設定</strong></td>
+              <td>
+                チャットログのタイムスタンプ表示（時分／時分秒／時分秒.ミリ秒）や、シャッフル・ダイス・カード追加等のログ出力ON/OFFを細かく設定できます（かるた等の先取判定にも活用可能）。
+              </td>
+            </tr>
+            <tr>
+              <td><strong>ルーム終了</strong></td>
+              <td>
+                対戦終了後、「🚪 ルームを終了する」を押すと、盤面上の全データが一括クリーンアップされ、安全にルームが閉鎖されます。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================== 06. ゲストとしてゲームを遊ぶ場合 ==================== -->
+    <section class="section-card" id="toc-guest">
+      <div class="section-header">
+        <div class="section-num">06</div>
+        <div class="section-title-wrap">
+          <h2>ゲストとしてゲームを遊ぶ場合</h2>
+          <p>参加の流れ、観戦者モード、安心の再入室復帰システム</p>
+        </div>
+      </div>
+
+      <h3>参加の流れ</h3>
+      <ol style="padding-left: 22px; color: #334155; line-height: 1.8;">
+        <li><strong>招待URLを開く、またはロビーから参加：</strong>
+          <ul>
+            <li>ホストから送られたURLを開くと、そのままプレイヤー名入力画面が表示されます。</li>
+            <li>ロビー画面から参加する場合は、「既存ルームに参加」にルームIDとパスワード（設定されている場合）を入力して「開始」を押します。</li>
+          </ul>
+        </li>
+        <li><strong>座席に着席する：</strong>
+          入室直後は全員「観戦者（Spectator）」になっています。操作パネルの<strong>「🪑 座席に座る」</strong>ボタンを押すか、空いている座席（SEAT1〜10）をクリックして着席しましょう。
+        </li>
+      </ol>
+
+      <div class="callout info">
+        <span class="callout-icon">👀</span>
+        <div class="callout-body">
+          <strong>観戦者（Spectator）モードについて</strong>
+          座席に座らずに観戦者として部屋に残ることで、対戦の様子をリアルタイムで見守ることができます。カードの操作やHPの変更は制限されるため盤面を荒らす心配がなく、カードの拡大プレビューやチャット、ダイス結果の確認は自由に行えます。
+        </div>
+      </div>
+
+      <div class="callout tip">
+        <span class="callout-icon">🔄</span>
+        <div class="callout-body">
+          <strong>途中で回線が切れても安心！座席の自動復帰（Resume）</strong>
+          万が一ブラウザのタブを誤って閉じたり通信が途切れてしまっても、60秒以内であれば座席情報がサーバーにキープされています。同じURLから再入室すれば、ボタンが「(あなたの席)」となり、ワンクリックで元の席と手札の状態へ復帰できます。
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 07. カード・コマ・ボードの生成 ==================== -->
+    <section class="section-card" id="toc-create">
+      <div class="section-header">
+        <div class="section-num">07</div>
+        <div class="section-title-wrap">
+          <h2>カード・コマ・ボードの生成</h2>
+          <p>アップロードエリアを使ったオブジェクト生成と裏面カスタマイズ</p>
+        </div>
+      </div>
+
+      <p>
+        ゲーム画面の最上部には、3種類のアップロードボタンが用意されています。<br>
+        パソコンなら画像ファイルを直接ドラッグ＆ドロップ、スマホやiPadならタップして写真ライブラリから選択するだけで、一瞬でフィールドにオブジェクトが生成されます。
+      </p>
+
+      <div class="styled-table-wrap">
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>ボタン種類</th>
+              <th>生成されるオブジェクト</th>
+              <th>特徴と挙動</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>🃏 カードを追加</strong></td>
+              <td>対戦用カード</td>
+              <td>
+                画像が設定されたカードサイズ（横120×縦160px等）に自動リサイズされて生成されます。複数枚の一括選択にも対応しており、デッキ丸ごとドラッグ＆ドロップして一気に読み込めます。
+              </td>
+            </tr>
+            <tr>
+              <td><strong>♟ コマを追加</strong></td>
+              <td>将棋・チェス駒、マーカー</td>
+              <td>
+                画像の解像度や縦横比をそのまま維持して生成されます。背景透過のPNG画像を使うことで、綺麗な丸型やキャラクター型の駒として盤面に配置できます。
+              </td>
+            </tr>
+            <tr>
+              <td><strong>🗺️ ボードを追加</strong></td>
+              <td>ゲーム盤・プレイマット</td>
+              <td>
+                マップや盤面画像として生成されます。自動でカードやコマより下の最背面レイヤーに敷かれ、右下のリサイズハンドルで盤面サイズを拡大縮小できます。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>カードの裏面（スリーブ）画像を変更する</h3>
+      <p>
+        操作パネルの「カード」メニュー内にある<strong>「🖼 全カードのウラ画像設定」</strong>または<strong>「🖼 選択カードのウラ画像設定」</strong>をクリックしてお好みの画像を選択すると、カード裏面のスリーブデザインを自由に変更できます。
+      </p>
+    </section>
+
+    <!-- ==================== 08. ルームのセーブ・ロード ==================== -->
+    <section class="section-card" id="toc-room-save">
+      <div class="section-header">
+        <div class="section-num">08</div>
+        <div class="section-title-wrap">
+          <h2>ルームのセーブ・ロード</h2>
+          <p>盤面上のカード配置、HP、チャット、エリア状態を丸ごと保存</p>
+        </div>
+      </div>
+
+      <p>
+        ホストは、対戦中の現在の盤面状態（カードやコマの位置・回転・表裏、プレイヤーHP、チャット履歴、各エリアの位置やサイズ）を<strong>「マイルーム」</strong>として保存できます。<br>
+        長時間のTRPGや重厚なボードゲームの中断セーブ、お気に入りの初期配置の保存に最適です。
+      </p>
+
+      <div class="styled-table-wrap">
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>プラン</th>
+              <th>マイルーム保持数</th>
+              <th>有効期限</th>
+              <th>備考</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>未ログイン（TRIAL）</strong></td>
+              <td>1部屋（作成制限: 1日1回）</td>
+              <td>作成から24時間</td>
+              <td>24時間経過後に自動消去されます。</td>
+            </tr>
+            <tr>
+              <td><strong>無料会員（BASIC）</strong></td>
+              <td><strong>最大 10部屋</strong></td>
+              <td><strong>無期限保存</strong></td>
+              <td>ログインするだけで10部屋までいつでも再開可能。</td>
+            </tr>
+            <tr>
+              <td><strong>プレミアム（PREMIUM）</strong></td>
+              <td><strong>最大 100部屋</strong></td>
+              <td><strong>無期限保存</strong></td>
+              <td>大容量100部屋キープ。多数のゲームを並行保存可能。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <div class="callout-body">
+          <strong>保存したルームの再開方法</strong>
+          マイページ（<code>mypage.html</code>）の「マイルーム一覧」から、いつでもワンクリックで保存したルームに入室して前回の続きから対戦を再開できます。
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 09. マイセットのセーブ・ロード ==================== -->
+    <section class="section-card" id="toc-myset">
+      <div class="section-header">
+        <div class="section-num">09</div>
+        <div class="section-title-wrap">
+          <h2>マイセットのセーブ・ロード</h2>
+          <p>自分だけの自慢のデッキを保存して、どの部屋でも即座に展開</p>
+        </div>
+      </div>
+
+      <p>
+        「マイセット」機能とは、自分が作成したお気に入りのカードデッキやトークン一式をスロットに保存しておく機能です。<br>
+        別の友達が立てたルームや新しい対戦部屋に入った際でも、操作パネルの<strong>「📂 ロード」</strong>を押すだけで、保存したデッキが一瞬で自分のエリアに展開されます。
+      </p>
+
+      <div class="styled-table-wrap">
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>プラン</th>
+              <th>マイセット保存スロット数</th>
+              <th>カード保持枚数・容量</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>無料会員（BASIC）</strong></td>
+              <td><strong>10スロット</strong></td>
+              <td>最大200枚 / 1MB</td>
+            </tr>
+            <tr>
+              <td><strong>プレミアム会員（PREMIUM）</strong></td>
+              <td><strong>100スロット</strong>（10枠ごとのページ送り）</td>
+              <td>最大1,000枚 / 20MB（高解像度対応）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        マイページ（<code>mypage.html</code>）では、保存したマイセットのスロット一覧、カードサムネイルの確認、名前の変更、不要になったデッキの整理が手軽に行えます。
+      </p>
+    </section>
+
+    <!-- ==================== 10. 操作方法一覧 ＆ 小ワザ ==================== -->
+    <section class="section-card" id="toc-shortcuts">
+      <div class="section-header">
+        <div class="section-num">010</div>
+        <div class="section-title-wrap">
+          <h2>操作方法一覧 ＆ ショートカットの小ワザ</h2>
+          <p>PCマウス・キーボード ＆ スマホ・タブレットタッチ操作の完全対応表</p>
+        </div>
+      </div>
+
+      <div class="styled-table-wrap">
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>やりたい操作</th>
+              <th>パソコン（マウス・キーボード）</th>
+              <th>スマホ・iPad（タッチ操作）</th>
+              <th>説明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>カードの移動</strong></td>
+              <td>ドラッグ＆ドロップ</td>
+              <td>1本指でスワイプ / ドラッグ</td>
+              <td>エリアをまたいで自由に移動できます。</td>
+            </tr>
+            <tr>
+              <td><strong>カードの回転（タップ）</strong></td>
+              <td><kbd>ダブルクリック</kbd></td>
+              <td><kbd>ダブルタップ</kbd></td>
+              <td>90度ずつ回転（ホスト設定により角度変更可能）。</td>
+            </tr>
+            <tr>
+              <td><strong>表裏の反転</strong></td>
+              <td><kbd>右クリック</kbd></td>
+              <td>カードを<kbd>長押し（0.5秒）</kbd></td>
+              <td>瞬時にカードの表と裏を切り替えます。</td>
+            </tr>
+            <tr>
+              <td><strong>拡大プレビュー</strong></td>
+              <td>カードを<kbd>左クリック</kbd></td>
+              <td>カードを<kbd>タップ</kbd></td>
+              <td>右側パネルにカード画像が高解像度で大きく表示されます。</td>
+            </tr>
+            <tr>
+              <td><strong>複数枚の一括選択</strong></td>
+              <td><kbd>Shift</kbd> + ドラッグ（矩形範囲選択）</td>
+              <td>パネルの「複数選択」ボタンを押してタップ</td>
+              <td>複数枚をまとめて選択し、一括でドラッグ移動や回転ができます。</td>
+            </tr>
+            <tr>
+              <td><strong>盤面の移動（パン）</strong></td>
+              <td>何もない背景をドラッグ</td>
+              <td>背景をドラッグ</td>
+              <td>テーブル全体を見渡すように視点をスクロール移動します。</td>
+            </tr>
+            <tr>
+              <td><strong>盤面の拡大・縮小（ズーム）</strong></td>
+              <td>マウスホイール</td>
+              <td>ピンチイン / ピンチアウト</td>
+              <td>自分だけの視点倍率を自由に変更できます。</td>
+            </tr>
+            <tr>
+              <td><strong>全カードを山札に回収</strong></td>
+              <td>パネル「❖ 全カードをデッキにまとめる」</td>
+              <td>パネル「❖ 全カードをデッキにまとめる」</td>
+              <td>散らばったカードを一瞬でデッキエリアに整列回収します。</td>
+            </tr>
+            <tr>
+              <td><strong>山札のシャッフル</strong></td>
+              <td>パネル「🌀 デッキエリアをシャッフル」</td>
+              <td>パネル「🌀 デッキエリアをシャッフル」</td>
+              <td>デッキ内のカードの並び順を完全ランダム化します。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="media-card">
+        <img src="./assets/CardControl.png" alt="カードの基本操作解説画像" loading="lazy">
+        <div class="media-card-caption">▲ カードの回転、裏返し、移動、プレビューの直感的な操作</div>
+      </div>
+    </section>
+
+    <!-- ==================== 11. よくある質問 (FAQ) ==================== -->
+    <section class="section-card" id="toc-faq">
+      <div class="section-header">
+        <div class="section-num">11</div>
+        <div class="section-title-wrap">
+          <h2>よくある質問 (FAQ)</h2>
+          <p>ユーザーの皆様からよく寄せられる質問と回答</p>
+        </div>
+      </div>
+
+      <div class="faq-list">
+        <details class="faq-item" open>
+          <summary class="faq-question">
+            <span class="faq-q-badge">Q</span>
+            <span>アプリのインストールや会員登録は必須ですか？</span>
+            <span class="faq-toggle-icon">▼</span>
+          </summary>
+          <div class="faq-answer">
+            いいえ、一切不要です。ブラウザ（Google Chrome, Safari, Microsoft Edgeなど）さえあれば、インストールなしですぐに遊べます。会員登録をしなくても「TRIAL」として即座にルーム作成・参加が可能です（無料登録するとマイルームやマイセットの無期限保存が使えるようになります）。
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span class="faq-q-badge">Q</span>
+            <span>利用料金はかかりますか？</span>
+            <span class="faq-toggle-icon">▼</span>
+          </summary>
+          <div class="faq-answer">
+            基本プレイは<strong>完全無料</strong>です。カードの生成、オンライン対戦、ダイスやカウンターなどの全ゲーム機能が無料でご利用いただけます。より多くのデッキやルームを大量に保存したい方向けに、月額500円の「プレミアムプラン」もご用意しています。
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span class="faq-q-badge">Q</span>
+            <span>手札のカードは他のプレイヤーに見えませんか？</span>
+            <span class="faq-toggle-icon">▼</span>
+          </summary>
+          <div class="faq-answer">
+            はい、見えません。「手札エリア」にあるカードは、操作している本人にのみ表面が見え、他のプレイヤーや観戦者の画面には自動的に「裏面（伏せられた状態）」として表示されます。手札が覗き見される心配なく安心して対戦できます。
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span class="faq-q-badge">Q</span>
+            <span>スマートフォンやiPadなどのタブレットでも遊べますか？</span>
+            <span class="faq-toggle-icon">▼</span>
+          </summary>
+          <div class="faq-answer">
+            はい、完全対応しています。タッチ操作によるドラッグ＆ドロップ、ダブルタップでのカード回転、長押しでの表裏反転など、直感的に操作できます。
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span class="faq-q-badge">Q</span>
+            <span>プレイは何人まで対応していますか？</span>
+            <span class="faq-toggle-icon">▼</span>
+          </summary>
+          <div class="faq-answer">
+            対戦座席（着席プレイヤー）は<strong>1人〜最大10人</strong>まで対応しています。また、座席に座らない「観戦者（Spectator）」としてなら何人でもルームに参加して対戦を見守ることができます。
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span class="faq-q-badge">Q</span>
+            <span>画像の著作権や取り扱いについて注意点はありますか？</span>
+            <span class="faq-toggle-icon">▼</span>
+          </summary>
+          <div class="faq-answer">
+            アップロードされた画像は、ご自身と対戦相手のプレイのために一時的に利用されます。第三者の著作権や知的財産権を侵害する画像、公序良俗に反する画像のアップロードは利用規約により禁止されていますのでご注意ください。
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ==================== 12. 困ったときは（トラブル対処） ==================== -->
+    <section class="section-card" id="toc-trouble">
+      <div class="section-header">
+        <div class="section-num">12</div>
+        <div class="section-title-wrap">
+          <h2>困ったときは（トラブルシューティング）</h2>
+          <p>トラブル時の対処法と確認ポイント</p>
+        </div>
+      </div>
+
+      <div class="steps-container">
+        <div class="step-card">
+          <span class="step-badge" style="background:#e64a5a;">症状 1</span>
+          <div class="step-content">
+            <h4>画面の動作が重い・カクつく</h4>
+            <p>
+              ・開いている他の不要なブラウザタブやアプリを閉じてください。<br>
+              ・マウスホイール等で拡大率を等倍（100%付近）に戻すと軽快に動作します。<br>
+              ・一度に大量の超高解像度画像をアップロードするとメモリを消費するため、画像のファイルサイズを小さめ（1枚あたり数百KB〜1MB程度）にリサイズして読み込むことをおすすめします。
+            </p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <span class="step-badge" style="background:#e64a5a;">症状 2</span>
+          <div class="step-content">
+            <h4>カードが画面の外に見切れて見失ってしまった</h4>
+            <p>
+              ・何もない背景をドラッグして盤面をパン（視点移動）するか、マウスホイールを手前に回してズームアウトしてください。<br>
+              ・操作パネルの<strong>「❖ 全カードをデッキにまとめる」</strong>を押すと、散らばったカードを一瞬でデッキエリアに回収できます。
+            </p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <span class="step-badge" style="background:#e64a5a;">症状 3</span>
+          <div class="step-content">
+            <h4>カードが動かせない・操作が同期しない</h4>
+            <p>
+              ・自分が「座席（SEAT1〜10）」に着席しているか確認してください（観戦者状態ではカードを操作できません）。<br>
+              ・他のプレイヤーの置いたカードを動かしたい場合は、ホストに「他プレイヤーのカード操作」をONにしてもらってください。<br>
+              ・通信が不安定になった場合は、ブラウザの再読み込み（リロード）を行ってください。60秒以内であれば座席は維持されたまま再入室できます。
+            </p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <span class="step-badge" style="background:#e64a5a;">症状 4</span>
+          <div class="step-content">
+            <h4>「ルーム作成制限」と表示されて部屋が作れない</h4>
+            <p>
+              未ログイン（TRIAL）状態でのルーム作成は、安全のため<strong>24時間に1回まで</strong>となっております。<br>
+              Googleアカウントまたはメールアドレスで<strong>無料アカウント登録（BASIC）</strong>を行ってログインしていただくと、1日10回までルーム作成が可能になり、マイルーム保存（10部屋）やマイセット保存（10枠）も利用できるようになります。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout warning" style="margin-top: 24px;">
+        <span class="callout-icon">📩</span>
+        <div class="callout-body">
+          <strong>解決しない問題や不具合のご報告</strong>
+          上記をお試しいただいても解決しない不具合や、機能のご要望などがございましたら、<a href="/contact.html" style="color:#78350f; font-weight:700; text-decoration:underline;">お問い合わせフォーム</a>よりお気軽にご連絡ください。運営チームが確認・対応いたします。
+        </div>
+      </div>
+    </section>
 
     <!-- フッター -->
-    <footer
-      style="grid-column: 1 / -1; background: #1e82e0; padding: 40px 32px; border-radius: 14px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.15); margin-top: 0px;">
+    <footer style="background: linear-gradient(135deg, #1e82e0 0%, #1569b8 100%); padding: 40px 32px; border-radius: 16px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.15); margin-top: 12px;">
       <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
-        <a href="/terms.html"
-          style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">利用規約</a>
-        <a href="/privacy.html"
-          style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">プライバシーポリシー</a>
-        <a href="/law.html"
-          style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">特定商取引法に基づく表記</a>
-        <a href="/plans.html"
-          style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">プラン</a>
-        <a href="/contact.html"
-          style="color: #ffffff; text-decoration: none; font-size: 0.85rem; font-weight: 600;">お問い合わせ</a>
+        <a href="/terms.html" style="color: #ffffff; text-decoration: none; font-size: 0.88rem; font-weight: 600;">利用規約</a>
+        <a href="/privacy.html" style="color: #ffffff; text-decoration: none; font-size: 0.88rem; font-weight: 600;">プライバシーポリシー</a>
+        <a href="/law.html" style="color: #ffffff; text-decoration: none; font-size: 0.88rem; font-weight: 600;">特定商取引法に基づく表記</a>
+        <a href="/plans.html" style="color: #ffffff; text-decoration: none; font-size: 0.88rem; font-weight: 600;">プラン</a>
+        <a href="/contact.html" style="color: #ffffff; text-decoration: none; font-size: 0.88rem; font-weight: 600;">お問い合わせ</a>
       </div>
       <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 12px;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <img src="/BatriTable-icon.png?v=3" alt="BatriTable" style="width: 28px; height: 28px; border-radius: 6px;">
-          <strong style="font-size: 1.2rem; color: #fff; letter-spacing: 0.05em;">BatriTable</strong>
+          <img src="/BatriTable-icon.png?v=3" alt="BatriTable" style="width: 32px; height: 32px; border-radius: 8px;">
+          <strong style="font-size: 1.25rem; color: #fff; letter-spacing: 0.05em;">BatriTable</strong>
         </div>
-        <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.8rem;">
+        <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.82rem;">
           © 2026 SOLVENTER
         </div>
       </div>
     </footer>
 
-  </div>
+  </div><!-- /.howto-wrapper -->
+
+  <!-- フローティング目次へ戻るボタン -->
+  <a href="#toc" class="back-to-toc" id="back-to-toc" title="目次へ戻る">
+    <span>▲</span> 目次へ戻る
+  </a>
+
 </body>
 
 </html>
