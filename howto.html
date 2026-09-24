@@ -86,14 +86,19 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ====== コンテナレイアウト（単一カラム・中央揃え） ====== */
+    /* ====== ヘッダーとコンテナレイアウト（ヘッダーと同一幅・広々ワイド構成） ====== */
+    .site-header {
+      max-width: 1400px;
+      margin: 16px auto 0 !important;
+    }
+
     .howto-wrapper {
-      max-width: 1040px;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 32px 20px 80px;
+      padding: 16px 16px 80px;
       display: flex;
       flex-direction: column;
-      gap: 36px;
+      gap: 28px;
     }
 
     /* ====== ヒーローエリア ====== */
@@ -386,8 +391,8 @@
 
     /* ====== 3ステップカード ====== */
     .steps-container {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 18px;
       margin: 20px 0;
     }
@@ -764,9 +769,9 @@
 
     /* ====== FAQ & トラブルシュート（アコーディオン） ====== */
     .faq-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 14px;
       margin: 20px 0;
     }
 
@@ -839,7 +844,8 @@
 
     /* ====== 画像ラップ ====== */
     .media-card {
-      margin: 24px 0;
+      margin: 24px auto;
+      max-width: 960px;
       border-radius: var(--radius-md);
       overflow: hidden;
       border: 1px solid #e2e8f0;
@@ -920,7 +926,9 @@
 
       .tools-grid,
       .modes-grid,
-      .area-breakdown {
+      .area-breakdown,
+      .steps-container,
+      .faq-list {
         grid-template-columns: 1fr;
       }
 
