@@ -1408,13 +1408,14 @@ body.hover-zoom-enabled .card.selected:not(.is-board):not(.memo):not(.note):not(
   display: none !important;
 }
 
-/* チェスモードは正方形（2400px × 2400px）にして余分な緑エリアを完全に排除 */
+/* チェスモードは正方形（2400px × 2400px）にして余分な緑エリアを完全に排除し、美麗な単色グレー枠線（#888）を適用 */
 #board-layout.layout-playonly,
 #board-layout.mode-chess {
   width: 2400px;
   height: 2400px;
-  background: transparent !important;
-  border: 4px solid #bbb;
+  background: #888 !important;
+  border: 6px solid #888;
+  box-sizing: content-box;
 }
 
 /* チェス盤面のゾーンラベル（プレイエリア（共有））を非表示 */
