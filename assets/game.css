@@ -1424,8 +1424,8 @@ body.hover-zoom-enabled .card.selected:not(.is-board):not(.memo):not(.note):not(
   display: none !important;
 }
 
-.center-deck { background: #f90; border: 4px dashed #666; grid-column: 1; position: relative; }
-.center-discard { background: #cc6666; border: 4px dashed #666; grid-column: 2; position: relative; }
+.center-deck { background: #f90; border: 10px dashed #666; box-sizing: border-box; grid-column: 1; position: relative; }
+.center-discard { background: #cc6666; border: 10px dashed #666; box-sizing: border-box; grid-column: 2; position: relative; }
 
 #field.mode-board .player-area { display: none; }
 #field.mode-board #board-layout { display: block; }
