@@ -1424,6 +1424,21 @@ body.hover-zoom-enabled .card.selected:not(.is-board):not(.memo):not(.note):not(
   display: none !important;
 }
 
+/* トランプモード（豪華プレイマット背景・手札/デッキ/捨て札エリアの透明塗りつぶし＆枠線） */
+#board-layout.mode-trump {
+  background: transparent !important;
+}
+#board-layout.mode-trump .board-hand,
+#board-layout.mode-trump .center-deck,
+#board-layout.mode-trump .center-discard {
+  background: transparent !important;
+  border: 10px dashed #666 !important;
+  box-sizing: border-box;
+}
+#board-layout.mode-trump #board-play > .zone-label {
+  display: none !important;
+}
+
 .center-deck { background: #f90; border: 10px dashed #666; box-sizing: border-box; grid-column: 1; position: relative; }
 .center-discard { background: #cc6666; border: 10px dashed #666; box-sizing: border-box; grid-column: 2; position: relative; }
 

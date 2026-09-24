@@ -347,6 +347,10 @@ function applyBoardSizeUI() {
       w = 2400;
       h = 2400;
     }
+    if ((m === 'trump' || m === 'board') && (w === undefined || w === 2400)) {
+      w = 3360;
+      h = 2400;
+    }
     if (w !== undefined) layout.style.width = w + 'px';
     if (h !== undefined) layout.style.height = h + 'px';
     if (x !== undefined) layout.style.left = x + 'px';
@@ -3126,6 +3130,7 @@ function applyFieldModeLayout() {
     boardLayoutEl.classList.toggle('layout-standard', boardNormLayout === 'standard');
     boardLayoutEl.classList.toggle('layout-playonly', boardNormLayout === 'playonly');
     boardLayoutEl.classList.toggle('mode-chess', m === 'chess');
+    boardLayoutEl.classList.toggle('mode-trump', m === 'trump');
 
     if (m === 'chess' || boardNormLayout === 'playonly') {
       if (!CURRENT_ROOM_META?.boardWidth || CURRENT_ROOM_META.boardWidth === 3360) {
@@ -3134,13 +3139,20 @@ function applyFieldModeLayout() {
       if (!CURRENT_ROOM_META?.boardHeight) {
         boardLayoutEl.style.height = '2400px';
       }
+    } else if (m === 'trump') {
+      if (!CURRENT_ROOM_META?.boardWidth || CURRENT_ROOM_META.boardWidth === 2400) {
+        boardLayoutEl.style.width = '3360px';
+      }
+      if (!CURRENT_ROOM_META?.boardHeight) {
+        boardLayoutEl.style.height = '2400px';
+      }
     }
     
-    // Chess などのプレイエリア背景画像の設定（カスタム画像が設定されていない場合のみデフォルトを適用）
+    // Chess / Trump などのプレイエリア背景画像の設定（カスタム画像が設定されていない場合のみデフォルトを適用）
     const boardPlayEl = document.getElementById('board-play');
     if (boardPlayEl) {
       const customAreaBg = areaBackgroundImages.get('board-play');
-      const hasCustomBg = !!customAreaBg?.imageUrl || boardPlayEl.classList.contains('has-bg-image') || (boardPlayEl.style.backgroundImage && !boardPlayEl.style.backgroundImage.includes('ChessBoard.png'));
+      const hasCustomBg = !!customAreaBg?.imageUrl || boardPlayEl.classList.contains('has-bg-image') || (boardPlayEl.style.backgroundImage && !boardPlayEl.style.backgroundImage.includes('ChessBoard.png') && !boardPlayEl.style.backgroundImage.includes('TrumpBoard.jpg'));
       if (hasCustomBg) {
         // カスタム背景画像が設定されている場合は保護し、必要であれば復元
         if (customAreaBg?.imageUrl && !boardPlayEl.style.backgroundImage) {
@@ -3152,6 +3164,11 @@ function applyFieldModeLayout() {
       } else {
         if (m === 'chess') {
           boardPlayEl.style.backgroundImage = "url('image/Chess/ChessBoard.png')";
+          boardPlayEl.style.backgroundSize = "100% 100%";
+          boardPlayEl.style.backgroundRepeat = "no-repeat";
+          boardPlayEl.style.backgroundPosition = "center";
+        } else if (m === 'trump') {
+          boardPlayEl.style.backgroundImage = "url('image/Trump/TrumpBoard.jpg')";
           boardPlayEl.style.backgroundSize = "100% 100%";
           boardPlayEl.style.backgroundRepeat = "no-repeat";
           boardPlayEl.style.backgroundPosition = "center";

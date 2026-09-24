@@ -674,7 +674,7 @@ function showLayoutModal() {
     window.selectLayoutOption('standard1');
     document.getElementById('field-layout-modal').style.display = 'flex';
   } else if (CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess') {
-    executeRoomCreation(CREATE_FIELD_MODE === 'trump' ? 'simple' : 'playonly');
+    executeRoomCreation(CREATE_FIELD_MODE === 'trump' ? 'standard' : 'playonly');
   } else {
     executeRoomCreation('standard1');
   }
@@ -764,6 +764,9 @@ async function executeRoomCreation(layoutType) {
 
     if (CREATE_FIELD_MODE === 'chess') {
       payload.boardWidth = 2400;
+      payload.boardHeight = 2400;
+    } else if (CREATE_FIELD_MODE === 'trump') {
+      payload.boardWidth = 3360;
       payload.boardHeight = 2400;
     }
 
