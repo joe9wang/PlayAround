@@ -591,7 +591,12 @@
         <div class="kv">
           <div class="avatar" id="avatar">P</div>
           <div>
-            <div style="display:flex; align-items:center; gap:8px;"><strong id="displayName">Player</strong> <span id="premium-badge-inline" style="display: none;"></span></div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <strong id="displayName" style="font-size:16px;">Player</strong>
+              <button class="small-btn" id="editDisplayNameBtn" style="font-size: 11px; padding: 2px 8px; border-radius: 6px; background: #f0f0f0; border: 1px solid #ccc; cursor: pointer;">名前を変更</button>
+              <span id="premium-badge-inline" style="display: none;"></span>
+            </div>
+            <div id="userEmailText" style="font-size: 12px; color: #888; margin-top: 3px;"></div>
             <div style="margin-top: 8px;">
               <button class="small-btn" id="changeAvatarBtn" style="font-size: 12px;">アイコンを変更</button>
             </div>
@@ -1118,19 +1123,95 @@
       }
     }
 
-    function applyUser(u) {
-      // 表示名は「メール > displayName > 'Player'」の優先順
+    async function applyUser(u) {
+      let disp = u.displayName || '';
+      try {
+        const uDoc = await getDoc(doc(db, `users/${u.uid}`));
+        if (uDoc.exists() && uDoc.data().displayName) {
+          disp = uDoc.data().displayName;
+        }
+      } catch (e) {
+        console.warn('Fetch user doc for displayName failed:', e);
+      }
+
       const email = u.email || '';
-      const disp = email || u.displayName || 'Player';
-      nameEl.textContent = u.displayName || disp;
-      
+      const finalName = disp || email || 'Player';
+      nameEl.textContent = finalName;
+
+      const emailEl = document.getElementById('userEmailText');
+      if (emailEl) {
+        emailEl.textContent = email ? `ID: ${email}` : '';
+      }
+
+      if (disp) {
+        localStorage.setItem('pa:last-player-name', disp);
+      }
+
       // アバター表示
       if (u.photoURL) {
         avEl.innerHTML = `<img src="${u.photoURL}" alt="Avatar">`;
       } else {
-        avEl.textContent = (u.displayName || disp || 'P').slice(0, 1).toUpperCase();
+        avEl.textContent = finalName.slice(0, 1).toUpperCase();
       }
     }
+
+    // ===== ユーザー名変更モーダル =====
+    const editNameBtn = document.getElementById('editDisplayNameBtn');
+    const nameModal = document.getElementById('name-edit-modal');
+    const nameInput = document.getElementById('edit-display-name-input');
+    const nameCancelBtn = document.getElementById('edit-display-name-cancel');
+    const nameSaveBtn = document.getElementById('edit-display-name-save');
+
+    editNameBtn?.addEventListener('click', () => {
+      const currentName = nameEl.textContent === 'Player' ? '' : nameEl.textContent;
+      const initialVal = (auth.currentUser?.displayName && !auth.currentUser.displayName.includes('@')) 
+        ? auth.currentUser.displayName 
+        : (localStorage.getItem('pa:last-player-name') || (currentName.includes('@') ? '' : currentName));
+      nameInput.value = initialVal;
+      nameModal.style.display = 'flex';
+      nameInput.focus();
+    });
+
+    nameCancelBtn?.addEventListener('click', () => {
+      nameModal.style.display = 'none';
+    });
+
+    nameModal?.addEventListener('click', (e) => {
+      if (e.target === nameModal) nameModal.style.display = 'none';
+    });
+
+    nameSaveBtn?.addEventListener('click', async () => {
+      const newName = (nameInput.value || '').trim();
+      if (!newName) {
+        alert('ユーザー名を入力してください。');
+        nameInput.focus();
+        return;
+      }
+      if (newName.length > 24) {
+        alert('ユーザー名は24文字以内で入力してください。');
+        return;
+      }
+      nameSaveBtn.disabled = true;
+      nameSaveBtn.textContent = '保存中...';
+      try {
+        await updateProfile(auth.currentUser, { displayName: newName });
+        await setDoc(doc(db, `users/${auth.currentUser.uid}`), {
+          displayName: newName,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        localStorage.setItem('pa:last-player-name', newName);
+        nameEl.textContent = newName;
+        updateAuthIndicator(auth.currentUser);
+        nameModal.style.display = 'none';
+        alert('ユーザー名を変更しました。');
+      } catch (err) {
+        console.error('Update displayName failed:', err);
+        alert('ユーザー名の更新に失敗しました: ' + err.message);
+      } finally {
+        nameSaveBtn.disabled = false;
+        nameSaveBtn.textContent = '保存';
+      }
+    });
 
     // ===== アイコン変更（拡大縮小・位置ずらしクロップ機能付き） =====
     let cropImg = null;
@@ -1982,6 +2063,20 @@
     </div>
   </div>
 
+  <!-- ▼ ユーザー名変更モーダル -->
+  <div id="name-edit-modal" role="dialog" aria-modal="true"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); align-items:center; justify-content:center; z-index:10002;">
+    <div style="background:#fff; padding:24px; border-radius:16px; width:360px; max-width:90%; box-shadow:0 12px 32px rgba(0,0,0,0.3); display:flex; flex-direction:column;">
+      <h3 style="margin-top:0; margin-bottom:8px; font-size:16px; color:#222;">ユーザー名の変更</h3>
+      <p style="font-size:12px; color:#666; margin-bottom:16px; line-height:1.4;">ゲーム内で使用する名前（表示名）を設定できます。着席時や観戦チャットで表示されます。</p>
+      <label style="display:block; font-size:12px; font-weight:bold; color:#444; margin-bottom:6px;">ユーザー名（最大24文字）</label>
+      <input type="text" id="edit-display-name-input" maxlength="24" class="field" style="width:100%; box-sizing:border-box; padding:8px 12px; border:1px solid #ccc; border-radius:8px; font-size:14px; margin-bottom:16px;" placeholder="例: SOLVENTER">
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" id="edit-display-name-cancel" class="small-btn" style="padding:8px 14px; background:#f0f0f0; border:1px solid #ddd; border-radius:8px; cursor:pointer;">キャンセル</button>
+        <button type="button" id="edit-display-name-save" class="small-btn" style="padding:8px 16px; background:#2563eb; color:#fff; font-weight:bold; border:none; border-radius:8px; cursor:pointer;">保存</button>
+      </div>
+    </div>
+  </div>
 
 </body>
 

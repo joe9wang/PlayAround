@@ -303,8 +303,10 @@ let CURRENT_UID = null;
 const hostOtherOpsWrap = document.getElementById('host-otherops');
 
 const toggleOtherOpsInput = document.getElementById('toggle-other-ops');
-
 const toggleOtherOpsText = document.getElementById('toggle-other-ops-text');
+
+const toggleSpectatorChatInput = document.getElementById('toggle-spectator-chat');
+const toggleSpectatorChatText = document.getElementById('toggle-spectator-chat-text');
 
 const btnModeCard = document.getElementById('btn-mode-card');
 const btnModeBoard = document.getElementById('btn-mode-board');
@@ -319,11 +321,38 @@ function applyOtherOpsUI() {
   document.body.classList.toggle('allow-other-ops', on);
   if (toggleOtherOpsInput) toggleOtherOpsInput.checked = on;
   if (toggleOtherOpsText) toggleOtherOpsText.textContent = on ? 'ON' : 'OFF';
+  applySpectatorChatUI();
   applySnapGridUI();
   applyHoverZoomUI();
   applyRotateSettingsUI();
   applyChatLogSettingsUI();
   if (typeof refreshAllCardsOwnership === 'function') refreshAllCardsOwnership();
+}
+
+function applySpectatorChatUI() {
+  const allow = (CURRENT_ROOM_META?.allowSpectatorChat !== false);
+  if (toggleSpectatorChatInput) toggleSpectatorChatInput.checked = allow;
+  if (toggleSpectatorChatText) toggleSpectatorChatText.textContent = allow ? 'ON' : 'OFF';
+
+  const isSpectator = (CURRENT_PLAYER === 'spectator');
+  const chatInput = document.getElementById('chat-input');
+  const chatSend = document.getElementById('chat-send');
+
+  if (isSpectator && !allow) {
+    if (chatInput) {
+      chatInput.disabled = true;
+      chatInput.placeholder = '観戦者チャットはホストにより無効化されています';
+    }
+    if (chatSend) chatSend.disabled = true;
+  } else {
+    if (chatInput && chatInput.getAttribute('data-chat-blocked') !== 'true') {
+      chatInput.disabled = false;
+      chatInput.placeholder = 'メッセージを入力…';
+    }
+    if (chatSend && chatSend.getAttribute('data-chat-blocked') !== 'true') {
+      chatSend.disabled = false;
+    }
+  }
 }
 
 function applyCardSizeUI() {
@@ -390,6 +419,19 @@ toggleOtherOpsInput?.addEventListener('change', async () => {
 
   } catch (e) { console.warn('toggle allowOthersMove failed', e); }
 
+});
+
+toggleSpectatorChatInput?.addEventListener('change', async () => {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (!isHost) { applySpectatorChatUI(); return; }
+
+  const val = !!toggleSpectatorChatInput.checked;
+  if (toggleSpectatorChatText) toggleSpectatorChatText.textContent = val ? 'ON' : 'OFF';
+
+  try {
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { allowSpectatorChat: val, updatedAt: serverTimestamp() }, { merge: true });
+    await postSystemLog(val ? 'ホストが観戦者チャットを有効にしました。' : 'ホストが観戦者チャットを無効にしました。');
+  } catch (e) { console.warn('toggle allowSpectatorChat failed', e); }
 });
 
 // ===== サイズ調整メモリスナップ（ホスト専用） =====
@@ -4502,13 +4544,15 @@ function loadSeatStatus(rid) {
 
 
 
-async function claimSeat(roomId, seat) {
+async function claimSeat(roomId, seat, customName) {
 
   if (seat === 'spectator') return true;
 
   const seatRef = doc(db, `rooms/${roomId}/seats/${seat}`);
 
-  const displayName = localStorage.getItem('pa:last-player-name') || 'Guest';
+  const authName = auth.currentUser?.displayName;
+  const validAuthName = (authName && !authName.includes('@')) ? authName : null;
+  const displayName = customName || validAuthName || localStorage.getItem('pa:last-player-name') || 'Guest';
 
   const color = '#22aaff';
 
@@ -5173,14 +5217,21 @@ function myDisplayName() {
     const seatData = (typeof CURRENT_PLAYER === 'number' && currentSeatMap) ? (currentSeatMap[CURRENT_PLAYER] || {}) : {};
 
     const nameFromSeat = seatData.displayName;
+    if (nameFromSeat) return nameFromSeat;
 
-    const fallback = document.getElementById('new-player-name')?.value;
+    const authName = auth.currentUser?.displayName;
+    const validAuthName = (authName && !authName.includes('@')) ? authName : null;
+    const saved = validAuthName || localStorage.getItem('pa:last-player-name') || '';
 
-    return nameFromSeat || fallback || `SEAT${CURRENT_PLAYER || '-'}`;
+    if (CURRENT_PLAYER === 'spectator') {
+      return `${saved || '匿名'} (観戦)`;
+    }
+
+    return saved || `SEAT${CURRENT_PLAYER || '-'}`;
 
   } catch (_) {
 
-    return `SEAT${CURRENT_PLAYER || '-'}`;
+    return (CURRENT_PLAYER === 'spectator') ? '匿名 (観戦)' : `SEAT${CURRENT_PLAYER || '-'}`;
 
   }
 
@@ -5192,6 +5243,12 @@ async function postChat(text) {
 
   if (!text || !CURRENT_ROOM || !CURRENT_PLAYER) return;
 
+  // 観戦者チャット無効時チェック
+  if (CURRENT_PLAYER === 'spectator' && CURRENT_ROOM_META?.allowSpectatorChat === false) {
+    alert('観戦者チャットは現在無効化されています。');
+    return;
+  }
+
   try {
 
     const payload = {
@@ -5199,6 +5256,7 @@ async function postChat(text) {
       text: String(text).slice(0, 500),
       seat: CURRENT_PLAYER,
       name: myDisplayName(),
+      isSpectator: (CURRENT_PLAYER === 'spectator'),
       createdAt: serverTimestamp()
     };
     if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
@@ -13216,16 +13274,13 @@ async function checkUrlParamsAndJoin() {
     if (meta.hasPassword) djPassArea.style.display = 'block';
 
     djStartBtn.onclick = async () => {
-      const name = djName.value.trim();
       const pass = djPass.value.trim();
-      if (!name) { alert(t('err.playerName')); return; }
       
       if (meta.hasPassword) {
         const hash = await sha256Hex(pass);
         if (hash !== meta.joinPassHash) { alert(t('err.passWrong')); return; }
       }
 
-      localStorage.setItem('pa:last-player-name', name);
       modal.style.display = 'none';
       startSession(roomId, 'spectator');
     };
@@ -13294,12 +13349,19 @@ const leaveSeatBtn = document.getElementById('leave-seat-btn');
 const seatSelectModal = document.getElementById('seat-select-modal');
 const seatSelectGrid = document.getElementById('seat-select-grid');
 const seatSelectCancel = document.getElementById('seat-select-cancel');
+const seatPlayerNameInput = document.getElementById('seat-player-name-input');
 
 if (sitSeatBtn) {
   sitSeatBtn.addEventListener('click', () => {
     if (!CURRENT_ROOM_META) return;
     const maxSeats = parseInt(CURRENT_ROOM_META.playerCount || 10, 10);
     seatSelectGrid.innerHTML = '';
+
+    if (seatPlayerNameInput) {
+      const authName = auth.currentUser?.displayName;
+      const validAuthName = (authName && !authName.includes('@')) ? authName : '';
+      seatPlayerNameInput.value = validAuthName || localStorage.getItem('pa:last-player-name') || '';
+    }
     
     for (let i = 1; i <= maxSeats; i++) {
       const seatData = currentSeatMap[i];
@@ -13324,11 +13386,24 @@ if (sitSeatBtn) {
       
       btn.addEventListener('click', async () => {
         if (isUsed) return;
+
+        let pName = seatPlayerNameInput?.value?.trim() || '';
+        if (!pName) {
+          alert('プレイヤー名を入力してください。');
+          seatPlayerNameInput?.focus();
+          return;
+        }
+        if (pName.length > 24) {
+          alert('プレイヤー名は24文字以内で入力してください。');
+          return;
+        }
+
+        localStorage.setItem('pa:last-player-name', pName);
         seatSelectModal.style.display = 'none';
         
         try { await showRoomInterstitial({ force: true, cooldownMs: 0 }); } catch (_) { }
         
-        const ok = await claimSeat(CURRENT_ROOM, i);
+        const ok = await claimSeat(CURRENT_ROOM, i, pName);
         if (!ok) { alert(`SEAT${i} はいま埋まりました。別の座席を選んでください。`); return; }
 
         // 新しい席の確保に成功
@@ -13358,7 +13433,7 @@ if (sitSeatBtn) {
         const isHost = CURRENT_ROOM_META?.hostUid === CURRENT_UID;
         if (isHost) {
           try {
-            await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { hostSeat: i, updatedAt: serverTimestamp() }, { merge: true });
+            await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { hostSeat: i, hostDisplayName: pName, updatedAt: serverTimestamp() }, { merge: true });
           } catch(e) {}
         }
       });
@@ -13366,6 +13441,9 @@ if (sitSeatBtn) {
       seatSelectGrid.appendChild(btn);
     }
     seatSelectModal.style.display = 'flex';
+    if (seatPlayerNameInput && !seatPlayerNameInput.value) {
+      seatPlayerNameInput.focus();
+    }
   });
 }
 

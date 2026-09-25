@@ -144,8 +144,8 @@ async function init() {
       }
       
       // Load stored player name if exists
-      if (!newPlayerNameInput.value) newPlayerNameInput.value = localStorage.getItem('pa:last-player-name') || '';
-      if (!playerNameInput.value) playerNameInput.value = localStorage.getItem('pa:last-player-name') || '';
+      if (newPlayerNameInput && !newPlayerNameInput.value) newPlayerNameInput.value = localStorage.getItem('pa:last-player-name') || '';
+      if (playerNameInput && !playerNameInput.value) playerNameInput.value = localStorage.getItem('pa:last-player-name') || '';
     } else {
       CURRENT_UID = null;
       authFormArea.style.display = 'flex';
@@ -176,9 +176,7 @@ async function init() {
   
   logoutBtn?.addEventListener('click', () => auth.signOut());
 
-  [joinRoomIdInput, playerNameInput].forEach(el => {
-    el?.addEventListener('input', updateStartButtonState);
-  });
+  joinRoomIdInput?.addEventListener('input', updateStartButtonState);
 
   document.getElementById('field-layout-ok')?.addEventListener('click', () => {
     let sel = CURRENT_LAYOUT_SELECTION || 'standard1';
@@ -240,8 +238,7 @@ async function init() {
 
 function updateStartButtonState() {
   const room = (joinRoomIdInput.value || '').trim();
-  const name = (playerNameInput.value || '').trim();
-  if (startBtn) startBtn.disabled = !(room && name);
+  if (startBtn) startBtn.disabled = !room;
 }
 
 function updateModePickButtons() {
@@ -451,13 +448,13 @@ async function checkCreatedRoomRejoinable(user) {
 async function handleCreateRoom() {
   await ensureAuthReady();
   TEMP_CREATE_ROOM_ID = (newRoomIdInput.value || '').trim();
-  TEMP_CREATE_CREATOR_NAME = (newPlayerNameInput.value || '').trim();
   
   if (!TEMP_CREATE_ROOM_ID) { alert(t('err.roomId')); return; }
-  if (!TEMP_CREATE_CREATOR_NAME) { alert(t('err.playerName')); newPlayerNameInput.focus(); return; }
 
-  // Store name
-  localStorage.setItem('pa:last-player-name', TEMP_CREATE_CREATOR_NAME);
+  // ホスト名（ログインユーザー名 > キャッシュされた名前 > ホスト）
+  const savedName = localStorage.getItem('pa:last-player-name');
+  const authName = auth.currentUser?.displayName;
+  TEMP_CREATE_CREATOR_NAME = (authName && !authName.includes('@')) ? authName : (savedName || 'ホスト');
 
   // ゲスト作成制限チェック
   if (auth.currentUser?.isAnonymous) {
@@ -753,6 +750,7 @@ async function executeRoomCreation(layoutType) {
       hostPhotoURL: auth.currentUser.photoURL || null,
       hostIsAnonymous: auth.currentUser.isAnonymous,
       roomClosed: false,
+      allowSpectatorChat: true,
       fieldMode: CREATE_FIELD_MODE,
       fieldLayout: layoutType || 'standard',
       needsInitialization: (CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess'),
@@ -831,13 +829,9 @@ async function executeRoomCreation(layoutType) {
 
 async function handleJoinRoom() {
   const id = (joinRoomIdInput.value || '').trim();
-  const name = (playerNameInput.value || '').trim();
   const pass = (joinRoomPassInput.value || '').trim();
 
-  if (!id || !name) return;
-
-  // Store name
-  localStorage.setItem('pa:last-player-name', name);
+  if (!id) return;
 
   startBtn.disabled = true;
   const oldText = startBtn.textContent;
