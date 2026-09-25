@@ -2768,4 +2768,42 @@ body:not(.is-host) .player-outer-handle {
   opacity: 1;
 }
 
+/* === Modal Option Cards: Prevent text selection & blinking caret === */
+.official-option,
+.layout-option {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  caret-color: transparent !important;
+  outline: none !important;
+}
+
+.official-option .layout-preview-wrap,
+.layout-option .layout-preview-wrap {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  caret-color: transparent !important;
+}
+
+.official-option img,
+.layout-option img {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-user-drag: none !important;
+  pointer-events: none !important;
+}
+
+.official-option .selection-overlay,
+.layout-option .selection-overlay {
+  pointer-events: none !important;
+}
+
+.official-option .layout-label,
+.layout-option .layout-label {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  caret-color: transparent !important;
+}
+
 

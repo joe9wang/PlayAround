@@ -227,6 +227,13 @@ async function init() {
     document.getElementById('basic-daily-limit-modal').style.display = 'none';
   });
 
+  // モーダル選択カードをクリックした際にテキストカーソルが点滅しないよう mousedown の既定フォーカス挙動を抑止
+  document.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.official-option, .layout-option')) {
+      e.preventDefault();
+    }
+  });
+
   updateModePickButtons();
   updateGuestLimitUI();
   checkCreatedRoomRejoinable(auth.currentUser);

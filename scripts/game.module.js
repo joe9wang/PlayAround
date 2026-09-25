@@ -644,6 +644,13 @@ document.getElementById('field-layout-cancel')?.addEventListener('click', () => 
   if (modal) modal.style.display = 'none';
 });
 
+// モーダル選択カードをクリックした際にテキストカーソルが点滅しないよう mousedown の既定フォーカス挙動を抑止
+document.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.layout-option')) {
+    e.preventDefault();
+  }
+});
+
 document.getElementById('field-layout-ok')?.addEventListener('click', async () => {
   const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
   if (!isHost) return;

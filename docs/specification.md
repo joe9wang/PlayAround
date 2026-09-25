@@ -988,3 +988,11 @@ card-game/
 - **ロビーおよびゲーム内セーブ・ロード対応**:
   - ロビーの「一般ゲーム」作成モーダルに「リバーシ」を追加（デフォルト2人プレイ）。
   - ゲーム内（`game.html`）の「一般セット」タブからも「リバーシ (64個)」をいつでもワンクリックで再ロード可能。
+
+### 21.7 モーダル選択カードのテキスト選択および入力カーソル（キャレット）抑止 (2026-09-25)
+- **テキストキャレット（点滅する縦棒）の防止**:
+  - 一般ゲーム選択モーダル（`.official-option`）およびフィールド構成モーダル（`.layout-option`）において、クリック時にブラウザが文字入力カーソル（キャレット）を表示してしまう不具合を解消。
+  - `.official-option`, `.layout-option` および子要素に対し `user-select: none !important;` と `caret-color: transparent !important;` を適用。
+  - カード内のサムネイル画像（`img`）および選択オーバーレイ（`.selection-overlay`）に `pointer-events: none !important;` を付与し、画像への誤フォーカスを防止。
+  - `lobby.module.js` および `game.module.js` にて、カード押下時（`mousedown`）のブラウザ標準テキストフォーカス挙動を `e.preventDefault()` で抑止。
+
