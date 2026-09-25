@@ -4069,63 +4069,109 @@ async function generateBoardPreview() {
 
     cardEls.forEach(el => {
       const pos = getRelativePos(el);
-      const drawX = Math.round(pos.l * scale + offsetX);
-      const drawY = Math.round(pos.t * scale + offsetY);
-      const drawW = Math.round(pos.w * scale);
-      const drawH = Math.round(pos.h * scale);
-      if (drawW < 1 || drawH < 1) return;
-
       const cardRadius = Math.max(1, Math.round(3 * scale));
       const isNoteIcon = el.classList.contains('note-icon');
+      const isImageToken = el.classList.contains('image-token') || el.classList.contains('is-board');
+      const isDice = el.classList.contains('dice');
+      const isTransparentPiece = isImageToken || isDice;
 
-      // ソフトシャドウ
-      ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-      ctx.shadowBlur = Math.max(2, Math.round(3 * scale));
-      ctx.shadowOffsetX = 1;
-      ctx.shadowOffsetY = Math.max(1, Math.round(2 * scale));
-
-      if (ctx.roundRect) {
-        ctx.beginPath();
-        ctx.roundRect(drawX, drawY, drawW, drawH, cardRadius);
-        ctx.fillStyle = isNoteIcon ? '#fff8cb' : '#ffffff';
-        ctx.fill();
-      } else {
-        ctx.fillStyle = isNoteIcon ? '#fff8cb' : '#ffffff';
-        ctx.fillRect(drawX, drawY, drawW, drawH);
+      // 回転の取得（transform: rotate(...) または data-rotation）
+      let rotation = 0;
+      const transformStyle = el.style.transform || '';
+      const rotMatch = transformStyle.match(/rotate\((-?\d+(?:\.\d+)?)deg\)/);
+      if (rotMatch) {
+        rotation = parseFloat(rotMatch[1]);
+      } else if (el.dataset.rotation) {
+        rotation = parseFloat(el.dataset.rotation);
       }
-      ctx.restore();
 
-      // カード本体クリッピング
+      // 未回転時の幅・高さと中心座標
+      const rawW = el.offsetWidth || pos.w;
+      const rawH = el.offsetHeight || pos.h;
+      const centerL = pos.l + pos.w / 2;
+      const centerT = pos.t + pos.h / 2;
+      const drawCenterL = Math.round(centerL * scale + offsetX);
+      const drawCenterT = Math.round(centerT * scale + offsetY);
+      const drawW = Math.round(rawW * scale);
+      const drawH = Math.round(rawH * scale);
+      const drawX = Math.round((centerL - rawW / 2) * scale + offsetX);
+      const drawY = Math.round((centerT - rawH / 2) * scale + offsetY);
+
+      if (drawW < 1 || drawH < 1) return;
+
+      // ソフトシャドウ＆白背景（通常カードのみ描画、透過コマは描画しない）
+      if (!isTransparentPiece) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+        ctx.shadowBlur = Math.max(2, Math.round(3 * scale));
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = Math.max(1, Math.round(2 * scale));
+
+        if (rotation) {
+          ctx.translate(drawCenterL, drawCenterT);
+          ctx.rotate((rotation * Math.PI) / 180);
+          if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(-drawW / 2, -drawH / 2, drawW, drawH, cardRadius);
+            ctx.fillStyle = isNoteIcon ? '#fff8cb' : '#ffffff';
+            ctx.fill();
+          } else {
+            ctx.fillStyle = isNoteIcon ? '#fff8cb' : '#ffffff';
+            ctx.fillRect(-drawW / 2, -drawH / 2, drawW, drawH);
+          }
+        } else {
+          if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(drawX, drawY, drawW, drawH, cardRadius);
+            ctx.fillStyle = isNoteIcon ? '#fff8cb' : '#ffffff';
+            ctx.fill();
+          } else {
+            ctx.fillStyle = isNoteIcon ? '#fff8cb' : '#ffffff';
+            ctx.fillRect(drawX, drawY, drawW, drawH);
+          }
+        }
+        ctx.restore();
+      }
+
+      // カード本体／コマ本体の描画
       ctx.save();
-      if (ctx.roundRect) {
+      if (rotation) {
+        ctx.translate(drawCenterL, drawCenterT);
+        ctx.rotate((rotation * Math.PI) / 180);
+      }
+
+      const localX = rotation ? -drawW / 2 : drawX;
+      const localY = rotation ? -drawH / 2 : drawY;
+
+      // 通常カードの場合のみ角丸クリッピング（透過コマはクリッピング不要）
+      if (!isTransparentPiece && ctx.roundRect) {
         ctx.beginPath();
-        ctx.roundRect(drawX, drawY, drawW, drawH, cardRadius);
+        ctx.roundRect(localX, localY, drawW, drawH, cardRadius);
         ctx.clip();
       }
 
       if (isNoteIcon) {
         // ノートアイコン（付箋メモ）の描画
-        const grad = ctx.createLinearGradient(drawX, drawY, drawX + drawW, drawY + drawH);
+        const grad = ctx.createLinearGradient(localX, localY, localX + drawW, localY + drawH);
         grad.addColorStop(0, '#fff8cb');
         grad.addColorStop(1, '#ffe58a');
         ctx.fillStyle = grad;
-        ctx.fillRect(drawX, drawY, drawW, drawH);
+        ctx.fillRect(localX, localY, drawW, drawH);
 
         // オレンジクリップ
         ctx.fillStyle = '#f5a33b';
         const clipW = Math.round(drawW * 0.5);
         const clipH = Math.max(2, Math.round(drawH * 0.15));
-        ctx.fillRect(drawX + (drawW - clipW) / 2, drawY, clipW, clipH);
+        ctx.fillRect(localX + (drawW - clipW) / 2, localY, clipW, clipH);
 
         // 横罫線
         ctx.strokeStyle = 'rgba(59, 48, 39, 0.35)';
         ctx.lineWidth = 1;
-        const lineY1 = drawY + Math.round(drawH * 0.4);
-        const lineY2 = drawY + Math.round(drawH * 0.6);
+        const lineY1 = localY + Math.round(drawH * 0.4);
+        const lineY2 = localY + Math.round(drawH * 0.6);
         ctx.beginPath();
-        ctx.moveTo(drawX + drawW * 0.2, lineY1); ctx.lineTo(drawX + drawW * 0.8, lineY1);
-        ctx.moveTo(drawX + drawW * 0.2, lineY2); ctx.lineTo(drawX + drawW * 0.8, lineY2);
+        ctx.moveTo(localX + drawW * 0.2, lineY1); ctx.lineTo(localX + drawW * 0.8, lineY1);
+        ctx.moveTo(localX + drawW * 0.2, lineY2); ctx.lineTo(localX + drawW * 0.8, lineY2);
         ctx.stroke();
       } else if (el.dataset.faceUp === 'true') {
         const img = el.querySelector('img');
@@ -4133,14 +4179,16 @@ async function generateBoardPreview() {
         const targetImg = (loadedImg && loadedImg.complete && loadedImg.naturalWidth > 0) ? loadedImg : (img && img.complete && img.naturalWidth > 0 ? img : null);
         if (targetImg) {
           try {
-            ctx.drawImage(targetImg, drawX, drawY, drawW, drawH);
+            ctx.drawImage(targetImg, localX, localY, drawW, drawH);
           } catch (e) {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(drawX, drawY, drawW, drawH);
+            if (!isTransparentPiece) {
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(localX, localY, drawW, drawH);
+            }
           }
-        } else {
+        } else if (!isTransparentPiece) {
           ctx.fillStyle = '#f8fafc';
-          ctx.fillRect(drawX, drawY, drawW, drawH);
+          ctx.fillRect(localX, localY, drawW, drawH);
         }
       } else {
         // 裏向きカード（裏面画像が設定されている場合は画像を描画）
@@ -4148,52 +4196,78 @@ async function generateBoardPreview() {
         const backImg = backUrl ? imageCache.get(backUrl) : null;
         if (backImg && backImg.complete && backImg.naturalWidth > 0) {
           try {
-            ctx.drawImage(backImg, drawX, drawY, drawW, drawH);
+            ctx.drawImage(backImg, localX, localY, drawW, drawH);
           } catch (e) {
-            ctx.fillStyle = '#1e293b';
-            ctx.fillRect(drawX, drawY, drawW, drawH);
+            if (!isTransparentPiece) {
+              ctx.fillStyle = '#1e293b';
+              ctx.fillRect(localX, localY, drawW, drawH);
+            }
           }
-        } else {
+        } else if (!isTransparentPiece) {
           // 画像がない場合のフォールバック（ダークネイビー + 微細なゴールド枠）
           ctx.fillStyle = '#1e293b';
-          ctx.fillRect(drawX, drawY, drawW, drawH);
+          ctx.fillRect(localX, localY, drawW, drawH);
           if (drawW > 8 && drawH > 10) {
             ctx.strokeStyle = 'rgba(212, 175, 55, 0.45)';
             ctx.lineWidth = 1;
-            ctx.strokeRect(drawX + 2, drawY + 2, drawW - 4, drawH - 4);
+            ctx.strokeRect(localX + 2, localY + 2, drawW - 4, drawH - 4);
           }
         }
       }
       ctx.restore();
 
-      // カード外枠
-      ctx.strokeStyle = isNoteIcon ? '#3b3027' : 'rgba(0, 0, 0, 0.25)';
-      ctx.lineWidth = 1;
-      if (ctx.roundRect) {
-        ctx.beginPath();
-        ctx.roundRect(drawX, drawY, drawW, drawH, cardRadius);
-        ctx.stroke();
-      } else {
-        ctx.strokeRect(drawX, drawY, drawW, drawH);
+      // カード外枠（通常カードのみ描画、透過コマは枠線を描画しない）
+      if (!isTransparentPiece) {
+        ctx.save();
+        if (rotation) {
+          ctx.translate(drawCenterL, drawCenterT);
+          ctx.rotate((rotation * Math.PI) / 180);
+        }
+        const borderX = rotation ? -drawW / 2 : drawX;
+        const borderY = rotation ? -drawH / 2 : drawY;
+        ctx.strokeStyle = isNoteIcon ? '#3b3027' : 'rgba(0, 0, 0, 0.25)';
+        ctx.lineWidth = 1;
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(borderX, borderY, drawW, drawH, cardRadius);
+          ctx.stroke();
+        } else {
+          ctx.strokeRect(borderX, borderY, drawW, drawH);
+        }
+        ctx.restore();
       }
 
       // トークン・カウンター文字
       const input = el.querySelector('.token-input');
       if (input && input.value) {
-        ctx.fillStyle = '#111';
-        ctx.font = `bold ${Math.max(7, Math.round(9 * scale))}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(input.value.slice(0, 10), drawX + drawW / 2, drawY + drawH / 2, drawW * 0.9);
+        ctx.save();
+        if (rotation) {
+          ctx.translate(drawCenterL, drawCenterT);
+          ctx.rotate((rotation * Math.PI) / 180);
+          ctx.fillStyle = '#111';
+          ctx.font = `bold ${Math.max(7, Math.round(9 * scale))}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(input.value.slice(0, 10), 0, 0, drawW * 0.9);
+        } else {
+          ctx.fillStyle = '#111';
+          ctx.font = `bold ${Math.max(7, Math.round(9 * scale))}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(input.value.slice(0, 10), drawX + drawW / 2, drawY + drawH / 2, drawW * 0.9);
+        }
+        ctx.restore();
       }
 
       const num = el.querySelector('.num-val');
       if (num) {
+        ctx.save();
         ctx.fillStyle = '#ef4444';
         ctx.font = `bold ${Math.max(9, Math.round(13 * scale))}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(num.textContent, drawX + drawW / 2, drawY + drawH / 2);
+        ctx.fillText(num.textContent, drawCenterL, drawCenterT);
+        ctx.restore();
       }
     });
 
