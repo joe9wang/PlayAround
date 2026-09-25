@@ -192,8 +192,8 @@ async function init() {
   document.getElementById('official-game-ok')?.addEventListener('click', () => {
     CREATE_FIELD_MODE = CURRENT_OFFICIAL_SELECTION;
     document.getElementById('official-game-modal').style.display = 'none';
-    // Trump uses standard layout (deck/discard areas), Chess uses playonly (board only)
-    const layout = (CURRENT_OFFICIAL_SELECTION === 'chess') ? 'playonly' : 'standard';
+    // Trump uses standard layout (deck/discard areas), Chess & Reversi use playonly (board only)
+    const layout = (CURRENT_OFFICIAL_SELECTION === 'chess' || CURRENT_OFFICIAL_SELECTION === 'reversi') ? 'playonly' : 'standard';
     executeRoomCreation(layout);
   });
   document.getElementById('official-game-cancel')?.addEventListener('click', () => {
@@ -250,7 +250,7 @@ function updateModePickButtons() {
   };
   set(pickModeCardBtn, CREATE_FIELD_MODE === 'card');
   set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
-  set(pickModeOfficialBtn, CREATE_FIELD_MODE === 'official' || CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess');
+  set(pickModeOfficialBtn, CREATE_FIELD_MODE === 'official' || CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess' || CREATE_FIELD_MODE === 'reversi');
 }
 
 window.selectOfficialOption = function(type) {
@@ -644,7 +644,7 @@ function openRoomLimitManageModal(currentRooms, maxRooms) {
 }
 
 function showLayoutModal() {
-  if (CREATE_FIELD_MODE === 'official' || CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess') {
+  if (CREATE_FIELD_MODE === 'official' || CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess' || CREATE_FIELD_MODE === 'reversi') {
     document.getElementById('official-game-modal').style.display = 'flex';
     window.selectOfficialOption(CURRENT_OFFICIAL_SELECTION || 'trump');
     return;
@@ -670,7 +670,7 @@ function showLayoutModal() {
     }
     window.selectLayoutOption('standard1');
     document.getElementById('field-layout-modal').style.display = 'flex';
-  } else if (CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess') {
+  } else if (CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess' || CREATE_FIELD_MODE === 'reversi') {
     executeRoomCreation(CREATE_FIELD_MODE === 'trump' ? 'standard' : 'playonly');
   } else {
     executeRoomCreation('standard1');
@@ -753,10 +753,10 @@ async function executeRoomCreation(layoutType) {
       allowSpectatorChat: true,
       fieldMode: CREATE_FIELD_MODE,
       fieldLayout: layoutType || 'standard',
-      needsInitialization: (CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess'),
+      needsInitialization: (CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess' || CREATE_FIELD_MODE === 'reversi'),
       joinPassHash: joinPassHash,
       hasPassword: !!joinPassHash,
-      playerCount: parseInt(newPlayerCountSelect?.value || '4', 10),
+      playerCount: parseInt(newPlayerCountSelect?.value || ((CREATE_FIELD_MODE === 'chess' || CREATE_FIELD_MODE === 'reversi') ? '2' : '4'), 10),
       roomName: id, // デフォルトはID
     };
 
@@ -766,6 +766,9 @@ async function executeRoomCreation(layoutType) {
     } else if (CREATE_FIELD_MODE === 'trump') {
       payload.boardWidth = 3360;
       payload.boardHeight = 2400;
+    } else if (CREATE_FIELD_MODE === 'reversi') {
+      payload.boardWidth = 3600;
+      payload.boardHeight = 2000;
     }
 
     // 匿名ユーザー（ゲスト）の場合のみ、24時間で削除される有効期限を設定 & 24時間作成制限のタイムスタンプ記録

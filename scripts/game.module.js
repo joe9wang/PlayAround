@@ -372,6 +372,10 @@ function applyBoardSizeUI() {
   const y = CURRENT_ROOM_META?.boardY;
   const layout = document.getElementById('board-layout');
   if (layout) {
+    if (m === 'reversi' && (w === undefined || w === 2400 || w === 3360)) {
+      w = 3600;
+      h = 2000;
+    }
     if (m === 'chess' && (w === undefined || w === 3360)) {
       w = 2400;
       h = 2400;
@@ -1452,7 +1456,7 @@ async function showOfficialConfirmation(type) {
 
   if (!confirmView || !confirmTitle || !detailsList) return;
 
-  const label = (type === 'trump') ? 'トランプ (54枚)' : 'チェス (32枚)';
+  const label = (type === 'trump') ? 'トランプ (54枚)' : (type === 'chess') ? 'チェス (32枚)' : 'リバーシ (64個)';
   confirmTitle.textContent = `${label} をロードしますか？`;
   detailsList.innerHTML = '<div style="padding:20px; color:#666; text-align:center;">セット内容を準備中...</div>';
   
@@ -1463,7 +1467,9 @@ async function showOfficialConfirmation(type) {
   // 公式セットはサーバー上のローカルファイルなので直接パスを指定する
   const candidates = (type === 'trump') 
     ? [`${TRUMP_IMG_BASE}/spade_A.png`, `${TRUMP_IMG_BASE}/heart_A.png`, `${TRUMP_IMG_BASE}/diamond_A.png`, `${TRUMP_IMG_BASE}/club_A.png`]
-    : [`image/Chess/White_king.png`, `image/Chess/White_queen.png`, `image/Chess/Black_king.png`, `image/Chess/Black_queen.png` ];
+    : (type === 'chess')
+      ? [`image/Chess/White_king.png`, `image/Chess/White_queen.png`, `image/Chess/Black_king.png`, `image/Chess/Black_queen.png` ]
+      : [`image/Reversi/Reversi_Black.png`, `image/Reversi/Reversi_White.png`];
 
   for (const fullPath of candidates) {
     const item = document.createElement('div');
@@ -1476,12 +1482,17 @@ async function showOfficialConfirmation(type) {
   }
   const msg = document.createElement('div');
   msg.style.cssText = "grid-column: 1/-1; text-align:center; padding:10px; color:#888; font-size:12px;";
-  msg.textContent = (type === 'trump') ? "全54枚のカードがロードされます" : "白黒各16枚、計32枚の駒がロードされます";
+  msg.textContent = (type === 'trump') ? "全54枚のカードがロードされます" : (type === 'chess') ? "白黒各16枚、計32枚の駒がロードされます" : "初期配置4個＋ストック60個、計64個の石がロードされます";
   detailsList.appendChild(msg);
 }
 
 async function loadOfficialSet(type) {
   try {
+    if (type === 'reversi') {
+      await spawnReversiSet(CURRENT_ROOM);
+      postLog('saveLoad', '公式セット「リバーシ」をロードしました');
+      return;
+    }
     const baseCards = collection(db, `rooms/${CURRENT_ROOM}/cards`);
     let batch = writeBatch(db), n = 0, i = 0;
     const z0 = Date.now() % 10000;
@@ -3145,8 +3156,8 @@ const areaBackgroundImages = new Map(); // areaId -> { imageUrl, fitMode }
 
 function applyFieldModeLayout() {
   const m = CURRENT_ROOM_META?.fieldMode;
-  // 'board', 'trump', 'chess' をボード系DOMにマップ
-  const mode = (m === 'board' || m === 'trump' || m === 'chess') ? 'board' : 'card';
+  // 'board', 'trump', 'chess', 'reversi' をボード系DOMにマップ
+  const mode = (m === 'board' || m === 'trump' || m === 'chess' || m === 'reversi') ? 'board' : 'card';
   const fieldRoot = document.getElementById('field');
   if (!fieldRoot) return;
 
@@ -3165,8 +3176,16 @@ function applyFieldModeLayout() {
     boardLayoutEl.classList.toggle('layout-playonly', boardNormLayout === 'playonly');
     boardLayoutEl.classList.toggle('mode-chess', m === 'chess');
     boardLayoutEl.classList.toggle('mode-trump', m === 'trump');
+    boardLayoutEl.classList.toggle('mode-reversi', m === 'reversi');
 
-    if (m === 'chess' || boardNormLayout === 'playonly') {
+    if (m === 'reversi') {
+      if (!CURRENT_ROOM_META?.boardWidth || CURRENT_ROOM_META.boardWidth === 2400 || CURRENT_ROOM_META.boardWidth === 3360) {
+        boardLayoutEl.style.width = '3600px';
+      }
+      if (!CURRENT_ROOM_META?.boardHeight || CURRENT_ROOM_META.boardHeight === 2400) {
+        boardLayoutEl.style.height = '2000px';
+      }
+    } else if (m === 'chess' || boardNormLayout === 'playonly') {
       if (!CURRENT_ROOM_META?.boardWidth || CURRENT_ROOM_META.boardWidth === 3360) {
         boardLayoutEl.style.width = '2400px';
       }
@@ -3182,11 +3201,11 @@ function applyFieldModeLayout() {
       }
     }
     
-    // Chess / Trump などのプレイエリア背景画像の設定（カスタム画像が設定されていない場合のみデフォルトを適用）
+    // Chess / Trump / Reversi などのプレイエリア背景画像の設定（カスタム画像が設定されていない場合のみデフォルトを適用）
     const boardPlayEl = document.getElementById('board-play');
     if (boardPlayEl) {
       const customAreaBg = areaBackgroundImages.get('board-play');
-      const hasCustomBg = !!customAreaBg?.imageUrl || boardPlayEl.classList.contains('has-bg-image') || (boardPlayEl.style.backgroundImage && !boardPlayEl.style.backgroundImage.includes('ChessBoard.png') && !boardPlayEl.style.backgroundImage.includes('TrumpBoard.jpg'));
+      const hasCustomBg = !!customAreaBg?.imageUrl || boardPlayEl.classList.contains('has-bg-image') || (boardPlayEl.style.backgroundImage && !boardPlayEl.style.backgroundImage.includes('ChessBoard.png') && !boardPlayEl.style.backgroundImage.includes('TrumpBoard.jpg') && !boardPlayEl.style.backgroundImage.includes('ReversiBoard.png'));
       if (hasCustomBg) {
         // カスタム背景画像が設定されている場合は保護し、必要であれば復元
         if (customAreaBg?.imageUrl && !boardPlayEl.style.backgroundImage) {
@@ -3203,6 +3222,11 @@ function applyFieldModeLayout() {
           boardPlayEl.style.backgroundPosition = "center";
         } else if (m === 'trump') {
           boardPlayEl.style.backgroundImage = "url('image/Trump/TrumpBoard.jpg')";
+          boardPlayEl.style.backgroundSize = "100% 100%";
+          boardPlayEl.style.backgroundRepeat = "no-repeat";
+          boardPlayEl.style.backgroundPosition = "center";
+        } else if (m === 'reversi') {
+          boardPlayEl.style.backgroundImage = "url('image/Reversi/ReversiBoard.png')";
           boardPlayEl.style.backgroundSize = "100% 100%";
           boardPlayEl.style.backgroundRepeat = "no-repeat";
           boardPlayEl.style.backgroundPosition = "center";
@@ -3234,9 +3258,9 @@ function applyFieldModeLayout() {
     }
   }
 
-  // ボードモードでの手札およびデッキ・捨て札の表示制御 (playonly または chess の場合は非表示)
+  // ボードモードでの手札およびデッキ・捨て札の表示制御 (playonly または chess / reversi の場合は非表示)
   if (mode === 'board') {
-    const isPlayOnly = (layout === 'playonly' || m === 'chess');
+    const isPlayOnly = (layout === 'playonly' || m === 'chess' || m === 'reversi');
     for (let i = 1; i <= 10; i++) {
       const handEl = document.getElementById(`board-hand-${i}`);
       if (handEl) {
@@ -4626,6 +4650,9 @@ function applyCardBackStyle(card) {
   if (url) {
     card.classList.add('has-back');
     card.style.backgroundImage = `url("${url}")`;
+    card.style.backgroundSize = 'contain';
+    card.style.backgroundRepeat = 'no-repeat';
+    card.style.backgroundPosition = 'center';
   } else {
     card.style.backgroundColor = '#000';
     card.classList.remove('has-back');
@@ -5902,6 +5929,9 @@ function createCardDom(cardId, imageSrc, state) {
   if (state?.type === 'board') {
     card.classList.add('image-token', 'is-board');
   }
+  if (state?.backImageUrl) {
+    card.dataset.backImageUrl = state.backImageUrl;
+  }
 
 
 
@@ -6230,7 +6260,8 @@ function createCardDom(cardId, imageSrc, state) {
     const isCounter = card.classList.contains('counter');
     const isTextToken = card.classList.contains('token') || card.classList.contains('memo');
     const isImageToken = card.classList.contains('image-token');
-    const isToken = isTextToken || isImageToken;
+    const hasBackImage = !!card.dataset.backImageUrl;
+    const isToken = isTextToken || (isImageToken && !hasBackImage);
     const isNumCtr = card.classList.contains('numcounter');
 
     if (isToken) {
@@ -6277,7 +6308,9 @@ function createCardDom(cardId, imageSrc, state) {
       if (imgEl) {
         if (nextFaceUp && !isOtherPlayersHandCard(c)) {
           imgEl.style.display = 'block';
-          c.style.backgroundColor = '#fff';
+          if (!c.classList.contains('image-token')) {
+            c.style.backgroundColor = '#fff';
+          }
           c.classList.remove('has-back');
           c.style.backgroundImage = '';
         } else {
@@ -6527,13 +6560,17 @@ function applyCardState(card, data) {
         return hs != null && String(hs) !== String(CURRENT_PLAYER);
       })());
 
-      if ((data.faceUp || !isActuallyCard) && !isOtherHand) {
+      const hasBack = !!card.dataset.backImageUrl;
+      const shouldShowFront = (data.faceUp || (!isActuallyCard && !hasBack)) && !isOtherHand;
+
+      if (shouldShowFront) {
         img.style.display = 'block';
-        card.style.backgroundColor = '#fff';
+        if (!card.classList.contains('image-token')) {
+          card.style.backgroundColor = '#fff';
+        }
         card.classList.remove('has-back');
         card.style.backgroundImage = '';
         // 裏面画像をあらかじめセット（プリロード）しておく。
-        // background-imageをセットしても、表の<img>タグやbackgroundColorが白なので隠れる。
         const backUrl = card.dataset.backImageUrl || '';
         if (backUrl) {
           const tempImg = new Image();
@@ -8578,6 +8615,8 @@ async function initializeOfficialGame(mode, roomId) {
     await spawnTrumpDeck(roomId);
   } else if (mode === 'chess') {
     await spawnChessSet(roomId);
+  } else if (mode === 'reversi') {
+    await spawnReversiSet(roomId);
   }
 }
 
@@ -8743,6 +8782,125 @@ async function spawnChessSet(roomId) {
   // White pieces (rank 0, 1)
   PIECES.forEach(p => p.files.forEach(f => spawnPiece(p.type, 'White', f, 0)));
   for (let f = 0; f < 8; f++) spawnPiece('pawn', 'White', f, 1);
+
+  if (count > 0) await batch.commit();
+}
+
+async function spawnReversiSet(roomId) {
+  const col = collection(db, `rooms/${roomId}/cards`);
+  let batch = writeBatch(db);
+  let count = 0;
+  let z = getMaxZIndex(Z_FRONT_BASE) + 1;
+
+  // Wait for board layout to settle
+  await new Promise(resolve => setTimeout(resolve, 800));
+
+  const boardEl = document.getElementById('board-play');
+  if (!boardEl) { console.error('board-play not found'); return; }
+  const fieldRoot = document.getElementById('field');
+  if (!fieldRoot) { console.error('field not found'); return; }
+
+  const boardRect = boardEl.getBoundingClientRect();
+  const fieldRect = fieldRoot.getBoundingClientRect();
+  const zVal = typeof zoom !== 'undefined' ? zoom : 1;
+
+  // Account for board-play's CSS border (background paints inside the border)
+  const scaleX = boardRect.width / boardEl.offsetWidth;
+  const scaleY = boardRect.height / boardEl.offsetHeight;
+  const borderL = boardEl.clientLeft * scaleX;
+  const borderT = boardEl.clientTop * scaleY;
+  const paddingBoxLeft = boardRect.left + borderL;
+  const paddingBoxTop = boardRect.top + borderT;
+  const paddingBoxW = boardEl.clientWidth * scaleX;
+  const paddingBoxH = boardEl.clientHeight * scaleY;
+
+  // Convert to field CSS coordinates
+  const boardInFieldX = (paddingBoxLeft - fieldRect.left) / zVal;
+  const boardInFieldY = (paddingBoxTop - fieldRect.top) / zVal;
+  const boardW = paddingBoxW / zVal;
+  const boardH = paddingBoxH / zVal;
+
+  const sx = boardW / 3600;
+  const sy = boardH / 2000;
+  const pieceSize = Math.round(190 * Math.min(sx, sy));
+
+  const BLACK_URL = 'image/Reversi/Reversi_Black.png';
+  const WHITE_URL = 'image/Reversi/Reversi_White.png';
+
+  const spawnPiece = (x, y, isFaceUp) => {
+    const ref = doc(col);
+    batch.set(ref, {
+      type: 'image-token',
+      imageUrl: BLACK_URL,
+      fullUrl: BLACK_URL,
+      backImageUrl: WHITE_URL,
+      x: Math.round(x),
+      y: Math.round(y),
+      zIndex: z++,
+      width: pieceSize,
+      height: pieceSize,
+      faceUp: isFaceUp,
+      ownerUid: null,
+      ownerSeat: null,
+      rotation: 0,
+      visibleToAll: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    count++;
+  };
+
+  // 1. Center 4 pieces
+  // Board: cx0 = 840, cy0 = 40, square = 240
+  // (3,3)=White (faceUp: false), (4,3)=Black (faceUp: true)
+  // (3,4)=Black (faceUp: true), (4,4)=White (faceUp: false)
+  const cx0 = boardInFieldX + 840 * sx;
+  const cy0 = boardInFieldY + 40 * sy;
+  const sqW = 240 * sx;
+  const sqH = 240 * sy;
+  const centerPieceOffsetX = (sqW - pieceSize) / 2;
+  const centerPieceOffsetY = (sqH - pieceSize) / 2;
+
+  const placeCenter = (c, r, isFaceUp) => {
+    const x = cx0 + c * sqW + centerPieceOffsetX;
+    const y = cy0 + r * sqH + centerPieceOffsetY;
+    spawnPiece(x, y, isFaceUp);
+  };
+
+  placeCenter(3, 3, false); // White
+  placeCenter(4, 3, true);  // Black
+  placeCenter(3, 4, true);  // Black
+  placeCenter(4, 4, false); // White
+
+  // 2. Left tray (White pieces): 3 cols x 10 rows = 30 pieces (faceUp: false)
+  // Tray x: 40 to 800 (w=760), y: 40 to 1960 (h=1920)
+  const leftTrayX = boardInFieldX + 40 * sx;
+  const leftTrayY = boardInFieldY + 40 * sy;
+  const trayColW = (760 * sx) / 3;
+  const trayRowH = (1920 * sy) / 10;
+  const trayOffsetPieceX = (trayColW - pieceSize) / 2;
+  const trayOffsetPieceY = (trayRowH - pieceSize) / 2;
+
+  for (let r = 0; r < 10; r++) {
+    for (let c = 0; c < 3; c++) {
+      const x = leftTrayX + c * trayColW + trayOffsetPieceX;
+      const y = leftTrayY + r * trayRowH + trayOffsetPieceY;
+      spawnPiece(x, y, false); // White
+    }
+  }
+
+  // 3. Right tray (Black pieces): 3 cols x 10 rows = 30 pieces (faceUp: true)
+  // Tray x: 2800 to 3560 (w=760), y: 40 to 1960 (h=1920)
+  const rightTrayX = boardInFieldX + 2800 * sx;
+  const rightTrayY = boardInFieldY + 40 * sy;
+
+  for (let r = 0; r < 10; r++) {
+    for (let c = 0; c < 3; c++) {
+      const x = rightTrayX + c * trayColW + trayOffsetPieceX;
+      const y = rightTrayY + r * trayRowH + trayOffsetPieceY;
+      spawnPiece(x, y, true); // Black
+    }
+  }
 
   if (count > 0) await batch.commit();
 }
