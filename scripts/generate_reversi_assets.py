@@ -153,46 +153,75 @@ def create_piece(color="black"):
     print(f"{filename} created successfully (256x256)")
 
 def create_lobby_thumbnail():
-    # Composite board + pieces into a sleek lobby preview image
-    board = Image.open("image/Reversi/ReversiBoard.png").convert("RGBA")
-    b_piece = Image.open("image/Reversi/Reversi_Black.png").convert("RGBA").resize((190, 190), Image.Resampling.LANCZOS)
-    w_piece = Image.open("image/Reversi/Reversi_White.png").convert("RGBA").resize((190, 190), Image.Resampling.LANCZOS)
+    # Load piece images
+    b_piece = Image.open('image/Reversi/Reversi_Black.png').convert('RGBA')
+    w_piece = Image.open('image/Reversi/Reversi_White.png').convert('RGBA')
 
-    # Place center 4 pieces
-    # (3,3)=W, (4,3)=B, (3,4)=B, (4,4)=W
-    cx0, cy0 = 840, 40
-    def place(c, r, p_img):
-        x = cx0 + c * 240 + (240 - 190) // 2
-        y = cy0 + r * 240 + (240 - 190) // 2
-        board.paste(p_img, (x, y), p_img)
+    # Create 1000x1000 square board thumbnail
+    S = 1000
+    img = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
 
-    place(3, 3, w_piece)
-    place(4, 3, b_piece)
-    place(3, 4, b_piece)
-    place(4, 4, w_piece)
+    pad = 24
+    bw = S - pad * 2
+    bh = S - pad * 2
 
-    # Place left tray white pieces: 3 cols x 10 rows = 30 pieces
-    # Tray x: 40 to 800 (w=760), y: 40 to 1960 (h=1920)
-    col_w = 760 / 3
-    row_h = 1920 / 10
-    for r in range(10):
-        for c in range(3):
-            px = int(40 + c * col_w + (col_w - 190) / 2)
-            py = int(40 + r * row_h + (row_h - 190) / 2)
-            board.paste(w_piece, (px, py), w_piece)
+    GREEN_TOP = (20, 130, 65, 255)
+    GREEN_BOT = (14, 105, 50, 255)
+    BORDER_COLOR = (24, 24, 27, 255)
+    GRID_COLOR = (24, 24, 27, 255)
+    DOT_COLOR = (24, 24, 27, 255)
 
-    # Place right tray black pieces: 3 cols x 10 rows = 30 pieces
-    # Tray x: 2800 to 3560 (w=760)
-    for r in range(10):
-        for c in range(3):
-            px = int(2800 + c * col_w + (col_w - 190) / 2)
-            py = int(40 + r * row_h + (row_h - 190) / 2)
-            board.paste(b_piece, (px, py), b_piece)
+    # Gradient fill for board
+    panel = Image.new('RGBA', (bw, bh), (0, 0, 0, 0))
+    p_draw = ImageDraw.Draw(panel)
+    for y in range(bh):
+        r_ratio = y / bh
+        r = int(GREEN_TOP[0] + (GREEN_BOT[0] - GREEN_TOP[0]) * r_ratio)
+        g = int(GREEN_TOP[1] + (GREEN_BOT[1] - GREEN_TOP[1]) * r_ratio)
+        b = int(GREEN_TOP[2] + (GREEN_BOT[2] - GREEN_TOP[2]) * r_ratio)
+        p_draw.line([(0, y), (bw, y)], fill=(r, g, b, 255))
 
-    # Resize to lobby thumbnail 640x356
-    thumb = board.resize((640, int(640 * 2000 / 3600)), Image.Resampling.LANCZOS)
-    thumb.save("image/Reversi_Field.png", "PNG", optimize=True)
-    print("Reversi_Field.png created successfully")
+    mask = Image.new('L', (bw, bh), 0)
+    m_draw = ImageDraw.Draw(mask)
+    m_draw.rounded_rectangle([0, 0, bw, bh], radius=16, fill=255)
+    img.paste(panel, (pad, pad), mask)
+    draw.rounded_rectangle([pad, pad, pad + bw, pad + bh], radius=16, outline=BORDER_COLOR, width=8)
+
+    # 8x8 grid
+    sq = bw / 8.0
+    for i in range(1, 8):
+        x = pad + i * sq
+        draw.line([(x, pad + 4), (x, pad + bh - 4)], fill=GRID_COLOR, width=3)
+        y = pad + i * sq
+        draw.line([(pad + 4, y), (pad + bw - 4, y)], fill=GRID_COLOR, width=3)
+
+    # 4 star dots at (2,2), (2,6), (6,2), (6,6)
+    dot_r = 6
+    for r_idx in [2, 6]:
+        for c_idx in [2, 6]:
+            dx = pad + c_idx * sq
+            dy = pad + r_idx * sq
+            draw.ellipse([dx - dot_r, dy - dot_r, dx + dot_r, dy + dot_r], fill=DOT_COLOR)
+
+    # Center 4 pieces
+    p_size = int(sq * 0.8)
+    b_piece_resized = b_piece.resize((p_size, p_size), Image.Resampling.LANCZOS)
+    w_piece_resized = w_piece.resize((p_size, p_size), Image.Resampling.LANCZOS)
+
+    offset = (sq - p_size) / 2.0
+    def place(col, row, p_img):
+        px = int(pad + col * sq + offset)
+        py = int(pad + row * sq + offset)
+        img.paste(p_img, (px, py), p_img)
+
+    place(3, 3, w_piece_resized)
+    place(4, 3, b_piece_resized)
+    place(3, 4, b_piece_resized)
+    place(4, 4, w_piece_resized)
+
+    img.save('image/Reversi_Field.png', 'PNG', optimize=True)
+    print('Reversi_Field.png created successfully (1000x1000)')
 
 if __name__ == "__main__":
     create_board()
