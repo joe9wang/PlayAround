@@ -144,13 +144,23 @@ body {
   background-position: center !important;
   background-repeat: no-repeat !important;
   border: none !important;
-  box-shadow: 2px 2px 6px rgba(0,0,0,0.3) !important;
+  box-shadow: none !important;
 }
 .card.image-token img {
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
   border-radius: 4px !important;
+}
+
+/* ホスト設定: コマの影表示がONの場合のみ影を付与 */
+body.piece-shadow-enabled .card.image-token:not(.is-board):not(.selected) {
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.3) !important;
+}
+
+/* ホスト設定: コマの影表示がOFFの場合、ホバー拡大時も影を出さない */
+body:not(.piece-shadow-enabled).hover-zoom-enabled .card.image-token:not(.selected):hover {
+  box-shadow: none !important;
 }
 
 #sidebar {

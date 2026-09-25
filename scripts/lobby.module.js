@@ -758,6 +758,7 @@ async function executeRoomCreation(layoutType) {
       hostIsAnonymous: auth.currentUser.isAnonymous,
       roomClosed: false,
       allowSpectatorChat: true,
+      pieceShadow: false,
       fieldMode: CREATE_FIELD_MODE,
       fieldLayout: layoutType || 'standard',
       needsInitialization: (CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess' || CREATE_FIELD_MODE === 'reversi' || CREATE_FIELD_MODE === 'shogi'),

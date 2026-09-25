@@ -324,6 +324,7 @@ function applyOtherOpsUI() {
   applySpectatorChatUI();
   applySnapGridUI();
   applyHoverZoomUI();
+  applyPieceShadowUI();
   applyRotateSettingsUI();
   applyChatLogSettingsUI();
   if (typeof refreshAllCardsOwnership === 'function') refreshAllCardsOwnership();
@@ -481,6 +482,38 @@ toggleHoverZoomInput?.addEventListener('change', async () => {
 });
 
 applyHoverZoomUI();
+
+// ===== コマの影表示（ホスト専用、デフォルトOFF） =====
+let PIECE_SHADOW_ENABLED = localStorage.getItem('pa:pieceShadow') === '1'; // デフォルト OFF (false)
+const togglePieceShadowInput = document.getElementById('toggle-piece-shadow');
+const togglePieceShadowText = document.getElementById('toggle-piece-shadow-text');
+
+function applyPieceShadowUI() {
+  if (CURRENT_ROOM_META?.pieceShadow !== undefined) {
+    PIECE_SHADOW_ENABLED = !!CURRENT_ROOM_META.pieceShadow;
+  } else if (!CURRENT_ROOM) {
+    PIECE_SHADOW_ENABLED = localStorage.getItem('pa:pieceShadow') === '1';
+  } else {
+    PIECE_SHADOW_ENABLED = false;
+  }
+  if (togglePieceShadowInput) togglePieceShadowInput.checked = PIECE_SHADOW_ENABLED;
+  if (togglePieceShadowText) togglePieceShadowText.textContent = PIECE_SHADOW_ENABLED ? 'ON' : 'OFF';
+  document.body.classList.toggle('piece-shadow-enabled', PIECE_SHADOW_ENABLED);
+}
+
+togglePieceShadowInput?.addEventListener('change', async () => {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  PIECE_SHADOW_ENABLED = !!togglePieceShadowInput.checked;
+  localStorage.setItem('pa:pieceShadow', PIECE_SHADOW_ENABLED ? '1' : '0');
+  applyPieceShadowUI();
+  if (isHost) {
+    try {
+      await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { pieceShadow: PIECE_SHADOW_ENABLED, updatedAt: serverTimestamp() }, { merge: true });
+    } catch (e) { console.warn('toggle pieceShadow failed', e); }
+  }
+});
+
+applyPieceShadowUI();
 
 // ===== カード回転設定（ホスト専用） =====
 let CARD_ROTATE_DIR = localStorage.getItem('pa:cardRotateDir') || 'cw'; // 'cw' (右回り) | 'ccw' (左回り)
