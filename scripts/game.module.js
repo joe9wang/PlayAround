@@ -376,7 +376,7 @@ function applyBoardSizeUI() {
       w = 3600;
       h = 2000;
     }
-    if (m === 'chess' && (w === undefined || w === 3360)) {
+    if ((m === 'chess' || m === 'shogi') && (w === undefined || w === 3360)) {
       w = 2400;
       h = 2400;
     }
@@ -1463,7 +1463,7 @@ async function showOfficialConfirmation(type) {
 
   if (!confirmView || !confirmTitle || !detailsList) return;
 
-  const label = (type === 'trump') ? 'トランプ (54枚)' : (type === 'chess') ? 'チェス (32枚)' : 'リバーシ (64個)';
+  const label = (type === 'trump') ? 'トランプ (54枚)' : (type === 'chess') ? 'チェス (32枚)' : (type === 'reversi') ? 'リバーシ (64個)' : '将棋 (40枚)';
   confirmTitle.textContent = `${label} をロードしますか？`;
   detailsList.innerHTML = '<div style="padding:20px; color:#666; text-align:center;">セット内容を準備中...</div>';
   
@@ -1476,7 +1476,9 @@ async function showOfficialConfirmation(type) {
     ? [`${TRUMP_IMG_BASE}/spade_A.png`, `${TRUMP_IMG_BASE}/heart_A.png`, `${TRUMP_IMG_BASE}/diamond_A.png`, `${TRUMP_IMG_BASE}/club_A.png`]
     : (type === 'chess')
       ? [`image/Chess/White_king.png`, `image/Chess/White_queen.png`, `image/Chess/Black_king.png`, `image/Chess/Black_queen.png` ]
-      : [`image/Reversi/Reversi_Black.png`, `image/Reversi/Reversi_White.png`];
+      : (type === 'reversi')
+        ? [`image/Reversi/Reversi_Black.png`, `image/Reversi/Reversi_White.png`]
+        : [`image/Shogi/Oushou.png`, `image/Shogi/Gyokushou.png`, `image/Shogi/Hisha.png`, `image/Shogi/Kakugyou.png`];
 
   for (const fullPath of candidates) {
     const item = document.createElement('div');
@@ -1489,7 +1491,7 @@ async function showOfficialConfirmation(type) {
   }
   const msg = document.createElement('div');
   msg.style.cssText = "grid-column: 1/-1; text-align:center; padding:10px; color:#888; font-size:12px;";
-  msg.textContent = (type === 'trump') ? "全54枚のカードがロードされます" : (type === 'chess') ? "白黒各16枚、計32枚の駒がロードされます" : "初期配置4個＋ストック60個、計64個の石がロードされます";
+  msg.textContent = (type === 'trump') ? "全54枚のカードがロードされます" : (type === 'chess') ? "白黒各16枚、計32枚の駒がロードされます" : (type === 'reversi') ? "初期配置4個＋ストック60個、計64個の石がロードされます" : "先手・後手各20枚、計40枚の駒がロードされます";
   detailsList.appendChild(msg);
 }
 
@@ -1498,6 +1500,11 @@ async function loadOfficialSet(type) {
     if (type === 'reversi') {
       await spawnReversiSet(CURRENT_ROOM);
       postLog('saveLoad', '公式セット「リバーシ」をロードしました');
+      return;
+    }
+    if (type === 'shogi') {
+      await spawnShogiSet(CURRENT_ROOM);
+      postLog('saveLoad', '公式セット「将棋」をロードしました');
       return;
     }
     const baseCards = collection(db, `rooms/${CURRENT_ROOM}/cards`);
@@ -3163,8 +3170,8 @@ const areaBackgroundImages = new Map(); // areaId -> { imageUrl, fitMode }
 
 function applyFieldModeLayout() {
   const m = CURRENT_ROOM_META?.fieldMode;
-  // 'board', 'trump', 'chess', 'reversi' をボード系DOMにマップ
-  const mode = (m === 'board' || m === 'trump' || m === 'chess' || m === 'reversi') ? 'board' : 'card';
+  // 'board', 'trump', 'chess', 'reversi', 'shogi' をボード系DOMにマップ
+  const mode = (m === 'board' || m === 'trump' || m === 'chess' || m === 'reversi' || m === 'shogi') ? 'board' : 'card';
   const fieldRoot = document.getElementById('field');
   if (!fieldRoot) return;
 
@@ -3184,6 +3191,7 @@ function applyFieldModeLayout() {
     boardLayoutEl.classList.toggle('mode-chess', m === 'chess');
     boardLayoutEl.classList.toggle('mode-trump', m === 'trump');
     boardLayoutEl.classList.toggle('mode-reversi', m === 'reversi');
+    boardLayoutEl.classList.toggle('mode-shogi', m === 'shogi');
 
     if (m === 'reversi') {
       if (!CURRENT_ROOM_META?.boardWidth || CURRENT_ROOM_META.boardWidth === 2400 || CURRENT_ROOM_META.boardWidth === 3360) {
@@ -3192,7 +3200,7 @@ function applyFieldModeLayout() {
       if (!CURRENT_ROOM_META?.boardHeight || CURRENT_ROOM_META.boardHeight === 2400) {
         boardLayoutEl.style.height = '2000px';
       }
-    } else if (m === 'chess' || boardNormLayout === 'playonly') {
+    } else if (m === 'chess' || m === 'shogi' || boardNormLayout === 'playonly') {
       if (!CURRENT_ROOM_META?.boardWidth || CURRENT_ROOM_META.boardWidth === 3360) {
         boardLayoutEl.style.width = '2400px';
       }
@@ -3208,11 +3216,11 @@ function applyFieldModeLayout() {
       }
     }
     
-    // Chess / Trump / Reversi などのプレイエリア背景画像の設定（カスタム画像が設定されていない場合のみデフォルトを適用）
+    // Chess / Trump / Reversi / Shogi などのプレイエリア背景画像の設定（カスタム画像が設定されていない場合のみデフォルトを適用）
     const boardPlayEl = document.getElementById('board-play');
     if (boardPlayEl) {
       const customAreaBg = areaBackgroundImages.get('board-play');
-      const hasCustomBg = !!customAreaBg?.imageUrl || boardPlayEl.classList.contains('has-bg-image') || (boardPlayEl.style.backgroundImage && !boardPlayEl.style.backgroundImage.includes('ChessBoard.png') && !boardPlayEl.style.backgroundImage.includes('TrumpBoard.jpg') && !boardPlayEl.style.backgroundImage.includes('ReversiBoard.png'));
+      const hasCustomBg = !!customAreaBg?.imageUrl || boardPlayEl.classList.contains('has-bg-image') || (boardPlayEl.style.backgroundImage && !boardPlayEl.style.backgroundImage.includes('ChessBoard.png') && !boardPlayEl.style.backgroundImage.includes('TrumpBoard.jpg') && !boardPlayEl.style.backgroundImage.includes('ReversiBoard.png') && !boardPlayEl.style.backgroundImage.includes('ShogiBoard.png'));
       if (hasCustomBg) {
         // カスタム背景画像が設定されている場合は保護し、必要であれば復元
         if (customAreaBg?.imageUrl && !boardPlayEl.style.backgroundImage) {
@@ -3234,6 +3242,11 @@ function applyFieldModeLayout() {
           boardPlayEl.style.backgroundPosition = "center";
         } else if (m === 'reversi') {
           boardPlayEl.style.backgroundImage = "url('image/Reversi/ReversiBoard.png')";
+          boardPlayEl.style.backgroundSize = "100% 100%";
+          boardPlayEl.style.backgroundRepeat = "no-repeat";
+          boardPlayEl.style.backgroundPosition = "center";
+        } else if (m === 'shogi') {
+          boardPlayEl.style.backgroundImage = "url('image/Shogi/ShogiBoard.png')";
           boardPlayEl.style.backgroundSize = "100% 100%";
           boardPlayEl.style.backgroundRepeat = "no-repeat";
           boardPlayEl.style.backgroundPosition = "center";
@@ -3265,9 +3278,9 @@ function applyFieldModeLayout() {
     }
   }
 
-  // ボードモードでの手札およびデッキ・捨て札の表示制御 (playonly または chess / reversi の場合は非表示)
+  // ボードモードでの手札およびデッキ・捨て札の表示制御 (playonly または chess / reversi / shogi の場合は非表示)
   if (mode === 'board') {
-    const isPlayOnly = (layout === 'playonly' || m === 'chess' || m === 'reversi');
+    const isPlayOnly = (layout === 'playonly' || m === 'chess' || m === 'reversi' || m === 'shogi');
     for (let i = 1; i <= 10; i++) {
       const handEl = document.getElementById(`board-hand-${i}`);
       if (handEl) {
@@ -8624,6 +8637,8 @@ async function initializeOfficialGame(mode, roomId) {
     await spawnChessSet(roomId);
   } else if (mode === 'reversi') {
     await spawnReversiSet(roomId);
+  } else if (mode === 'shogi') {
+    await spawnShogiSet(roomId);
   }
 }
 
@@ -8908,6 +8923,140 @@ async function spawnReversiSet(roomId) {
       spawnPiece(x, y, true); // Black
     }
   }
+
+  if (count > 0) await batch.commit();
+}
+
+async function spawnShogiSet(roomId) {
+  const col = collection(db, `rooms/${roomId}/cards`);
+  let batch = writeBatch(db);
+  let count = 0;
+  let z = getMaxZIndex(Z_FRONT_BASE) + 1;
+
+  // Wait for board layout to settle
+  await new Promise(resolve => setTimeout(resolve, 800));
+
+  const boardEl = document.getElementById('board-play');
+  if (!boardEl) { console.error('board-play not found'); return; }
+  const fieldRoot = document.getElementById('field');
+  if (!fieldRoot) { console.error('field not found'); return; }
+
+  const boardRect = boardEl.getBoundingClientRect();
+  const fieldRect = fieldRoot.getBoundingClientRect();
+  const zVal = typeof zoom !== 'undefined' ? zoom : 1;
+
+  // Account for board-play's CSS border (background paints inside the border)
+  const scaleX = boardRect.width / boardEl.offsetWidth;
+  const scaleY = boardRect.height / boardEl.offsetHeight;
+  const borderL = boardEl.clientLeft * scaleX;
+  const borderT = boardEl.clientTop * scaleY;
+  const paddingBoxLeft = boardRect.left + borderL;
+  const paddingBoxTop = boardRect.top + borderT;
+  const paddingBoxW = boardEl.clientWidth * scaleX;
+  const paddingBoxH = boardEl.clientHeight * scaleY;
+
+  // Convert to field CSS coordinates
+  const boardInFieldX = (paddingBoxLeft - fieldRect.left) / zVal;
+  const boardInFieldY = (paddingBoxTop - fieldRect.top) / zVal;
+  const boardW = paddingBoxW / zVal;
+  const boardH = paddingBoxH / zVal;
+
+  const sx = boardW / 2400;
+  const sy = boardH / 2400;
+
+  // Board grid starts at (390, 300), cell size (180, 200)
+  const gx0 = boardInFieldX + 390 * sx;
+  const gy0 = boardInFieldY + 300 * sy;
+  const cw = 180 * sx;
+  const ch = 200 * sy;
+
+  const pieceW = Math.round(145 * sx);
+  const pieceH = Math.round(155 * sy);
+  const ox = (cw - pieceW) / 2;
+  const oy = (ch - pieceH) / 2;
+
+  const IMG_BASE = 'image/Shogi';
+
+  const PIECE_URLS = {
+    ou: `${IMG_BASE}/Oushou.png`,
+    gyoku: `${IMG_BASE}/Gyokushou.png`,
+    hisha: `${IMG_BASE}/Hisha.png`,
+    ryu: `${IMG_BASE}/Ryuou.png`,
+    kaku: `${IMG_BASE}/Kakugyou.png`,
+    uma: `${IMG_BASE}/Ryuuma.png`,
+    kin: `${IMG_BASE}/Kinshou.png`,
+    gin: `${IMG_BASE}/Ginshou.png`,
+    narigin: `${IMG_BASE}/Narigin.png`,
+    kei: `${IMG_BASE}/Keima.png`,
+    narikei: `${IMG_BASE}/Narikei.png`,
+    kyou: `${IMG_BASE}/Kyousha.png`,
+    narikyou: `${IMG_BASE}/Narikyou.png`,
+    fu: `${IMG_BASE}/Fuhyou.png`,
+    to: `${IMG_BASE}/Tokin.png`,
+  };
+
+  const spawnPiece = (frontKey, backKey, colIdx, rowIdx, rot) => {
+    const frontUrl = PIECE_URLS[frontKey];
+    const backUrl = backKey ? PIECE_URLS[backKey] : '';
+    const x = Math.round(gx0 + colIdx * cw + ox);
+    const y = Math.round(gy0 + rowIdx * ch + oy);
+
+    const ref = doc(col);
+    batch.set(ref, {
+      type: 'image-token',
+      imageUrl: frontUrl,
+      fullUrl: frontUrl,
+      backImageUrl: backUrl,
+      x, y,
+      zIndex: z++,
+      width: pieceW,
+      height: pieceH,
+      faceUp: true,
+      ownerUid: null,
+      ownerSeat: null,
+      rotation: rot,
+      visibleToAll: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    count++;
+  };
+
+  // Gote (Top player, rot: 180)
+  // Row 0: 香 桂 銀 金 王 金 銀 桂 香
+  const goteRow0 = [
+    ['kyou', 'narikyou'], ['kei', 'narikei'], ['gin', 'narigin'], ['kin', null],
+    ['ou', null],
+    ['kin', null], ['gin', 'narigin'], ['kei', 'narikei'], ['kyou', 'narikyou']
+  ];
+  goteRow0.forEach(([f, b], c) => spawnPiece(f, b, c, 0, 180));
+
+  // Row 1: 飛(col 1), 角(col 7)
+  spawnPiece('hisha', 'ryu', 1, 1, 180);
+  spawnPiece('kaku', 'uma', 7, 1, 180);
+
+  // Row 2: 9x 歩
+  for (let c = 0; c < 9; c++) {
+    spawnPiece('fu', 'to', c, 2, 180);
+  }
+
+  // Sente (Bottom player, rot: 0)
+  // Row 6: 9x 歩
+  for (let c = 0; c < 9; c++) {
+    spawnPiece('fu', 'to', c, 6, 0);
+  }
+
+  // Row 7: 角(col 1), 飛(col 7)
+  spawnPiece('kaku', 'uma', 1, 7, 0);
+  spawnPiece('hisha', 'ryu', 7, 7, 0);
+
+  // Row 8: 香 桂 銀 金 玉 金 銀 桂 香
+  const senteRow8 = [
+    ['kyou', 'narikyou'], ['kei', 'narikei'], ['gin', 'narigin'], ['kin', null],
+    ['gyoku', null],
+    ['kin', null], ['gin', 'narigin'], ['kei', 'narikei'], ['kyou', 'narikyou']
+  ];
+  senteRow8.forEach(([f, b], c) => spawnPiece(f, b, c, 8, 0));
 
   if (count > 0) await batch.commit();
 }
