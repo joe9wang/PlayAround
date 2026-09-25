@@ -978,6 +978,21 @@ body.hover-zoom-enabled .card.selected:not(.is-board):not(.memo):not(.note):not(
   text-align: center;
 }
 
+.auth-user-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.lobby-credit {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  margin-top: 16px;
+}
+
 .lobby-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

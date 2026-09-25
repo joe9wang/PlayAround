@@ -12,7 +12,7 @@
   <meta name="description" content="BatriTableのロビー画面。ルームを作成して友だちと手軽に遊べます。">
   <title>ロビー - BatriTable</title>
   <meta content="width=device-width, initial-scale=1" name="viewport" />
-  <link rel="stylesheet" href="assets/game.css">
+  <link rel="stylesheet" href="assets/game.css?v=20260925">
   <style>
     body {
       background: #f6f7fb;
@@ -34,6 +34,19 @@
       max-width: 900px;
       width: 100%;
       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .auth-user-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .lobby-credit {
+      text-align: center;
+      font-size: 13px;
+      color: #666;
+      margin-top: 16px;
     }
     /* ▼ ルーム制限モーダル用マイルームカード */
     .room-card {
@@ -163,11 +176,11 @@
             type="button" data-i18n="auth.rejoinCreatedRoom">🚪 作成したルームに入る</button>
         </div>
         <div id="auth-loggedin-area" style="display:none;">
-          <div class="auth-user-info" style="display:flex; align-items:center; gap:8px;">
+          <div class="auth-user-info" style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px;">
             <span id="whoami" style="color:#555; font-size:13px;"></span>
             <span id="lobby-premium-badge" style="display:none;"></span>
           </div>
-          <div class="auth-buttons">
+          <div class="auth-buttons" style="display:flex; justify-content:center; gap:10px; align-items:center;">
             <button class="btn secondary" id="logout-google" style="padding:8px 12px;" data-i18n="auth.logout">ログアウト</button>
             <button class="btn secondary" id="btn-mypage" style="padding:8px 12px;" data-i18n="app.mypage"
               onclick="location.href='./mypage.html'">マイページ</button>
@@ -245,7 +258,7 @@
           </div>
         </section>
       </div>
-      <div class="lobby-credit">BatriTable — © 2026 SOLVENTER</div>
+      <div class="lobby-credit" style="text-align:center; font-size:13px; color:#666; margin-top:16px;">BatriTable — © 2026 SOLVENTER</div>
     </div>
   </div>
 
