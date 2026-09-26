@@ -298,6 +298,38 @@ let unsubscribeRoomDoc = null;
 let CURRENT_PLAYER = null; // 1..4
 let CURRENT_UID = null;
 
+// 重複セッション（別端末ログイン）検知用の個別セッションID
+const MY_SESSION_ID = 'sess_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now();
+let isDisconnectedByDuplicateSession = false;
+
+function handleDuplicateSessionDisconnection() {
+  if (isDisconnectedByDuplicateSession) return;
+  isDisconnectedByDuplicateSession = true;
+  window.__isDuplicateSessionDisconnected = true;
+
+  try { stopHeartbeat(); } catch (_) { }
+  try { stopHostHeartbeat(); } catch (_) { }
+  try { stopHostWatch(); } catch (_) { }
+  try { if (unsubscribeSeats) { unsubscribeSeats(); unsubscribeSeats = null; } } catch (_) { }
+  try { if (unsubscribeCards) { unsubscribeCards(); unsubscribeCards = null; } } catch (_) { }
+  try { if (unsubscribeRoomDoc) { unsubscribeRoomDoc(); unsubscribeRoomDoc = null; } } catch (_) { }
+  try { if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; } } catch (_) { }
+
+  const modal = document.getElementById('duplicate-session-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    const lobbyBtn = document.getElementById('duplicate-session-lobby-btn');
+    if (lobbyBtn) {
+      lobbyBtn.onclick = () => {
+        window.location.href = 'lobby.html';
+      };
+    }
+  } else {
+    alert(typeof t === 'function' ? t('session.duplicateMsg', '別の端末またはブラウザからログインされたため、このセッションを切断しました。') : '別の端末またはブラウザからログインされたため、このセッションを切断しました。');
+    window.location.href = 'lobby.html';
+  }
+}
+
 // Host-only toggle: 他プレイヤーのカード操作
 
 const hostOtherOpsWrap = document.getElementById('host-otherops');
@@ -4624,6 +4656,15 @@ function loadSeatStatus(rid) {
     const seatNo = idx + 1;
     if (snap.exists()) {
       const d = snap.data() || {};
+
+      // 重複セッション（別端末ログイン）検知：同一アカウントが別端末で着席した場合はこのセッションを切断
+      if (!isDisconnectedByDuplicateSession && CURRENT_PLAYER === seatNo && CURRENT_UID && d.claimedByUid === CURRENT_UID) {
+        if (d.activeSessionId && d.activeSessionId !== MY_SESSION_ID) {
+          handleDuplicateSessionDisconnection();
+          return;
+        }
+      }
+
       const oldBack = currentSeatMap[seatNo]?.backImageUrl;
       const isClaimed = !!d.claimedByUid;
 
@@ -4636,6 +4677,7 @@ function loadSeatStatus(rid) {
           heartbeatAt: d.heartbeatAt || null,
           areaColors: d.areaColors || {},
           backImageUrl: d.backImageUrl || null,
+          activeSessionId: d.activeSessionId || null,
         }
       );
 
@@ -4801,13 +4843,13 @@ async function claimSeat(roomId, seat, customName) {
       const snap = await tx.get(seatRef);
 
       if (!snap.exists()) {
-        tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() }, { merge: true });
+        tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp(), activeSessionId: MY_SESSION_ID }, { merge: true });
         return true;
       }
       const data = snap.data();
       const stale = isSeatStale(data);
       if (!data.claimedByUid || stale || data.claimedByUid === CURRENT_UID) {
-        tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp() }, { merge: true });
+        tx.set(seatRef, { claimedByUid: CURRENT_UID, displayName, color, claimedAt: serverTimestamp(), heartbeatAt: serverTimestamp(), activeSessionId: MY_SESSION_ID }, { merge: true });
         return true;
       }
 
@@ -4924,7 +4966,7 @@ async function startHeartbeat(roomId, seat) {
 
       if (active || needIdleKeepAlive) {
 
-        updateSeatBatched(seat, { heartbeatAt: serverTimestamp() });
+        updateSeatBatched(seat, { heartbeatAt: serverTimestamp(), activeSessionId: MY_SESSION_ID });
 
         lastSeatHBWriteAt = now;
 
@@ -5315,6 +5357,12 @@ function startSession(roomId, playerId) {
 
   if (lobby) lobby.style.display = 'none';
 
+  if (CURRENT_PLAYER !== 'spectator') {
+    try {
+      setDoc(doc(db, `rooms/${roomId}/seats/${playerId}`), { activeSessionId: MY_SESSION_ID, heartbeatAt: serverTimestamp() }, { merge: true }).catch(() => {});
+    } catch (_) { }
+  }
+
   startHeartbeat(roomId, playerId);
 
   if (IS_ROOM_CREATOR) startHostHeartbeat(roomId);
@@ -5336,6 +5384,7 @@ function startSession(roomId, playerId) {
   const __onLeave = () => {
 
     if (__leavingOnce) return;
+    if (isDisconnectedByDuplicateSession) return;
 
     __leavingOnce = true;
 

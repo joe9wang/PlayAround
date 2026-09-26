@@ -1063,6 +1063,24 @@
     </div>
   </div>
 
+  <!-- 重複セッション（別端末ログイン）切断モーダル -->
+  <div id="duplicate-session-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:999999; align-items:center; justify-content:center; pointer-events:auto;">
+    <div
+      style="background:#fff; padding:28px 24px; border-radius:16px; max-width:90%; width:380px; box-shadow:0 12px 36px rgba(0,0,0,.4); text-align:center;">
+      <div style="font-size:48px; margin-bottom:12px; line-height:1;">📱</div>
+      <div style="font-weight:800; font-size:18px; color:#1f2937; margin-bottom:10px;" data-i18n="session.duplicateTitle">切断されました</div>
+      <p style="font-size:13.5px; color:#4b5563; line-height:1.6; margin:0 0 20px 0;" data-i18n="session.duplicateMsg">
+        別の端末またはブラウザからログインされたため、このセッションを切断しました。
+      </p>
+      <div style="display:flex; justify-content:center;">
+        <button id="duplicate-session-lobby-btn" class="btn primary" style="padding:10px 24px; font-size:14px; font-weight:bold; border-radius:8px; cursor:pointer;" data-i18n="session.returnToLobby">
+          ロビーへ戻る
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- チャット＆ログ設定モーダル -->
   <div id="chat-log-settings-modal"
     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:20000; align-items:center; justify-content:center; backdrop-filter:blur(2px);">

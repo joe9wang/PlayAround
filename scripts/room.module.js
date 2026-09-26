@@ -16,6 +16,7 @@ import {
  */
 export async function releaseSeat(db, roomId, seat, currentUid, hostUid) {
   if (seat === 'spectator') return;
+  if (typeof window !== 'undefined' && window.__isDuplicateSessionDisconnected) return;
   try {
     // ホスト・非ホストに関わらずドキュメントは削除せず、所有権とハートビートのみクリアする
     // これにより backImageUrl や areaColors などの設定が保持される
