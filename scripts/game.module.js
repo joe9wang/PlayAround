@@ -325,6 +325,7 @@ function applyOtherOpsUI() {
   applySnapGridUI();
   applyHoverZoomUI();
   applyPieceShadowUI();
+  applyLockOtherHandUI();
   applyRotateSettingsUI();
   applyChatLogSettingsUI();
   if (typeof refreshAllCardsOwnership === 'function') refreshAllCardsOwnership();
@@ -514,6 +515,40 @@ togglePieceShadowInput?.addEventListener('change', async () => {
 });
 
 applyPieceShadowUI();
+
+// ===== 他人の手札カード移動制限（ホスト専用、デフォルトOFF） =====
+let LOCK_OTHER_HAND_CARDS = localStorage.getItem('pa:lockOtherHandCards') === '1'; // デフォルト OFF (false)
+const toggleLockOtherHandInput = document.getElementById('toggle-lock-other-hand');
+const toggleLockOtherHandText = document.getElementById('toggle-lock-other-hand-text');
+
+function applyLockOtherHandUI() {
+  if (CURRENT_ROOM_META?.lockOtherHandCards !== undefined) {
+    LOCK_OTHER_HAND_CARDS = !!CURRENT_ROOM_META.lockOtherHandCards;
+  } else if (!CURRENT_ROOM) {
+    LOCK_OTHER_HAND_CARDS = localStorage.getItem('pa:lockOtherHandCards') === '1';
+  } else {
+    LOCK_OTHER_HAND_CARDS = false;
+  }
+  if (toggleLockOtherHandInput) toggleLockOtherHandInput.checked = LOCK_OTHER_HAND_CARDS;
+  if (toggleLockOtherHandText) toggleLockOtherHandText.textContent = LOCK_OTHER_HAND_CARDS ? 'ON' : 'OFF';
+}
+
+toggleLockOtherHandInput?.addEventListener('change', async () => {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (!isHost) { applyLockOtherHandUI(); return; }
+
+  LOCK_OTHER_HAND_CARDS = !!toggleLockOtherHandInput.checked;
+  localStorage.setItem('pa:lockOtherHandCards', LOCK_OTHER_HAND_CARDS ? '1' : '0');
+  applyLockOtherHandUI();
+  if (typeof refreshAllCardsOwnership === 'function') refreshAllCardsOwnership();
+
+  try {
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { lockOtherHandCards: LOCK_OTHER_HAND_CARDS, updatedAt: serverTimestamp() }, { merge: true });
+    await postSystemLog(LOCK_OTHER_HAND_CARDS ? 'ホストが他人の手札カード移動制限を有効（移動不可）にしました。' : 'ホストが他人の手札カード移動制限を無効（移動可能）にしました。');
+  } catch (e) { console.warn('toggle lockOtherHandCards failed', e); }
+});
+
+applyLockOtherHandUI();
 
 // ===== カード回転設定（ホスト専用） =====
 let CARD_ROTATE_DIR = localStorage.getItem('pa:cardRotateDir') || 'cw'; // 'cw' (右回り) | 'ccw' (左回り)
@@ -2300,9 +2335,17 @@ function canOperateCard(cardEl, kind) {
   if (CURRENT_PLAYER == null || CURRENT_PLAYER === 'spectator') return false;
   if (isCardLockedByOther(cardEl)) return false; // 他人が操作中の場合は一切の操作不可
 
-  // 1. 他人の手札内にあるカードは一切の操作不可（覗き見・反転・回転・強奪を完全防止）
+  // 1. 他人の手札内にあるカードの移動制限
   if (isOtherPlayersHandCard(cardEl)) {
-    return false;
+    // ON：カードが他人の手札エリアに入ったら、そのカードを動かすことができない
+    if (LOCK_OTHER_HAND_CARDS) {
+      return false;
+    }
+    // OFF：カードが他人の手札エリアに入ったら、そのカードを動かすことができる
+    if (kind === 'move') {
+      return true;
+    }
+    return false; // 移動以外の操作（反転・回転・削除等）は手札内では保護
   }
 
   // 2. 自分の手札内にあるカードは常に全操作可能（移動・表裏・回転・削除）
@@ -11351,6 +11394,8 @@ async function checkRestoreRoomSlot() {
       playerCount: roomData.playerCount || 4,
 
       allowOthersMove: roomData.allowOthersMove || false,
+
+      lockOtherHandCards: roomData.lockOtherHandCards || false,
 
       isRestored: true,
 
