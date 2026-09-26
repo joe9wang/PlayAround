@@ -9979,103 +9979,168 @@ window.sendSelectedToBack = async function () {
 
 
 
-window.openMyCardsDialog = function () {
+function createCardListItemElement(info) {
+  const { id, src, type, ownerSeat } = info;
+  const item = document.createElement('div');
+  item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;position:relative;transition:all 0.15s ease;box-sizing:border-box;';
+  item.title = id;
 
+  if (type === 'memo' || type === 'note' || type === 'numcounter') {
+    const placeholder = document.createElement('div');
+    placeholder.style.cssText = 'width:100%; aspect-ratio:3/4; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#eee; border-radius:6px;';
+    let icon = '❓';
+    let label = '';
+    if (type === 'memo') { icon = '📝'; label = info.text || 'メモ'; }
+    else if (type === 'note') { icon = '📒'; label = `ノート (${info.noteCount})`; }
+    else if (type === 'numcounter') { icon = '🔢'; label = info.val || '0'; }
+    placeholder.innerHTML = `<div style="font-size:28px;">${icon}</div><div style="font-size:10px; color:#666; margin-top:4px; text-align:center; overflow:hidden; width:90%; white-space:nowrap; text-overflow:ellipsis;">${label}</div>`;
+    item.appendChild(placeholder);
+  } else {
+    const img = document.createElement('img');
+    img.crossOrigin = 'anonymous';
+    img.src = src;
+    img.alt = (type === 'board') ? 'ボード' : 'カード';
+    img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
+    item.appendChild(img);
+  }
+
+  // ホストで他座席のボードの場合は座席バッジを表示
+  if (ownerSeat && String(ownerSeat) !== String(CURRENT_PLAYER)) {
+    const badge = document.createElement('div');
+    badge.textContent = `SEAT${ownerSeat}`;
+    badge.style.cssText = 'position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.65);color:#fff;font-size:9px;padding:2px 5px;border-radius:4px;font-weight:bold;';
+    item.appendChild(badge);
+  }
+
+  item.addEventListener('contextmenu', (e) => {
+    if (typeof showTokenContextMenu === 'function') {
+      showTokenContextMenu(e, id);
+    }
+  });
+  item.addEventListener('mouseenter', () => {
+    item.style.outline = '3px solid #66aaff';
+    item.style.transform = 'translateY(-2px)';
+    item.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
+  });
+  item.addEventListener('mouseleave', () => {
+    item.style.outline = 'none';
+    item.style.transform = 'none';
+    item.style.boxShadow = 'none';
+  });
+
+  item.addEventListener('click', async () => {
+    await focusCardById(id);
+    postLog('search', `一覧から選択しました`);
+    closeMyCardsDialog();
+  });
+
+  return item;
+}
+
+window.openMyCardsDialog = function () {
   if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
 
   const titleEl = document.getElementById('card-list-title');
   if (titleEl) titleEl.textContent = '自分のもの一覧';
 
   cardListGrid.innerHTML = '';
-  const mine = [];
+  cardListGrid.style.display = 'block'; // 案B: セクション縦並び用に block に設定
+
+  const isHost = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
+
+  // カテゴリ別の配列を準備
+  const groups = {
+    boards: [],
+    cards: [],
+    tokens: [],
+    notes: []
+  };
 
   for (const [id, el] of cardDomMap) {
+    const rawType = el.dataset.type || 'card';
+    const ownerSeat = el.dataset.ownerSeat || '';
+    const isMine = (ownerSeat === String(CURRENT_PLAYER));
+    // ホストの場合は、テーブル共有備品であるボード（board）を他座席の所有であっても一覧に含める
+    const includeBoard = (isHost && rawType === 'board');
 
-    if (el.dataset.ownerSeat === String(CURRENT_PLAYER)) {
+    if (!isMine && !includeBoard) continue;
 
-      const type = el.dataset.type || 'card';
-      const imgEl = el.querySelector('img');
-      const src = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
-      const info = { id, src, type };
-      if (type === 'numcounter') {
-        const input = el.querySelector('.nc-input');
-        info.val = input ? input.value : 0;
-      } else if (type === 'memo' || type === 'token') {
-        const input = el.querySelector('.token-input');
-        info.text = input ? input.value : '';
-      } else if (type === 'note') {
-        const badge = el.querySelector('.note-badge');
-        info.noteCount = badge ? badge.textContent : 0;
-      }
-      mine.push(info);
+    const imgEl = el.querySelector('img');
+    const src = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
+    const info = { id, src, type: rawType, ownerSeat };
 
+    if (rawType === 'numcounter') {
+      const input = el.querySelector('.nc-input');
+      info.val = input ? input.value : 0;
+    } else if (rawType === 'memo' || rawType === 'token') {
+      const input = el.querySelector('.token-input');
+      info.text = input ? input.value : '';
+    } else if (rawType === 'note') {
+      const badge = el.querySelector('.note-badge');
+      info.noteCount = badge ? badge.textContent : 0;
     }
 
+    if (rawType === 'board') {
+      groups.boards.push(info);
+    } else if (rawType === 'image-token' || rawType === 'token' || rawType === 'dice') {
+      groups.tokens.push(info);
+    } else if (rawType === 'note' || rawType === 'memo' || rawType === 'numcounter') {
+      groups.notes.push(info);
+    } else {
+      groups.cards.push(info);
+    }
   }
 
-  if (mine.length === 0) {
+  const totalCount = groups.boards.length + groups.cards.length + groups.tokens.length + groups.notes.length;
 
+  if (totalCount === 0) {
     const empty = document.createElement('div');
-
-    empty.textContent = 'まだ自分のカードがありません。';
-
+    empty.textContent = 'まだ自分のカードや備品がありません。';
     empty.style.cssText = 'color:#666;font-size:14px;text-align:center;padding:24px 12px;';
-
     cardListGrid.appendChild(empty);
-
   } else {
+    // セクション定義（表示順序：ボード → カード → コマ・トークン → メモ・ノート）
+    const sections = [
+      { key: 'boards', labelKey: 'list.categoryBoards', defaultLabel: '📋 ボード', items: groups.boards },
+      { key: 'cards', labelKey: 'list.categoryCards', defaultLabel: '🃏 カード', items: groups.cards },
+      { key: 'tokens', labelKey: 'list.categoryTokens', defaultLabel: '♟️ コマ・トークン', items: groups.tokens },
+      { key: 'notes', labelKey: 'list.categoryNotes', defaultLabel: '📝 メモ・ノート', items: groups.notes }
+    ];
 
-    mine.forEach((info) => {
-      const { id, src, type } = info;
-      const item = document.createElement('div');
-      item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;';
-      item.title = id;
+    sections.forEach(({ labelKey, defaultLabel, items }) => {
+      if (items.length === 0) return; // 0件のセクションは非表示
 
-      if (type === 'memo' || type === 'note' || type === 'numcounter') {
-        const placeholder = document.createElement('div');
-        placeholder.style.cssText = 'width:100%; aspect-ratio:3/4; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#eee; border-radius:6px;';
-        let icon = '❓';
-        let label = '';
-        if (type === 'memo') { icon = '📝'; label = info.text || 'メモ'; }
-        else if (type === 'note') { icon = '📒'; label = `ノート (${info.noteCount})`; }
-        else if (type === 'numcounter') { icon = '🔢'; label = info.val || '0'; }
-        placeholder.innerHTML = `<div style="font-size:28px;">${icon}</div><div style="font-size:10px; color:#666; margin-top:4px; text-align:center; overflow:hidden; width:90%; white-space:nowrap; text-overflow:ellipsis;">${label}</div>`;
-        item.appendChild(placeholder);
-      } else {
-        const img = document.createElement('img'); img.crossOrigin = 'anonymous';
-        img.src = src; img.alt = 'カード'; img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
-        item.appendChild(img);
-      }
+      const labelText = typeof t === 'function' ? t(labelKey, defaultLabel) : defaultLabel;
 
-      item.addEventListener('contextmenu', (e) => {
-        if (typeof showTokenContextMenu === 'function') {
-          showTokenContextMenu(e, id);
-        }
-      });
-      item.addEventListener('mouseenter', () => { item.style.outline = '3px solid #66aaff'; });
+      const secWrapper = document.createElement('div');
+      secWrapper.style.cssText = 'margin-bottom:20px;';
 
-      item.addEventListener('mouseleave', () => { item.style.outline = 'none'; });
+      // 見出しヘッダー
+      const secHeader = document.createElement('div');
+      secHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#f3f4f6;padding:8px 12px;border-radius:8px;margin-bottom:10px;border-left:4px solid #3b82f6;';
+      
+      const titleSpan = document.createElement('span');
+      titleSpan.style.cssText = 'font-weight:700;font-size:13.5px;color:#1f2937;';
+      titleSpan.textContent = `${labelText} (${items.length})`;
+      secHeader.appendChild(titleSpan);
 
-      item.addEventListener('click', async () => {
+      secWrapper.appendChild(secHeader);
 
-        await focusCardById(id);
+      // グリッド
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill, minmax(96px, 1fr));gap:10px;';
 
-        // ★一覧から選択したログ
-
-        postLog('search', `一覧から選択しました`);
-
-        closeMyCardsDialog();
-
+      items.forEach((info) => {
+        const item = createCardListItemElement(info);
+        grid.appendChild(item);
       });
 
-      cardListGrid.appendChild(item);
-
+      secWrapper.appendChild(grid);
+      cardListGrid.appendChild(secWrapper);
     });
-
   }
 
   cardListModal.style.display = 'flex';
-
 };
 
 
@@ -10162,6 +10227,7 @@ window.openMyDeckCardsDialog = function () {
 
 
   cardListGrid.innerHTML = '';
+  cardListGrid.style.display = 'grid';
 
 
 
@@ -10315,6 +10381,7 @@ window.openMyDiscardCardsDialog = function () {
   // 自分のカードのうち、中心点が捨て札エリア内にあるものだけ抽出
 
   cardListGrid.innerHTML = '';
+  cardListGrid.style.display = 'grid';
 
   const listed = [];
 
