@@ -7751,10 +7751,13 @@ function makeDraggable(card) {
           const zIndex = parseInt(c.style.zIndex) || 1;
           const updateData = { x, y, zIndex, activeOperator: null };
 
-          const handSeat = getCardHandSeat(c);
-          if (handSeat != null) {
-            updateData.ownerSeat = handSeat;
-            c.dataset.ownerSeat = String(handSeat);
+          const isBoard = c.classList.contains('is-board') || c.dataset.type === 'board';
+          if (!isBoard) {
+            const handSeat = getCardHandSeat(c);
+            if (handSeat != null) {
+              updateData.ownerSeat = handSeat;
+              c.dataset.ownerSeat = String(handSeat);
+            }
           }
           
           if (c.style.width) {
@@ -7974,10 +7977,13 @@ function makeDraggable(card) {
           const zIndex = parseInt(c.style.zIndex) || 1;
           const updateData = { x, y, zIndex, activeOperator: null };
 
-          const handSeat = getCardHandSeat(c);
-          if (handSeat != null) {
-            updateData.ownerSeat = handSeat;
-            c.dataset.ownerSeat = String(handSeat);
+          const isBoard = c.classList.contains('is-board') || c.dataset.type === 'board';
+          if (!isBoard) {
+            const handSeat = getCardHandSeat(c);
+            if (handSeat != null) {
+              updateData.ownerSeat = handSeat;
+              c.dataset.ownerSeat = String(handSeat);
+            }
           }
           
           if (c.style.width) {
@@ -9980,7 +9986,7 @@ window.sendSelectedToBack = async function () {
 
 
 function createCardListItemElement(info) {
-  const { id, src, type, ownerSeat } = info;
+  const { id, src, type } = info;
   const item = document.createElement('div');
   item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;position:relative;transition:all 0.15s ease;box-sizing:border-box;';
   item.title = id;
@@ -10002,14 +10008,6 @@ function createCardListItemElement(info) {
     img.alt = (type === 'board') ? 'ボード' : 'カード';
     img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
     item.appendChild(img);
-  }
-
-  // ホストで他座席のボードの場合は座席バッジを表示
-  if (ownerSeat && String(ownerSeat) !== String(CURRENT_PLAYER)) {
-    const badge = document.createElement('div');
-    badge.textContent = `SEAT${ownerSeat}`;
-    badge.style.cssText = 'position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.65);color:#fff;font-size:9px;padding:2px 5px;border-radius:4px;font-weight:bold;';
-    item.appendChild(badge);
   }
 
   item.addEventListener('contextmenu', (e) => {
@@ -10046,8 +10044,6 @@ window.openMyCardsDialog = function () {
   cardListGrid.innerHTML = '';
   cardListGrid.style.display = 'block'; // 案B: セクション縦並び用に block に設定
 
-  const isHost = !!(CURRENT_ROOM_META?.hostUid && CURRENT_UID && CURRENT_ROOM_META.hostUid === CURRENT_UID);
-
   // カテゴリ別の配列を準備
   const groups = {
     boards: [],
@@ -10057,17 +10053,12 @@ window.openMyCardsDialog = function () {
   };
 
   for (const [id, el] of cardDomMap) {
+    if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
+
     const rawType = el.dataset.type || 'card';
-    const ownerSeat = el.dataset.ownerSeat || '';
-    const isMine = (ownerSeat === String(CURRENT_PLAYER));
-    // ホストの場合は、テーブル共有備品であるボード（board）を他座席の所有であっても一覧に含める
-    const includeBoard = (isHost && rawType === 'board');
-
-    if (!isMine && !includeBoard) continue;
-
     const imgEl = el.querySelector('img');
     const src = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
-    const info = { id, src, type: rawType, ownerSeat };
+    const info = { id, src, type: rawType };
 
     if (rawType === 'numcounter') {
       const input = el.querySelector('.nc-input');
