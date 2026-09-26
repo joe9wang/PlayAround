@@ -6297,9 +6297,14 @@ function createCardDom(cardId, imageSrc, state) {
     if (img) img.style.display = 'none';
 
     card.addEventListener('click', (e) => {
+      if (card._justDragged) {
+        card._justDragged = false;
+        e.stopPropagation();
+        return;
+      }
       if (e.detail > 1) return;
       if (typeof openNoteViewModal === 'function') openNoteViewModal(cardId);
-    });
+    }, true);
 
     card.addEventListener('contextmenu', (e) => {
       e.preventDefault();
@@ -7627,6 +7632,15 @@ function makeDraggable(card) {
       });
 
       if (!isDragging) return;
+      selectedCards.forEach(c => {
+        c._justDragged = true;
+      });
+      setTimeout(() => {
+        selectedCards.forEach(c => {
+          c._justDragged = false;
+        });
+      }, 150);
+
       isDragging = false;
 
       updateOverlapBadges();
@@ -7861,6 +7875,16 @@ function makeDraggable(card) {
         return;
       }
       card._lpFired = false;
+      if (isDragging) {
+        selectedCards.forEach(c => {
+          c._justDragged = true;
+        });
+        setTimeout(() => {
+          selectedCards.forEach(c => {
+            c._justDragged = false;
+          });
+        }, 150);
+      }
       isDragging = false;
 
       updateOverlapBadges();
