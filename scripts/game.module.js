@@ -4779,9 +4779,18 @@ async function claimSeat(roomId, seat, customName) {
 
   const seatRef = doc(db, `rooms/${roomId}/seats/${seat}`);
 
-  const authName = auth.currentUser?.displayName;
-  const validAuthName = (authName && !authName.includes('@')) ? authName : null;
-  const displayName = customName || validAuthName || localStorage.getItem('pa:last-player-name') || 'Guest';
+  const user = auth.currentUser;
+  const isRegisteredUser = !!(user && !user.isAnonymous);
+  let defaultName = 'Guest';
+  if (isRegisteredUser) {
+    const authName = user.displayName;
+    const validAuthName = (authName && !authName.includes('@')) ? authName : (user.email ? user.email.split('@')[0] : 'Player');
+    defaultName = validAuthName;
+  } else {
+    const playerPrefix = typeof t === 'function' ? t('common.player', 'プレイヤー') : 'プレイヤー';
+    defaultName = (seat !== 'spectator') ? `${playerPrefix}${seat}` : `${playerPrefix}（観戦）`;
+  }
+  const displayName = customName || defaultName;
 
   const color = '#22aaff';
 
@@ -5203,15 +5212,24 @@ function updateSessionIndicator() {
     sessionIndicator.innerHTML = '<div>ROOM: -</div><div>PLAYER: -</div><div>SEAT: -</div>';
     return;
   }
-  let pName = localStorage.getItem('pa:last-player-name') || 'Guest';
+  const user = auth.currentUser;
+  const isRegisteredUser = !!(user && !user.isAnonymous);
+  let pName = '';
   let seatDisplay = '観戦';
-  if (CURRENT_PLAYER !== 'spectator') {
-    const seatData = currentSeatMap[CURRENT_PLAYER];
-    if (seatData && seatData.claimedByUid === CURRENT_UID && seatData.displayName) {
-      pName = seatData.displayName;
-    } else if (localStorage.getItem('pa:last-player-name')) {
-      pName = localStorage.getItem('pa:last-player-name');
+
+  if (isRegisteredUser) {
+    pName = user.displayName || (user.email ? user.email.split('@')[0] : 'Player');
+  } else {
+    const playerPrefix = typeof t === 'function' ? t('common.player', 'プレイヤー') : 'プレイヤー';
+    if (CURRENT_PLAYER !== 'spectator') {
+      pName = `${playerPrefix}${CURRENT_PLAYER}`;
+    } else {
+      const spectatorLabel = typeof t === 'function' ? t('common.spectator', '観戦') : '観戦';
+      pName = `${playerPrefix}（${spectatorLabel}）`;
     }
+  }
+
+  if (CURRENT_PLAYER !== 'spectator') {
     seatDisplay = `${CURRENT_PLAYER}`; // SEATを省く
   }
 
@@ -5452,30 +5470,21 @@ function appendSystemLine(text) {
 
 
 function myDisplayName() {
-
   try {
-
-    const seatData = (typeof CURRENT_PLAYER === 'number' && currentSeatMap) ? (currentSeatMap[CURRENT_PLAYER] || {}) : {};
-
-    const nameFromSeat = seatData.displayName;
-    if (nameFromSeat) return nameFromSeat;
-
-    const authName = auth.currentUser?.displayName;
-    const validAuthName = (authName && !authName.includes('@')) ? authName : null;
-    const saved = validAuthName || localStorage.getItem('pa:last-player-name') || '';
-
-    if (CURRENT_PLAYER === 'spectator') {
-      return `${saved || '匿名'} (観戦)`;
+    const user = auth.currentUser;
+    const isRegisteredUser = !!(user && !user.isAnonymous);
+    if (isRegisteredUser) {
+      return user.displayName || (user.email ? user.email.split('@')[0] : 'Player');
     }
-
-    return saved || `SEAT${CURRENT_PLAYER || '-'}`;
-
+    const playerPrefix = typeof t === 'function' ? t('common.player', 'プレイヤー') : 'プレイヤー';
+    if (CURRENT_PLAYER !== 'spectator') {
+      return `${playerPrefix}${CURRENT_PLAYER}`;
+    }
+    const spectatorLabel = typeof t === 'function' ? t('common.spectator', '観戦') : '観戦';
+    return `${playerPrefix}（${spectatorLabel}）`;
   } catch (_) {
-
-    return (CURRENT_PLAYER === 'spectator') ? '匿名 (観戦)' : `SEAT${CURRENT_PLAYER || '-'}`;
-
+    return (CURRENT_PLAYER === 'spectator') ? 'プレイヤー（観戦）' : `プレイヤー${CURRENT_PLAYER || '-'}`;
   }
-
 }
 
 
@@ -13933,10 +13942,30 @@ if (sitSeatBtn) {
     const maxSeats = parseInt(CURRENT_ROOM_META.playerCount || 10, 10);
     seatSelectGrid.innerHTML = '';
 
+    const user = auth.currentUser;
+    const isRegistered = !!(user && !user.isAnonymous);
+    const nameDesc = document.getElementById('seat-player-name-desc');
+
     if (seatPlayerNameInput) {
-      const authName = auth.currentUser?.displayName;
-      const validAuthName = (authName && !authName.includes('@')) ? authName : '';
-      seatPlayerNameInput.value = validAuthName || localStorage.getItem('pa:last-player-name') || '';
+      if (isRegistered) {
+        const regName = user.displayName || (user.email ? user.email.split('@')[0] : 'Player');
+        seatPlayerNameInput.value = regName;
+        seatPlayerNameInput.disabled = true;
+        seatPlayerNameInput.style.backgroundColor = '#f3f4f6';
+        if (nameDesc) {
+          nameDesc.style.display = 'block';
+          nameDesc.textContent = '※ログイン中のアカウント名が適用されます。';
+        }
+      } else {
+        seatPlayerNameInput.value = '';
+        seatPlayerNameInput.disabled = true;
+        seatPlayerNameInput.style.backgroundColor = '#f3f4f6';
+        seatPlayerNameInput.placeholder = '座席番号（プレイヤー1〜4）として着席します';
+        if (nameDesc) {
+          nameDesc.style.display = 'block';
+          nameDesc.textContent = '※未ログインのため、座席番号（プレイヤー1〜4）で着席します。';
+        }
+      }
     }
     
     for (let i = 1; i <= maxSeats; i++) {
@@ -13963,18 +13992,17 @@ if (sitSeatBtn) {
       btn.addEventListener('click', async () => {
         if (isUsed) return;
 
-        let pName = seatPlayerNameInput?.value?.trim() || '';
-        if (!pName) {
-          alert('プレイヤー名を入力してください。');
-          seatPlayerNameInput?.focus();
-          return;
-        }
-        if (pName.length > 24) {
-          alert('プレイヤー名は24文字以内で入力してください。');
-          return;
+        const curUser = auth.currentUser;
+        const curRegistered = !!(curUser && !curUser.isAnonymous);
+        let pName = '';
+
+        if (curRegistered) {
+          pName = curUser.displayName || (curUser.email ? curUser.email.split('@')[0] : 'Player');
+        } else {
+          const playerPrefix = typeof t === 'function' ? t('common.player', 'プレイヤー') : 'プレイヤー';
+          pName = `${playerPrefix}${i}`;
         }
 
-        localStorage.setItem('pa:last-player-name', pName);
         seatSelectModal.style.display = 'none';
         
         try { await showRoomInterstitial({ force: true, cooldownMs: 0 }); } catch (_) { }
@@ -14021,9 +14049,6 @@ if (sitSeatBtn) {
       seatSelectGrid.appendChild(btn);
     }
     seatSelectModal.style.display = 'flex';
-    if (seatPlayerNameInput && !seatPlayerNameInput.value) {
-      seatPlayerNameInput.focus();
-    }
   });
 }
 
