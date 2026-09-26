@@ -49,13 +49,38 @@ function updateAuthIndicator(user) {
     `;
   } else {
     const photo = user.photoURL;
-    const name = user.displayName || user.email || 'Player';
+    const name = user.displayName || localStorage.getItem('pa:last-player-name') || (user.email ? user.email.split('@')[0] : 'Player');
     const initial = name.charAt(0).toUpperCase();
+    const mypageText = (typeof t === 'function') ? t('app.mypage') : 'マイページ';
     authIndicator.innerHTML = `
-      <a href="./mypage.html" class="avatar-btn" title="マイページへ">
-        ${photo ? `<img src="${photo}" alt="Avatar">` : initial}
-      </a>
+      <div class="header-user-badge">
+        <a href="./mypage.html" class="avatar-btn" title="マイページへ"></a>
+        <div class="user-info-col">
+          <span class="user-display-name"></span>
+          <a href="./mypage.html" class="user-mypage-btn" data-i18n="app.mypage"></a>
+        </div>
+      </div>
     `;
+    const avatarBtn = authIndicator.querySelector('.avatar-btn');
+    if (avatarBtn) {
+      if (photo) {
+        const img = document.createElement('img');
+        img.src = photo;
+        img.alt = 'Avatar';
+        avatarBtn.appendChild(img);
+      } else {
+        avatarBtn.textContent = initial;
+      }
+    }
+    const nameSpan = authIndicator.querySelector('.user-display-name');
+    if (nameSpan) {
+      nameSpan.textContent = name;
+      nameSpan.title = name;
+    }
+    const mypageBtn = authIndicator.querySelector('.user-mypage-btn');
+    if (mypageBtn) {
+      mypageBtn.textContent = mypageText;
+    }
   }
 }
 
