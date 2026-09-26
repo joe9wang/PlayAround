@@ -78,7 +78,7 @@ import {
 
   doc, setDoc, getDoc, updateDoc, onSnapshot,
 
-  serverTimestamp, runTransaction, deleteDoc, collection, limit,
+  serverTimestamp, runTransaction, deleteDoc, collection, limit, limitToLast,
 
   addDoc, where, query, getDocs, writeBatch, Timestamp, orderBy, getCountFromServer,
 
@@ -5854,7 +5854,7 @@ function subscribeChat() {
 
     orderBy('createdAt', 'asc'),
 
-    limit(200)
+    limitToLast(200)
 
   );
 
