@@ -812,6 +812,20 @@ input:checked + .slider:before {
   transform-origin: 50% 50%;
 }
 
+/* 他プレイヤーによるカード移動のスムーズ加減速アニメーション */
+.card.remote-animating-move:not([data-is-dragging="true"]) {
+  transition: left 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+              top 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+              border .2s, scale .15s ease, box-shadow .15s ease !important;
+  will-change: left, top;
+}
+
+/* 自身がドラッグ中、またはマウス操作中は即座に transition を解除して完全ゼロ遅延を保証 */
+.card[data-is-dragging="true"],
+.card:active {
+  transition: none !important;
+}
+
 .card[data-owner="other"] {
   cursor: not-allowed;
   opacity: .95;

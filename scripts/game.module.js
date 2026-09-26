@@ -326,6 +326,7 @@ function applyOtherOpsUI() {
   applyHoverZoomUI();
   applyPieceShadowUI();
   applyLockOtherHandUI();
+  applyCardAnimationUI();
   applyRotateSettingsUI();
   applyChatLogSettingsUI();
   if (typeof refreshAllCardsOwnership === 'function') refreshAllCardsOwnership();
@@ -549,6 +550,39 @@ toggleLockOtherHandInput?.addEventListener('change', async () => {
 });
 
 applyLockOtherHandUI();
+
+// ===== カード移動アニメーション（ホスト専用、デフォルトON） =====
+let ANIMATE_CARD_MOVE = localStorage.getItem('pa:animateCardMove') !== '0'; // デフォルト ON (true)
+const toggleCardAnimationInput = document.getElementById('toggle-card-animation');
+const toggleCardAnimationText = document.getElementById('toggle-card-animation-text');
+
+function applyCardAnimationUI() {
+  if (CURRENT_ROOM_META?.animateCardMove !== undefined) {
+    ANIMATE_CARD_MOVE = !!CURRENT_ROOM_META.animateCardMove;
+  } else if (!CURRENT_ROOM) {
+    ANIMATE_CARD_MOVE = localStorage.getItem('pa:animateCardMove') !== '0';
+  } else {
+    ANIMATE_CARD_MOVE = true; // デフォルト ON
+  }
+  if (toggleCardAnimationInput) toggleCardAnimationInput.checked = ANIMATE_CARD_MOVE;
+  if (toggleCardAnimationText) toggleCardAnimationText.textContent = ANIMATE_CARD_MOVE ? 'ON' : 'OFF';
+}
+
+toggleCardAnimationInput?.addEventListener('change', async () => {
+  const isHost = !!(CURRENT_ROOM && CURRENT_ROOM_META?.hostUid === CURRENT_UID);
+  if (!isHost) { applyCardAnimationUI(); return; }
+
+  ANIMATE_CARD_MOVE = !!toggleCardAnimationInput.checked;
+  localStorage.setItem('pa:animateCardMove', ANIMATE_CARD_MOVE ? '1' : '0');
+  applyCardAnimationUI();
+
+  try {
+    await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), { animateCardMove: ANIMATE_CARD_MOVE, updatedAt: serverTimestamp() }, { merge: true });
+    await postSystemLog(ANIMATE_CARD_MOVE ? 'ホストがカード移動アニメーションを有効にしました。' : 'ホストがカード移動アニメーションを無効にしました。');
+  } catch (e) { console.warn('toggle animateCardMove failed', e); }
+});
+
+applyCardAnimationUI();
 
 // ===== カード回転設定（ホスト専用） =====
 let CARD_ROTATE_DIR = localStorage.getItem('pa:cardRotateDir') || 'cw'; // 'cw' (右回り) | 'ccw' (左回り)
@@ -5863,7 +5897,18 @@ const cardDomMap = new Map();
 
 const localChangeMap = new Map();
 
-function markLocal(id) { localChangeMap.set(id, Date.now()); setTimeout(() => localChangeMap.delete(id), 1200); }
+function markLocal(id) {
+  localChangeMap.set(id, Date.now());
+  const el = cardDomMap.get(id);
+  if (el) {
+    if (el._remoteAnimTimer) {
+      clearTimeout(el._remoteAnimTimer);
+      el._remoteAnimTimer = null;
+    }
+    el.classList.remove('remote-animating-move');
+  }
+  setTimeout(() => localChangeMap.delete(id), 1200);
+}
 
 function isLocalRecent(id) { const t = localChangeMap.get(id); return t && (Date.now() - t < 1200); }
 
@@ -6690,8 +6735,35 @@ function applyCardState(card, data) {
   }
 
   if (!isDraggingLocally && !isLocalRecent(cardId)) {
-    card.style.left = `${data.x || 0}px`;
-    card.style.top = `${data.y || 0}px`;
+    const targetX = (data.x != null) ? data.x : 0;
+    const targetY = (data.y != null) ? data.y : 0;
+    const hasInitial = card.dataset.hasInitialPos === 'true';
+    const curLeft = parseFloat(card.style.left) || 0;
+    const curTop = parseFloat(card.style.top) || 0;
+
+    // 初回ロード完了後、かつアニメーション設定ON、かつ初期位置設定済み、かつ位置に有意な変化がある場合のみアニメーション
+    const shouldAnimate = ANIMATE_CARD_MOVE && isInitialLoadDone && hasInitial &&
+      (Math.abs(curLeft - targetX) > 1 || Math.abs(curTop - targetY) > 1);
+
+    if (shouldAnimate) {
+      if (card._remoteAnimTimer) clearTimeout(card._remoteAnimTimer);
+      card.classList.add('remote-animating-move');
+      card.style.left = `${targetX}px`;
+      card.style.top = `${targetY}px`;
+      card._remoteAnimTimer = setTimeout(() => {
+        card.classList.remove('remote-animating-move');
+        card._remoteAnimTimer = null;
+      }, 380);
+    } else {
+      if (card._remoteAnimTimer) {
+        clearTimeout(card._remoteAnimTimer);
+        card._remoteAnimTimer = null;
+      }
+      card.classList.remove('remote-animating-move');
+      card.style.left = `${targetX}px`;
+      card.style.top = `${targetY}px`;
+      card.dataset.hasInitialPos = 'true';
+    }
 
     if (data.zIndex) {
       // 互換性確保：古いデータ(z-index < 300)は300以上のレイヤーに底上げする
@@ -7499,6 +7571,8 @@ function makeDraggable(card) {
       selectedCards = Array.from(document.querySelectorAll('.card.selected')).filter(c => canOperateCard(c, 'move'));
       initialPositions.clear();
       selectedCards.forEach(c => {
+        if (c._remoteAnimTimer) { clearTimeout(c._remoteAnimTimer); c._remoteAnimTimer = null; }
+        c.classList.remove('remote-animating-move');
         c.dataset.isDragging = 'false';
         initialPositions.set(c.dataset.cardId, {
           left: parseFloat(c.style.left) || 0,
@@ -7509,6 +7583,8 @@ function makeDraggable(card) {
     } else {
       selectedCards = [card];
       initialPositions.clear();
+      if (card._remoteAnimTimer) { clearTimeout(card._remoteAnimTimer); card._remoteAnimTimer = null; }
+      card.classList.remove('remote-animating-move');
       card.dataset.isDragging = 'false';
       initialPositions.set(card.dataset.cardId, {
         left: parseFloat(card.style.left) || 0,
