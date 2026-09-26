@@ -5191,9 +5191,14 @@ function updateSessionIndicator() {
     } catch (e) { console.warn('Expiry calculation error', e); }
   }
 
+  // ホストバッジ表示（自身がホストの場合）
+  const isHost = typeof isHostNow === 'function' && isHostNow();
+  const hostLabel = typeof t === 'function' ? t('room.hostBadge', 'ホスト') : 'ホスト';
+  const hostBadge = isHost ? ` <span class="session-host-badge" title="${hostLabel}"><svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>${hostLabel}</span>` : '';
+
   sessionIndicator.innerHTML = `
     <div>ROOM: ${CURRENT_ROOM}${expiryText}</div>
-    <div>PLAYER: ${pName}</div>
+    <div>PLAYER: ${pName}${hostBadge}</div>
     <div>SEAT: ${seatDisplay}</div>
   `;
   
