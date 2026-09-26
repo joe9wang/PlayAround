@@ -4625,12 +4625,13 @@ function loadSeatStatus(rid) {
     if (snap.exists()) {
       const d = snap.data() || {};
       const oldBack = currentSeatMap[seatNo]?.backImageUrl;
+      const isClaimed = !!d.claimedByUid;
 
       currentSeatMap[seatNo] = Object.assign(
         {},
         currentSeatMap[seatNo] || {},
         {
-          displayName: d.displayName || '',
+          displayName: isClaimed ? (d.displayName || '') : '',
           claimedByUid: d.claimedByUid || null,
           heartbeatAt: d.heartbeatAt || null,
           areaColors: d.areaColors || {},
@@ -5206,7 +5207,11 @@ function updateSessionIndicator() {
   let seatDisplay = '観戦';
   if (CURRENT_PLAYER !== 'spectator') {
     const seatData = currentSeatMap[CURRENT_PLAYER];
-    if (seatData && seatData.displayName) pName = seatData.displayName;
+    if (seatData && seatData.claimedByUid === CURRENT_UID && seatData.displayName) {
+      pName = seatData.displayName;
+    } else if (localStorage.getItem('pa:last-player-name')) {
+      pName = localStorage.getItem('pa:last-player-name');
+    }
     seatDisplay = `${CURRENT_PLAYER}`; // SEATを省く
   }
 
@@ -13989,6 +13994,10 @@ if (sitSeatBtn) {
         }
 
         CURRENT_PLAYER = i;
+        currentSeatMap[i] = Object.assign({}, currentSeatMap[i] || {}, {
+          claimedByUid: CURRENT_UID,
+          displayName: pName
+        });
         document.body.classList.remove('is-spectator');
         startHeartbeat(CURRENT_ROOM, i);
         subscribeHP(CURRENT_ROOM);
