@@ -2317,9 +2317,9 @@ function isBoardMode() {
 
   const m = CURRENT_ROOM_META?.fieldMode;
 
-  // 'board' と 'trump' をボード系モードとして扱う
+  // 'board' と 'trump'、一般ゲーム（'chess', 'reversi', 'shogi'）をボード系モードとして扱う
 
-  return (m === 'board' || m === 'trump');
+  return (m === 'board' || m === 'trump' || m === 'chess' || m === 'reversi' || m === 'shogi');
 
 }
 
@@ -2687,6 +2687,46 @@ function centerOfDeck(seat, w, h) {
   const x = Math.round(b.minX + (b.width - (w || 0)) / 2);
   const y = Math.round(b.minY + (b.height - (h || 0)) / 2);
   return { x, y };
+}
+
+// === 有効なデッキエリア領域を取得（存在しない/非表示ならnull） ===
+function getEffectiveDeckBounds(seat) {
+  if (isBoardMode()) {
+    const el = document.querySelector('#board-center .center-deck');
+    if (el && window.getComputedStyle(el).display !== 'none' && el.offsetWidth > 0 && el.offsetHeight > 0) {
+      return rectFromEl(el);
+    }
+    return null;
+  } else {
+    const deck = document.querySelector(`.player-${seat} .deck-area`);
+    if (deck && window.getComputedStyle(deck).display !== 'none' && deck.offsetWidth > 0 && deck.offsetHeight > 0) {
+      return rectFromEl(deck);
+    }
+    return null;
+  }
+}
+
+// === カード・コマ・ボードの生成位置（中央揃え）を計算 ===
+function getSpawnPosition({ kind, width, height, seat = CURRENT_PLAYER }) {
+  const w = width || CARD_W;
+  const h = height || CARD_H;
+  const isCard = (kind === 'card' || (!kind && kind !== 'piece' && kind !== 'board'));
+
+  if (isCard) {
+    // カードの場合：デッキエリアがあればデッキエリア中央、なければプレイエリア中央
+    const deckBounds = getEffectiveDeckBounds(seat);
+    if (deckBounds) {
+      return {
+        x: Math.round(deckBounds.minX + (deckBounds.width - w) / 2),
+        y: Math.round(deckBounds.minY + (deckBounds.height - h) / 2)
+      };
+    } else {
+      return centerOfMainPlay(seat, w, h);
+    }
+  } else {
+    // コマ・ボードの場合：常にプレイエリア中央
+    return centerOfMainPlay(seat, w, h);
+  }
 }
 
 
@@ -7394,6 +7434,7 @@ async function processQueue() {
   // ★ アップロード完了合計
 
   let totalUploaded = 0;
+  let spawnOrderIndex = 0;
 
   try {
 
@@ -7421,17 +7462,18 @@ async function processQueue() {
 
 
 
-          const isSimple = (CURRENT_ROOM_META?.fieldLayout === 'simple' || CURRENT_ROOM_META?.fieldLayout === 'simple1');
           const isPiece = (kind === 'piece');
           const isBoard = (kind === 'board');
           const isToken = isPiece || isBoard;
           const zBase = isBoard ? Z_CENTER_BASE : Z_FRONT_BASE;
 
-          const pos = (isSimple || isToken) ? randomPointInMainPlay(CURRENT_PLAYER) : randomPointInDeck(CURRENT_PLAYER);
+          const objW = isBoard ? (sw || CARD_W) : CARD_W;
+          const objH = isBoard ? (sh || CARD_H) : CARD_H;
+          const pos = getSpawnPosition({ kind, width: objW, height: objH, seat: CURRENT_PLAYER });
           const { x, y } = pos;
 
           const typeData = isBoard ? { type: 'board' } : (isPiece ? { type: 'image-token' } : {});
-          const zIndex = getMaxZIndex(zBase) + 1;
+          const zIndex = getMaxZIndex(zBase) + (++spawnOrderIndex);
 
           // 1) まず Firestore にメタだけ作る（URLはあとで埋める）
           const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
@@ -9486,7 +9528,7 @@ window.spawnMemo = async function () {
     alert('ルームに参加してから実行してください'); return;
   }
   try {
-    const { x, y } = randomPointInMainPlay(CURRENT_PLAYER);
+    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, 200, 150);
     const z = getMaxZIndex(Z_FRONT_BASE) + 20;
     const imgUrl = blankTokenThumb();
     const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
@@ -9523,7 +9565,7 @@ window.spawnNote = async function () {
     alert('ルームに参加してから実行してください'); return;
   }
   try {
-    const { x, y } = randomPointInMainPlay(CURRENT_PLAYER);
+    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, 200, 150);
     const z = getMaxZIndex(Z_FRONT_BASE) + 20;
     const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
 

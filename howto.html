@@ -1557,6 +1557,56 @@
         </table>
       </div>
 
+      <h3>生成される位置（配置ルール）</h3>
+      <p>
+        オブジェクトを追加した際、ゲームモードと種類に応じて最も操作しやすいエリアの<strong>「真ん中」</strong>に自動で美しく整列・配置されます。
+      </p>
+
+      <div class="styled-table-wrap">
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>ゲームモード</th>
+              <th>オブジェクト種類</th>
+              <th>生成される場所</th>
+              <th>配置と重なり</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td rowspan="2"><strong>🃏 カードゲームモード</strong></td>
+              <td><strong>カード</strong></td>
+              <td><strong>自分のデッキエリア</strong> の真ん中<br><small style="color: #64748b;">※デッキエリアがないレイアウトの場合は「自分のプレイエリア」真ん中</small></td>
+              <td>複数枚を一括追加した場合、デッキエリア中央に綺麗な<strong>1つの山札（スタック）</strong>として順番に重なります。</td>
+            </tr>
+            <tr>
+              <td><strong>コマ・ボード</strong></td>
+              <td><strong>自分のプレイエリア</strong> の真ん中</td>
+              <td>画像の大きさに応じて重心が中央に揃うよう自動配置されます。</td>
+            </tr>
+            <tr>
+              <td rowspan="2"><strong>🎲 ボードゲームモード</strong><br><small style="color: #64748b;">（ボード／トランプ／チェス／将棋／リバーシ）</small></td>
+              <td><strong>カード</strong></td>
+              <td><strong>中央デッキエリア（共有）</strong> の真ん中<br><small style="color: #64748b;">※デッキエリアがない場合は「共有プレイエリア」真ん中</small></td>
+              <td>テーブル中央のデッキエリアに山札として綺麗にまとまって配置されます。</td>
+            </tr>
+            <tr>
+              <td><strong>コマ・ボード</strong></td>
+              <td><strong>共有プレイエリア</strong> の真ん中</td>
+              <td>盤面画像はテーブル中央に自動センタリングされ、下敷きレイヤーとして美しく展開されます。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <div class="callout-body">
+          <strong>複数枚の一括追加で即座に山札が完成！</strong><br>
+          カード画像を10枚〜数十枚まとめてドラッグ＆ドロップすると、すべてデッキエリアの真ん中にズレなく重なって配置されます。そのまま右クリックメニューから「シャッフル」や「引く」操作へスムーズに移行できます。
+        </div>
+      </div>
+
       <h3>カードの裏面（スリーブ）画像を変更する</h3>
       <p>
         操作パネルの「カード」メニュー内にある<strong>「🖼 全カードのウラ画像設定」</strong>または<strong>「🖼 選択カードのウラ画像設定」</strong>をクリックしてお好みの画像を選択すると、カード裏面のスリーブデザインを自由に変更できます。
