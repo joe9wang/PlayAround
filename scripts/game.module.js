@@ -3355,6 +3355,7 @@ function renderFieldLabels() {
 // エリア背景画像およびカスタム寸法キャッシュ (ルーム更新やハートビートで上書きされないよう保護)
 const areaBackgroundImages = new Map(); // areaId -> { imageUrl, fitMode }
 const areaCustomSizes = new Map();      // areaId -> { width, height, x, y, multX, multY, scaleLevel, isAbsolute }
+const deletedAreaIds = new Set();       // 削除されたエリアID（リロード後も非表示・削除状態を永続化）
 
 function getAreaElementById(id) {
   if (!id) return null;
@@ -3442,6 +3443,31 @@ function restoreAllAreaSizes() {
         if (sizeInfo.x !== undefined) layout.style.left = sizeInfo.x + 'px';
         if (sizeInfo.y !== undefined) layout.style.top = sizeInfo.y + 'px';
       }
+    }
+  }
+}
+
+function applyDeletedAreas() {
+  if (!deletedAreaIds.size) return;
+
+  for (const id of deletedAreaIds) {
+    const el = getAreaElementById(id);
+    if (el) {
+      if (el.classList.contains('dynamic-area') || el.classList.contains('center-deck') || el.classList.contains('center-discard')) {
+        el.remove();
+      } else {
+        el.style.display = 'none';
+      }
+    }
+  }
+
+  // #board-center の表示判定: center-deck と center-discard の両方が削除されている場合は親枠も非表示
+  const centerEl = document.getElementById('board-center');
+  if (centerEl) {
+    const deckDeleted = deletedAreaIds.has('center-deck');
+    const discardDeleted = deletedAreaIds.has('center-discard');
+    if (deckDeleted && discardDeleted) {
+      centerEl.style.display = 'none';
     }
   }
 }
@@ -3570,7 +3596,8 @@ function applyFieldModeLayout() {
     const centerEl = document.getElementById('board-center');
     if (centerEl) {
       const boardNormLayout = (layout === 'standard1') ? 'standard' : (layout === 'simple1') ? 'simple' : layout;
-      centerEl.style.display = (isPlayOnly || boardNormLayout === 'simple') ? 'none' : '';
+      const bothDeleted = deletedAreaIds.has('center-deck') && deletedAreaIds.has('center-discard');
+      centerEl.style.display = (isPlayOnly || boardNormLayout === 'simple' || bothDeleted) ? 'none' : '';
     }
   }
 
@@ -3595,9 +3622,10 @@ function applyFieldModeLayout() {
     setupCardLayoutSplitters();
   }
 
-  // エリア背景画像およびカスタム寸法の自動維持・復元
+  // エリア背景画像およびカスタム寸法の自動維持・復元、ならびに削除済みエリアの永続非表示
   restoreAllAreaBackgrounds();
   restoreAllAreaSizes();
+  applyDeletedAreas();
 }
 
 // === カードゲームモード用 レイアウト比率管理 & 境界スプリッター ===
@@ -11902,8 +11930,10 @@ async function checkRestoreRoomSlot() {
 
 
 
-    // チャットのログを追加
+    // エリア（動的エリア、削除状態、カスタム寸法）の復元
+    await copyCollection('areas');
 
+    // チャットのログを追加
     await copyCollection('log');
 
     await addDoc(collection(db, `rooms/${newRoomId}/chat`), {
@@ -12042,6 +12072,25 @@ function subscribeAreas() {
       if (el && el.dataset.moving === 'true') return;
       if (placingArea && placingArea.el && placingArea.el.dataset.areaId === id) return;
 
+      // 削除フラグの同期（リロード時も含め恒久維持）
+      if (data.isDeleted) {
+        deletedAreaIds.add(id);
+        if (el) {
+          if (el.classList.contains('dynamic-area') || el.classList.contains('center-deck') || el.classList.contains('center-discard')) {
+            el.remove();
+          } else {
+            el.style.display = 'none';
+          }
+        }
+        applyDeletedAreas();
+        return;
+      } else {
+        deletedAreaIds.delete(id);
+        if (el) {
+          el.style.display = '';
+        }
+      }
+
       if (!el && data.isAbsolute && change.type !== 'removed') {
            el = document.createElement('div');
            el.className = data.type + (id.startsWith('dynamic-') ? ' dynamic-area' : '');
@@ -12111,30 +12160,6 @@ function subscribeAreas() {
         }
 
         return;
-
-      }
-
-
-
-      // Deleted flag sync from other players
-
-      if (data.isDeleted) {
-
-        if (el.classList.contains('dynamic-area') || el.classList.contains('center-deck') || el.classList.contains('center-discard')) {
-
-          el.remove();
-
-        } else {
-
-          el.style.display = 'none';
-
-        }
-
-        return;
-
-      } else {
-
-        el.style.display = ''; // Restore if undeleted
 
       }
 
@@ -13017,37 +13042,17 @@ function bindAreaContextMenuOnce() {
 
       if (!CURRENT_ROOM || !currentTargetAreaId) return;
 
-
-
-      if (!confirm('このエリアを完全に削除（非表示）にしますか？\n※ページをリロードすると元に戻る場合があります')) return;
-
-
+      const confirmMsg = typeof t === 'function' ? t('area.confirmDelete', 'このエリアを削除しますか？') : 'このエリアを削除しますか？';
+      if (!confirm(confirmMsg)) return;
 
       try {
+        const areaIdToDelete = currentTargetAreaId;
+        const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${areaIdToDelete}`);
+        await setDoc(docRef, { isDeleted: true, updatedAt: serverTimestamp() }, { merge: true });
 
-        const docRef = doc(db, `rooms/${CURRENT_ROOM}/areas/${currentTargetAreaId}`);
-
-        await setDoc(docRef, { isDeleted: true }, { merge: true });
-
-        
-
-        // ローカルでも直ちに反映
-
-        const el = getCurrentTargetAreaElement();
-
-        if (el) {
-
-          if (el.classList.contains('dynamic-area') || el.classList.contains('center-deck') || el.classList.contains('center-discard')) {
-
-            el.remove();
-
-          } else {
-
-            el.style.display = 'none';
-
-          }
-
-        }
+        // ローカルでも直ちに反映（Setに追加して一括適用）
+        deletedAreaIds.add(areaIdToDelete);
+        applyDeletedAreas();
 
       } catch (err) {
 
