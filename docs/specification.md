@@ -1,6 +1,6 @@
 # BatriTable アプリケーション仕様書
 
-> **バージョン**: v1.24（オブジェクト一覧ダイアログのタブ統合＆動的エリア対応）  
+> **バージョン**: v1.25（エリア背景画像およびカスタムサイズのハートビート同期・永続化保護）  
 > **最終更新**: 2026-09-27  
 > **運営**: SOLVENTER  
 > **URL**: https://www.batritable.com/
@@ -661,6 +661,9 @@ users/{uid}
 - **画像のみをエリア化するスタイリング**:
   - 画像が設定されたエリアには `.has-bg-image` が付与され、元々の青色背景（`#228be6`）や緑色背景（`#2d8`）、点線枠（`border`）、内側余白（`padding`）、および右下のテキストバッジ（`.zone-label`）が非表示・透明化され、画像のみが手札エリア・プレイエリアとして表示される。
   - 「🧹 エリア画像リセット」を行うと、元の背景色・枠線・ラベルが即座に復元される。
+- **ハートビート同期・再レイアウト時の永続保護**:
+  - ホストが約60秒間隔で送信するハートビート（`HOST_HEARTBEAT_MS = 60000`）によるルームメタデータの定期更新や、`applyFieldModeLayout`・`renderAreaColors` の再評価時でも、設定されたエリア背景画像およびカスタム寸法（幅・高さ・座標・倍率）が上書き・初期化されないよう、`areaBackgroundImages` および `areaCustomSizes` の保護キャッシュを保持。
+  - ルーム更新や背景色描画（`renderAreaColors`）が走った場合も、カスタム背景画像が適用されているエリアは背景色ベタ塗りを透過（`backgroundColor = 'transparent'`）し、末尾で `restoreAllAreaBackgrounds()` および `restoreAllAreaSizes()` を実行して画像とサイズを恒久維持する。
 
 #### カードゲームモードのエリア境界線ドラッグリサイズ（ホスト専用・全席同期）
 - **操作権限**: ホストのみドラッグリサイズ操作が可能（ゲスト・観戦者には操作ハンドルは非表示）。
@@ -1093,6 +1096,19 @@ card-game/
   - フィールド上に該当エリアが存在する場合（固定配置または動的追加）にのみ対応タブが動的に表示されるスマート設計。
 - **動的エリア上のカード認識（デッキ・捨て札一覧の検出漏れ解消）**:
   - 後から追加された動的デッキエリア（`.dynamic-area.deck-area`）や動的捨て札エリア（`.dynamic-area.discard-area`）に置かれたカードも、固定エリアと同様に正確な矩形判定を行い、対応するタブ一覧に正しく抽出・表示されるよう改善。
+
+### 21.15 エリア背景画像およびカスタムサイズのハートビート同期・永続化保護 (2026-09-27)
+- **定期ハートビート（約60秒間隔）によるエリア画像・サイズ消失の恒久防止**:
+  - ホストが約60秒間隔で発信するハートビートによる `rooms/{roomId}` 更新通知（`subscribeRoomDoc`）時に、フィールド再レイアウトや背景色再描画（`renderAreaColors`）が実行され、手札・プレイエリア等のカスタム背景画像がデフォルト背景色で塗りつぶされたり、サイズ情報がCSSの初期状態へ戻ってしまう問題を完全解消。
+- **背景画像キャッシュと描画保護（`areaBackgroundImages` & `restoreAllAreaBackgrounds`）**:
+  - 画像が設定されたエリア（`areaBackgroundImages` に登録されたエリアまたは `.has-bg-image` 保持要素）に対して、`renderAreaColors` 実行時でも背景色を透過（`backgroundColor = 'transparent'`）にして上書きをブロック。
+  - ルームメタデータ変更時およびエリアサブコレクション（`areas`）同期時に `restoreAllAreaBackgrounds()` を呼び出し、常に背景画像・表示モード（fill/natural）を復元。
+- **カスタム寸法キャッシュと再適用（`areaCustomSizes` & `restoreAllAreaSizes`）**:
+  - リサイズ操作（`makeAreaResizable`）や画像適合リサイズ（`applyAreaImageFit`）、Firestore からのエリア情報受信時（`subscribeAreas`）に、各エリアの寸法（`width` / `height` / `x` / `y` / `multX` / `multY` / `scaleLevel`）を保護キャッシュ `areaCustomSizes` に即時保持。
+  - ルームメタデータの定期同期（ハートビート）やレイアウト切り替えが行われた直後にも `restoreAllAreaSizes()` を自動実行し、設定されたサイズが元に戻ることなく恒久的に維持される仕組みを構築。
+- **全座席セレクタ対応の堅牢化（`getAreaElementById`）**:
+  - カードモードの固定プレイヤーエリア（`player-1-main`, `player-1-hand` 等）から動的配置エリア（`dynamic-area`）、ボードモードエリアまで一元的にDOM要素を解決するユーティリティを整備し、同期漏れや対象要素の取り違えを防止。
+
 
 
 

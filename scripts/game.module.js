@@ -3191,21 +3191,28 @@ function renderAreaColors() {
     const root = document.querySelector(`.player-${seat}`);
     if (!root) continue;
 
-    const deck = root.querySelector('.deck-area');
-    const deck2 = root.querySelector('.deck2-area');
-    const main = root.querySelector('.main-play-area');
-    const hand = root.querySelector('.hand-area');
-    const special = root.querySelector('.special-area');
-    const special2 = root.querySelector('.special2-area');
-    const discard = root.querySelector('.discard-area');
+    const applyColorIfNotBg = (el, key) => {
+      if (!el) return;
+      const areaId = `player-${seat}-${key}`;
+      const hasBg = (typeof areaBackgroundImages !== 'undefined' && areaBackgroundImages.has(areaId)) || el.classList.contains('has-bg-image');
+      if (hasBg) {
+        el.style.backgroundColor = 'transparent';
+      } else {
+        el.style.backgroundColor = getSeatAreaColor(seat, key);
+      }
+    };
 
-    if (deck) deck.style.backgroundColor = getSeatAreaColor(seat, 'deck');
-    if (deck2) deck2.style.backgroundColor = getSeatAreaColor(seat, 'deck2');
-    if (main) main.style.backgroundColor = getSeatAreaColor(seat, 'main');
-    if (hand) hand.style.backgroundColor = getSeatAreaColor(seat, 'hand');
-    if (special) special.style.backgroundColor = getSeatAreaColor(seat, 'special');
-    if (special2) special2.style.backgroundColor = getSeatAreaColor(seat, 'special2');
-    if (discard) discard.style.backgroundColor = getSeatAreaColor(seat, 'discard');
+    applyColorIfNotBg(root.querySelector('.deck-area'), 'deck');
+    applyColorIfNotBg(root.querySelector('.deck2-area'), 'deck2');
+    applyColorIfNotBg(root.querySelector('.main-play-area'), 'main');
+    applyColorIfNotBg(root.querySelector('.hand-area'), 'hand');
+    applyColorIfNotBg(root.querySelector('.special-area'), 'special');
+    applyColorIfNotBg(root.querySelector('.special2-area'), 'special2');
+    applyColorIfNotBg(root.querySelector('.discard-area'), 'discard');
+  }
+
+  if (typeof restoreAllAreaBackgrounds === 'function') {
+    restoreAllAreaBackgrounds();
   }
 }
 
@@ -3345,8 +3352,99 @@ function renderFieldLabels() {
 
 // ===============================
 
-// エリア背景画像キャッシュ (ルーム更新やハートビートで上書きされないよう保護)
+// エリア背景画像およびカスタム寸法キャッシュ (ルーム更新やハートビートで上書きされないよう保護)
 const areaBackgroundImages = new Map(); // areaId -> { imageUrl, fitMode }
+const areaCustomSizes = new Map();      // areaId -> { width, height, x, y, multX, multY, scaleLevel, isAbsolute }
+
+function getAreaElementById(id) {
+  if (!id) return null;
+  const parts = id.match(/^(player-\d+)-(.+)$/);
+  if (parts) {
+    const seat = parts[1]; // e.g. "player-1"
+    const rawKey = parts[2].replace(/-area$/, '');  // e.g. "main", "hand", "deck", "play"
+    const cls = (rawKey === 'main' || rawKey === 'play') ? 'main-play-area' : (rawKey + '-area');
+    return document.querySelector(`.player-area.${seat} .${cls}`) ||
+           document.querySelector(`.${seat} .${cls}`) ||
+           document.querySelector(`.player-area.${seat} .play-area`) ||
+           document.querySelector(`[data-area-id="${id}"]`);
+  }
+  let el = document.querySelector(`[data-area-id="${id}"]`);
+  if (!el) el = document.getElementById(id);
+  if (!el) el = document.querySelector(`.${id}`);
+  return el;
+}
+
+function restoreAllAreaBackgrounds() {
+  if (typeof areaBackgroundImages === 'undefined' || !areaBackgroundImages.size) return;
+
+  for (const [id, bgInfo] of areaBackgroundImages) {
+    if (!bgInfo?.imageUrl) continue;
+    const el = getAreaElementById(id);
+    if (el) {
+      el.style.backgroundImage = `url("${bgInfo.imageUrl}")`;
+      el.style.backgroundSize = (bgInfo.fitMode === 'contain') ? 'contain' : '100% 100%';
+      el.style.backgroundPosition = 'center';
+      el.style.backgroundRepeat = 'no-repeat';
+      el.style.backgroundColor = 'transparent';
+      el.classList.add('has-bg-image');
+
+      if (id === 'board-play') {
+        const layout = el.parentElement;
+        if (layout && layout.id === 'board-layout') {
+          layout.style.border = 'none';
+          layout.style.background = 'transparent';
+        }
+      }
+    }
+  }
+}
+
+function restoreAllAreaSizes() {
+  if (typeof areaCustomSizes === 'undefined' || !areaCustomSizes.size) return;
+
+  for (const [id, sizeInfo] of areaCustomSizes) {
+    if (!sizeInfo) continue;
+    const el = getAreaElementById(id);
+    if (!el) continue;
+
+    const multX = sizeInfo.multX || 1;
+    const multY = sizeInfo.multY || 1;
+    if (sizeInfo.width !== undefined && sizeInfo.width > 0) {
+      el.style.width = (sizeInfo.width * multX) + 'px';
+    } else if (multX !== 1) {
+      el.style.setProperty('--area-mult-x', multX);
+    }
+
+    if (sizeInfo.height !== undefined && sizeInfo.height > 0) {
+      el.style.height = (sizeInfo.height * multY) + 'px';
+    } else if (multY !== 1) {
+      el.style.setProperty('--area-mult-y', multY);
+    }
+
+    if (sizeInfo.x !== undefined && (sizeInfo.isAbsolute || el.parentElement === field)) {
+      el.style.left = sizeInfo.x + 'px';
+    }
+    if (sizeInfo.y !== undefined && (sizeInfo.isAbsolute || el.parentElement === field)) {
+      el.style.top = sizeInfo.y + 'px';
+    }
+
+    if (sizeInfo.scaleLevel !== undefined && sizeInfo.scaleLevel !== 0) {
+      const scale = Math.pow(1.2, sizeInfo.scaleLevel);
+      el.style.transform = `scale(${scale})`;
+      el.style.transformOrigin = '50% 50%';
+    }
+
+    if (id === 'board-play') {
+      const layout = el.parentElement;
+      if (layout && layout.id === 'board-layout') {
+        if (sizeInfo.width !== undefined && sizeInfo.width > 0) layout.style.width = sizeInfo.width + 'px';
+        if (sizeInfo.height !== undefined && sizeInfo.height > 0) layout.style.height = sizeInfo.height + 'px';
+        if (sizeInfo.x !== undefined) layout.style.left = sizeInfo.x + 'px';
+        if (sizeInfo.y !== undefined) layout.style.top = sizeInfo.y + 'px';
+      }
+    }
+  }
+}
 
 // roomMeta.fieldMode に応じて DOM を切替え。
 
@@ -3496,6 +3594,10 @@ function applyFieldModeLayout() {
     }
     setupCardLayoutSplitters();
   }
+
+  // エリア背景画像およびカスタム寸法の自動維持・復元
+  restoreAllAreaBackgrounds();
+  restoreAllAreaSizes();
 }
 
 // === カードゲームモード用 レイアウト比率管理 & 境界スプリッター ===
@@ -4673,6 +4775,9 @@ function loadSeatStatus(rid) {
 
     renderFieldLabels(); renderAreaColors(); updateEndRoomButtonVisibility(); updateLeaveRoomButtonVisibility(); renderHPPanel();
 
+    // エリア背景画像とカスタム寸法の永続復元
+    restoreAllAreaBackgrounds();
+    restoreAllAreaSizes();
   });
 
 
@@ -11831,50 +11936,16 @@ function subscribeAreas() {
 
 
 
-      let el = null;
-
-      // ID例: "player-1-play-area" -> selector: .player-area.player-1 .play-area
-
-      const parts = id.match(/^(player-\d)-(.+)$/);
-
-      if (parts) {
-
-        const seat = parts[1]; // target seat class, e.g. "player-1"
-
-        const key = parts[2];  // short key, e.g. "main", "deck"
-
-        const cls = (key === 'main') ? 'main-play-area' : (key + '-area');
-
-        el = document.querySelector(`.player-area.${seat} .${cls}`);
-
-      } else {
-
-        el = document.querySelector(`[data-area-id="${id}"]`);
-
-        if (!el) el = document.getElementById(id);
-
-        if (!el) el = document.querySelector(`.${id}`);
-
-      }
-
-
+      let el = getAreaElementById(id);
 
       // ★ 配置モード中のガード（el 解決後に行う）
-
       if (el && el.dataset.moving === 'true') return;
-
       if (placingArea && placingArea.el && placingArea.el.dataset.areaId === id) return;
 
-
-
       if (!el && data.isAbsolute && change.type !== 'removed') {
-
            el = document.createElement('div');
-
            el.className = data.type + (id.startsWith('dynamic-') ? ' dynamic-area' : '');
-
            el.dataset.areaId = id;
-
            let label = 'エリア';
            let i18nKey = 'zone.play';
            if (data.type === 'deck-area') { label = 'デッキエリア'; i18nKey = 'zone.deck'; }
@@ -11890,26 +11961,16 @@ function subscribeAreas() {
            if (isHost) {
              makeAreaResizable(el, id);
            }
-
       }
-
-
-
-
 
       if (!el) {
-
         console.warn('[subscribeAreas] el not found, skip. id=', id);
-
         return;
-
       }
 
-
-
       if (change.type === 'removed') {
-
         areaBackgroundImages.delete(id);
+        areaCustomSizes.delete(id);
 
         if (el.classList.contains('dynamic-area')) {
 
@@ -12161,15 +12222,26 @@ function subscribeAreas() {
       }
 
       // テキストなどが歪まないように、単一の全体スケール(拡大/縮小)のみtransformで処理
-
       el.style.transform = `scale(${scale})`;
-
       el.style.transformOrigin = '50% 50%';
 
+      // キャッシュに保存（ハートビートや再レイアウト時の保護）
+      areaCustomSizes.set(id, {
+        width: data.width,
+        height: data.height,
+        x: data.x,
+        y: data.y,
+        multX: multX,
+        multY: multY,
+        scaleLevel: scaleLevel,
+        isAbsolute: isAbsoluteArea
+      });
     });
 
+    // スナップショット適用後、全エリアの背景画像とサイズを確実に保護・復元
+    restoreAllAreaBackgrounds();
+    restoreAllAreaSizes();
   });
-
 }
 
 
@@ -12610,7 +12682,7 @@ function bindAreaContextMenuOnce() {
 
     if (playerArea) {
 
-      const pMatch = playerArea.className.match(/player-(\d)/);
+      const pMatch = playerArea.className.match(/player-(\d+)/);
 
       pClass = pMatch ? pMatch[1] : '';
 
@@ -12996,6 +13068,9 @@ function bindAreaContextMenuOnce() {
 
       if (fitMode === 'fill') {
         // 現在のエリアサイズに合わせる (縦横比もエリアサイズに適合)
+        areaBackgroundImages.set(targetId, { imageUrl: url, fitMode: 'fill' });
+        restoreAllAreaBackgrounds();
+
         await setDoc(areaDocRef, {
           imageUrl: url,
           fitMode: 'fill',
@@ -13003,6 +13078,15 @@ function bindAreaContextMenuOnce() {
         }, { merge: true });
       } else if (fitMode === 'natural') {
         // 画像のサイズに合わせる (エリア寸法を画像サイズに完全一致)
+        areaBackgroundImages.set(targetId, { imageUrl: url, fitMode: 'natural' });
+        areaCustomSizes.set(targetId, {
+          width: pendingAreaNaturalW,
+          height: pendingAreaNaturalH,
+          isAbsolute: (targetId.startsWith('board-') || targetId.startsWith('dynamic-'))
+        });
+        restoreAllAreaBackgrounds();
+        restoreAllAreaSizes();
+
         const updateData = {
           imageUrl: url,
           fitMode: 'natural',
@@ -13294,39 +13378,8 @@ function bindAreaContextMenuOnce() {
 
 
 function getCurrentTargetAreaElement() {
-
   if (!currentTargetAreaId) return null;
-
-  const match = currentTargetAreaId.match(/^(player-\d)-(.+)$/);
-
-  let el = null;
-
-  if (match) {
-
-    const seat = match[1]; // e.g. "player-1"
-
-    const key = match[2];  // e.g. "main"
-
-    const cls = (key === 'main') ? 'main-play-area' : (key + '-area');
-
-    el = document.querySelector(`.player-area.${seat} .${cls}`);
-
-  }
-
-  if (!el) {
-
-    el = document.querySelector(`[data-area-id="${currentTargetAreaId}"]`);
-
-  }
-
-  // ボードモードのエリアは id 属性 or クラス名で存在する
-
-  if (!el) el = document.getElementById(currentTargetAreaId);
-
-  if (!el) el = document.querySelector(`.${currentTargetAreaId}`);
-
-  return el;
-
+  return getAreaElementById(currentTargetAreaId);
 }
 
 
@@ -13536,6 +13589,15 @@ function makeAreaResizable(el, areaId) {
             height: parseFloat(el.style.height) || el.offsetHeight,
             updatedAt: serverTimestamp()
           };
+
+          // ローカルキャッシュに即座に保存
+          areaCustomSizes.set(areaId, {
+            width: data.width,
+            height: data.height,
+            x: data.x,
+            y: data.y,
+            isAbsolute: true
+          });
 
           if (areaId === 'board-layout' || areaId === 'board-play') {
             await setDoc(doc(db, `rooms/${CURRENT_ROOM}`), {
