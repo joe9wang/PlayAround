@@ -75,10 +75,6 @@
         <a href="/lobby.html" data-i18n="nav.lobby">ロビー</a>
         <a href="/howto.html" data-i18n="nav.howto">遊び方</a>
         <a href="/plans.html" data-i18n="nav.plans">プラン</a>
-        <a href="/about.html" data-i18n="nav.about">運営者情報</a>
-        <a href="/privacy.html" data-i18n="nav.privacy">プライバシー</a>
-        <a href="/terms.html" data-i18n="nav.terms">利用規約</a>
-        <a href="/contact.html" data-i18n="nav.contact">お問い合わせ</a>
         <!-- 言語切替 -->
         <select aria-label="Language" class="lang-switch-header" id="lang-switch">
           <option value="ja">日本語</option>
@@ -102,10 +98,6 @@
     <div class="lobby-card" style="max-width:400px; padding:24px; background:#fff; border-radius:16px;">
       <h3 style="margin-top:0;">ルームに入室</h3>
       <div id="dj-room-info" style="font-size:14px; color:#666; margin-bottom:16px;"></div>
-
-      <label class="lobby-label">プレイヤー名</label>
-      <input class="field" id="dj-player-name" maxlength="24" placeholder="例: SOLVENTER" type="text"
-        style="margin-bottom:12px;" />
 
       <div id="dj-password-area" style="display:none;">
         <label class="lobby-label">入室パスワード</label>
@@ -155,11 +147,7 @@
       <details class="ops-section">
         <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;" data-i18n="side.search">
           検索</summary>
-        <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 一覧</button>
-        <div class="sl-row" role="group" aria-label="Search lists">
-          <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
-          <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🔍 捨て札一覧</button>
-        </div>
+        <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 オブジェクト一覧</button>
       </details>
 
       <!-- Selection Section -->
@@ -292,6 +280,32 @@
           </div>
 
           <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+            <div style="font-size:12px;color:#555;" data-i18n="side.lockOtherHand">
+              他人の手札カード移動制限
+            </div>
+            <div class="row" style="align-items:center; gap:8px;">
+              <span id="toggle-lock-other-hand-text" style="font-size:11px; font-weight:bold; color:#777;">OFF</span>
+              <label class="switch" data-i18n-title="side.lockOtherHandTitle" title="ONにすると、他人の手札内にあるカードを動かすことができなくなります（デフォルト: OFF）">
+                <input id="toggle-lock-other-hand" type="checkbox">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+            <div style="font-size:12px;color:#555;">
+              観戦者チャット
+            </div>
+            <div class="row" style="align-items:center; gap:8px;">
+              <span id="toggle-spectator-chat-text" style="font-size:11px; font-weight:bold; color:#777;">ON</span>
+              <label class="switch" title="ONにすると、観戦者もチャットで発言できます">
+                <input id="toggle-spectator-chat" type="checkbox" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
             <div style="font-size:12px;color:#555;">
               サイズ調整メモリ
             </div>
@@ -312,6 +326,32 @@
               <span id="toggle-hover-zoom-text" style="font-size:11px; font-weight:bold; color:#777;">ON</span>
               <label class="switch" title="ONにすると、カードにマウスを乗せたときに少し拡大されて見やすくなります">
                 <input id="toggle-hover-zoom" type="checkbox" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+            <div style="font-size:12px;color:#555;" data-i18n="side.cardAnimation">
+              カード移動アニメーション
+            </div>
+            <div class="row" style="align-items:center; gap:8px;">
+              <span id="toggle-card-animation-text" style="font-size:11px; font-weight:bold; color:#777;">ON</span>
+              <label class="switch" data-i18n-title="side.cardAnimationTitle" title="ONにすると、他人が動かしたカードが滑らかに加減速して移動します（デフォルトON）">
+                <input id="toggle-card-animation" type="checkbox" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+            <div style="font-size:12px;color:#555;" data-i18n="side.pieceShadow">
+              コマの影表示
+            </div>
+            <div class="row" style="align-items:center; gap:8px;">
+              <span id="toggle-piece-shadow-text" style="font-size:11px; font-weight:bold; color:#777;">OFF</span>
+              <label class="switch" data-i18n-title="side.pieceShadowTitle" title="ONにすると、将棋やチェスなどのコマ・トークンに影を表示します（デフォルトOFF）">
+                <input id="toggle-piece-shadow" type="checkbox">
                 <span class="slider round"></span>
               </label>
             </div>
@@ -449,6 +489,21 @@
   </div>
   <div id="container">
     <div id="spectator-banner" data-i18n="spectator.warning">現在は【観戦者】です（『座席に座る』ボタンから参加できます）</div>
+    <!-- === Fullscreen Toggle Button (UI overlay) === -->
+    <button id="btn-fullscreen-toggle" class="fullscreen-toggle-btn" type="button" data-i18n-title="fullscreen.maximize" title="画面を最大化">
+      <svg class="fs-icon-maximize" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 3 21 3 21 9"></polyline>
+        <polyline points="9 21 3 21 3 15"></polyline>
+        <line x1="21" y1="3" x2="14" y2="10"></line>
+        <line x1="3" y1="21" x2="10" y2="14"></line>
+      </svg>
+      <svg class="fs-icon-minimize" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+        <polyline points="4 14 10 14 10 20"></polyline>
+        <polyline points="20 10 14 10 14 4"></polyline>
+        <line x1="14" y1="10" x2="21" y2="3"></line>
+        <line x1="3" y1="21" x2="10" y2="14"></line>
+      </svg>
+    </button>
     <div id="marquee"></div>
     <div id="field">
       <div class="player-area player-1">
@@ -816,14 +871,23 @@
     <div id="card-list-sheet"
       style="width:min(920px, 92vw); max-height:80vh; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
       <div id="card-list-header"
-        style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
-        <div id="card-list-title" style="font-weight:700;">
-          一覧
+        style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee; gap: 12px;">
+        <div id="card-list-title" style="font-weight:700; white-space:nowrap;">
+          オブジェクト一覧
         </div>
-        <button id="card-list-close"
-          style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;" type="button">
-          閉じる
-        </button>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <label id="card-list-filter-label" style="display:flex; align-items:center; gap:6px; font-size:13px; color:#4b5563; cursor:pointer; user-select:none;">
+            <input type="checkbox" id="card-list-filter-mine" style="cursor:pointer; width:16px; height:16px;">
+            <span id="card-list-filter-text">自分のカードのみ表示</span>
+          </label>
+          <button id="card-list-close"
+            style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;" type="button">
+            閉じる
+          </button>
+        </div>
+      </div>
+      <div id="card-list-tabs"
+        style="display:flex; gap:6px; padding:6px 12px 0 12px; border-bottom:1px solid #e5e7eb; background:#f9fafb; overflow-x:auto;">
       </div>
       <div id="card-list-body" style="padding:12px; overflow:auto;">
         <div id="card-list-grid"
@@ -943,6 +1007,14 @@
               <span class="slot-label">チェス (32枚)</span>
               <div class="slot-preview"><span class="empty">各色16枚セット</span></div>
             </button>
+            <button class="slot-item-btn official-btn" data-official="reversi">
+              <span class="slot-label">リバーシ (64個)</span>
+              <div class="slot-preview"><span class="empty">初期4個 + ストック60個</span></div>
+            </button>
+            <button class="slot-item-btn official-btn" data-official="shogi">
+              <span class="slot-label">将棋 (40枚)</span>
+              <div class="slot-preview"><span class="empty">本将棋 20枚×2セット</span></div>
+            </button>
           </div>
         </div>
 
@@ -994,12 +1066,37 @@
     <div
       style="background:#fff; padding:20px; border-radius:12px; max-width:90%; width:320px; box-shadow:0 6px 24px rgba(0,0,0,.3);">
       <div style="font-weight:700; font-size:16px; margin-bottom:12px;">座席を選択してください</div>
+      
+      <div style="margin-bottom:14px;">
+        <label id="seat-player-name-label" style="display:block; font-size:12px; font-weight:bold; color:#444; margin-bottom:4px;">プレイヤー名</label>
+        <div id="seat-player-name-desc" style="font-size:12px; color:#666; margin-bottom:6px; line-height:1.4;"></div>
+        <input type="text" id="seat-player-name-input" maxlength="24" class="field" style="width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #ccc; border-radius:6px; font-size:13px;" placeholder="例: SOLVENTER">
+      </div>
+
       <div id="seat-select-grid" class="seat-grid"
         style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
         <!-- JSで動的にボタンを生成します -->
       </div>
       <div style="display:flex; justify-content:flex-end;">
         <button id="seat-select-cancel" class="btn secondary">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 重複セッション（別端末ログイン）切断モーダル -->
+  <div id="duplicate-session-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:999999; align-items:center; justify-content:center; pointer-events:auto;">
+    <div
+      style="background:#fff; padding:28px 24px; border-radius:16px; max-width:90%; width:380px; box-shadow:0 12px 36px rgba(0,0,0,.4); text-align:center;">
+      <div style="font-size:48px; margin-bottom:12px; line-height:1;">📱</div>
+      <div style="font-weight:800; font-size:18px; color:#1f2937; margin-bottom:10px;" data-i18n="session.duplicateTitle">切断されました</div>
+      <p style="font-size:13.5px; color:#4b5563; line-height:1.6; margin:0 0 20px 0;" data-i18n="session.duplicateMsg">
+        別の端末またはブラウザからログインされたため、このセッションを切断しました。
+      </p>
+      <div style="display:flex; justify-content:center;">
+        <button id="duplicate-session-lobby-btn" class="btn primary" style="padding:10px 24px; font-size:14px; font-weight:bold; border-radius:8px; cursor:pointer;" data-i18n="session.returnToLobby">
+          ロビーへ戻る
+        </button>
       </div>
     </div>
   </div>

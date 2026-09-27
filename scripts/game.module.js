@@ -10916,6 +10916,7 @@ function bindPanZoomHandlers() {
     if (e.button !== 0 && e.button !== 1) return;
     if (e.detail > 1) return;
     if (e.target.closest(".card")) return;
+    if (e.target.closest("#btn-fullscreen-toggle") || e.target.closest(".fullscreen-toggle-btn")) return;
 
     if (e.shiftKey || e.button === 1 || (isMultiSelectMode && e.button === 0)) {
       // Marquee selection
@@ -11034,6 +11035,7 @@ function bindPanZoomHandlers() {
 
   container.addEventListener('touchstart', (e) => {
     if (e.target.closest('.card')) return;  // カード上のタッチはカード側で処理
+    if (e.target.closest('#btn-fullscreen-toggle') || e.target.closest('.fullscreen-toggle-btn')) return; // フルスクリーンボタンのタップを妨げない
 
     if (isMultiSelectMode && e.touches.length === 1) {
       e.preventDefault();
@@ -14777,3 +14779,109 @@ window.addEventListener('keydown', (e) => {
     }
   }
 });
+
+// =====================================================
+// === Fullscreen Mode Toggle ===
+// =====================================================
+(function initFullscreenToggle() {
+  const btn = document.getElementById('btn-fullscreen-toggle');
+  if (!btn) return;
+
+  const iconMaximize = btn.querySelector('.fs-icon-maximize');
+  const iconMinimize = btn.querySelector('.fs-icon-minimize');
+
+  function isNativeFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+
+  function isFullscreen() {
+    return isNativeFullscreen() || document.body.classList.contains('fullscreen-mode');
+  }
+
+  function updateIcons() {
+    const fs = isFullscreen();
+    if (iconMaximize) iconMaximize.style.display = fs ? 'none' : '';
+    if (iconMinimize) iconMinimize.style.display = fs ? '' : 'none';
+    // Update tooltip
+    if (typeof t === 'function') {
+      btn.title = fs ? t('fullscreen.minimize') : t('fullscreen.maximize');
+    } else {
+      btn.title = fs ? '元に戻す' : '画面を最大化';
+    }
+  }
+
+  async function toggleFullscreen() {
+    const currentlyFs = isFullscreen();
+
+    if (currentlyFs) {
+      // 終了処理
+      document.body.classList.remove('fullscreen-mode');
+      updateIcons();
+      try {
+        if (document.exitFullscreen && isNativeFullscreen()) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen && isNativeFullscreen()) {
+          await document.webkitExitFullscreen();
+        }
+      } catch (err) {
+        console.warn('Exit fullscreen failed (ignorable on iOS):', err);
+      }
+    } else {
+      // 最大化処理（CSSクラスを先行付与してiPad等の非対応環境でも確実にUI最大化）
+      document.body.classList.add('fullscreen-mode');
+      updateIcons();
+      try {
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+          await el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+          await el.webkitRequestFullscreen();
+        }
+      } catch (err) {
+        // iOS/iPadOSなど非対応環境ではエラーが出るが、CSS最大化（fullscreen-mode）は有効のまま維持
+        console.info('Native fullscreen not available or blocked, using CSS fullscreen mode:', err);
+      }
+    }
+  }
+
+  let lastTouchTime = 0;
+  btn.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+  }, { passive: true });
+  btn.addEventListener('touchend', (e) => {
+    e.stopPropagation();
+    lastTouchTime = Date.now();
+    toggleFullscreen();
+  });
+  btn.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+  });
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (Date.now() - lastTouchTime < 500) return;
+    toggleFullscreen();
+  });
+
+  // Sync state when native fullscreen changes (e.g. user presses Escape on PC)
+  function handleFullscreenChange() {
+    if (isNativeFullscreen()) {
+      document.body.classList.add('fullscreen-mode');
+    } else {
+      document.body.classList.remove('fullscreen-mode');
+    }
+    updateIcons();
+  }
+
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+  // ESCキーフォールバック（iPadの外付けキーボード等でもESCで戻れるように）
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('fullscreen-mode')) {
+      if (!isNativeFullscreen()) {
+        document.body.classList.remove('fullscreen-mode');
+        updateIcons();
+      }
+    }
+  });
+})();

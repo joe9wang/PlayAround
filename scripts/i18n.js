@@ -279,7 +279,9 @@ const I18N = {
         "auth.verifySent": "確認メールを送信しました。メール内のリンクをクリックしてください。",
         "auth.resendBtn": "確認メールを再送する",
         "auth.resending": "送信中...",
-        "mypage.deleteSuccess": "アカウントとすべてのデータを削除しました。ご利用ありがとうございました。"
+        "mypage.deleteSuccess": "アカウントとすべてのデータを削除しました。ご利用ありがとうございました。",
+        "fullscreen.maximize": "画面を最大化",
+        "fullscreen.minimize": "元に戻す"
     },
     en: {
         "app.title": "Play board/card games with images (up to 4)",
@@ -557,7 +559,9 @@ const I18N = {
         "auth.verifySent": "Verification email sent. Please click the link in the email.",
         "auth.resendBtn": "Resend verification email",
         "auth.resending": "Sending...",
-        "mypage.deleteSuccess": "Your account and all data have been deleted. Thank you for using BatriTable."
+        "mypage.deleteSuccess": "Your account and all data have been deleted. Thank you for using BatriTable.",
+        "fullscreen.maximize": "Enter Fullscreen",
+        "fullscreen.minimize": "Exit Fullscreen"
     }
 };
 

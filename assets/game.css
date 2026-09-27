@@ -498,6 +498,50 @@ input:checked + .slider:before {
   z-index: 0;
 }
 
+/* === Fullscreen Toggle Button === */
+.fullscreen-toggle-btn {
+  position: absolute;
+  bottom: 48px;
+  right: 14px;
+  z-index: 900;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  padding: 0;
+  outline: none;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.fullscreen-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.65);
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.fullscreen-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+/* === Fullscreen Mode Overrides === */
+body.fullscreen-mode .site-header {
+  display: none !important;
+}
+body.fullscreen-mode {
+  --header-h: 0px;
+  --stack-h: calc(var(--upload-h) + var(--footer-h));
+}
+
 #field {
   position: absolute;
   transform-origin: 0 0;
