@@ -147,11 +147,7 @@
       <details class="ops-section">
         <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;" data-i18n="side.search">
           検索</summary>
-        <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 一覧</button>
-        <div class="sl-row" role="group" aria-label="Search lists">
-          <button class="sl-btn" onclick="openMyDeckCardsDialog()" data-i18n="side.deckList">🔍 デッキ一覧</button>
-          <button class="sl-btn" onclick="openMyDiscardCardsDialog()" data-i18n="side.discardList">🔍 捨て札一覧</button>
-        </div>
+        <button class="sl-btn" onclick="openMyCardsDialog()" data-i18n="side.allMyCards">🔍 オブジェクト一覧</button>
       </details>
 
       <!-- Selection Section -->
@@ -868,6 +864,9 @@
           style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;" type="button">
           閉じる
         </button>
+      </div>
+      <div id="card-list-tabs"
+        style="display:flex; gap:6px; padding:6px 12px 0 12px; border-bottom:1px solid #e5e7eb; background:#f9fafb; overflow-x:auto;">
       </div>
       <div id="card-list-body" style="padding:12px; overflow:auto;">
         <div id="card-list-grid"

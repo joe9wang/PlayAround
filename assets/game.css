@@ -2915,4 +2915,44 @@ body:not(.is-host) .player-outer-handle {
   caret-color: transparent !important;
 }
 
-
+/* === オブジェクト一覧モーダルのタブ === */
+.card-list-tab-btn {
+  background: transparent;
+  color: #4b5563;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.card-list-tab-btn:hover {
+  color: #1f2937;
+  background: rgba(0, 0, 0, 0.04);
+}
+.card-list-tab-btn.active {
+  color: #2563eb;
+  border-bottom: 2px solid #2563eb;
+  background: #ffffff;
+  font-weight: 700;
+}
+.card-list-tab-badge {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: #e5e7eb;
+  color: #4b5563;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+.card-list-tab-btn.active .card-list-tab-badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
