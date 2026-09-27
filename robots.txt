@@ -1,4 +1,4 @@
-# robots.txt for BatriTable
+﻿# robots.txt for BatriTable
 User-agent: *
 Allow: /
 Disallow: /api/
@@ -6,4 +6,4 @@ Disallow: /dist/
 Disallow: /partials/
 
 # サイトマップの場所を明示
-Sitemap: https://www.batritable.com/sitemap.xml
+Sitemap: https://batritable.com/sitemap.xml

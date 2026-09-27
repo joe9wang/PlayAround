@@ -3,64 +3,72 @@
 
   <!-- トップページ -->
   <url>
-    <loc>https://www.batritable.com/</loc>
+    <loc>https://batritable.com/</loc>
+    <lastmod>2026-09-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
+  <!-- ロビーページ -->
+  <url>
+    <loc>https://batritable.com/lobby.html</loc>
+    <lastmod>2026-09-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- ゲームページ -->
   <url>
-    <loc>https://www.batritable.com/game.html</loc>
+    <loc>https://batritable.com/game.html</loc>
+    <lastmod>2026-09-27</lastmod>
     <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- 遊び方 -->
+  <url>
+    <loc>https://batritable.com/howto.html</loc>
+    <lastmod>2026-09-27</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- プラン比較 -->
   <url>
-    <loc>https://www.batritable.com/plans.html</loc>
+    <loc>https://batritable.com/plans.html</loc>
+    <lastmod>2026-09-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- 遊び方 -->
-  <url>
-    <loc>https://www.batritable.com/howto.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
   <!-- 利用規約 -->
   <url>
-    <loc>https://www.batritable.com/terms.html</loc>
+    <loc>https://batritable.com/terms.html</loc>
+    <lastmod>2026-09-27</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <!-- プライバシーポリシー -->
   <url>
-    <loc>https://www.batritable.com/privacy.html</loc>
+    <loc>https://batritable.com/privacy.html</loc>
+    <lastmod>2026-09-27</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <!-- お問い合わせ -->
   <url>
-    <loc>https://www.batritable.com/contact.html</loc>
+    <loc>https://batritable.com/contact.html</loc>
+    <lastmod>2026-09-27</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
-  <!-- オリジナルゲーム 
-  <url>
-    <loc>https://www.batritable.com/Geki-Mahjong.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  -->
-
   <!-- 運営者情報 -->
   <url>
-    <loc>https://www.batritable.com/about.html</loc>
+    <loc>https://batritable.com/about.html</loc>
+    <lastmod>2026-09-27</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
