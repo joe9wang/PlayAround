@@ -4778,6 +4778,16 @@ function loadSeatStatus(rid) {
     // エリア背景画像とカスタム寸法の永続復元
     restoreAllAreaBackgrounds();
     restoreAllAreaSizes();
+
+    // オブジェクト一覧モーダルが開いている場合、設定変更に追従して再描画
+    const cardListModalEl = document.getElementById('card-list-modal');
+    if (cardListModalEl && cardListModalEl.style.display === 'flex') {
+      const activeTabBtn = document.querySelector('.card-list-tab-btn.active');
+      const activeTabId = activeTabBtn ? activeTabBtn.dataset.tabId : 'all';
+      if (typeof window.openMyCardsDialog === 'function') {
+        window.openMyCardsDialog(activeTabId);
+      }
+    }
   });
 
 
@@ -10133,31 +10143,73 @@ window.sendSelectedToBack = async function () {
 
 
 // === エリア矩形収集・判定ヘルパー ===
-function getActiveDeckRects(seat) {
-  const rects = [];
-  const baseRect = getDeckBoundsForSeat(seat);
-  if (baseRect && baseRect.width > 0 && baseRect.height > 0) {
-    rects.push(baseRect);
+function isFilterMyCardsOnly() {
+  if (CURRENT_ROOM_META?.filterMyCardsOnly !== undefined) {
+    return !!CURRENT_ROOM_META.filterMyCardsOnly;
   }
-  document.querySelectorAll('.dynamic-area.deck-area').forEach(el => {
+  // デフォルト: ボードゲーム系は false (全員分表示), カードゲーム系は true (自分のカードのみ)
+  return !isBoardMode();
+}
+
+function getActiveDeckRects(seat, onlyMine = false) {
+  const rects = [];
+  if (onlyMine && seat) {
+    const baseRect = getDeckBoundsForSeat(seat);
+    if (baseRect && baseRect.width > 0 && baseRect.height > 0) {
+      rects.push(baseRect);
+    }
+  } else {
+    // 全座席のデッキエリア、またはボード中央デッキ
+    const centerDeck = document.querySelector('#board-center .center-deck');
+    if (centerDeck) {
+      const r = rectFromEl(centerDeck);
+      if (r && r.width > 0 && r.height > 0) rects.push(r);
+    }
+    document.querySelectorAll('.deck-area, .deck2-area').forEach(el => {
+      const r = rectFromEl(el);
+      if (r && r.width > 0 && r.height > 0) {
+        rects.push(r);
+      }
+    });
+  }
+  // 動的エリアも確実に収集（重複除外）
+  document.querySelectorAll('.dynamic-area.deck-area, [data-area-id^="dynamic-deck"]').forEach(el => {
     const r = rectFromEl(el);
     if (r && r.width > 0 && r.height > 0) {
-      rects.push(r);
+      if (!rects.some(existing => Math.abs(existing.minX - r.minX) < 1 && Math.abs(existing.minY - r.minY) < 1)) {
+        rects.push(r);
+      }
     }
   });
   return rects;
 }
 
-function getActiveDiscardRects(seat) {
+function getActiveDiscardRects(seat, onlyMine = false) {
   const rects = [];
-  const baseRect = getDiscardBoundsForSeat(seat);
-  if (baseRect && baseRect.width > 0 && baseRect.height > 0) {
-    rects.push(baseRect);
+  if (onlyMine && seat) {
+    const baseRect = getDiscardBoundsForSeat(seat);
+    if (baseRect && baseRect.width > 0 && baseRect.height > 0) {
+      rects.push(baseRect);
+    }
+  } else {
+    const centerDiscard = document.querySelector('#board-center .center-discard');
+    if (centerDiscard) {
+      const r = rectFromEl(centerDiscard);
+      if (r && r.width > 0 && r.height > 0) rects.push(r);
+    }
+    document.querySelectorAll('.discard-area').forEach(el => {
+      const r = rectFromEl(el);
+      if (r && r.width > 0 && r.height > 0) {
+        rects.push(r);
+      }
+    });
   }
-  document.querySelectorAll('.dynamic-area.discard-area').forEach(el => {
+  document.querySelectorAll('.dynamic-area.discard-area, [data-area-id^="dynamic-discard"]').forEach(el => {
     const r = rectFromEl(el);
     if (r && r.width > 0 && r.height > 0) {
-      rects.push(r);
+      if (!rects.some(existing => Math.abs(existing.minX - r.minX) < 1 && Math.abs(existing.minY - r.minY) < 1)) {
+        rects.push(r);
+      }
     }
   });
   return rects;
@@ -10165,10 +10217,12 @@ function getActiveDiscardRects(seat) {
 
 function getActiveSpecialRects() {
   const rects = [];
-  document.querySelectorAll('.dynamic-area.special-area').forEach(el => {
+  document.querySelectorAll('.special-area, .special2-area').forEach(el => {
     const r = rectFromEl(el);
     if (r && r.width > 0 && r.height > 0) {
-      rects.push(r);
+      if (!rects.some(existing => Math.abs(existing.minX - r.minX) < 1 && Math.abs(existing.minY - r.minY) < 1)) {
+        rects.push(r);
+      }
     }
   });
   return rects;
@@ -10185,8 +10239,8 @@ function isCardInRects(cardEl, rects) {
   return rects.some(r => cx >= r.minX && cx <= r.minX + r.width && cy >= r.minY && cy <= r.minY + r.height);
 }
 
-function createCardListItemElement(info, onSelect) {
-  const { id, src, type } = info;
+function createCardListItemElement(info, onSelect, showOwnerBadge = false) {
+  const { id, src, type, ownerSeat } = info;
   const item = document.createElement('div');
   item.style.cssText = 'border:1px solid #ddd;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fafafa;position:relative;transition:all 0.15s ease;box-sizing:border-box;';
   item.title = id;
@@ -10208,6 +10262,15 @@ function createCardListItemElement(info, onSelect) {
     img.alt = (type === 'board') ? 'ボード' : 'カード';
     img.style.cssText = 'width:100%;height:auto;object-fit:contain;border-radius:6px;';
     item.appendChild(img);
+  }
+
+  // 所有者バッジ（全カード表示時）
+  if (showOwnerBadge) {
+    const isMine = (ownerSeat === String(CURRENT_PLAYER));
+    const badge = document.createElement('div');
+    badge.style.cssText = `position:absolute; top:4px; right:4px; padding:2px 6px; font-size:10px; font-weight:700; border-radius:4px; pointer-events:none; z-index:5; background:${isMine ? 'rgba(37,99,235,0.85)' : (ownerSeat ? 'rgba(107,114,128,0.85)' : 'rgba(16,185,129,0.85)')}; color:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.3);`;
+    badge.textContent = ownerSeat ? `SEAT ${ownerSeat}` : (typeof t === 'function' ? t('list.shared', '共有') : '共有');
+    item.appendChild(badge);
   }
 
   item.addEventListener('contextmenu', (e) => {
@@ -10242,15 +10305,50 @@ function createCardListItemElement(info, onSelect) {
 window.openMyCardsDialog = function (defaultTab = 'all') {
   if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
 
+  const isHost = CURRENT_UID && CURRENT_ROOM_META?.hostUid === CURRENT_UID;
+  const filterOnlyMine = isFilterMyCardsOnly();
+
   const titleEl = document.getElementById('card-list-title');
   if (titleEl) {
-    titleEl.textContent = typeof t === 'function' ? t('list.modalTitle', '自分のオブジェクト一覧') : '自分のオブジェクト一覧';
+    const titleKey = filterOnlyMine ? 'list.modalTitleMine' : 'list.modalTitleAll';
+    const defaultTitle = filterOnlyMine ? '自分のオブジェクト一覧' : 'オブジェクト一覧';
+    titleEl.textContent = typeof t === 'function' ? t(titleKey, defaultTitle) : defaultTitle;
+  }
+
+  const filterCheckbox = document.getElementById('card-list-filter-mine');
+  const filterLabel = document.getElementById('card-list-filter-label');
+  const filterText = document.getElementById('card-list-filter-text');
+  if (filterCheckbox) {
+    filterCheckbox.checked = filterOnlyMine;
+    filterCheckbox.disabled = !isHost;
+    if (filterText) {
+      const hint = isHost ? '' : (typeof t === 'function' ? t('list.filterHostOnlyHint', '（ホスト設定）') : '（ホスト設定）');
+      filterText.textContent = (typeof t === 'function' ? t('list.filterMyCardsOnly', '自分のカードのみ表示') : '自分のカードのみ表示') + hint;
+    }
+    if (filterLabel) {
+      filterLabel.title = isHost ? '' : 'この設定はホストのみ変更できます';
+      filterLabel.style.cursor = isHost ? 'pointer' : 'default';
+    }
+    filterCheckbox.onchange = async () => {
+      if (!isHost || !CURRENT_ROOM) return;
+      const newVal = filterCheckbox.checked;
+      try {
+        await updateDoc(doc(db, `rooms/${CURRENT_ROOM}`), {
+          filterMyCardsOnly: newVal,
+          updatedAt: serverTimestamp()
+        });
+        if (CURRENT_ROOM_META) CURRENT_ROOM_META.filterMyCardsOnly = newVal;
+        openMyCardsDialog(currentTabId);
+      } catch (err) {
+        console.error('Failed to update filterMyCardsOnly:', err);
+      }
+    };
   }
 
   const tabsContainer = document.getElementById('card-list-tabs');
 
-  // 自席の全オブジェクトを取得
-  const allMyItems = [];
+  // 対象オブジェクトを取得
+  const allTargetItems = [];
   const groups = {
     boards: [],
     cards: [],
@@ -10259,12 +10357,13 @@ window.openMyCardsDialog = function (defaultTab = 'all') {
   };
 
   for (const [id, el] of cardDomMap) {
-    if (el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
+    if (filterOnlyMine && el.dataset.ownerSeat !== String(CURRENT_PLAYER)) continue;
 
     const rawType = el.dataset.type || 'card';
     const imgEl = el.querySelector('img');
     const src = fullImageStore.get(id) || (imgEl ? imgEl.src : '');
-    const info = { id, src, type: rawType, el };
+    const ownerSeat = el.dataset.ownerSeat || null;
+    const info = { id, src, type: rawType, el, ownerSeat };
 
     if (rawType === 'numcounter') {
       const input = el.querySelector('.nc-input');
@@ -10277,7 +10376,7 @@ window.openMyCardsDialog = function (defaultTab = 'all') {
       info.noteCount = badge ? badge.textContent : 0;
     }
 
-    allMyItems.push(info);
+    allTargetItems.push(info);
 
     if (rawType === 'board') {
       groups.boards.push(info);
@@ -10291,21 +10390,21 @@ window.openMyCardsDialog = function (defaultTab = 'all') {
   }
 
   // エリアの矩形リストを取得（固定＋動的）
-  const deckRects = getActiveDeckRects(CURRENT_PLAYER);
-  const discardRects = getActiveDiscardRects(CURRENT_PLAYER);
+  const deckRects = getActiveDeckRects(CURRENT_PLAYER, filterOnlyMine);
+  const discardRects = getActiveDiscardRects(CURRENT_PLAYER, filterOnlyMine);
   const specialRects = getActiveSpecialRects();
 
   // 各エリア内のオブジェクトを抽出
-  const deckItems = allMyItems.filter(item => isCardInRects(item.el, deckRects));
-  const discardItems = allMyItems.filter(item => isCardInRects(item.el, discardRects));
-  const specialItems = allMyItems.filter(item => isCardInRects(item.el, specialRects));
+  const deckItems = allTargetItems.filter(item => isCardInRects(item.el, deckRects));
+  const discardItems = allTargetItems.filter(item => isCardInRects(item.el, discardRects));
+  const specialItems = allTargetItems.filter(item => isCardInRects(item.el, specialRects));
 
   // 利用可能なタブの構築
   const tabDefs = [
     {
       id: 'all',
       label: typeof t === 'function' ? t('list.tabAll', 'すべて') : 'すべて',
-      count: allMyItems.length
+      count: allTargetItems.length
     }
   ];
 
@@ -10358,13 +10457,14 @@ window.openMyCardsDialog = function (defaultTab = 'all') {
     }
 
     cardListGrid.innerHTML = '';
+    const showBadge = !filterOnlyMine;
 
     if (tabId === 'all') {
       cardListGrid.style.display = 'block';
 
-      if (allMyItems.length === 0) {
+      if (allTargetItems.length === 0) {
         const empty = document.createElement('div');
-        empty.textContent = typeof t === 'function' ? t('list.emptyAll', 'まだ自分のカードや備品がありません。') : 'まだ自分のカードや備品がありません。';
+        empty.textContent = typeof t === 'function' ? t('list.emptyAll', 'まだカードや備品がありません。') : 'まだカードや備品がありません。';
         empty.style.cssText = 'color:#666;font-size:14px;text-align:center;padding:24px 12px;';
         cardListGrid.appendChild(empty);
       } else {
@@ -10399,7 +10499,7 @@ window.openMyCardsDialog = function (defaultTab = 'all') {
             const item = createCardListItemElement(info, () => {
               postLog('search', `一覧から選択しました`);
               closeMyCardsDialog();
-            });
+            }, showBadge);
             grid.appendChild(item);
           });
 
@@ -10422,7 +10522,7 @@ window.openMyCardsDialog = function (defaultTab = 'all') {
           const item = createCardListItemElement(info, () => {
             postLog('search', activeDef.logText || `一覧から選択しました`);
             closeMyCardsDialog();
-          });
+          }, showBadge);
           cardListGrid.appendChild(item);
         });
       }

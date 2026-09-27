@@ -856,14 +856,20 @@
     <div id="card-list-sheet"
       style="width:min(920px, 92vw); max-height:80vh; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;">
       <div id="card-list-header"
-        style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee;">
-        <div id="card-list-title" style="font-weight:700;">
-          自分のオブジェクト一覧
+        style="padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee; gap: 12px;">
+        <div id="card-list-title" style="font-weight:700; white-space:nowrap;">
+          オブジェクト一覧
         </div>
-        <button id="card-list-close"
-          style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;" type="button">
-          閉じる
-        </button>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <label id="card-list-filter-label" style="display:flex; align-items:center; gap:6px; font-size:13px; color:#4b5563; cursor:pointer; user-select:none;">
+            <input type="checkbox" id="card-list-filter-mine" style="cursor:pointer; width:16px; height:16px;">
+            <span id="card-list-filter-text">自分のカードのみ表示</span>
+          </label>
+          <button id="card-list-close"
+            style="border:0; background:#eee; padding:6px 10px; border-radius:8px; cursor:pointer;" type="button">
+            閉じる
+          </button>
+        </div>
       </div>
       <div id="card-list-tabs"
         style="display:flex; gap:6px; padding:6px 12px 0 12px; border-bottom:1px solid #e5e7eb; background:#f9fafb; overflow-x:auto;">
