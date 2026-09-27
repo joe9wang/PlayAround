@@ -10081,7 +10081,7 @@ window.openMyCardsDialog = function () {
   if (!CURRENT_ROOM || !CURRENT_PLAYER) { alert('ルームに参加してから実行してください'); return; }
 
   const titleEl = document.getElementById('card-list-title');
-  if (titleEl) titleEl.textContent = '自分のもの一覧';
+  if (titleEl) titleEl.textContent = '自分のオブジェクト一覧';
 
   cardListGrid.innerHTML = '';
   cardListGrid.style.display = 'block'; // 案B: セクション縦並び用に block に設定
@@ -13437,6 +13437,10 @@ function stopAreaPlacement() {
 
     document.removeEventListener('contextmenu', placingArea.cancelHandler);
 
+    if (placingArea.keydownHandler) {
+      document.removeEventListener('keydown', placingArea.keydownHandler);
+    }
+
     placingArea = null;
 
   }
@@ -13787,6 +13791,10 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     field.appendChild(areaEl);
   }
   areaEl.style.position = 'absolute';
+  areaEl.style.gridArea = 'auto';
+  areaEl.style.gridColumn = 'auto';
+  areaEl.style.gridRow = 'auto';
+  areaEl.style.margin = '0';
 
   const typeClasses = ['hand-area', 'deck-area', 'discard-area', 'special-area'];
   const type = forceType || [...areaEl.classList].find(c => typeClasses.includes(c)) || 'deck-area';
@@ -13796,11 +13804,11 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     const fieldRect = field.getBoundingClientRect();
     const mx = e.clientX;
     const my = e.clientY;
-    let z = typeof zoom !== 'undefined' ? zoom : 1;
-    const w = areaEl.offsetWidth * z;
-    const h = areaEl.offsetHeight * z;
-    let x = ((mx - fieldRect.left) / z) - (w / z / 2);
-    let y = ((my - fieldRect.top) / z) - (h / z / 2);
+    const z = typeof zoom !== 'undefined' ? zoom : 1;
+    const w = areaEl.offsetWidth;
+    const h = areaEl.offsetHeight;
+    let x = ((mx - fieldRect.left) / z) - (w / 2);
+    let y = ((my - fieldRect.top) / z) - (h / 2);
 
     if (typeof SNAP_GRID_ENABLED !== 'undefined' && SNAP_GRID_ENABLED) {
       x = Math.round(x / 20) * 20;
@@ -13810,7 +13818,7 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     areaEl.style.left = x + 'px';
     areaEl.style.top = y + 'px';
 
-    const checkRect = { l: mx - w/2, t: my - h/2, r: mx + w/2, b: my + h/2 };
+    const checkRect = { l: mx - (w * z) / 2, t: my - (h * z) / 2, r: mx + (w * z) / 2, b: my + (h * z) / 2 };
     let overlap = false;
     document.querySelectorAll('.hand-area, .deck-area, .discard-area, .special-area').forEach(other => {
       if (other === areaEl) return;
@@ -13842,6 +13850,9 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     document.removeEventListener('mousemove', placingArea.mouseMoveHandler);
     document.removeEventListener('click', placingArea.clickHandler);
     document.removeEventListener('contextmenu', placingArea.cancelHandler);
+    if (placingArea.keydownHandler) {
+      document.removeEventListener('keydown', placingArea.keydownHandler);
+    }
     delete areaEl.dataset.moving;
     placingArea = null;
 
@@ -13871,16 +13882,25 @@ function startAreaPlacement(areaEl, isNew, areaId, forceType) {
     stopAreaPlacement();
   };
 
+  const keydownHandler = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      stopAreaPlacement();
+    }
+  };
+
   setTimeout(() => {
     document.addEventListener('mousemove', mouseMoveHandler);
     document.addEventListener('click', clickHandler);
     document.addEventListener('contextmenu', cancelHandler);
+    document.addEventListener('keydown', keydownHandler);
   }, 100);
 
   placingArea.type = type;
   placingArea.mouseMoveHandler = mouseMoveHandler;
   placingArea.clickHandler = clickHandler;
   placingArea.cancelHandler = cancelHandler;
+  placingArea.keydownHandler = keydownHandler;
 }
 
 /**
