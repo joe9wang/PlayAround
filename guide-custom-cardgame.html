@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>自作カードゲーム・オリカをオンラインで対戦＆テストプレイする方法【インストール不要・無料】｜BatriTable</title>
+  <meta name="description"
+    content="自作カードゲームやオリカ（オリジナルカード）を印刷なしでオンライン対戦！BatriTableなら画像を用意するだけで、ブラウザ上で山札シャッフル、手札隠し、ライフ管理などリアルなTCG対戦が即座に可能です。スマホ・PC・iPad対応。" />
+  <meta name="keywords" content="自作カードゲーム オンライン,オリカ 対戦,自作TCG テストプレイ,カードゲーム シミュレーター ブラウザ,同人ボドゲ オンライン,BatriTable,バトライテーブル" />
+  <link rel="canonical" href="https://batritable.com/guide-custom-cardgame.html">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="BatriTable（バトライテーブル）">
+  <meta property="og:title" content="自作カードゲーム・オリカをオンラインで対戦＆テストプレイする方法【インストール不要・無料】">
+  <meta property="og:description" content="印刷不要！画像をアップロードするだけで自作カードゲームやオリカをオンライン対戦・テストプレイ。シャッフル、手札隠し、ダイス完備。">
+  <meta property="og:url" content="https://batritable.com/guide-custom-cardgame.html">
+  <meta property="og:image" content="https://batritable.com/assets/ogp.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="自作カードゲーム・オリカをオンラインで対戦＆テストプレイする方法【無料】">
+  <meta name="twitter:description" content="印刷不要！画像をアップロードするだけで自作TCG・オリカをオンライン対戦。スマホ・PC両対応。">
+  <meta name="twitter:image" content="https://batritable.com/assets/ogp.png">
+
+  <!-- Favicon -->
+  <link href="/favicon.ico" rel="icon" sizes="any" />
+  <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
+  <link href="/favicon-16.png?v=3" rel="icon" sizes="16x16" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/site.css">
+
+  <!-- 構造化データ（FAQPage & Article） -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "自作カードゲーム・オリカをオンラインで対戦＆テストプレイする方法【インストール不要・無料】",
+        "description": "自作カードゲームやオリカ（オリジナルカード）を印刷なしでオンライン対戦！BatriTableなら画像を用意するだけで、ブラウザ上でリアルなTCG対戦が即座に可能です。",
+        "image": "https://batritable.com/assets/ogp.png",
+        "publisher": {
+          "@type": "Organization",
+          "name": "SOLVENTER",
+          "url": "https://batritable.com/"
+        },
+        "url": "https://batritable.com/guide-custom-cardgame.html",
+        "inLanguage": "ja"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "自作カードゲームをオンラインでテストプレイするには何が必要ですか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "カード表面（および裏面）の画像ファイル（PNG、JPG、WebP形式など）があればすぐにプレイできます。特別な専用ソフトのインストールは一切不要で、ChromeやSafariなどのWebブラウザから遊べます。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "スマートフォンやiPadからでも自作カードゲームで対戦できますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "はい、BatriTableはスマートフォン（iOS/Android）、iPad、PCのすべてに対応しています。タッチ操作によるカードのドラッグ移動やタップ反転も快適に行えます。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "対戦相手の手札は見えてしまいますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "いいえ、BatriTableには「手札非公開機能（自分だけに見える手札トレイ）」や「ホストによる他プレイヤーのカード操作制限機能」が備わっており、相手にカードを見られずに本番同様の心理戦を楽しめます。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "利用料金はかかりますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "基本機能は完全無料でご利用いただけます。アカウント登録なしでもゲストとして即座にルーム作成や対戦が可能です。"
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    :root {
+      --primary: #3cd08e;
+      --primary-dark: #2fb078;
+      --accent: #1e82e0;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --ink: #0f172a;
+      --text-sub: #475569;
+      --radius: 16px;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans JP", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.8;
+    }
+
+    .article-container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    .article-header {
+      background: linear-gradient(135deg, #2563eb 0%, #1e82e0 100%);
+      color: #fff;
+      padding: 48px 36px;
+      border-radius: var(--radius);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.2);
+      margin-bottom: 36px;
+      text-align: center;
+    }
+
+    .article-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+
+    .article-header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1.4;
+      margin: 0 0 16px;
+    }
+
+    .article-header p {
+      font-size: 1.05rem;
+      color: rgba(255, 255, 255, 0.9);
+      margin: 0;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .content-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+      margin-bottom: 32px;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #1e293b;
+      border-left: 6px solid #3cd08e;
+      padding-left: 14px;
+      margin: 36px 0 20px;
+    }
+
+    .content-card > h2:first-child {
+      margin-top: 0;
+    }
+
+    h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #334155;
+      margin: 24px 0 12px;
+    }
+
+    p {
+      margin: 0 0 16px;
+      color: var(--text-sub);
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 24px 0;
+    }
+
+    @media (max-width: 640px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+      .article-header h1 {
+        font-size: 1.5rem;
+      }
+      .article-header {
+        padding: 32px 20px;
+      }
+      .content-card {
+        padding: 24px 18px;
+      }
+    }
+
+    .bad-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .bad-box strong {
+      color: #dc2626;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .good-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .good-box strong {
+      color: #16a34a;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .step-box {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 14px;
+      border-left: 4px solid #1e82e0;
+    }
+
+    .step-num {
+      background: #1e82e0;
+      color: #fff;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .feature-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .feature-item {
+      background: #f1f5f9;
+      padding: 18px;
+      border-radius: 12px;
+    }
+
+    .feature-item h4 {
+      margin: 0 0 6px;
+      color: #0f172a;
+      font-size: 1rem;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 18px 0;
+    }
+
+    .faq-item:last-child {
+      border-bottom: none;
+    }
+
+    .faq-q {
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .faq-q span {
+      background: #3cd08e;
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    .faq-a {
+      color: #475569;
+      padding-left: 32px;
+      margin: 0;
+    }
+
+    .cta-banner {
+      background: linear-gradient(135deg, #3cd08e 0%, #2fb078 100%);
+      color: #fff;
+      padding: 40px 24px;
+      border-radius: var(--radius);
+      text-align: center;
+      box-shadow: 0 12px 30px rgba(60, 208, 142, 0.3);
+      margin-top: 48px;
+    }
+
+    .cta-banner h2 {
+      border: none;
+      padding: 0;
+      color: #fff;
+      margin: 0 0 12px;
+      font-size: 1.8rem;
+    }
+
+    .cta-banner p {
+      color: #f0fdf4;
+      margin: 0 0 24px;
+      font-size: 1.05rem;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      background: #0b3b2b;
+      color: #ffffff;
+      padding: 16px 36px;
+      border-radius: 30px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s ease, background 0.2s ease;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      background: #06241a;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ヘッダー -->
+  <div id="header-mount"></div>
+
+  <main class="article-container">
+
+    <!-- 記事ヘッダー -->
+    <header class="article-header">
+      <span class="article-badge">自作ゲーム・オリカ開発ガイド</span>
+      <h1>自作カードゲーム・オリカをオンラインで対戦＆テストプレイする方法</h1>
+      <p>プリンターでの印刷やハサミ切りはもう不要！画像をドラッグ＆ドロップするだけで、遠くの友達とブラウザからリアルなTCG対戦ができるツールの使い方をわかりやすく解説します。</p>
+    </header>
+
+    <!-- セクション1: 悩み・課題 -->
+    <article class="content-card">
+      <h2>自作カードゲーム（オリカ）の開発でぶつかる「3大悩み」</h2>
+      <p>自分だけのオリジナルカードゲームやボードゲームを作るとき、多くのクリエイターが直面するのが<strong>「テストプレイのハードルの高さ」</strong>です。</p>
+
+      <div class="comparison-grid">
+        <div class="bad-box">
+          <strong>❌ 従来のリアル紙でのテストプレイ</strong>
+          <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 0.95rem;">
+            <li>コンビニや自宅で印刷する費用・インク代がかさむ</li>
+            <li>1枚テキストを修正するたびに再印刷・裁断が必要</li>
+            <li>遠方に住む友達やテスターとプレイできない</li>
+            <li>スリーブに既存カードと一緒に詰める作業が大変</li>
+          </ul>
+        </div>
+        <div class="good-box">
+          <strong>⭕ BatriTableでのオンラインテストプレイ</strong>
+          <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 0.95rem;">
+            <li>印刷不要！画像データをそのままアップロード</li>
+            <li>修正があれば画像を差し替えるだけで数秒で完了</li>
+            <li>URLを共有するだけで、Discord通話しながら即対戦</li>
+            <li>PC・スマホ・iPadどれでもインストール不要で動く</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>「BatriTable（バトライテーブル）」を使えば、Webブラウザひとつでリアルなカード操作（山札シャッフル、タップ、手札トレイ、ライフカウンターなど）を完全再現してテストプレイが可能です。</p>
+    </article>
+
+    <!-- セクション2: プレイイメージ・特徴 -->
+    <article class="content-card">
+      <h2>自作TCG対戦に必要な充実のシミュレーター機能</h2>
+      <p>一般的なオンラインホワイトボードや画像共有ツールと異なり、BatriTableは<strong>「カードゲーム＆ボードゲームのプレイに特化」</strong>して設計されています。</p>
+
+      <div style="text-align: center; margin: 24px 0;">
+        <picture>
+          <source srcset="PlayExample.webp" type="image/webp">
+          <img src="PlayExample.png" alt="BatriTableの実際の対戦画面" width="2015" height="1121"
+            style="width: 100%; max-width: 760px; height: auto; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" />
+        </picture>
+      </div>
+
+      <div class="feature-list">
+        <div class="feature-item">
+          <h4>🃏 山札・シャッフル＆ドロー</h4>
+          <p style="font-size: 0.9rem; margin: 0;">カードを重ねて山札を作成し、ワンクリックでランダムシャッフル。山札の上から手札にスムーズにドローできます。</p>
+        </div>
+        <div class="feature-item">
+          <h4>🙈 手札非公開トレイ</h4>
+          <p style="font-size: 0.9rem; margin: 0;">相手に見られない自分だけの手札トレイを搭載。裏向きの伏せカードやシールドゾーンの構築も自由自在です。</p>
+        </div>
+        <div class="feature-item">
+          <h4>🔄 タップ・反転・回転</h4>
+          <p style="font-size: 0.9rem; margin: 0;">ワンクリックで90度タップ（攻撃状態）や表裏リバースが可能。デュエルマスターズ、MTG、遊戯王ライクな動作も直感操作。</p>
+        </div>
+        <div class="feature-item">
+          <h4>🎲 ダイス・ライフカウンター・トークン</h4>
+          <p style="font-size: 0.9rem; margin: 0;">6面ダイスロールやライフ増減カウンター、マーカー用のトークンコマも配置可能。追加ツール不要です。</p>
+        </div>
+        <div class="feature-item">
+          <h4>🛡️ ホスト制限モード（不正防止）</h4>
+          <p style="font-size: 0.9rem; margin: 0;">他プレイヤーが自分の手札やカードを誤って動かせないようにする権限制限に対応。真剣勝負も安心です。</p>
+        </div>
+        <div class="feature-item">
+          <h4>👥 最大8人までのマルチプレイ</h4>
+          <p style="font-size: 0.9rem; margin: 0;">1対1のタイマン対戦はもちろん、多人数バトルロイヤルやチーム戦、TRPGのセッション用卓としても活用できます。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- セクション3: 簡単3ステップの始め方 -->
+    <article class="content-card">
+      <h2>簡単3ステップ！BatriTableでオリカ対戦を始める方法</h2>
+
+      <div class="step-box">
+        <div class="step-num">1</div>
+        <div>
+          <h3 style="margin-top: 0;">カードの画像データを用意する</h3>
+          <p>CanvaやPhotoshop、クリスタなどで制作したカード画像（またはスマートフォンの写真・イラスト）を用意します。比率は一般的なトレカ比率（縦長）でOKです。</p>
+        </div>
+      </div>
+
+      <div class="step-box">
+        <div class="step-num">2</div>
+        <div>
+          <h3 style="margin-top: 0;">BatriTableでルームを作成</h3>
+          <p>「ロビー」からルーム名を入力して部屋を作成します。ログインなしのゲスト利用も可能です（無料アカウントを作成するとデッキのクラウド保存ができます）。</p>
+        </div>
+      </div>
+
+      <div class="step-box">
+        <div class="step-num">3</div>
+        <div>
+          <h3 style="margin-top: 0;">画像をドロップして友達を招待！</h3>
+          <p>盤面に画像をドラッグ＆ドロップするだけで即座にカード化。あとはブラウザのURLをDiscordやLINEで対戦相手に送れば、すぐにリアルタイム対戦がスタートします。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- セクション4: FAQ -->
+    <article class="content-card">
+      <h2>よくある質問（FAQ）</h2>
+
+      <div class="faq-item">
+        <div class="faq-q"><span>Q</span> 対応している画像形式は何ですか？</div>
+        <div class="faq-a">PNG、JPEG（JPG）、WebP、GIFなど、一般的な画像形式に幅広く対応しています。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q"><span>Q</span> 相手にもアプリをインストールしてもらう必要がありますか？</div>
+        <div class="faq-a">いいえ、一切不要です。招待URLをクリックするだけで、ブラウザ（PC/スマホ/タブレット）上ですぐに参加できます。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q"><span>Q</span> 自作ゲーム以外の既存カードゲームの練習にも使えますか？</div>
+        <div class="faq-a">ご自身が私的使用目的で用意した画像を使って、友人とのリモート対戦やデッキの回し方のシミュレーションを行うことも可能です。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q"><span>Q</span> 無料でどこまで使えますか？</div>
+        <div class="faq-a">基本機能はすべて無料です。ルーム作成、カード操作、対戦マルチプレイなど、テストプレイに必要な機能がいつでも無料でお使いいただけます。</div>
+      </div>
+    </article>
+
+    <!-- CTAバナー -->
+    <div class="cta-banner">
+      <h2>今すぐ自作カードゲームで対戦してみよう！</h2>
+      <p>会員登録不要・完全無料。ブラウザを開いてすぐに遊べます。</p>
+      <a href="lobby.html" class="cta-btn">▶ 無料でルームを作成する</a>
+    </div>
+
+  </main>
+
+  <!-- フッター -->
+  <div id="footer-mount"></div>
+
+  <script>
+    (async () => {
+      async function loadPartial(id, path) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const tries = ["./partials/" + path, "/partials/" + path];
+        for (const url of tries) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (res.ok) { el.innerHTML = await res.text(); return; }
+          } catch (e) { }
+        }
+      }
+      loadPartial('header-mount', 'header.html');
+      loadPartial('footer-mount', 'footer.html');
+    })();
+  </script>
+  <script type="module" src="./scripts/header-auth.js"></script>
+</body>
+
+</html>
