@@ -6350,6 +6350,11 @@ function applyCardSelection(card) {
   } else {
     previewInfo.textContent = `カードのオーナー: ${ownerPlayerNum}`;
   }
+
+  // クイックメニューの表示
+  if (typeof showQuickObjectMenu === 'function') {
+    showQuickObjectMenu(card);
+  }
 }
 
 // ===============================
@@ -7857,6 +7862,7 @@ function makeDraggable(card) {
       if (!isDragging) {
         if (Math.hypot(e2.clientX - startClientX, e2.clientY - startClientY) < DRAG_THRESHOLD) return;
         isDragging = true;
+        if (typeof hideQuickObjectMenu === 'function') hideQuickObjectMenu();
         if (isMultiSelectMode && card.classList.contains('selected')) {
           toggleMultiSelectMode(false);
         }
@@ -7976,6 +7982,9 @@ function makeDraggable(card) {
       isDragging = false;
 
       updateOverlapBadges();
+      if (typeof showQuickObjectMenu === 'function' && selectedCard === card) {
+        showQuickObjectMenu(card);
+      }
     };
 
 
@@ -8073,6 +8082,7 @@ function makeDraggable(card) {
       if (!isDragging) {
         if (dist < 10) return;
         isDragging = true;
+        if (typeof hideQuickObjectMenu === 'function') hideQuickObjectMenu();
         if (isMultiSelectMode && card.classList.contains('selected')) {
           toggleMultiSelectMode(false);
         }
@@ -8223,6 +8233,9 @@ function makeDraggable(card) {
       isDragging = false;
 
       updateOverlapBadges();
+      if (typeof showQuickObjectMenu === 'function' && selectedCard === card) {
+        showQuickObjectMenu(card);
+      }
     };
 
     document.addEventListener('touchmove', onMove, { passive: false });
@@ -14885,3 +14898,260 @@ window.addEventListener('keydown', (e) => {
     }
   });
 })();
+
+// ===================================================
+// Quick Object Menu (カード・コマ・ボードのクイック操作ツールバー)
+// ===================================================
+let quickMenuTarget = null;
+let quickMenuHideTimeout = null;
+
+function positionQuickMenu() {
+  const qmEl = document.getElementById('quick-object-menu');
+  if (!qmEl || !quickMenuTarget || !document.contains(quickMenuTarget)) {
+    hideQuickObjectMenu();
+    return;
+  }
+
+  const rect = quickMenuTarget.getBoundingClientRect();
+  const qmWidth = qmEl.offsetWidth || 180;
+  const qmHeight = qmEl.offsetHeight || 44;
+
+  // 水平位置：ターゲットの中央
+  let left = rect.left + rect.width / 2 - qmWidth / 2;
+  // 画面左右端のclamp（余白8px）
+  left = Math.max(8, Math.min(window.innerWidth - qmWidth - 8, left));
+
+  // 垂直位置：基本はオブジェクトの上端から約8px上
+  const spaceAbove = rect.top;
+  const needSpace = qmHeight + 12;
+  let top;
+  if (spaceAbove >= needSpace) {
+    top = rect.top - qmHeight - 8;
+    qmEl.classList.remove('placement-bottom');
+  } else {
+    // 上に余白がない場合は下側に表示
+    top = rect.bottom + 8;
+    qmEl.classList.add('placement-bottom');
+  }
+
+  // 矢印ノズルの位置調整（ターゲットの中心を正確に指す）
+  const arrowEl = qmEl.querySelector('.qm-arrow');
+  if (arrowEl) {
+    const arrowX = Math.max(16, Math.min(qmWidth - 16, (rect.left + rect.width / 2) - left));
+    arrowEl.style.left = `${arrowX}px`;
+  }
+
+  qmEl.style.left = `${left + window.scrollX}px`;
+  qmEl.style.top = `${top + window.scrollY}px`;
+}
+
+function showQuickObjectMenu(card) {
+  if (!card) return;
+  const qmEl = document.getElementById('quick-object-menu');
+  if (!qmEl) return;
+
+  // 他人の手札カードは操作禁止なのでメニューを出さない
+  if (typeof isOtherPlayersHandCard === 'function' && isOtherPlayersHandCard(card)) {
+    hideQuickObjectMenu();
+    return;
+  }
+
+  if (quickMenuHideTimeout) {
+    clearTimeout(quickMenuHideTimeout);
+    quickMenuHideTimeout = null;
+  }
+
+  quickMenuTarget = card;
+
+  // ボタンの出し分け・状態更新
+  const rotateBtn = document.getElementById('qm-rotate-btn');
+  const flipBtn = document.getElementById('qm-flip-btn');
+  const copyBtn = document.getElementById('qm-copy-btn');
+  const deleteBtn = document.getElementById('qm-delete-btn');
+
+  const isMemo = card.classList.contains('memo');
+  const isCounter = card.classList.contains('counter') || card.classList.contains('numcounter');
+  const hasBackImage = !!card.dataset.backImageUrl;
+  const isImageToken = card.classList.contains('image-token');
+  const isToken = card.classList.contains('token') || (isImageToken && !hasBackImage);
+
+  // フリップボタン：裏表がないメモやカウンタ等の場合は非表示
+  if (flipBtn) {
+    if (isMemo || isCounter || (isToken && !hasBackImage)) {
+      flipBtn.style.display = 'none';
+    } else {
+      flipBtn.style.display = 'flex';
+    }
+  }
+
+  // 削除ボタン：権限チェック
+  if (deleteBtn) {
+    if (typeof canOperateCard === 'function' && !canOperateCard(card, 'delete')) {
+      deleteBtn.style.opacity = '0.35';
+      deleteBtn.style.pointerEvents = 'none';
+    } else {
+      deleteBtn.style.opacity = '1';
+      deleteBtn.style.pointerEvents = 'auto';
+    }
+  }
+
+  qmEl.style.display = 'block';
+  positionQuickMenu();
+  requestAnimationFrame(() => {
+    qmEl.classList.add('show');
+  });
+}
+
+function hideQuickObjectMenu() {
+  const qmEl = document.getElementById('quick-object-menu');
+  if (!qmEl) return;
+  quickMenuTarget = null;
+  qmEl.classList.remove('show');
+  if (quickMenuHideTimeout) clearTimeout(quickMenuHideTimeout);
+  quickMenuHideTimeout = setTimeout(() => {
+    if (!quickMenuTarget) {
+      qmEl.style.display = 'none';
+    }
+  }, 160);
+}
+
+// ボタンイベントの初期化
+function initQuickObjectMenuOnce() {
+  const qmEl = document.getElementById('quick-object-menu');
+  if (!qmEl || qmEl._bound) return;
+  qmEl._bound = true;
+
+  // メニュー内のクリックで伝播を阻止
+  qmEl.addEventListener('click', (e) => e.stopPropagation());
+  qmEl.addEventListener('mousedown', (e) => e.stopPropagation());
+  qmEl.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+
+  // 1: 回転 (90°)
+  const rotateBtn = document.getElementById('qm-rotate-btn');
+  if (rotateBtn) {
+    rotateBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!quickMenuTarget) return;
+      if (typeof canOperateCard === 'function' && !canOperateCard(quickMenuTarget, 'rotate')) return;
+      if (typeof quickMenuTarget._rotateCards === 'function') {
+        await quickMenuTarget._rotateCards();
+      } else if (typeof rotateCards === 'function') {
+        await rotateCards(quickMenuTarget);
+      }
+      setTimeout(positionQuickMenu, 80);
+    });
+  }
+
+  // 2: フリップ (表裏反転)
+  const flipBtn = document.getElementById('qm-flip-btn');
+  if (flipBtn) {
+    flipBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!quickMenuTarget) return;
+      if (typeof canOperateCard === 'function' && !canOperateCard(quickMenuTarget, 'flip')) return;
+      if (typeof quickMenuTarget._flipCards === 'function') {
+        await quickMenuTarget._flipCards();
+      } else if (typeof flipCards === 'function') {
+        await flipCards(quickMenuTarget);
+      }
+      setTimeout(positionQuickMenu, 80);
+    });
+  }
+
+  // 3: コピー (複製)
+  const copyBtn = document.getElementById('qm-copy-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!quickMenuTarget || !CURRENT_ROOM) return;
+      const cardId = quickMenuTarget.dataset.cardId;
+      if (!cardId) return;
+
+      try {
+        const docRef = doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`);
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) return;
+
+        const data = snap.data();
+        const cloned = { ...data };
+
+        const currentX = parseFloat(quickMenuTarget.style.left) || cloned.x || 0;
+        const currentY = parseFloat(quickMenuTarget.style.top) || cloned.y || 0;
+        cloned.x = currentX + 24;
+        cloned.y = currentY + 24;
+
+        const isBoard = quickMenuTarget.classList.contains('is-board') || quickMenuTarget.dataset.type === 'board';
+        const zBase = isBoard ? Z_CENTER_BASE : Z_FRONT_BASE;
+        cloned.zIndex = getMaxZIndex(zBase) + 1;
+
+        cloned.ownerUid = CURRENT_UID;
+        if (CURRENT_PLAYER) cloned.ownerSeat = CURRENT_PLAYER;
+        cloned.activeOperator = null;
+        cloned.createdAt = serverTimestamp();
+        cloned.updatedAt = serverTimestamp();
+        if (CURRENT_ROOM_META?.expiresAt) cloned.expiresAt = CURRENT_ROOM_META.expiresAt;
+
+        const newDocRef = await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), cloned);
+        if (typeof postLog === 'function') postLog('cardAction', `オブジェクトを複製しました`);
+
+        // 新しく生成された要素を自動選択
+        setTimeout(() => {
+          const newEl = (typeof cardDomMap !== 'undefined' && cardDomMap?.get(newDocRef.id)) ||
+                        document.querySelector(`[data-card-id="${newDocRef.id}"]`);
+          if (newEl && typeof applyCardSelection === 'function') {
+            applyCardSelection(newEl);
+          }
+        }, 250);
+      } catch (err) {
+        console.error('Quick menu copy failed:', err);
+      }
+    });
+  }
+
+  // 4: 削除
+  const deleteBtn = document.getElementById('qm-delete-btn');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!quickMenuTarget || !CURRENT_ROOM) return;
+      if (typeof canOperateCard === 'function' && !canOperateCard(quickMenuTarget, 'delete')) return;
+      const cardId = quickMenuTarget.dataset.cardId;
+      if (!cardId) return;
+
+      const targetEl = quickMenuTarget;
+      hideQuickObjectMenu();
+
+      try {
+        await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`));
+        if (typeof markLocal === 'function') markLocal(cardId);
+        if (typeof markLocalDelete === 'function') markLocalDelete(cardId);
+        if (typeof postLog === 'function') postLog('cardAction', `オブジェクトを削除しました`);
+      } catch (err) {
+        console.warn('Quick menu delete failed:', err);
+      }
+    });
+  }
+
+  // 盤面クリックで閉じる
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#quick-object-menu') || e.target.closest('.card')) return;
+    hideQuickObjectMenu();
+  });
+
+  // スクロールやズーム時に位置再計算
+  window.addEventListener('scroll', () => {
+    if (quickMenuTarget) positionQuickMenu();
+  }, { passive: true });
+}
+
+// グローバル公開 & 初期化
+window.showQuickObjectMenu = showQuickObjectMenu;
+window.hideQuickObjectMenu = hideQuickObjectMenu;
+window.positionQuickMenu = positionQuickMenu;
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initQuickObjectMenuOnce);
+} else {
+  initQuickObjectMenuOnce();
+}
+

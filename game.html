@@ -1506,6 +1506,57 @@
     </div>
   </div>
 
+  <!-- === Quick Object Menu (フローティング・クイック操作ツールバー) === -->
+  <div id="quick-object-menu" class="quick-object-menu" style="display: none;" role="toolbar" aria-label="クイック操作メニュー">
+    <div class="quick-menu-inner">
+      <!-- 1: 回転 -->
+      <button type="button" id="qm-rotate-btn" class="qm-btn" title="回転 (90°)" aria-label="回転">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="7" y="5" width="10" height="14" rx="2" transform="rotate(15 12 12)" />
+          <path d="M4 11A8 8 0 0 1 18 5" />
+          <polyline points="15 2 19 5 16 9" />
+          <path d="M20 13A8 8 0 0 1 6 19" />
+          <polyline points="9 22 5 19 8 15" />
+        </svg>
+      </button>
+
+      <!-- 2: フリップ（裏表反転） -->
+      <button type="button" id="qm-flip-btn" class="qm-btn" title="表裏をめくる" aria-label="めくる">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="8" y="3" width="9" height="18" rx="2.5" />
+          <path d="M4 13.5c-.2-3.8 3-6.5 7.5-6.5" />
+          <path d="M4 13.5c0 3.5 4.5 5 10 4" />
+          <polyline points="11 15 15 17.5 11.5 20.5" />
+        </svg>
+      </button>
+
+      <!-- 3: コピー（複製） -->
+      <button type="button" id="qm-copy-btn" class="qm-btn" title="複製 (コピー)" aria-label="コピー">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="8" y="7" width="12" height="14" rx="2.5" />
+          <path d="M4 17V5a2 2 0 0 1 2-2h10" />
+        </svg>
+      </button>
+
+      <!-- セパレーター（削除の誤爆防止） -->
+      <div class="qm-divider"></div>
+
+      <!-- 4: 削除（ゴミ箱） -->
+      <button type="button" id="qm-delete-btn" class="qm-btn qm-btn-danger" title="削除" aria-label="削除">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18" />
+          <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+          <rect x="5" y="6" width="14" height="15" rx="2.5" />
+          <line x1="9.5" y1="10" x2="9.5" y2="17" />
+          <line x1="12" y1="10" x2="12" y2="17" />
+          <line x1="14.5" y1="10" x2="14.5" y2="17" />
+        </svg>
+      </button>
+    </div>
+    <!-- 吹き出しの三角形矢印ノズル -->
+    <div class="qm-arrow"></div>
+  </div>
+
   <!-- === Token Context Menu === -->
   <div id="token-context-menu" class="area-context-menu" style="display: none; position: absolute; z-index: 10001;">
     <ul>

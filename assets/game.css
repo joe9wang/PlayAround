@@ -3000,3 +3000,114 @@ body:not(.is-host) .player-outer-handle {
   background: #dbeafe;
   color: #1d4ed8;
 }
+
+/* ===================================================
+   Quick Object Menu (選択オブジェクト上のクイック操作メニュー)
+=================================================== */
+.quick-object-menu {
+  position: absolute;
+  z-index: 15000;
+  pointer-events: auto;
+  opacity: 0;
+  transform: scale(0.88) translateY(6px);
+  transform-origin: center bottom;
+  transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.35)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.quick-object-menu.show {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.quick-object-menu.placement-bottom {
+  transform-origin: center top;
+}
+
+.quick-menu-inner {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  padding: 4px 6px;
+}
+
+.qm-btn {
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f1f5f9;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.12s ease, transform 0.1s ease, color 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.qm-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.qm-btn:active {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.qm-btn svg {
+  display: block;
+  pointer-events: none;
+}
+
+.qm-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 2px;
+}
+
+.qm-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+
+.qm-btn-danger:active {
+  background: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+}
+
+/* 矢印ノズル */
+.qm-arrow {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  pointer-events: none;
+}
+
+/* 上側にメニューが出る時（矢印は下向き） */
+.quick-object-menu:not(.placement-bottom) .qm-arrow {
+  bottom: -6px;
+  border-top: 6px solid rgba(15, 23, 42, 0.92);
+}
+
+/* 下側にメニューが出る時（矢印は上向き） */
+.quick-object-menu.placement-bottom .qm-arrow {
+  top: -6px;
+  border-bottom: 6px solid rgba(15, 23, 42, 0.92);
+}
+
