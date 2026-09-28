@@ -29,8 +29,8 @@ const DIRS = [
 const staticFiles = [
   "./ads.txt", "./robots.txt", "./sitemap.xml", "./privacy.html", 
   "./contact.html", "./terms.html", "./law.html", "./about.html", 
-  "./howto.html", "./Geki-Mahjong.html",
-  "./BatriTable-icon.png", "./PlayExample.png", "./favicon.ico",
+  "./howto.html", "./Geki-Mahjong.html", "./guide-custom-cardgame.html",
+  "./BatriTable-icon.png", "./PlayExample.png", "./PlayExample.webp", "./favicon.ico",
   "./favicon-32.png", "./favicon-16.png", "./favicon-192.png",
   "./favicon-512.png", "./sw.js", "./site.webmanifest"
 ];
