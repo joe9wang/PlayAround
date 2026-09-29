@@ -392,10 +392,14 @@
         </a>
       </div>
 
-      <!-- 中央の画像 (PlayExample.png) -->
+      <!-- 中央の画像 (PlayExample.webp / PlayExample.png) -->
       <div style="text-align:center; margin:32px 0;">
-        <img src="PlayExample.png" alt="BatriTable（バトライテーブル / バトリテーブル）プレイ画面例"
-          style="width:100%; max-width:900px; height:auto; border-radius:16px;" />
+        <picture>
+          <source srcset="PlayExample.webp" type="image/webp">
+          <img src="PlayExample.png" alt="BatriTable（バトライテーブル / バトリテーブル）プレイ画面例"
+            width="2015" height="1121" fetchpriority="high"
+            style="width:100%; max-width:900px; height:auto; border-radius:16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);" />
+        </picture>
       </div>
 
       <div>
@@ -407,6 +411,17 @@
           最大8人までのマルチプレイ人数に対応。<br>
           <!-- すぐに遊べる、オリジナルゲームが搭載。<br> -->
         </p>
+      </div>
+
+      <!-- ガイド記事への導線（内部リンクSEO強化） -->
+      <div style="margin-top: 24px; padding: 18px 24px; background: rgba(0,0,0,0.12); border-radius: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <strong style="font-size: 1.05rem; display: block; margin-bottom: 4px;">📖 自作カードゲーム・オリカをオンライン対戦する方法</strong>
+          <span style="font-size: 0.88rem; opacity: 0.9;">画像の用意から部屋作成、Discord通話でのテストプレイ手順を詳しく解説！</span>
+        </div>
+        <a href="guide-custom-cardgame.html" class="btn btn-dark" style="padding: 10px 18px; border-radius: 10px; text-decoration: none; font-size: 0.9rem; white-space: nowrap;">
+          解説ガイドを読む →
+        </a>
       </div>
 
 

@@ -11171,6 +11171,7 @@ function bindPanZoomHandlers() {
           selectedCard = null;
           setPreview();
           updateSelectedCount();
+          if (typeof hideQuickObjectMenu === 'function') hideQuickObjectMenu();
         }
       } else if (mRect && mRect.width >= 10 && mRect.height >= 10) {
         justMarqueeSelected = true;
@@ -11212,6 +11213,7 @@ function bindPanZoomHandlers() {
         selectedCard = null;
         setPreview();
         updateSelectedCount();
+        if (typeof hideQuickObjectMenu === 'function') hideQuickObjectMenu();
       }
     }
     touchMode.type = null;
@@ -11230,6 +11232,7 @@ function bindPanZoomHandlers() {
       selectedCard = null;
       setPreview();
       updateSelectedCount();
+      if (typeof hideQuickObjectMenu === 'function') hideQuickObjectMenu();
     }
   });
 }
@@ -15132,11 +15135,13 @@ function initQuickObjectMenuOnce() {
     });
   }
 
-  // 盤面クリックで閉じる
-  document.addEventListener('click', (e) => {
+  // 盤面クリック・タップで閉じる
+  const handleOutsideQuickMenu = (e) => {
     if (e.target.closest('#quick-object-menu') || e.target.closest('.card')) return;
     hideQuickObjectMenu();
-  });
+  };
+  document.addEventListener('click', handleOutsideQuickMenu);
+  document.addEventListener('pointerdown', handleOutsideQuickMenu);
 
   // スクロールやズーム時に位置再計算
   window.addEventListener('scroll', () => {
