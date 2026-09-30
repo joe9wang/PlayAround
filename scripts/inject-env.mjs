@@ -32,7 +32,7 @@ const staticFiles = [
   "./howto.html", "./Geki-Mahjong.html", "./guide-custom-cardgame.html",
   "./BatriTable-icon.png", "./PlayExample.png", "./PlayExample.webp", "./favicon.ico",
   "./favicon-32.png", "./favicon-16.png", "./favicon-192.png",
-  "./favicon-512.png", "./sw.js", "./site.webmanifest"
+  "./favicon-512.png", "./apple-touch-icon.png", "./sw.js", "./site.webmanifest"
 ];
 
 const replMap = {
