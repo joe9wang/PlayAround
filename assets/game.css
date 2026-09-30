@@ -1350,6 +1350,63 @@ body.hover-zoom-enabled .card.selected:not(.is-board):not(.memo):not(.note):not(
   background: transparent !important;
 }
 
+/* コイン専用スタイル & トスアニメーション */
+.card.dice.is-coin {
+  width: 72px;
+  height: 72px;
+  border-radius: 50% !important;
+  cursor: grab;
+  user-select: none;
+  perspective: 800px;
+}
+.card.dice.is-coin:active {
+  cursor: grabbing;
+}
+.card.dice.is-coin img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  backface-visibility: visible;
+}
+.card.dice.is-coin.tossing {
+  pointer-events: none !important;
+  z-index: 28000 !important;
+  animation: coinTossFlight 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.card.dice.is-coin.tossing img {
+  animation: coinTossFlip 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes coinTossFlight {
+  0% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  }
+  45% {
+    transform: translateY(-80px) scale(1.3);
+    filter: drop-shadow(0 28px 18px rgba(0, 0, 0, 0.22));
+  }
+  85% {
+    transform: translateY(-4px) scale(1.02);
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  }
+}
+
+@keyframes coinTossFlip {
+  0% {
+    transform: rotateX(0deg);
+  }
+  100% {
+    transform: rotateX(1440deg);
+  }
+}
+
 .card.numcounter {
   width: 100px;
   height: 100px;

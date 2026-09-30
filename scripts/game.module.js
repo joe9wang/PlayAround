@@ -6407,14 +6407,11 @@ function createCardDom(cardId, imageSrc, state) {
 
 
   if (state?.type === 'dice') {
-
     card.classList.add('dice');     // 小さめ正方形の見た目はCSSで
+    const isCoin = state?.diceKind === 'coin';
+    if (isCoin) card.classList.add('is-coin');
 
-    // coin だけは丸く見せたいのでフラグでクラス付与
-
-    if (state?.diceKind === 'coin') card.classList.add('is-coin');
-
-    card.style.cursor = 'pointer';
+    card.style.cursor = isCoin ? 'grab' : 'pointer';
 
     card.dataset.cardId = cardId;
     card.dataset.ownerUid = state?.ownerUid || '';
@@ -6425,79 +6422,74 @@ function createCardDom(cardId, imageSrc, state) {
       (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me'
     );
 
-
-
-    // ←← ここが重要：img を作って貼る
-
+    // img を作って貼る
     const img = document.createElement('img'); img.crossOrigin = 'anonymous';
-
     img.src = imageSrc;
-
     img.decoding = 'async';
-
     img.loading = 'lazy';
-
     card.appendChild(img);
 
+    if (isCoin) {
+      // コイン: ダブルクリックでトス、右クリックで削除、ドラッグ可能
+      card._tossCoin = () => {
+        if (typeof tossCoinOnField === 'function') tossCoinOnField(card);
+      };
 
+      card.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        card._tossCoin();
+      });
 
-    // クリックで自分のダイスだけ削除
+      // 右クリックで削除（自分のコインのみ）
+      card.addEventListener('contextmenu', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+        try {
+          const id = card.dataset.cardId;
+          await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
+          markLocal(id);
+          markLocalDelete(id);
+          if (typeof postLog === 'function') postLog('cardAction', 'コインを削除しました');
+        } catch (e) {
+          console.warn('delete coin failed', e);
+        }
+      });
 
+      // コインはドラッグ可能にする
+      makeDraggable(card);
+      return card;
+    }
+
+    // ダイス: クリックで自分のダイスだけ削除
     card.addEventListener('click', async (e) => {
-
       e.stopPropagation();
-
       if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
-
       try {
-
         const id = card.dataset.cardId;
-
         await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
-
         markLocal(id);
-
         markLocalDelete(id);
-
       } catch (e) {
-
         console.warn('delete dice failed', e);
-
       }
-
     });
-
-
 
     // 右クリックでも自分のダイスだけ削除
-
     card.addEventListener('contextmenu', async (e) => {
-
       e.preventDefault();
-
       e.stopPropagation();
-
       if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
-
       try {
-
         const id = card.dataset.cardId;
-
         await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
-
         markLocal(id);
-
         markLocalDelete(id);
-
       } catch (e) {
-
         console.warn('delete dice failed', e);
-
       }
-
     });
-
-
 
     card.addEventListener('dblclick', e => e.preventDefault());
 
@@ -7099,10 +7091,20 @@ function applyCardState(card, data) {
 
     const targetSrc = isHighResNeeded ? data.fullUrl : data.imageUrl;
 
-    if (targetSrc && img.src !== targetSrc) { 
-
-      img.src = targetSrc; 
-
+    if (targetSrc && img.src !== targetSrc) {
+      if (card.classList.contains('is-coin') && !card._isTossing && !isLocalRecent(card.dataset.cardId)) {
+        card.classList.remove('tossing');
+        void card.offsetWidth;
+        card.classList.add('tossing');
+        setTimeout(() => {
+          img.src = targetSrc;
+        }, 320);
+        setTimeout(() => {
+          card.classList.remove('tossing');
+        }, 660);
+      } else {
+        img.src = targetSrc;
+      }
     }
 
   }
@@ -8205,9 +8207,11 @@ function makeDraggable(card) {
           const now = Date.now();
           const lastTap = card._lastTapTime || 0;
           if (now - lastTap < 350) {
-            // ダブルタップ検出: 90度回転
+            // ダブルタップ検出: コインの場合はトス、通常カードは90度回転
             card._lastTapTime = 0;
-            if (typeof card._rotateCards === 'function') {
+            if (card.classList.contains('is-coin') && typeof card._tossCoin === 'function') {
+              card._tossCoin();
+            } else if (typeof card._rotateCards === 'function') {
               card._rotateCards();
             }
           } else {
@@ -8794,23 +8798,22 @@ function svgCoinDataUrl(face) { // face: 'オモテ' or 'ウラ'
 // ==== 既存の自分ダイスを一旦削除して1つに揃える ====
 
 async function resetMyDiceIfAny() {
-
   const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
-
   const qOld = query(baseCol, where('type', '==', 'dice'), where('ownerSeat', '==', CURRENT_PLAYER));
-
   const snap = await getDocs(qOld);
-
   if (!snap.empty) {
-
     const batch = writeBatch(db);
-
-    snap.forEach(d => batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${d.id}`)));
-
-    await batch.commit();
-
+    let count = 0;
+    snap.forEach(d => {
+      if (d.data()?.diceKind !== 'coin') {
+        batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${d.id}`));
+        count++;
+      }
+    });
+    if (count > 0) {
+      await batch.commit();
+    }
   }
-
 }
 
 
@@ -9033,41 +9036,34 @@ window.rollD100 = async function () {
 
 
 
-// ==== コイン ====
+// ==== コイン機能 ====
 
-window.flipCoin = async function () {
-
+// 1. コイントス（チャット＆ログのみ）
+window.flipCoinLogOnly = async function () {
   if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+  disableDiceButtons(600);
 
-  disableDiceButtons(3000);
+  const isHeads = Math.random() < 0.5;
+  const faceJP = isHeads ? 'オモテ' : 'ウラ';
+  postLog('diceCoin', `コイントス → ${faceJP}`);
+};
+
+// 2. コイン生成（フィールド上に配置）
+window.spawnCoin = async function () {
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+  disableDiceButtons(600);
 
   try {
-
-    await resetMyDiceIfAny();
-
-
-
-    const isHeads = Math.random() < 0.5;
-
-    const faceJP = isHeads ? 'オモテ' : 'ウラ';
-
-    const val = isHeads ? 1 : 2;   // 便宜的に 1=表, 2=裏
+    const SIZE = 72;
+    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
+    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
+    const faceJP = 'オモテ';
     const imgUrl = svgCoinDataUrl(faceJP);
 
-
-
-    const SIZE = 72;
-
-    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
-
-    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
-
-
-
     const payload = {
-      type: 'dice',          // 既存の .card.dice の見た目/削除挙動に合わせる
-      diceKind: 'coin',      // ← コイン判定用フラグを保存
-      diceValue: val,
+      type: 'dice',
+      diceKind: 'coin',
+      diceValue: 1,
       imageUrl: imgUrl,
       fullUrl: imgUrl,
       x, y, zIndex: z,
@@ -9082,16 +9078,61 @@ window.flipCoin = async function () {
     if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
 
     await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
-
-    postLog('diceCoin', `コイントス → ${faceJP}`);
-
+    postLog('cardAction', 'コインを配置しました');
   } catch (e) {
-
-    console.error(e); alert('コインの作成に失敗しました。');
-
+    console.error(e);
+    alert('コインの作成に失敗しました。');
   }
-
 };
+
+// 3. フィールド上のコインをトスする（ダブルクリック / ダブルタップ時）
+async function tossCoinOnField(card) {
+  if (!card || card._isTossing) return;
+  if (!CURRENT_ROOM || !CURRENT_PLAYER) return;
+  card._isTossing = true;
+
+  // アニメーション適用（飛び上がり＆3Dフリップ）
+  card.classList.remove('tossing');
+  void card.offsetWidth;
+  card.classList.add('tossing');
+
+  const isHeads = Math.random() < 0.5;
+  const faceJP = isHeads ? 'オモテ' : 'ウラ';
+  const val = isHeads ? 1 : 2;
+  const imgUrl = svgCoinDataUrl(faceJP);
+  const img = card.querySelector('img');
+
+  // 最高点あたり（0.32秒後）で画像差し替え
+  setTimeout(() => {
+    if (img) img.src = imgUrl;
+  }, 320);
+
+  // 着地時（0.66秒後）に確定処理
+  setTimeout(async () => {
+    card.classList.remove('tossing');
+    card._isTossing = false;
+
+    const cardId = card.dataset.cardId;
+    if (!cardId) return;
+
+    try {
+      markLocal(cardId);
+      await updateDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`), {
+        diceValue: val,
+        imageUrl: imgUrl,
+        fullUrl: imgUrl,
+        updatedAt: serverTimestamp()
+      });
+      postLog('diceCoin', `コイントス → ${faceJP}`);
+    } catch (err) {
+      console.warn('tossCoin update failed:', err);
+    }
+  }, 660);
+}
+window.tossCoinOnField = tossCoinOnField;
+
+// 既存互換用
+window.flipCoin = window.spawnCoin;
 
 
 
@@ -11577,9 +11618,10 @@ Object.assign(window, {
 
 
   // コイン・ダイス
-
   flipCoin,
-
+  flipCoinLogOnly,
+  spawnCoin,
+  tossCoinOnField,
   rollD10,
 
   rollD20,
