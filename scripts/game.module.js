@@ -9048,41 +9048,151 @@ window.flipCoinLogOnly = async function () {
   postLog('diceCoin', `コイントス → ${faceJP}`);
 };
 
-// 2. コイン生成（フィールド上に配置）
-window.spawnCoin = async function () {
-  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
-  disableDiceButtons(600);
+// 2. コイン生成（マウスカーソル追従・クリック配置モード）
+let placingCoin = null;
 
-  try {
-    const SIZE = 72;
-    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
-    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
-    const faceJP = 'オモテ';
-    const imgUrl = svgCoinDataUrl(faceJP);
-
-    const payload = {
-      type: 'dice',
-      diceKind: 'coin',
-      diceValue: 1,
-      imageUrl: imgUrl,
-      fullUrl: imgUrl,
-      x, y, zIndex: z,
-      faceUp: true,
-      ownerUid: CURRENT_UID,
-      ownerSeat: CURRENT_PLAYER,
-      rotation: 0,
-      visibleToAll: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
-    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
-
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
-    postLog('cardAction', 'コインを配置しました');
-  } catch (e) {
-    console.error(e);
-    alert('コインの作成に失敗しました。');
+function stopCoinPlacement() {
+  if (!placingCoin) return;
+  const { previewEl, moveHandler, clickHandler, cancelHandler, keyHandler, btn } = placingCoin;
+  if (previewEl && previewEl.parentElement) {
+    previewEl.remove();
   }
+  document.removeEventListener('pointermove', moveHandler);
+  document.removeEventListener('touchmove', moveHandler);
+  document.removeEventListener('pointerdown', clickHandler, true);
+  document.removeEventListener('contextmenu', cancelHandler);
+  document.removeEventListener('keydown', keyHandler);
+  document.body.classList.remove('is-placing-coin');
+  if (btn) btn.classList.remove('placing-active');
+  placingCoin = null;
+}
+
+window.spawnCoin = function () {
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください');
+    return;
+  }
+
+  // 既に配置モード中ならキャンセル
+  if (placingCoin) {
+    stopCoinPlacement();
+    return;
+  }
+
+  const btn = document.getElementById('spawn-coin-btn');
+  if (btn) btn.classList.add('placing-active');
+  document.body.classList.add('is-placing-coin');
+
+  const SIZE = 72;
+  const previewEl = document.createElement('div');
+  previewEl.className = 'card dice is-coin coin-placement-preview';
+  previewEl.style.width = `${SIZE}px`;
+  previewEl.style.height = `${SIZE}px`;
+  previewEl.style.position = 'absolute';
+  previewEl.style.display = 'block';
+
+  const img = document.createElement('img');
+  img.src = svgCoinDataUrl('オモテ');
+  previewEl.appendChild(img);
+
+  field.appendChild(previewEl);
+
+  let currentCoord = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
+  previewEl.style.left = `${currentCoord.x}px`;
+  previewEl.style.top = `${currentCoord.y}px`;
+
+  const updatePos = (clientX, clientY) => {
+    const fieldRect = field.getBoundingClientRect();
+    const z = typeof zoom !== 'undefined' ? zoom : 1;
+    const x = ((clientX - fieldRect.left) / z) - (SIZE / 2);
+    const y = ((clientY - fieldRect.top) / z) - (SIZE / 2);
+    currentCoord = { x: Math.round(x), y: Math.round(y) };
+    previewEl.style.left = `${currentCoord.x}px`;
+    previewEl.style.top = `${currentCoord.y}px`;
+    previewEl.style.display = 'block';
+  };
+
+  const moveHandler = (e) => {
+    const touch = e.touches ? e.touches[0] : e;
+    if (touch) updatePos(touch.clientX, touch.clientY);
+  };
+
+  const startTime = Date.now();
+  const clickHandler = async (e) => {
+    // ボタン自体のタップ直後（150ms以内）はスキップ
+    if (Date.now() - startTime < 150) return;
+
+    // 操作パネルやヘッダー内でのクリックならキャンセル
+    if (e.target.closest('#sidebar') || e.target.closest('.site-header') || e.target.closest('#control-panel')) {
+      stopCoinPlacement();
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const clientX = e.clientX || (e.touches && e.touches[0]?.clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0]?.clientY);
+    if (typeof clientX === 'number' && typeof clientY === 'number') {
+      updatePos(clientX, clientY);
+    }
+
+    const { x, y } = currentCoord;
+    stopCoinPlacement();
+
+    try {
+      const z = getMaxZIndex(Z_FRONT_BASE) + 100;
+      const faceJP = 'オモテ';
+      const imgUrl = svgCoinDataUrl(faceJP);
+
+      const payload = {
+        type: 'dice',
+        diceKind: 'coin',
+        diceValue: 1,
+        imageUrl: imgUrl,
+        fullUrl: imgUrl,
+        x, y, zIndex: z,
+        faceUp: true,
+        ownerUid: CURRENT_UID,
+        ownerSeat: CURRENT_PLAYER,
+        rotation: 0,
+        visibleToAll: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
+
+      await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
+      postLog('cardAction', 'コインを配置しました');
+    } catch (err) {
+      console.error(err);
+      alert('コインの作成に失敗しました。');
+    }
+  };
+
+  const cancelHandler = (e) => {
+    e.preventDefault();
+    stopCoinPlacement();
+  };
+
+  const keyHandler = (e) => {
+    if (e.key === 'Escape') stopCoinPlacement();
+  };
+
+  placingCoin = {
+    previewEl,
+    moveHandler,
+    clickHandler,
+    cancelHandler,
+    keyHandler,
+    btn
+  };
+
+  document.addEventListener('pointermove', moveHandler);
+  document.addEventListener('touchmove', moveHandler, { passive: true });
+  document.addEventListener('pointerdown', clickHandler, true);
+  document.addEventListener('contextmenu', cancelHandler);
+  document.addEventListener('keydown', keyHandler);
 };
 
 // 3. フィールド上のコインをトスする（ダブルクリック / ダブルタップ時）

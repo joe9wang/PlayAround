@@ -1379,6 +1379,24 @@ body.hover-zoom-enabled .card.selected:not(.is-board):not(.memo):not(.note):not(
   animation: coinTossFlip 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
+/* コイン配置プレビュー */
+.card.dice.is-coin.coin-placement-preview {
+  opacity: 0.75;
+  pointer-events: none !important;
+  z-index: 29000 !important;
+  box-shadow: 0 0 16px rgba(255, 213, 79, 0.8), 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+  transition: opacity 0.15s ease-out;
+}
+body.is-placing-coin #field-container {
+  cursor: crosshair !important;
+}
+#spawn-coin-btn.placing-active {
+  background: #fef08a !important;
+  color: #854d0e !important;
+  border-color: #eab308 !important;
+  font-weight: 700;
+}
+
 @keyframes coinTossFlight {
   0% {
     transform: translateY(0) scale(1);
