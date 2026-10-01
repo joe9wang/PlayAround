@@ -15270,23 +15270,44 @@ function showQuickObjectMenu(card) {
   const isImageToken = card.classList.contains('image-token');
   const isToken = card.classList.contains('token') || (isImageToken && !hasBackImage);
 
+  // 回転ボタン：コインの場合は非表示
+  if (rotateBtn) {
+    if (isCoin) {
+      rotateBtn.style.display = 'none';
+    } else {
+      rotateBtn.style.display = 'flex';
+      if (typeof canOperateCard === 'function' && !canOperateCard(card, 'rotate')) {
+        rotateBtn.style.opacity = '0.35';
+        rotateBtn.style.pointerEvents = 'none';
+      } else {
+        rotateBtn.style.opacity = '1';
+        rotateBtn.style.pointerEvents = 'auto';
+      }
+    }
+  }
+
   // 設定ボタン：コインのみ表示
   if (settingsBtn) {
     settingsBtn.style.display = isCoin ? 'flex' : 'none';
   }
 
-  // フリップボタン：裏表がないメモやカウンタ等の場合は非表示。コインはコイントスとして表示
+  // フリップボタン（アイコン切り替え対応：カードはカードめくり、コインは案Aのコイン反転スピン）
+  const CARD_FLIP_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="9" height="18" rx="2.5" /><path d="M4 13.5c-.2-3.8 3-6.5 7.5-6.5" /><path d="M4 13.5c0 3.5 4.5 5 10 4" /><polyline points="11 15 15 17.5 11.5 20.5" /></svg>`;
+  const COIN_FLIP_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M9 12a3 3 0 0 1 5.5-1.7" /><polyline points="15 7.5 15 10.5 12 10.5" /><path d="M15 12a3 3 0 0 1-5.5 1.7" /><polyline points="9 16.5 9 13.5 12 13.5" /></svg>`;
+
   if (flipBtn) {
     if (isCoin) {
       flipBtn.style.display = 'flex';
       flipBtn.setAttribute('title', 'コイントス');
       flipBtn.setAttribute('aria-label', 'コイントス');
+      flipBtn.innerHTML = COIN_FLIP_SVG;
     } else if (isMemo || isCounter || (isToken && !hasBackImage)) {
       flipBtn.style.display = 'none';
     } else {
       flipBtn.style.display = 'flex';
       flipBtn.setAttribute('title', '表裏をめくる');
       flipBtn.setAttribute('aria-label', 'めくる');
+      flipBtn.innerHTML = CARD_FLIP_SVG;
     }
   }
 
