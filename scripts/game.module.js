@@ -6470,6 +6470,7 @@ function createCardDom(cardId, imageSrc, state) {
 
       // コインはドラッグ可能にする
       makeDraggable(card);
+      makeCoinResizable(card, cardId);
       return card;
     }
 
@@ -13995,6 +13996,122 @@ function makeBoardResizable(card, cardId) {
 
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
+    });
+  });
+}
+
+/**
+ * コインをドラッグでリサイズ可能にする（正円1:1維持＆タッチ対応）
+ */
+function makeCoinResizable(card, cardId) {
+  if (!card || !cardId) return;
+  if (card.dataset.resizableBound === 'true') return;
+  card.dataset.resizableBound = 'true';
+
+  const positions = ['n', 's', 'w', 'e', 'nw', 'ne', 'sw', 'se'];
+  positions.forEach(pos => {
+    const handle = document.createElement('div');
+    handle.className = `resize-handle ${pos}`;
+    card.appendChild(handle);
+
+    handle.addEventListener('pointerdown', (e) => {
+      if (typeof canOperateCard === 'function' && !canOperateCard(card, 'move')) return;
+      if (!card.classList.contains('selected')) return; // 選択中のみリサイズ可能
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startRect = card.getBoundingClientRect();
+      const fieldEl = document.getElementById('field') || (typeof field !== 'undefined' ? field : document.body);
+      const fieldRect = fieldEl.getBoundingClientRect();
+      const z = typeof zoom !== 'undefined' ? zoom : 1;
+
+      const startW = startRect.width / z;
+      const startH = startRect.height / z;
+      const startL = (startRect.left - fieldRect.left) / z;
+      const startT = (startRect.top - fieldRect.top) / z;
+
+      card.classList.add('resizing');
+      try {
+        handle.setPointerCapture(e.pointerId);
+      } catch (_) {}
+
+      let currentSize = startW;
+      let currentL = startL;
+      let currentT = startT;
+
+      const onPointerMove = (me) => {
+        const dx = (me.clientX - startX) / z;
+        const dy = (me.clientY - startY) / z;
+
+        let scale = 1.0;
+        if (pos === 'e') {
+          scale = (startW + dx) / startW;
+        } else if (pos === 'w') {
+          scale = (startW - dx) / startW;
+        } else if (pos === 's') {
+          scale = (startH + dy) / startH;
+        } else if (pos === 'n') {
+          scale = (startH - dy) / startH;
+        } else if (pos === 'se') {
+          scale = (startW + (dx + dy) / 2) / startW;
+        } else if (pos === 'sw') {
+          scale = (startW + (-dx + dy) / 2) / startW;
+        } else if (pos === 'ne') {
+          scale = (startW + (dx - dy) / 2) / startW;
+        } else if (pos === 'nw') {
+          scale = (startW + (-dx - dy) / 2) / startW;
+        }
+
+        // コインは正円（1:1）を維持：最小36px、最大360px
+        const newSize = Math.round(Math.max(36, Math.min(360, startW * scale)));
+        let newL = startL;
+        let newT = startT;
+
+        if (pos.includes('w')) newL = startL + (startW - newSize);
+        if (pos.includes('n')) newT = startT + (startH - newSize);
+
+        currentSize = newSize;
+        currentL = newL;
+        currentT = newT;
+
+        card.style.setProperty('width', `${newSize}px`, 'important');
+        card.style.setProperty('height', `${newSize}px`, 'important');
+        card.style.left = `${newL}px`;
+        card.style.top = `${newT}px`;
+
+        if (typeof positionQuickMenu === 'function') {
+          positionQuickMenu();
+        }
+      };
+
+      const onPointerUp = async (ue) => {
+        handle.removeEventListener('pointermove', onPointerMove);
+        handle.removeEventListener('pointerup', onPointerUp);
+        handle.removeEventListener('pointercancel', onPointerUp);
+        try {
+          handle.releasePointerCapture(ue.pointerId);
+        } catch (_) {}
+
+        card.classList.remove('resizing');
+
+        const width = currentSize;
+        const height = currentSize;
+        const x = Math.round(currentL);
+        const y = Math.round(currentT);
+
+        const id = card.dataset.cardId;
+        if (id) {
+          if (typeof markLocal === 'function') markLocal(id);
+          updateCardBatched(id, { width, height, x, y });
+        }
+      };
+
+      handle.addEventListener('pointermove', onPointerMove);
+      handle.addEventListener('pointerup', onPointerUp);
+      handle.addEventListener('pointercancel', onPointerUp);
     });
   });
 }

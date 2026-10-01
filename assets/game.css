@@ -1834,6 +1834,47 @@ body.collapse-right .edge-right { display: inline-flex; }
   outline: 2px solid #007bff !important;
 }
 
+/* === Coin Resizing === */
+.card.dice.is-coin.selected .resize-handle {
+  pointer-events: auto;
+  display: block;
+}
+.card.dice.is-coin.selected .resize-handle.nw,
+.card.dice.is-coin.selected .resize-handle.ne,
+.card.dice.is-coin.selected .resize-handle.sw,
+.card.dice.is-coin.selected .resize-handle.se {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ef4444 !important;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.card.dice.is-coin.selected .resize-handle.n,
+.card.dice.is-coin.selected .resize-handle.s {
+  height: 12px;
+  background: rgba(239, 68, 68, 0.15) !important;
+}
+.card.dice.is-coin.selected .resize-handle.w,
+.card.dice.is-coin.selected .resize-handle.e {
+  width: 12px;
+  background: rgba(239, 68, 68, 0.15) !important;
+}
+.card.dice.is-coin.selected .resize-handle:hover {
+  background: rgba(239, 68, 68, 0.4) !important;
+}
+.card.dice.is-coin.selected .resize-handle.nw:hover,
+.card.dice.is-coin.selected .resize-handle.ne:hover,
+.card.dice.is-coin.selected .resize-handle.sw:hover,
+.card.dice.is-coin.selected .resize-handle.se:hover {
+  background: #dc2626 !important;
+  transform: scale(1.25);
+}
+.card.dice.is-coin.resizing {
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.9) !important;
+}
+
 /* === Dynamic Areas (Deck, Discard, Special) === */
 .dynamic-area {
   position: absolute !important;
