@@ -6476,6 +6476,11 @@ function createCardDom(cardId, imageSrc, state) {
 
     // ダイス: ダブルクリックでロール、クリックで選択、右クリックで削除、ドラッグ可能
     card.dataset.maxFaces = String(state?.maxFaces || 6);
+    try {
+      card._customFaces = state?.customFaces ? (typeof state.customFaces === 'string' ? JSON.parse(state.customFaces) : state.customFaces) : {};
+    } catch {
+      card._customFaces = {};
+    }
     card._rollDice = () => {
       if (typeof rollDiceOnField === 'function') rollDiceOnField(card);
     };
@@ -6982,6 +6987,13 @@ function applyCardState(card, data) {
   if (data.backImageUrl !== undefined) card.dataset.backImageUrl = data.backImageUrl || '';
   if (data.diceValue !== undefined) card.dataset.diceValue = String(data.diceValue || 1);
   if (data.maxFaces !== undefined) card.dataset.maxFaces = String(data.maxFaces || 6);
+  if (data.customFaces !== undefined) {
+    try {
+      card._customFaces = data.customFaces ? (typeof data.customFaces === 'string' ? JSON.parse(data.customFaces) : data.customFaces) : {};
+    } catch {
+      card._customFaces = {};
+    }
+  }
   if (typeof updateCardCursor === 'function') updateCardCursor(card);
 
   // ★ 自分が現在ドラッグ中のカード、または直近にローカルで位置・重なり更新したカードは、
@@ -8641,7 +8653,10 @@ let lastDiceAt = 0;
 /**
  * ダイス出目に応じた画像URLを返す
  */
-function getDiceImageUrl(faces, val) {
+function getDiceImageUrl(faces, val, customFaces) {
+  if (customFaces && customFaces[String(val)]) {
+    return customFaces[String(val)];
+  }
   if (faces === 6) {
     return svgDiceDataUrl(val);
   }
@@ -8943,7 +8958,7 @@ async function rollDiceOnField(card) {
 
   const faces = parseInt(card.dataset.maxFaces || 6, 10);
   const newVal = Math.floor(Math.random() * faces) + 1;
-  const imgUrl = getDiceImageUrl(faces, newVal);
+  const imgUrl = getDiceImageUrl(faces, newVal, card._customFaces);
   const img = card.querySelector('img');
 
   setTimeout(() => {
@@ -15216,9 +15231,19 @@ function showQuickObjectMenu(card) {
     }
   }
 
-  // 設定ボタン：コインのみ表示
+  // 設定ボタン：コインおよびダイスの場合に表示
   if (settingsBtn) {
-    settingsBtn.style.display = isCoin ? 'flex' : 'none';
+    if (isCoin) {
+      settingsBtn.style.display = 'flex';
+      settingsBtn.setAttribute('title', 'コイン設定');
+      settingsBtn.setAttribute('aria-label', 'コイン設定');
+    } else if (isDice) {
+      settingsBtn.style.display = 'flex';
+      settingsBtn.setAttribute('title', 'ダイス設定');
+      settingsBtn.setAttribute('aria-label', 'ダイス設定');
+    } else {
+      settingsBtn.style.display = 'none';
+    }
   }
 
   // フリップボタン（アイコン切り替え対応：カードはカードめくり、コインはコイン反転スピン、ダイスはダイスロール）
@@ -15325,7 +15350,7 @@ function initQuickObjectMenuOnce() {
     });
   }
 
-  // 4: 設定（コイン画像設定等）
+  // 4: 設定（コイン画像設定、ダイス画像設定等）
   const settingsBtn = document.getElementById('qm-settings-btn');
   if (settingsBtn) {
     settingsBtn.addEventListener('click', (e) => {
@@ -15333,6 +15358,8 @@ function initQuickObjectMenuOnce() {
       if (!quickMenuTarget) return;
       if (quickMenuTarget.classList.contains('is-coin') && typeof openCoinSettingsModal === 'function') {
         openCoinSettingsModal(quickMenuTarget);
+      } else if ((quickMenuTarget.dataset.type === 'dice' || quickMenuTarget.classList.contains('dice')) && typeof openDiceSettingsModal === 'function') {
+        openDiceSettingsModal(quickMenuTarget);
       }
     });
   }
@@ -15416,7 +15443,7 @@ function initQuickObjectMenuOnce() {
     if (typeof closeDicePicker === 'function' && !e.target.closest('#spawn-dice-btn') && !e.target.closest('#dice-picker-popover')) {
       closeDicePicker();
     }
-    if (e.target.closest('#quick-object-menu') || e.target.closest('.card')) return;
+    if (e.target.closest('#quick-object-menu') || e.target.closest('.card') || e.target.closest('#coin-settings-modal') || e.target.closest('#coin-crop-modal') || e.target.closest('#dice-settings-modal') || e.target.closest('#dice-crop-modal')) return;
     hideQuickObjectMenu();
   };
   document.addEventListener('click', handleOutsideQuickMenu);
@@ -15437,10 +15464,12 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     initQuickObjectMenuOnce();
     initCoinSettingsOnce();
+    initDiceSettingsOnce();
   });
 } else {
   initQuickObjectMenuOnce();
   initCoinSettingsOnce();
+  initDiceSettingsOnce();
 }
 
 // ====================================================================
@@ -15768,5 +15797,368 @@ function initCoinSettingsOnce() {
 
 window.openCoinSettingsModal = openCoinSettingsModal;
 window.closeCoinSettingsModal = closeCoinSettingsModal;
+
+// ====================================================================
+// ダイス各面画像設定モーダル & 四角形クロップ機能
+// ====================================================================
+let currentEditingDice = null;
+let currentCropDiceFace = null; // number (1, 2, 3...)
+let diceCropImg = null;
+let diceCropBaseScale = 1.0;
+let diceCropZoom = 1.0;
+let diceCropOffsetX = 0;
+let diceCropOffsetY = 0;
+const DICE_CROP_VIEW_SIZE = 280;
+
+function openDiceSettingsModal(card) {
+  if (!card) return;
+  currentEditingDice = card;
+  const faces = parseInt(card.dataset.maxFaces || 6, 10);
+
+  const titleEl = document.getElementById('dice-settings-title');
+  if (titleEl) {
+    titleEl.textContent = `🎲 ${faces}面ダイス各面画像の設定`;
+  }
+
+  renderDiceSettingsFaces(card, faces);
+
+  const modal = document.getElementById('dice-settings-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function closeDiceSettingsModal() {
+  const modal = document.getElementById('dice-settings-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  currentEditingDice = null;
+}
+
+function renderDiceSettingsFaces(card, faces) {
+  const container = document.getElementById('dice-faces-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const customFaces = card._customFaces || {};
+
+  for (let val = 1; val <= faces; val++) {
+    const valStr = String(val);
+    const currentSrc = customFaces[valStr] || getDiceImageUrl(faces, val);
+    const hasCustom = !!customFaces[valStr];
+
+    const faceCard = document.createElement('div');
+    faceCard.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;';
+
+    const label = document.createElement('div');
+    label.style.cssText = 'font-weight: 700; font-size: 13px; color: #334155;';
+    label.textContent = `出目 ${val}`;
+
+    const previewBox = document.createElement('div');
+    previewBox.style.cssText = 'width: 80px; height: 80px; border-radius: 10px; overflow: hidden; box-shadow: 0 3px 8px rgba(0,0,0,0.12); border: 2px solid #cbd5e1; background: #fff; display: flex; align-items: center; justify-content: center;';
+
+    const img = document.createElement('img');
+    img.id = `dice-face-preview-${val}`;
+    img.src = currentSrc;
+    img.alt = `出目 ${val}`;
+    img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+    previewBox.appendChild(img);
+
+    const btnCol = document.createElement('div');
+    btnCol.style.cssText = 'display: flex; flex-direction: column; gap: 4px; width: 100%;';
+
+    const changeBtn = document.createElement('button');
+    changeBtn.type = 'button';
+    changeBtn.style.cssText = 'width: 100%; padding: 5px 8px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; transition: background 0.15s;';
+    changeBtn.textContent = '画像を変更';
+    changeBtn.addEventListener('click', () => {
+      pickFileForDiceFace(val);
+    });
+
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.id = `dice-face-reset-${val}`;
+    resetBtn.style.cssText = `width: 100%; padding: 4px 8px; background: #fff; color: #64748b; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; cursor: pointer; transition: background 0.15s; display: ${hasCustom ? 'block' : 'none'};`;
+    resetBtn.textContent = 'デフォルトに戻す';
+    resetBtn.addEventListener('click', () => {
+      resetDiceFace(val);
+    });
+
+    btnCol.appendChild(changeBtn);
+    btnCol.appendChild(resetBtn);
+
+    faceCard.appendChild(label);
+    faceCard.appendChild(previewBox);
+    faceCard.appendChild(btnCol);
+
+    container.appendChild(faceCard);
+  }
+}
+
+function renderDiceCropCanvas() {
+  const canvas = document.getElementById('dice-crop-canvas');
+  const ctx = canvas?.getContext('2d');
+  if (!ctx || !diceCropImg) return;
+  ctx.clearRect(0, 0, DICE_CROP_VIEW_SIZE, DICE_CROP_VIEW_SIZE);
+
+  const currentScale = diceCropBaseScale * diceCropZoom;
+  const drawW = diceCropImg.naturalWidth * currentScale;
+  const drawH = diceCropImg.naturalHeight * currentScale;
+  const drawX = (DICE_CROP_VIEW_SIZE - drawW) / 2 + diceCropOffsetX;
+  const drawY = (DICE_CROP_VIEW_SIZE - drawH) / 2 + diceCropOffsetY;
+
+  ctx.drawImage(diceCropImg, drawX, drawY, drawW, drawH);
+}
+
+function openDiceCropModal(imgElement, val) {
+  currentCropDiceFace = val;
+  diceCropImg = imgElement;
+  diceCropBaseScale = Math.max(DICE_CROP_VIEW_SIZE / diceCropImg.naturalWidth, DICE_CROP_VIEW_SIZE / diceCropImg.naturalHeight);
+  diceCropZoom = 1.0;
+  diceCropOffsetX = 0;
+  diceCropOffsetY = 0;
+
+  const titleEl = document.getElementById('dice-crop-title');
+  if (titleEl) {
+    titleEl.textContent = `🎲 出目 ${val} 画像の切り抜き`;
+  }
+
+  const slider = document.getElementById('dice-zoom-slider');
+  if (slider) slider.value = '1';
+
+  const cropModal = document.getElementById('dice-crop-modal');
+  if (cropModal) cropModal.style.display = 'flex';
+
+  renderDiceCropCanvas();
+}
+
+function closeDiceCropModal() {
+  const cropModal = document.getElementById('dice-crop-modal');
+  if (cropModal) cropModal.style.display = 'none';
+  diceCropImg = null;
+  currentCropDiceFace = null;
+}
+
+function pickFileForDiceFace(val) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        openDiceCropModal(img, val);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+async function resetDiceFace(val) {
+  if (!currentEditingDice || !CURRENT_ROOM) return;
+  const cardId = currentEditingDice.dataset.cardId;
+  if (!cardId) return;
+
+  try {
+    const faces = parseInt(currentEditingDice.dataset.maxFaces || 6, 10);
+    const valStr = String(val);
+    const updatedCustomFaces = { ...(currentEditingDice._customFaces || {}) };
+    delete updatedCustomFaces[valStr];
+    currentEditingDice._customFaces = updatedCustomFaces;
+
+    const defaultSvg = getDiceImageUrl(faces, val);
+    const prev = document.getElementById(`dice-face-preview-${val}`);
+    if (prev) prev.src = defaultSvg;
+    const resetBtn = document.getElementById(`dice-face-reset-${val}`);
+    if (resetBtn) resetBtn.style.display = 'none';
+
+    const updateData = {
+      customFaces: updatedCustomFaces,
+      updatedAt: serverTimestamp()
+    };
+
+    // 現在の出目と同じなら盤面上の表示も更新
+    if (currentEditingDice.dataset.diceValue === valStr) {
+      updateData.imageUrl = defaultSvg;
+      updateData.fullUrl = defaultSvg;
+      const img = currentEditingDice.querySelector('img');
+      if (img) img.src = defaultSvg;
+      if (selectedCard === currentEditingDice && typeof setPreview === 'function') {
+        setPreview(defaultSvg);
+      }
+    }
+
+    markLocal(cardId);
+    await updateDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`), updateData);
+    if (typeof postLog === 'function') {
+      postLog('cardAction', `ダイスの出目${val}の画像をデフォルトに戻しました`);
+    }
+  } catch (err) {
+    console.error('Reset dice face failed:', err);
+    alert('デフォルトへの復元に失敗しました。');
+  }
+}
+
+function initDiceSettingsOnce() {
+  const settingsModal = document.getElementById('dice-settings-modal');
+  if (!settingsModal || settingsModal._initDone) return;
+  settingsModal._initDone = true;
+
+  // 閉じるボタン
+  document.getElementById('dice-settings-close')?.addEventListener('click', closeDiceSettingsModal);
+  document.getElementById('dice-settings-done')?.addEventListener('click', closeDiceSettingsModal);
+  settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) closeDiceSettingsModal();
+  });
+
+  // クロップモーダルのイベント
+  const cropModal = document.getElementById('dice-crop-modal');
+  const cropContainer = document.getElementById('dice-crop-container');
+  const zoomSlider = document.getElementById('dice-zoom-slider');
+
+  document.getElementById('dice-crop-close')?.addEventListener('click', closeDiceCropModal);
+  document.getElementById('dice-crop-cancel')?.addEventListener('click', closeDiceCropModal);
+  cropModal?.addEventListener('click', (e) => {
+    if (e.target === cropModal) closeDiceCropModal();
+  });
+
+  // クロップ内ドラッグ
+  let isCropDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragStartOffsetX = 0;
+  let dragStartOffsetY = 0;
+
+  cropContainer?.addEventListener('pointerdown', (e) => {
+    if (!diceCropImg) return;
+    isCropDragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    dragStartOffsetX = diceCropOffsetX;
+    dragStartOffsetY = diceCropOffsetY;
+    cropContainer.style.cursor = 'grabbing';
+    cropContainer.setPointerCapture(e.pointerId);
+  });
+
+  cropContainer?.addEventListener('pointermove', (e) => {
+    if (!isCropDragging) return;
+    diceCropOffsetX = dragStartOffsetX + (e.clientX - dragStartX);
+    diceCropOffsetY = dragStartOffsetY + (e.clientY - dragStartY);
+    renderDiceCropCanvas();
+  });
+
+  const stopCropDrag = () => {
+    isCropDragging = false;
+    if (cropContainer) cropContainer.style.cursor = 'grab';
+  };
+  cropContainer?.addEventListener('pointerup', stopCropDrag);
+  cropContainer?.addEventListener('pointercancel', stopCropDrag);
+
+  // ズームスライダー
+  zoomSlider?.addEventListener('input', () => {
+    diceCropZoom = parseFloat(zoomSlider.value) || 1.0;
+    renderDiceCropCanvas();
+  });
+
+  // マウスホイールズーム
+  cropContainer?.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.05 : -0.05;
+    let nextZoom = Math.min(3.0, Math.max(1.0, diceCropZoom + delta));
+    diceCropZoom = nextZoom;
+    if (zoomSlider) zoomSlider.value = String(diceCropZoom);
+    renderDiceCropCanvas();
+  }, { passive: false });
+
+  // クロップ適用 & Storageアップロード（四角形正方形出力）
+  document.getElementById('dice-crop-apply')?.addEventListener('click', async () => {
+    if (!diceCropImg || !currentEditingDice || !CURRENT_ROOM || !currentCropDiceFace) return;
+    const applyBtn = document.getElementById('dice-crop-apply');
+    if (applyBtn) {
+      applyBtn.disabled = true;
+      applyBtn.textContent = '保存中…';
+    }
+
+    try {
+      const cardId = currentEditingDice.dataset.cardId;
+      const OUT_SIZE = 512;
+      const outCanvas = document.createElement('canvas');
+      outCanvas.width = OUT_SIZE;
+      outCanvas.height = OUT_SIZE;
+      const outCtx = outCanvas.getContext('2d');
+
+      // 四角形（正方形）出力
+      const currentScale = diceCropBaseScale * diceCropZoom;
+      const ratio = OUT_SIZE / DICE_CROP_VIEW_SIZE;
+      const drawW = diceCropImg.naturalWidth * currentScale * ratio;
+      const drawH = diceCropImg.naturalHeight * currentScale * ratio;
+      const drawX = ((DICE_CROP_VIEW_SIZE - diceCropImg.naturalWidth * currentScale) / 2 + diceCropOffsetX) * ratio;
+      const drawY = ((DICE_CROP_VIEW_SIZE - diceCropImg.naturalHeight * currentScale) / 2 + diceCropOffsetY) * ratio;
+
+      outCtx.drawImage(diceCropImg, drawX, drawY, drawW, drawH);
+
+      const blob = await new Promise((resolve) => outCanvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('Blob generation failed');
+
+      const storagePath = `rooms/${CURRENT_ROOM}/dice/${cardId}_face${currentCropDiceFace}_${Date.now()}.png`;
+      const sRef = ref(storage, storagePath);
+      await uploadBytes(sRef, blob);
+      const downloadUrl = await getDownloadURL(sRef);
+
+      const valStr = String(currentCropDiceFace);
+      const updatedCustomFaces = { ...(currentEditingDice._customFaces || {}) };
+      updatedCustomFaces[valStr] = downloadUrl;
+      currentEditingDice._customFaces = updatedCustomFaces;
+
+      const pImg = document.getElementById(`dice-face-preview-${valStr}`);
+      if (pImg) pImg.src = downloadUrl;
+      const resetBtn = document.getElementById(`dice-face-reset-${valStr}`);
+      if (resetBtn) resetBtn.style.display = 'block';
+
+      const updateData = {
+        customFaces: updatedCustomFaces,
+        updatedAt: serverTimestamp()
+      };
+
+      // 現在の出目と同じなら盤面上の表示も即座に更新
+      if (currentEditingDice.dataset.diceValue === valStr) {
+        updateData.imageUrl = downloadUrl;
+        updateData.fullUrl = downloadUrl;
+        const img = currentEditingDice.querySelector('img');
+        if (img) img.src = downloadUrl;
+        if (selectedCard === currentEditingDice && typeof setPreview === 'function') {
+          setPreview(downloadUrl);
+        }
+      }
+
+      markLocal(cardId);
+      await updateDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`), updateData);
+
+      if (typeof postLog === 'function') {
+        postLog('cardAction', `ダイスの出目${valStr}の画像を変更しました`);
+      }
+
+      closeDiceCropModal();
+    } catch (err) {
+      console.error('Save dice image failed:', err);
+      alert('ダイス画像の保存に失敗しました。');
+    } finally {
+      if (applyBtn) {
+        applyBtn.disabled = false;
+        applyBtn.textContent = '適用する';
+      }
+    }
+  });
+}
+
+window.openDiceSettingsModal = openDiceSettingsModal;
+window.closeDiceSettingsModal = closeDiceSettingsModal;
+
 
 

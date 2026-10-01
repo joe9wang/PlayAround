@@ -1672,6 +1672,54 @@
     </div>
   </div>
 
+  <!-- === ダイス設定モーダル === -->
+  <div id="dice-settings-modal" role="dialog" aria-modal="true" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); align-items: center; justify-content: center; z-index: 10002;">
+    <div class="dice-settings-sheet" style="width: min(660px, 94vw); max-height: 88vh; background: #ffffff; border-radius: 18px; box-shadow: 0 16px 40px rgba(0,0,0,0.35); overflow: hidden; display: flex; flex-direction: column;">
+      <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; background: #f8fafc; flex-shrink: 0;">
+        <div style="font-weight: 700; font-size: 17px; display: flex; align-items: center; gap: 8px; color: #1e293b;">
+          <span>🎲</span> <span id="dice-settings-title">ダイス各面画像の設定</span>
+        </div>
+        <button id="dice-settings-close" type="button" style="border: none; background: transparent; font-size: 20px; color: #64748b; cursor: pointer; padding: 4px 8px; line-height: 1; border-radius: 6px;" aria-label="閉じる">✕</button>
+      </div>
+      <div style="padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; flex: 1;">
+        <div style="font-size: 13px; color: #64748b; line-height: 1.5;">
+          各面の画像を好きな画像にカスタマイズできます。ダイスを振った際にも、この画像が出目として表示されます。
+        </div>
+        <!-- 各面のグリッド一覧（動的生成） -->
+        <div id="dice-faces-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; justify-content: center;"></div>
+      </div>
+      <div style="padding: 12px 20px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end; flex-shrink: 0;">
+        <button type="button" id="dice-settings-done" style="padding: 8px 22px; background: #334155; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer;">完了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === ダイス画像クロップモーダル（四角形） === -->
+  <div id="dice-crop-modal" role="dialog" aria-modal="true" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); align-items: center; justify-content: center; z-index: 10003;">
+    <div id="dice-crop-sheet" style="width: min(380px, 92vw); background: #fff; border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,.4); overflow: hidden; display: flex; flex-direction: column;">
+      <div style="padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee;">
+        <div id="dice-crop-title" style="font-weight: 700; font-size: 16px;">ダイス画像の切り抜き</div>
+        <button id="dice-crop-close" type="button" style="border: 0; background: none; font-size: 22px; color: #888; cursor: pointer; padding: 0 4px; line-height: 1;">✕</button>
+      </div>
+      <div style="padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+        <div id="dice-crop-container" style="width: 280px; height: 280px; position: relative; overflow: hidden; background: #18181b; border-radius: 14px; cursor: grab; touch-action: none; user-select: none;">
+          <canvas id="dice-crop-canvas" width="280" height="280" style="display: block; width: 100%; height: 100%;"></canvas>
+          <!-- 四角形（角丸）のクロップ枠ガイド -->
+          <div style="position: absolute; inset: 0; pointer-events: none; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55), inset 0 0 0 2px rgba(255,255,255,0.9);"></div>
+        </div>
+        <div style="width: 100%; max-width: 280px; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 14px; color: #777; user-select: none;">🔍-</span>
+          <input type="range" id="dice-zoom-slider" min="1" max="3" step="0.01" value="1" style="flex: 1; cursor: pointer; accent-color: #2563eb;">
+          <span style="font-size: 14px; color: #777; user-select: none;">🔍+</span>
+        </div>
+      </div>
+      <div style="padding: 12px 18px; border-top: 1px solid #eee; background: #f9fafb; display: flex; justify-content: flex-end; gap: 10px;">
+        <button id="dice-crop-cancel" type="button" style="border: 1px solid #ddd; background: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; color: #555;">キャンセル</button>
+        <button id="dice-crop-apply" type="button" style="border: none; background: #2563eb; color: #fff; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 700; box-shadow: 0 2px 6px rgba(37,99,235,0.3);">適用する</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 
