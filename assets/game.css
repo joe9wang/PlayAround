@@ -1404,6 +1404,70 @@ body.is-placing-coin #field-container {
   box-shadow: 0 0 14px rgba(239, 68, 68, 0.75) !important;
 }
 
+/* ダイス共通スタイル（コイン以外） */
+.card.dice:not(.is-coin) {
+  width: 72px;
+  height: 72px;
+  cursor: grab;
+  user-select: none;
+}
+.card.dice:not(.is-coin):active {
+  cursor: grabbing;
+}
+.card.dice:not(.is-coin) img {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  pointer-events: none;
+}
+.card.dice:not(.is-coin).selected {
+  border: 3.5px solid #ef4444 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.75) !important;
+}
+.card.dice:not(.is-coin).rolling {
+  pointer-events: none !important;
+  z-index: 28000 !important;
+  animation: diceRollFlight 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.card.dice:not(.is-coin).rolling img {
+  animation: diceRollSpin 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+@keyframes diceRollFlight {
+  0% { transform: translateY(0) scale(1); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }
+  45% { transform: translateY(-75px) scale(1.25); filter: drop-shadow(0 24px 16px rgba(0,0,0,0.25)); }
+  85% { transform: translateY(-4px) scale(1.02); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+  100% { transform: translateY(0) scale(1); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }
+}
+@keyframes diceRollSpin {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ダイス配置プレビュー */
+.card.dice:not(.is-coin).dice-placement-preview {
+  opacity: 0.75;
+  pointer-events: none !important;
+  z-index: 29000 !important;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.8), 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+  transition: opacity 0.15s ease-out;
+}
+body.is-placing-dice #field-container {
+  cursor: crosshair !important;
+}
+#spawn-dice-btn.placing-active {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  border-color: #3b82f6 !important;
+  font-weight: 700;
+}
+.dice-picker-opt:hover {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+}
+
 /* コイン設定モーダル */
 .coin-settings-sheet button:hover {
   opacity: 0.9;
@@ -1834,15 +1898,15 @@ body.collapse-right .edge-right { display: inline-flex; }
   outline: 2px solid #007bff !important;
 }
 
-/* === Coin Resizing === */
-.card.dice.is-coin.selected .resize-handle {
+/* === Dice & Coin Resizing === */
+.card.dice.selected .resize-handle {
   pointer-events: auto;
   display: block;
 }
-.card.dice.is-coin.selected .resize-handle.nw,
-.card.dice.is-coin.selected .resize-handle.ne,
-.card.dice.is-coin.selected .resize-handle.sw,
-.card.dice.is-coin.selected .resize-handle.se {
+.card.dice.selected .resize-handle.nw,
+.card.dice.selected .resize-handle.ne,
+.card.dice.selected .resize-handle.sw,
+.card.dice.selected .resize-handle.se {
   width: 14px;
   height: 14px;
   border-radius: 50%;
@@ -1851,27 +1915,27 @@ body.collapse-right .edge-right { display: inline-flex; }
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
-.card.dice.is-coin.selected .resize-handle.n,
-.card.dice.is-coin.selected .resize-handle.s {
+.card.dice.selected .resize-handle.n,
+.card.dice.selected .resize-handle.s {
   height: 12px;
   background: rgba(239, 68, 68, 0.15) !important;
 }
-.card.dice.is-coin.selected .resize-handle.w,
-.card.dice.is-coin.selected .resize-handle.e {
+.card.dice.selected .resize-handle.w,
+.card.dice.selected .resize-handle.e {
   width: 12px;
   background: rgba(239, 68, 68, 0.15) !important;
 }
-.card.dice.is-coin.selected .resize-handle:hover {
+.card.dice.selected .resize-handle:hover {
   background: rgba(239, 68, 68, 0.4) !important;
 }
-.card.dice.is-coin.selected .resize-handle.nw:hover,
-.card.dice.is-coin.selected .resize-handle.ne:hover,
-.card.dice.is-coin.selected .resize-handle.sw:hover,
-.card.dice.is-coin.selected .resize-handle.se:hover {
+.card.dice.selected .resize-handle.nw:hover,
+.card.dice.selected .resize-handle.ne:hover,
+.card.dice.selected .resize-handle.sw:hover,
+.card.dice.selected .resize-handle.se:hover {
   background: #dc2626 !important;
   transform: scale(1.25);
 }
-.card.dice.is-coin.resizing {
+.card.dice.resizing {
   box-shadow: 0 0 18px rgba(239, 68, 68, 0.9) !important;
 }
 

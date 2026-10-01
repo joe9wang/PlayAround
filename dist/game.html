@@ -208,13 +208,28 @@
           <button class="sl-btn" id="spawn-coin-btn" onclick="spawnCoin()" data-i18n="side.spawnCoin">🪙 コイン生成</button>
         </div>
       </details>
-      <details class="ops-section">
+      <details class="ops-section" id="dice-ops-section">
         <summary class="section-label" style="cursor:pointer; outline:none; user-select:none;">ダイス<br>
-          <span style="font-size:12px;color:#666;font-weight:normal;" data-i18n="side.diceHint">(左クリックか右クリックで削除)</span>
+          <span style="font-size:12px;color:#666;font-weight:normal;" data-i18n="side.diceHint">(ダブルクリックで振る、右クリックで削除)</span>
         </summary>
+        <div style="margin-bottom: 8px; position: relative;">
+          <button class="sl-btn" id="spawn-dice-btn" onclick="toggleDicePicker(event)" style="width: 100%; font-weight: 700;">🎲 ダイス生成</button>
+          <!-- 面数選択ポップオーバー -->
+          <div id="dice-picker-popover" style="display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 8px; z-index: 100; flex-direction: column; gap: 4px;">
+            <div style="font-size: 11px; font-weight: 700; color: #64748b; padding: 2px 4px; border-bottom: 1px solid #f1f5f9; margin-bottom: 2px;">生成する面数を選択：</div>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;">
+              <button type="button" class="dice-picker-opt" onclick="startDicePlacement(4)" style="padding: 6px 0; font-size: 12px; font-weight: 700; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 6px; cursor: pointer;">4面</button>
+              <button type="button" class="dice-picker-opt" onclick="startDicePlacement(6)" style="padding: 6px 0; font-size: 12px; font-weight: 700; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 6px; cursor: pointer;">6面</button>
+              <button type="button" class="dice-picker-opt" onclick="startDicePlacement(10)" style="padding: 6px 0; font-size: 12px; font-weight: 700; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 6px; cursor: pointer;">10面</button>
+              <button type="button" class="dice-picker-opt" onclick="startDicePlacement(20)" style="padding: 6px 0; font-size: 12px; font-weight: 700; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 6px; cursor: pointer;">20面</button>
+              <button type="button" class="dice-picker-opt" onclick="startDicePlacement(100)" style="padding: 6px 0; font-size: 12px; font-weight: 700; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 6px; cursor: pointer;">100面</button>
+            </div>
+          </div>
+        </div>
+        <div style="font-size: 11px; color: #888; margin-bottom: 4px; padding-left: 2px;">チャット＆ログのみ：</div>
         <div class="sl-row" role="group" aria-label="dice-row1">
           <button class="sl-btn" id="roll-d4-btn" onclick="rollD4()" data-i18n="side.rollD4">🎲 4面ダイス</button>
-          <button class="sl-btn" id="roll-d6-btn" data-i18n="side.rollD6">🎲 6面ダイス</button>
+          <button class="sl-btn" id="roll-d6-btn" onclick="rollD6()" data-i18n="side.rollD6">🎲 6面ダイス</button>
         </div>
         <div class="sl-row" role="group" aria-label="dice-row2">
           <button class="sl-btn" id="roll-d10-btn" onclick="rollD10()" data-i18n="side.rollD10">🎲 10面ダイス</button>

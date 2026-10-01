@@ -6474,38 +6474,48 @@ function createCardDom(cardId, imageSrc, state) {
       return card;
     }
 
-    // ダイス: クリックで自分のダイスだけ削除
-    card.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
-      try {
-        const id = card.dataset.cardId;
-        await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
-        markLocal(id);
-        markLocalDelete(id);
-      } catch (e) {
-        console.warn('delete dice failed', e);
+    // ダイス: ダブルクリックでロール、クリックで選択、右クリックで削除、ドラッグ可能
+    card.dataset.maxFaces = String(state?.maxFaces || 6);
+    card._rollDice = () => {
+      if (typeof rollDiceOnField === 'function') rollDiceOnField(card);
+    };
+
+    // クリックで選択（赤枠表示 & クイックメニュー）
+    card.addEventListener('click', (e) => {
+      if (card._justDragged) {
+        card._justDragged = false;
+        e.stopPropagation();
+        return;
       }
+      e.stopPropagation();
+      applyCardSelection(card);
     });
 
-    // 右クリックでも自分のダイスだけ削除
+    card.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      card._rollDice();
+    });
+
+    // 右クリックで削除（自分のダイスのみ）
     card.addEventListener('contextmenu', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
+      if (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) return;
       try {
         const id = card.dataset.cardId;
         await deleteDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${id}`));
         markLocal(id);
         markLocalDelete(id);
-      } catch (e) {
-        console.warn('delete dice failed', e);
+        if (typeof postLog === 'function') postLog('cardAction', 'ダイスを削除しました');
+      } catch (err) {
+        console.warn('delete dice failed', err);
       }
     });
 
-    card.addEventListener('dblclick', e => e.preventDefault());
-
-    // ダイスはドラッグ不可：makeDraggable は呼ばない
+    // ダイスはドラッグ可能＆リサイズ可能にする
+    makeDraggable(card);
+    makeCoinResizable(card, cardId);
     return card;
   }
 
@@ -6971,6 +6981,7 @@ function applyCardState(card, data) {
   if (data.frontImageUrl !== undefined) card.dataset.frontImageUrl = data.frontImageUrl || '';
   if (data.backImageUrl !== undefined) card.dataset.backImageUrl = data.backImageUrl || '';
   if (data.diceValue !== undefined) card.dataset.diceValue = String(data.diceValue || 1);
+  if (data.maxFaces !== undefined) card.dataset.maxFaces = String(data.maxFaces || 6);
   if (typeof updateCardCursor === 'function') updateCardCursor(card);
 
   // ★ 自分が現在ドラッグ中のカード、または直近にローカルで位置・重なり更新したカードは、
@@ -7116,6 +7127,16 @@ function applyCardState(card, data) {
         }, 320);
         setTimeout(() => {
           card.classList.remove('tossing');
+        }, 660);
+      } else if (card.classList.contains('dice') && !card._isRolling && !isLocalRecent(card.dataset.cardId)) {
+        card.classList.remove('rolling');
+        void card.offsetWidth;
+        card.classList.add('rolling');
+        setTimeout(() => {
+          img.src = targetSrc;
+        }, 320);
+        setTimeout(() => {
+          card.classList.remove('rolling');
         }, 660);
       } else {
         img.src = targetSrc;
@@ -8618,124 +8639,33 @@ window.spawnNumberCounter = async function () {
 let lastDiceAt = 0;
 
 /**
-
- * 6面ダイスを1つだけ生成（3秒クールダウン、クリック/右クリックで自分のもののみ削除）
-
+ * ダイス出目に応じた画像URLを返す
  */
-
-
-
-window.rollD6 = async function () {
-
-  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
-
-    alert('ルームに参加してから実行してください'); return;
-
+function getDiceImageUrl(faces, val) {
+  if (faces === 6) {
+    return svgDiceDataUrl(val);
   }
+  return svgNumberDiceDataUrl(val);
+}
 
-  disableDiceButtons(3000);
+// ==== ダイス（チャット＆ログのみ） ====
+window.rollDiceLogOnly = async function (faces = 6) {
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください');
+    return;
+  }
 
   const now = Date.now();
-
-  if (now - lastDiceAt < 3000) return; // 早押しガード
-
+  if (now - lastDiceAt < 400) return; // 早押しガード
   lastDiceAt = now;
 
+  disableDiceButtons(400);
 
-
-  const btn = document.getElementById('roll-d6-btn');
-
-  if (btn) btn.disabled = true;
-
-  setTimeout(() => { if (btn) btn.disabled = false; }, 3000);
-
-
-
-  try {
-
-    // 1) 既存の自分のダイスを削除（常に1つだけにする）
-
-    const baseCol = collection(db, `rooms/${CURRENT_ROOM}/cards`);
-
-    const qOld = query(baseCol, where('type', '==', 'dice'), where('ownerSeat', '==', CURRENT_PLAYER));
-
-    const oldSnap = await getDocs(qOld);
-
-    if (!oldSnap.empty) {
-
-      const batch = writeBatch(db);
-
-      oldSnap.forEach(d => batch.delete(doc(db, `rooms/${CURRENT_ROOM}/cards/${d.id}`)));
-
-      await batch.commit();
-
-    }
-
-
-
-    // 2) 新しい出目
-
-    const val = (Math.random() * 6 | 0) + 1;
-
-    const imgUrl = svgDiceDataUrl(val);
-
-
-
-    // 3) プレイエリア中央に72x72を置く
-
-    const SIZE = 72;
-
-    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
-
-
-
-    // 4) 一番手前（既存カード群より十分高いz）
-
-    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
-
-
-
-    // 5) 追加
-
-    await addDoc(baseCol, {
-
-      type: 'dice',
-
-      diceValue: val,
-
-      imageUrl: imgUrl,
-
-      fullUrl: imgUrl,
-
-      x, y, zIndex: z,
-
-      faceUp: true,
-
-      ownerUid: CURRENT_UID,
-
-      ownerSeat: CURRENT_PLAYER,
-
-      rotation: 0,
-
-      visibleToAll: true,
-
-      createdAt: serverTimestamp(),
-
-      updatedAt: serverTimestamp()
-
-    });
-
-    postLog('diceCoin', `6面ダイスを振りました → ${val}`);
-
-  } catch (e) {
-
-    console.error(e);
-
-    alert('ダイス作成に失敗しました。ネットワーク状態を確認してもう一度お試しください。');
-
-  }
-
+  const val = Math.floor(Math.random() * faces) + 1;
+  postLog('diceCoin', `${faces}面ダイスを振りました → ${val}`);
 };
+
+window.rollD6 = () => window.rollDiceLogOnly(6);
 
 
 
@@ -8833,221 +8763,220 @@ async function resetMyDiceIfAny() {
 
 
 
-// ==== D10 ====
+// ==== 各面ダイス（チャット＆ログのみ） ====
+window.rollD4 = () => window.rollDiceLogOnly(4);
+window.rollD10 = () => window.rollDiceLogOnly(10);
+window.rollD20 = () => window.rollDiceLogOnly(20);
+window.rollD100 = () => window.rollDiceLogOnly(100);
 
-window.rollD10 = async function () {
+// ==== ダイス生成＆配置機能 ====
+let placingDice = null;
 
-  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
-
-  disableDiceButtons(3000);
-
-  try {
-
-    await resetMyDiceIfAny();
-
-
-
-    const val = (Math.random() * 10 | 0) + 1;
-
-    const imgUrl = svgNumberDiceDataUrl(val);
-
-
-
-    const SIZE = 72;
-
-    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
-
-    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
-
-
-
-    const payload = {
-      type: 'dice',
-      diceValue: val,
-      imageUrl: imgUrl,
-      fullUrl: imgUrl,
-      x, y, zIndex: z,
-      faceUp: true,
-      ownerUid: CURRENT_UID,
-      ownerSeat: CURRENT_PLAYER,
-      rotation: 0,
-      visibleToAll: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
-    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
-
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
-
-    postLog('diceCoin', `10面ダイスを振りました → ${val}`);
-
-  } catch (e) {
-
-    console.error(e); alert('10面ダイスの作成に失敗しました。');
-
+window.toggleDicePicker = function (e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
   }
-
+  const popover = document.getElementById('dice-picker-popover');
+  if (!popover) return;
+  const isShown = popover.style.display === 'flex';
+  popover.style.display = isShown ? 'none' : 'flex';
 };
 
-
-
-// ==== D20 ====
-
-window.rollD20 = async function () {
-
-  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
-
-  disableDiceButtons(3000);
-
-  try {
-
-    await resetMyDiceIfAny();
-
-
-
-    const val = (Math.random() * 20 | 0) + 1;
-
-    const imgUrl = svgNumberDiceDataUrl(val);
-
-    const SIZE = 72;
-
-    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
-
-    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
-
-
-
-    const payload = {
-      type: 'dice',
-      diceValue: val,
-      imageUrl: imgUrl,
-      fullUrl: imgUrl,
-      x, y, zIndex: z,
-      faceUp: true,
-      ownerUid: CURRENT_UID,
-      ownerSeat: CURRENT_PLAYER,
-      rotation: 0,
-      visibleToAll: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
-    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
-
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
-
-    postLog('diceCoin', `20面ダイスを振りました → ${val}`);
-
-  } catch (e) {
-
-    console.error(e); alert('20面ダイスの作成に失敗しました。');
-
-  }
-
+window.closeDicePicker = function () {
+  const popover = document.getElementById('dice-picker-popover');
+  if (popover) popover.style.display = 'none';
 };
 
+function stopDicePlacement() {
+  if (!placingDice) return;
+  const { previewEl, moveHandler, clickHandler, cancelHandler, keyHandler, btn } = placingDice;
+  document.removeEventListener('pointermove', moveHandler);
+  document.removeEventListener('touchmove', moveHandler);
+  document.removeEventListener('pointerdown', clickHandler, true);
+  document.removeEventListener('contextmenu', cancelHandler);
+  document.removeEventListener('keydown', keyHandler);
 
-
-// ==== D4 ====
-
-window.rollD4 = async function () {
-
-  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
-
-  disableDiceButtons(3000);
-
-  try {
-
-    await resetMyDiceIfAny();
-
-    const val = (Math.random() * 4 | 0) + 1;
-
-    const imgUrl = svgNumberDiceDataUrl(val);
-
-    const SIZE = 72;
-
-    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
-
-    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
-
-    const payload = {
-      type: 'dice',
-      diceValue: val,
-      imageUrl: imgUrl,
-      fullUrl: imgUrl,
-      x, y, zIndex: z,
-      faceUp: true,
-      ownerUid: CURRENT_UID,
-      ownerSeat: CURRENT_PLAYER,
-      rotation: 0,
-      visibleToAll: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
-    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
-
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
-
-    postLog('diceCoin', `4面ダイスを振りました → ${val}`);
-
-  } catch (e) {
-
-    console.error(e); alert('4面ダイスの作成に失敗しました。');
-
+  if (previewEl && previewEl.parentNode) {
+    previewEl.parentNode.removeChild(previewEl);
   }
+  if (btn) btn.classList.remove('placing-active');
+  document.body.classList.remove('is-placing-dice');
+  placingDice = null;
+}
+window.stopDicePlacement = stopDicePlacement;
 
+window.startDicePlacement = function (faces = 6) {
+  closeDicePicker();
+  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) {
+    alert('ルームに参加してから実行してください');
+    return;
+  }
+  stopDicePlacement();
+  if (typeof stopCoinPlacement === 'function') stopCoinPlacement();
+
+  const field = document.getElementById('field');
+  if (!field) return;
+
+  const btn = document.getElementById('spawn-dice-btn');
+  if (btn) btn.classList.add('placing-active');
+  document.body.classList.add('is-placing-dice');
+
+  const SIZE = 72;
+  const previewEl = document.createElement('div');
+  previewEl.className = 'card dice dice-placement-preview';
+  previewEl.style.width = `${SIZE}px`;
+  previewEl.style.height = `${SIZE}px`;
+  previewEl.style.position = 'absolute';
+  previewEl.style.display = 'block';
+
+  const initialVal = 1;
+  const imgUrl = getDiceImageUrl(faces, initialVal);
+  const img = document.createElement('img');
+  img.src = imgUrl;
+  previewEl.appendChild(img);
+
+  field.appendChild(previewEl);
+
+  let currentCoord = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
+  previewEl.style.left = `${currentCoord.x}px`;
+  previewEl.style.top = `${currentCoord.y}px`;
+
+  const updatePos = (clientX, clientY) => {
+    const fieldRect = field.getBoundingClientRect();
+    const z = typeof zoom !== 'undefined' ? zoom : 1;
+    const x = ((clientX - fieldRect.left) / z) - (SIZE / 2);
+    const y = ((clientY - fieldRect.top) / z) - (SIZE / 2);
+    currentCoord = { x: Math.round(x), y: Math.round(y) };
+    previewEl.style.left = `${currentCoord.x}px`;
+    previewEl.style.top = `${currentCoord.y}px`;
+    previewEl.style.display = 'block';
+  };
+
+  const moveHandler = (e) => {
+    const touch = e.touches ? e.touches[0] : e;
+    if (touch) updatePos(touch.clientX, touch.clientY);
+  };
+
+  const startTime = Date.now();
+  const clickHandler = async (e) => {
+    if (Date.now() - startTime < 150) return;
+    if (e.target.closest('#sidebar') || e.target.closest('.site-header') || e.target.closest('#control-panel') || e.target.closest('#dice-picker-popover')) {
+      stopDicePlacement();
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const clientX = e.clientX || (e.touches && e.touches[0]?.clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0]?.clientY);
+    if (typeof clientX === 'number' && typeof clientY === 'number') {
+      updatePos(clientX, clientY);
+    }
+
+    const { x, y } = currentCoord;
+    stopDicePlacement();
+
+    try {
+      const z = getMaxZIndex(Z_FRONT_BASE) + 100;
+      const payload = {
+        type: 'dice',
+        diceKind: 'dice',
+        maxFaces: faces,
+        diceValue: initialVal,
+        imageUrl: imgUrl,
+        fullUrl: imgUrl,
+        x, y, zIndex: z,
+        faceUp: true,
+        ownerUid: CURRENT_UID,
+        ownerSeat: CURRENT_PLAYER,
+        rotation: 0,
+        visibleToAll: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
+
+      await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
+      postLog('cardAction', `${faces}面ダイスを配置しました`);
+    } catch (err) {
+      console.error(err);
+      alert('ダイスの作成に失敗しました。');
+    }
+  };
+
+  const cancelHandler = (e) => {
+    e.preventDefault();
+    stopDicePlacement();
+  };
+
+  const keyHandler = (e) => {
+    if (e.key === 'Escape') stopDicePlacement();
+  };
+
+  placingDice = {
+    previewEl,
+    moveHandler,
+    clickHandler,
+    cancelHandler,
+    keyHandler,
+    btn
+  };
+
+  document.addEventListener('pointermove', moveHandler);
+  document.addEventListener('touchmove', moveHandler, { passive: true });
+  document.addEventListener('pointerdown', clickHandler, true);
+  document.addEventListener('contextmenu', cancelHandler);
+  document.addEventListener('keydown', keyHandler);
 };
 
+// 3. フィールド上のダイスを振る（ダブルクリック / ダブルタップ / クイックメニュー）
+async function rollDiceOnField(card) {
+  if (!card || card._isRolling) return;
+  if (!CURRENT_ROOM || !CURRENT_PLAYER) return;
+  card._isRolling = true;
 
+  card.classList.remove('rolling');
+  void card.offsetWidth;
+  card.classList.add('rolling');
 
-// ==== D100 ====
+  const faces = parseInt(card.dataset.maxFaces || 6, 10);
+  const newVal = Math.floor(Math.random() * faces) + 1;
+  const imgUrl = getDiceImageUrl(faces, newVal);
+  const img = card.querySelector('img');
 
-window.rollD100 = async function () {
+  setTimeout(() => {
+    if (img) img.src = imgUrl;
+  }, 320);
 
-  if (!CURRENT_ROOM || !CURRENT_PLAYER || !CURRENT_UID) { alert('ルームに参加してから実行してください'); return; }
+  setTimeout(async () => {
+    card.classList.remove('rolling');
+    card._isRolling = false;
 
-  disableDiceButtons(3000);
+    const cardId = card.dataset.cardId;
+    if (!cardId) return;
 
-  try {
+    card.dataset.diceValue = String(newVal);
+    if (selectedCard === card && typeof setPreview === 'function') {
+      setPreview(imgUrl);
+    }
 
-    await resetMyDiceIfAny();
-
-    const val = (Math.random() * 100 | 0) + 1;
-
-    const imgUrl = svgNumberDiceDataUrl(val);
-
-    const SIZE = 72;
-
-    const { x, y } = centerOfMainPlay(CURRENT_PLAYER, SIZE, SIZE);
-
-    const z = getMaxZIndex(Z_FRONT_BASE) + 100;
-
-    const payload = {
-      type: 'dice',
-      diceValue: val,
-      imageUrl: imgUrl,
-      fullUrl: imgUrl,
-      x, y, zIndex: z,
-      faceUp: true,
-      ownerUid: CURRENT_UID,
-      ownerSeat: CURRENT_PLAYER,
-      rotation: 0,
-      visibleToAll: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
-    if (CURRENT_ROOM_META?.expiresAt) payload.expiresAt = CURRENT_ROOM_META.expiresAt;
-
-    await addDoc(collection(db, `rooms/${CURRENT_ROOM}/cards`), payload);
-
-    postLog('diceCoin', `100面ダイスを振りました → ${val}`);
-
-  } catch (e) {
-
-    console.error(e); alert('100面ダイスの作成に失敗しました。');
-
-  }
-
-};
+    try {
+      markLocal(cardId);
+      await updateDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`), {
+        diceValue: newVal,
+        imageUrl: imgUrl,
+        fullUrl: imgUrl,
+        updatedAt: serverTimestamp()
+      });
+      postLog('diceCoin', `${faces}面ダイスを振りました → ${newVal}`);
+    } catch (err) {
+      console.warn('rollDice update failed:', err);
+    }
+  }, 660);
+}
+window.rollDiceOnField = rollDiceOnField;
 
 
 
@@ -15269,10 +15198,11 @@ function showQuickObjectMenu(card) {
   const hasBackImage = !!card.dataset.backImageUrl;
   const isImageToken = card.classList.contains('image-token');
   const isToken = card.classList.contains('token') || (isImageToken && !hasBackImage);
+  const isDice = (card.dataset.type === 'dice' || card.classList.contains('dice')) && !isCoin;
 
-  // 回転ボタン：コインの場合は非表示
+  // 回転ボタン：コインおよびダイスの場合は非表示
   if (rotateBtn) {
-    if (isCoin) {
+    if (isCoin || isDice) {
       rotateBtn.style.display = 'none';
     } else {
       rotateBtn.style.display = 'flex';
@@ -15291,9 +15221,10 @@ function showQuickObjectMenu(card) {
     settingsBtn.style.display = isCoin ? 'flex' : 'none';
   }
 
-  // フリップボタン（アイコン切り替え対応：カードはカードめくり、コインは案Aのコイン反転スピン）
+  // フリップボタン（アイコン切り替え対応：カードはカードめくり、コインはコイン反転スピン、ダイスはダイスロール）
   const CARD_FLIP_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="9" height="18" rx="2.5" /><path d="M4 13.5c-.2-3.8 3-6.5 7.5-6.5" /><path d="M4 13.5c0 3.5 4.5 5 10 4" /><polyline points="11 15 15 17.5 11.5 20.5" /></svg>`;
   const COIN_FLIP_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M9 12a3 3 0 0 1 5.5-1.7" /><polyline points="15 7.5 15 10.5 12 10.5" /><path d="M15 12a3 3 0 0 1-5.5 1.7" /><polyline points="9 16.5 9 13.5 12 13.5" /></svg>`;
+  const DICE_ROLL_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.5" /><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" /><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" /><circle cx="8.5" cy="15.5" r="1.2" fill="currentColor" /><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor" /><circle cx="12" cy="12" r="1.2" fill="currentColor" /></svg>`;
 
   if (flipBtn) {
     if (isCoin) {
@@ -15301,6 +15232,11 @@ function showQuickObjectMenu(card) {
       flipBtn.setAttribute('title', 'コイントス');
       flipBtn.setAttribute('aria-label', 'コイントス');
       flipBtn.innerHTML = COIN_FLIP_SVG;
+    } else if (isDice) {
+      flipBtn.style.display = 'flex';
+      flipBtn.setAttribute('title', 'ダイスを振る');
+      flipBtn.setAttribute('aria-label', 'ダイスを振る');
+      flipBtn.innerHTML = DICE_ROLL_SVG;
     } else if (isMemo || isCounter || (isToken && !hasBackImage)) {
       flipBtn.style.display = 'none';
     } else {
@@ -15369,7 +15305,7 @@ function initQuickObjectMenuOnce() {
     });
   }
 
-  // 2: フリップ (表裏反転 / コイントス)
+  // 2: フリップ (表裏反転 / コイントス / ダイスロール)
   const flipBtn = document.getElementById('qm-flip-btn');
   if (flipBtn) {
     flipBtn.addEventListener('click', async (e) => {
@@ -15378,6 +15314,8 @@ function initQuickObjectMenuOnce() {
       if (typeof canOperateCard === 'function' && !canOperateCard(quickMenuTarget, 'flip')) return;
       if (quickMenuTarget.classList.contains('is-coin') && typeof quickMenuTarget._tossCoin === 'function') {
         await quickMenuTarget._tossCoin();
+      } else if ((quickMenuTarget.dataset.type === 'dice' || quickMenuTarget.classList.contains('dice')) && typeof quickMenuTarget._rollDice === 'function') {
+        await quickMenuTarget._rollDice();
       } else if (typeof quickMenuTarget._flipCards === 'function') {
         await quickMenuTarget._flipCards();
       } else if (typeof flipCards === 'function') {
@@ -15475,6 +15413,9 @@ function initQuickObjectMenuOnce() {
 
   // 盤面クリック・タップで閉じる
   const handleOutsideQuickMenu = (e) => {
+    if (typeof closeDicePicker === 'function' && !e.target.closest('#spawn-dice-btn') && !e.target.closest('#dice-picker-popover')) {
+      closeDicePicker();
+    }
     if (e.target.closest('#quick-object-menu') || e.target.closest('.card')) return;
     hideQuickObjectMenu();
   };
