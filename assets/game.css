@@ -1397,6 +1397,24 @@ body.is-placing-coin #field-container {
   font-weight: 700;
 }
 
+/* コイン選択時の円形赤枠 */
+.card.dice.is-coin.selected {
+  border: 3.5px solid #ef4444 !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.75) !important;
+}
+
+/* コイン設定モーダル */
+.coin-settings-sheet button:hover {
+  opacity: 0.9;
+}
+.coin-preview-circle {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.coin-preview-circle:hover {
+  transform: scale(1.04);
+}
+
 @keyframes coinTossFlight {
   0% {
     transform: translateY(0) scale(1);

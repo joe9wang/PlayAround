@@ -6430,10 +6430,21 @@ function createCardDom(cardId, imageSrc, state) {
     card.appendChild(img);
 
     if (isCoin) {
-      // コイン: ダブルクリックでトス、右クリックで削除、ドラッグ可能
+      // コイン: ダブルクリックでトス、クリックで選択、右クリックで削除、ドラッグ可能
       card._tossCoin = () => {
         if (typeof tossCoinOnField === 'function') tossCoinOnField(card);
       };
+
+      // クリックで選択（赤枠表示 & クイックメニュー）
+      card.addEventListener('click', (e) => {
+        if (card._justDragged) {
+          card._justDragged = false;
+          e.stopPropagation();
+          return;
+        }
+        e.stopPropagation();
+        applyCardSelection(card);
+      });
 
       card.addEventListener('dblclick', (e) => {
         e.stopPropagation();
@@ -6956,6 +6967,9 @@ function applyCardState(card, data) {
   card.dataset.ownerSeat = (data.ownerSeat != null) ? String(data.ownerSeat) : '';
   card.dataset.activeOperator = data.activeOperator || '';
   card.setAttribute('data-owner', (card.dataset.ownerSeat && card.dataset.ownerSeat !== String(CURRENT_PLAYER)) ? 'other' : 'me');
+  if (data.frontImageUrl !== undefined) card.dataset.frontImageUrl = data.frontImageUrl || '';
+  if (data.backImageUrl !== undefined) card.dataset.backImageUrl = data.backImageUrl || '';
+  if (data.diceValue !== undefined) card.dataset.diceValue = String(data.diceValue || 1);
   if (typeof updateCardCursor === 'function') updateCardCursor(card);
 
   // ★ 自分が現在ドラッグ中のカード、または直近にローカルで位置・重なり更新したカードは、
@@ -9209,7 +9223,9 @@ async function tossCoinOnField(card) {
   const isHeads = Math.random() < 0.5;
   const faceJP = isHeads ? 'オモテ' : 'ウラ';
   const val = isHeads ? 1 : 2;
-  const imgUrl = svgCoinDataUrl(faceJP);
+  const customFront = card.dataset.frontImageUrl;
+  const customBack = card.dataset.backImageUrl;
+  const imgUrl = isHeads ? (customFront || svgCoinDataUrl('オモテ')) : (customBack || svgCoinDataUrl('ウラ'));
   const img = card.querySelector('img');
 
   // 最高点あたり（0.32秒後）で画像差し替え
@@ -9224,6 +9240,11 @@ async function tossCoinOnField(card) {
 
     const cardId = card.dataset.cardId;
     if (!cardId) return;
+
+    card.dataset.diceValue = String(val);
+    if (selectedCard === card && typeof setPreview === 'function') {
+      setPreview(imgUrl);
+    }
 
     try {
       markLocal(cardId);
@@ -15122,20 +15143,33 @@ function showQuickObjectMenu(card) {
   const rotateBtn = document.getElementById('qm-rotate-btn');
   const flipBtn = document.getElementById('qm-flip-btn');
   const copyBtn = document.getElementById('qm-copy-btn');
+  const settingsBtn = document.getElementById('qm-settings-btn');
   const deleteBtn = document.getElementById('qm-delete-btn');
 
+  const isCoin = card.classList.contains('is-coin');
   const isMemo = card.classList.contains('memo');
   const isCounter = card.classList.contains('counter') || card.classList.contains('numcounter');
   const hasBackImage = !!card.dataset.backImageUrl;
   const isImageToken = card.classList.contains('image-token');
   const isToken = card.classList.contains('token') || (isImageToken && !hasBackImage);
 
-  // フリップボタン：裏表がないメモやカウンタ等の場合は非表示
+  // 設定ボタン：コインのみ表示
+  if (settingsBtn) {
+    settingsBtn.style.display = isCoin ? 'flex' : 'none';
+  }
+
+  // フリップボタン：裏表がないメモやカウンタ等の場合は非表示。コインはコイントスとして表示
   if (flipBtn) {
-    if (isMemo || isCounter || (isToken && !hasBackImage)) {
+    if (isCoin) {
+      flipBtn.style.display = 'flex';
+      flipBtn.setAttribute('title', 'コイントス');
+      flipBtn.setAttribute('aria-label', 'コイントス');
+    } else if (isMemo || isCounter || (isToken && !hasBackImage)) {
       flipBtn.style.display = 'none';
     } else {
       flipBtn.style.display = 'flex';
+      flipBtn.setAttribute('title', '表裏をめくる');
+      flipBtn.setAttribute('aria-label', 'めくる');
     }
   }
 
@@ -15197,19 +15231,33 @@ function initQuickObjectMenuOnce() {
     });
   }
 
-  // 2: フリップ (表裏反転)
+  // 2: フリップ (表裏反転 / コイントス)
   const flipBtn = document.getElementById('qm-flip-btn');
   if (flipBtn) {
     flipBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!quickMenuTarget) return;
       if (typeof canOperateCard === 'function' && !canOperateCard(quickMenuTarget, 'flip')) return;
-      if (typeof quickMenuTarget._flipCards === 'function') {
+      if (quickMenuTarget.classList.contains('is-coin') && typeof quickMenuTarget._tossCoin === 'function') {
+        await quickMenuTarget._tossCoin();
+      } else if (typeof quickMenuTarget._flipCards === 'function') {
         await quickMenuTarget._flipCards();
       } else if (typeof flipCards === 'function') {
         await flipCards(quickMenuTarget);
       }
       setTimeout(positionQuickMenu, 80);
+    });
+  }
+
+  // 4: 設定（コイン画像設定等）
+  const settingsBtn = document.getElementById('qm-settings-btn');
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!quickMenuTarget) return;
+      if (quickMenuTarget.classList.contains('is-coin') && typeof openCoinSettingsModal === 'function') {
+        openCoinSettingsModal(quickMenuTarget);
+      }
     });
   }
 
@@ -15307,8 +15355,339 @@ window.hideQuickObjectMenu = hideQuickObjectMenu;
 window.positionQuickMenu = positionQuickMenu;
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initQuickObjectMenuOnce);
+  document.addEventListener('DOMContentLoaded', () => {
+    initQuickObjectMenuOnce();
+    initCoinSettingsOnce();
+  });
 } else {
   initQuickObjectMenuOnce();
+  initCoinSettingsOnce();
 }
+
+// ====================================================================
+// コイン画像設定モーダル & 円形クロップ機能
+// ====================================================================
+let currentEditingCoin = null;
+let currentCropFace = null; // 'front' | 'back'
+let coinCropImg = null;
+let coinCropBaseScale = 1.0;
+let coinCropZoom = 1.0;
+let coinCropOffsetX = 0;
+let coinCropOffsetY = 0;
+const COIN_CROP_VIEW_SIZE = 280;
+
+function openCoinSettingsModal(card) {
+  if (!card) return;
+  currentEditingCoin = card;
+  const frontImg = document.getElementById('coin-preview-front');
+  const backImg = document.getElementById('coin-preview-back');
+
+  const frontSrc = card.dataset.frontImageUrl || svgCoinDataUrl('オモテ');
+  const backSrc = card.dataset.backImageUrl || svgCoinDataUrl('ウラ');
+
+  if (frontImg) frontImg.src = frontSrc;
+  if (backImg) backImg.src = backSrc;
+
+  const modal = document.getElementById('coin-settings-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function closeCoinSettingsModal() {
+  const modal = document.getElementById('coin-settings-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  currentEditingCoin = null;
+}
+
+function renderCoinCropCanvas() {
+  const canvas = document.getElementById('coin-crop-canvas');
+  const ctx = canvas?.getContext('2d');
+  if (!ctx || !coinCropImg) return;
+  ctx.clearRect(0, 0, COIN_CROP_VIEW_SIZE, COIN_CROP_VIEW_SIZE);
+
+  const currentScale = coinCropBaseScale * coinCropZoom;
+  const drawW = coinCropImg.naturalWidth * currentScale;
+  const drawH = coinCropImg.naturalHeight * currentScale;
+  const drawX = (COIN_CROP_VIEW_SIZE - drawW) / 2 + coinCropOffsetX;
+  const drawY = (COIN_CROP_VIEW_SIZE - drawH) / 2 + coinCropOffsetY;
+
+  ctx.drawImage(coinCropImg, drawX, drawY, drawW, drawH);
+}
+
+function openCoinCropModal(imgElement, face) {
+  currentCropFace = face;
+  coinCropImg = imgElement;
+  coinCropBaseScale = Math.max(COIN_CROP_VIEW_SIZE / coinCropImg.naturalWidth, COIN_CROP_VIEW_SIZE / coinCropImg.naturalHeight);
+  coinCropZoom = 1.0;
+  coinCropOffsetX = 0;
+  coinCropOffsetY = 0;
+
+  const titleEl = document.getElementById('coin-crop-title');
+  if (titleEl) {
+    titleEl.textContent = face === 'front' ? 'オモテ（表）画像の切り抜き' : 'ウラ（裏）画像の切り抜き';
+  }
+
+  const slider = document.getElementById('coin-zoom-slider');
+  if (slider) slider.value = '1';
+
+  const cropModal = document.getElementById('coin-crop-modal');
+  if (cropModal) cropModal.style.display = 'flex';
+
+  renderCoinCropCanvas();
+}
+
+function closeCoinCropModal() {
+  const cropModal = document.getElementById('coin-crop-modal');
+  if (cropModal) cropModal.style.display = 'none';
+  coinCropImg = null;
+  currentCropFace = null;
+}
+
+function initCoinSettingsOnce() {
+  const settingsModal = document.getElementById('coin-settings-modal');
+  if (!settingsModal || settingsModal._initDone) return;
+  settingsModal._initDone = true;
+
+  // 閉じるボタン
+  document.getElementById('coin-settings-close')?.addEventListener('click', closeCoinSettingsModal);
+  document.getElementById('coin-settings-done')?.addEventListener('click', closeCoinSettingsModal);
+  settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) closeCoinSettingsModal();
+  });
+
+  // ファイル選択トリガー
+  const pickFileForFace = (face) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          openCoinCropModal(img, face);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
+
+  document.getElementById('coin-change-front-btn')?.addEventListener('click', () => pickFileForFace('front'));
+  document.getElementById('coin-change-back-btn')?.addEventListener('click', () => pickFileForFace('back'));
+
+  // デフォルトに戻す
+  const resetFace = async (face) => {
+    if (!currentEditingCoin || !CURRENT_ROOM) return;
+    const cardId = currentEditingCoin.dataset.cardId;
+    if (!cardId) return;
+
+    try {
+      const isFront = face === 'front';
+      const defaultSvg = svgCoinDataUrl(isFront ? 'オモテ' : 'ウラ');
+      const updateData = {};
+      if (isFront) {
+        updateData.frontImageUrl = null;
+        currentEditingCoin.dataset.frontImageUrl = '';
+        const prev = document.getElementById('coin-preview-front');
+        if (prev) prev.src = defaultSvg;
+        if (currentEditingCoin.dataset.diceValue === '1' || !currentEditingCoin.dataset.diceValue) {
+          updateData.imageUrl = defaultSvg;
+          updateData.fullUrl = defaultSvg;
+          const img = currentEditingCoin.querySelector('img');
+          if (img) img.src = defaultSvg;
+          if (selectedCard === currentEditingCoin && typeof setPreview === 'function') {
+            setPreview(defaultSvg);
+          }
+        }
+      } else {
+        updateData.backImageUrl = null;
+        currentEditingCoin.dataset.backImageUrl = '';
+        const prev = document.getElementById('coin-preview-back');
+        if (prev) prev.src = defaultSvg;
+        if (currentEditingCoin.dataset.diceValue === '2') {
+          updateData.imageUrl = defaultSvg;
+          updateData.fullUrl = defaultSvg;
+          const img = currentEditingCoin.querySelector('img');
+          if (img) img.src = defaultSvg;
+          if (selectedCard === currentEditingCoin && typeof setPreview === 'function') {
+            setPreview(defaultSvg);
+          }
+        }
+      }
+      updateData.updatedAt = serverTimestamp();
+      markLocal(cardId);
+      await updateDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`), updateData);
+      if (typeof postLog === 'function') {
+        postLog('cardAction', `コインの${isFront ? 'オモテ' : 'ウラ'}画像をデフォルトに戻しました`);
+      }
+    } catch (err) {
+      console.error('Reset coin image failed:', err);
+      alert('デフォルトへの復元に失敗しました。');
+    }
+  };
+
+  document.getElementById('coin-reset-front-btn')?.addEventListener('click', () => resetFace('front'));
+  document.getElementById('coin-reset-back-btn')?.addEventListener('click', () => resetFace('back'));
+
+  // クロップモーダルのイベント
+  const cropModal = document.getElementById('coin-crop-modal');
+  const cropContainer = document.getElementById('coin-crop-container');
+  const zoomSlider = document.getElementById('coin-zoom-slider');
+
+  document.getElementById('coin-crop-close')?.addEventListener('click', closeCoinCropModal);
+  document.getElementById('coin-crop-cancel')?.addEventListener('click', closeCoinCropModal);
+  cropModal?.addEventListener('click', (e) => {
+    if (e.target === cropModal) closeCoinCropModal();
+  });
+
+  // クロップ内ドラッグ
+  let isCropDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragStartOffsetX = 0;
+  let dragStartOffsetY = 0;
+
+  cropContainer?.addEventListener('pointerdown', (e) => {
+    if (!coinCropImg) return;
+    isCropDragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    dragStartOffsetX = coinCropOffsetX;
+    dragStartOffsetY = coinCropOffsetY;
+    cropContainer.style.cursor = 'grabbing';
+    cropContainer.setPointerCapture(e.pointerId);
+  });
+
+  cropContainer?.addEventListener('pointermove', (e) => {
+    if (!isCropDragging) return;
+    coinCropOffsetX = dragStartOffsetX + (e.clientX - dragStartX);
+    coinCropOffsetY = dragStartOffsetY + (e.clientY - dragStartY);
+    renderCoinCropCanvas();
+  });
+
+  const stopCropDrag = () => {
+    isCropDragging = false;
+    if (cropContainer) cropContainer.style.cursor = 'grab';
+  };
+  cropContainer?.addEventListener('pointerup', stopCropDrag);
+  cropContainer?.addEventListener('pointercancel', stopCropDrag);
+
+  // ズームスライダー
+  zoomSlider?.addEventListener('input', () => {
+    coinCropZoom = parseFloat(zoomSlider.value) || 1.0;
+    renderCoinCropCanvas();
+  });
+
+  // マウスホイールズーム
+  cropContainer?.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.05 : -0.05;
+    let nextZoom = Math.min(3.0, Math.max(1.0, coinCropZoom + delta));
+    coinCropZoom = nextZoom;
+    if (zoomSlider) zoomSlider.value = String(coinCropZoom);
+    renderCoinCropCanvas();
+  }, { passive: false });
+
+  // クロップ適用 & Storageアップロード
+  document.getElementById('coin-crop-apply')?.addEventListener('click', async () => {
+    if (!coinCropImg || !currentEditingCoin || !CURRENT_ROOM || !currentCropFace) return;
+    const applyBtn = document.getElementById('coin-crop-apply');
+    if (applyBtn) {
+      applyBtn.disabled = true;
+      applyBtn.textContent = '保存中…';
+    }
+
+    try {
+      const cardId = currentEditingCoin.dataset.cardId;
+      const OUT_SIZE = 512;
+      const outCanvas = document.createElement('canvas');
+      outCanvas.width = OUT_SIZE;
+      outCanvas.height = OUT_SIZE;
+      const outCtx = outCanvas.getContext('2d');
+
+      // 円形クリップして丸型出力
+      outCtx.beginPath();
+      outCtx.arc(OUT_SIZE / 2, OUT_SIZE / 2, OUT_SIZE / 2, 0, Math.PI * 2);
+      outCtx.closePath();
+      outCtx.clip();
+
+      const currentScale = coinCropBaseScale * coinCropZoom;
+      const ratio = OUT_SIZE / COIN_CROP_VIEW_SIZE;
+      const drawW = coinCropImg.naturalWidth * currentScale * ratio;
+      const drawH = coinCropImg.naturalHeight * currentScale * ratio;
+      const drawX = ((COIN_CROP_VIEW_SIZE - coinCropImg.naturalWidth * currentScale) / 2 + coinCropOffsetX) * ratio;
+      const drawY = ((COIN_CROP_VIEW_SIZE - coinCropImg.naturalHeight * currentScale) / 2 + coinCropOffsetY) * ratio;
+
+      outCtx.drawImage(coinCropImg, drawX, drawY, drawW, drawH);
+
+      const blob = await new Promise((resolve) => outCanvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('Blob generation failed');
+
+      const storagePath = `rooms/${CURRENT_ROOM}/coins/${cardId}_${currentCropFace}_${Date.now()}.png`;
+      const sRef = ref(storage, storagePath);
+      await uploadBytes(sRef, blob);
+      const downloadUrl = await getDownloadURL(sRef);
+
+      const isFront = currentCropFace === 'front';
+      const updateData = {};
+      if (isFront) {
+        updateData.frontImageUrl = downloadUrl;
+        currentEditingCoin.dataset.frontImageUrl = downloadUrl;
+        const pImg = document.getElementById('coin-preview-front');
+        if (pImg) pImg.src = downloadUrl;
+        if (currentEditingCoin.dataset.diceValue === '1' || !currentEditingCoin.dataset.diceValue) {
+          updateData.imageUrl = downloadUrl;
+          updateData.fullUrl = downloadUrl;
+          const img = currentEditingCoin.querySelector('img');
+          if (img) img.src = downloadUrl;
+          if (selectedCard === currentEditingCoin && typeof setPreview === 'function') {
+            setPreview(downloadUrl);
+          }
+        }
+      } else {
+        updateData.backImageUrl = downloadUrl;
+        currentEditingCoin.dataset.backImageUrl = downloadUrl;
+        const pImg = document.getElementById('coin-preview-back');
+        if (pImg) pImg.src = downloadUrl;
+        if (currentEditingCoin.dataset.diceValue === '2') {
+          updateData.imageUrl = downloadUrl;
+          updateData.fullUrl = downloadUrl;
+          const img = currentEditingCoin.querySelector('img');
+          if (img) img.src = downloadUrl;
+          if (selectedCard === currentEditingCoin && typeof setPreview === 'function') {
+            setPreview(downloadUrl);
+          }
+        }
+      }
+      updateData.updatedAt = serverTimestamp();
+      markLocal(cardId);
+      await updateDoc(doc(db, `rooms/${CURRENT_ROOM}/cards/${cardId}`), updateData);
+
+      if (typeof postLog === 'function') {
+        postLog('cardAction', `コインの${isFront ? 'オモテ' : 'ウラ'}画像を変更しました`);
+      }
+
+      closeCoinCropModal();
+    } catch (err) {
+      console.error('Save coin image failed:', err);
+      alert('コイン画像の保存に失敗しました。');
+    } finally {
+      if (applyBtn) {
+        applyBtn.disabled = false;
+        applyBtn.textContent = '適用する';
+      }
+    }
+  });
+}
+
+window.openCoinSettingsModal = openCoinSettingsModal;
+window.closeCoinSettingsModal = closeCoinSettingsModal;
+
 
