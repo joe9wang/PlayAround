@@ -697,14 +697,18 @@ function setupContextMenuEvents() {
     if (!ctxMenu?.contains(e.target)) hideContextMenu();
   });
 
-  ctxProperties?.addEventListener('click', () => {
+  ctxProperties?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const targetId = CTX_TARGET_ENTITY_ID;
     hideContextMenu();
-    if (CTX_TARGET_ENTITY_ID) openPropertiesModal(CTX_TARGET_ENTITY_ID);
+    if (targetId) openPropertiesModal(targetId);
   });
 
-  ctxRotate?.addEventListener('click', () => {
+  ctxRotate?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const targetId = CTX_TARGET_ENTITY_ID;
     hideContextMenu();
-    const ent = ENTITIES.find(e => e.id === CTX_TARGET_ENTITY_ID);
+    const ent = ENTITIES.find(e => e.id === targetId);
     if (ent) {
       ent.angle = ((ent.angle || 0) + 90) % 360;
       const dom = document.getElementById(ent.id);
@@ -713,9 +717,11 @@ function setupContextMenuEvents() {
     }
   });
 
-  ctxFlip?.addEventListener('click', () => {
+  ctxFlip?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const targetId = CTX_TARGET_ENTITY_ID;
     hideContextMenu();
-    const ent = ENTITIES.find(e => e.id === CTX_TARGET_ENTITY_ID);
+    const ent = ENTITIES.find(e => e.id === targetId);
     if (ent && ent.type === 'card') {
       ent.isFaceDown = !ent.isFaceDown;
       const dom = document.getElementById(ent.id);
@@ -724,9 +730,11 @@ function setupContextMenuEvents() {
     }
   });
 
-  ctxDelete?.addEventListener('click', () => {
+  ctxDelete?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const targetId = CTX_TARGET_ENTITY_ID;
     hideContextMenu();
-    const ent = ENTITIES.find(e => e.id === CTX_TARGET_ENTITY_ID);
+    const ent = ENTITIES.find(e => e.id === targetId);
     if (ent) {
       ENTITIES = ENTITIES.filter(e => e.id !== ent.id);
       document.getElementById(ent.id)?.remove();
