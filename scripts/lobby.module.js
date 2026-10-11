@@ -98,6 +98,7 @@ const startBtn = document.getElementById('start-btn');
 const pickModeCardBtn = document.getElementById('pick-mode-card');
 const pickModeBoardBtn = document.getElementById('pick-mode-board');
 const pickModeOfficialBtn = document.getElementById('pick-mode-official');
+const pickModeDevBtn = document.getElementById('pick-mode-dev');
 
 // === Initialization ===
 async function init() {
@@ -148,9 +149,15 @@ async function init() {
       if (user.isAnonymous) {
         authFormArea.style.display = 'flex';
         authLoggedinArea.style.display = 'none';
+        if (pickModeDevBtn) pickModeDevBtn.style.display = 'none';
+        if (CREATE_FIELD_MODE === 'dev') {
+          CREATE_FIELD_MODE = 'card';
+          updateModePickButtons();
+        }
       } else {
         authFormArea.style.display = 'none';
         authLoggedinArea.style.display = 'block';
+        if (pickModeDevBtn) pickModeDevBtn.style.display = 'inline-block';
 
         // プレミアムバッジ表示
         fetchPremiumStatus(user.uid).then(pStatus => {
@@ -175,6 +182,11 @@ async function init() {
       CURRENT_UID = null;
       authFormArea.style.display = 'flex';
       authLoggedinArea.style.display = 'none';
+      if (pickModeDevBtn) pickModeDevBtn.style.display = 'none';
+      if (CREATE_FIELD_MODE === 'dev') {
+        CREATE_FIELD_MODE = 'card';
+        updateModePickButtons();
+      }
       // Auto anonymous sign-in if not logged in
       try { await signInAnonymously(auth); } catch (e) { console.error('Auth error', e); }
     }
@@ -193,6 +205,10 @@ async function init() {
   pickModeBoardBtn?.addEventListener('click', () => { CREATE_FIELD_MODE = 'board'; updateModePickButtons(); });
   pickModeOfficialBtn?.addEventListener('click', () => {
     CREATE_FIELD_MODE = 'official';
+    updateModePickButtons();
+  });
+  pickModeDevBtn?.addEventListener('click', () => {
+    CREATE_FIELD_MODE = 'dev';
     updateModePickButtons();
   });
   
@@ -283,6 +299,7 @@ function updateModePickButtons() {
   set(pickModeCardBtn, CREATE_FIELD_MODE === 'card');
   set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
   set(pickModeOfficialBtn, CREATE_FIELD_MODE === 'official' || CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess' || CREATE_FIELD_MODE === 'reversi' || CREATE_FIELD_MODE === 'shogi');
+  set(pickModeDevBtn, CREATE_FIELD_MODE === 'dev');
 }
 
 window.selectOfficialOption = function(type) {
@@ -676,6 +693,10 @@ function openRoomLimitManageModal(currentRooms, maxRooms) {
 }
 
 function showLayoutModal() {
+  if (CREATE_FIELD_MODE === 'dev') {
+    executeRoomCreation('dev');
+    return;
+  }
   if (CREATE_FIELD_MODE === 'official' || CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess' || CREATE_FIELD_MODE === 'reversi' || CREATE_FIELD_MODE === 'shogi') {
     document.getElementById('official-game-modal').style.display = 'flex';
     window.selectOfficialOption(CURRENT_OFFICIAL_SELECTION || 'trump');
@@ -803,6 +824,9 @@ async function executeRoomCreation(layoutType) {
     } else if (CREATE_FIELD_MODE === 'reversi') {
       payload.boardWidth = 3600;
       payload.boardHeight = 2000;
+    } else if (CREATE_FIELD_MODE === 'dev') {
+      payload.boardWidth = 3200;
+      payload.boardHeight = 2400;
     }
 
     // 匿名ユーザー（ゲスト）の場合のみ、24時間で削除される有効期限を設定 & 24時間作成制限のタイムスタンプ記録
@@ -854,7 +878,8 @@ async function executeRoomCreation(layoutType) {
     // In a real app we might want to call a function to clear subcollections.
     
     // Redirect to game
-    window.location.href = `game.html?id=${encodeURIComponent(id)}`;
+    const targetHtml = (CREATE_FIELD_MODE === 'dev') ? 'game-dev.html' : 'game.html';
+    window.location.href = `${targetHtml}?id=${encodeURIComponent(id)}`;
 
   } catch (e) {
     console.error('Create room failed', e);
@@ -901,7 +926,8 @@ async function handleJoinRoom() {
     }
 
     // Redirect to game
-    window.location.href = `game.html?id=${encodeURIComponent(id)}`;
+    const targetHtml = (meta && meta.fieldMode === 'dev') ? 'game-dev.html' : 'game.html';
+    window.location.href = `${targetHtml}?id=${encodeURIComponent(id)}`;
   } catch (e) {
     console.error('Join failed', e);
     alert('入室に失敗しました。');

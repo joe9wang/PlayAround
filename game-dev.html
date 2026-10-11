@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8" />
+  <title>開発者モード｜BatriTable（バトライテーブル）</title>
+  <meta name="description" content="BatriTable 開発者モード。カードゲーム・ボードゲームの構造体定義、エリア構築、ボタン自動化アクション、CPUルール設定が可能な統合開発環境。">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Favicon -->
+  <link href="/favicon.ico" rel="icon" sizes="any" />
+  <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
+  <link href="/favicon-16.png?v=3" rel="icon" sizes="16x16" type="image/png" />
+  <link href="/apple-touch-icon.png?v=3" rel="apple-touch-icon" sizes="180x180" />
+  <link href="/site.webmanifest" rel="manifest" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="assets/game-dev.css?v=20261012-1">
+</head>
+
+<body>
+  <!-- Top Bar -->
+  <header id="dev-topbar">
+    <div class="topbar-brand">
+      <span class="brand-badge">🛠️ 開発者モード</span>
+      <div class="room-badge">
+        <span>ROOM:</span>
+        <span id="room-id-display">------</span>
+        <button id="btn-copy-room-id" style="background:transparent; border:none; color:#a78bfa; cursor:pointer;" title="ルームIDをコピー">📋</button>
+      </div>
+    </div>
+
+    <!-- Top Bar Actions (Same features as current: Cards, Board, Pieces) -->
+    <div class="topbar-actions">
+      <button class="top-btn" id="btn-upload-card" title="画像をアップロードしてカードを生成">
+        <span>🃏 カードを追加</span>
+      </button>
+      <input type="file" id="file-input-card" accept="image/*" multiple style="display:none;" />
+
+      <button class="top-btn" id="btn-upload-board" title="盤面・マップ用背景画像を配置">
+        <span>🗺️ ボードを追加</span>
+      </button>
+      <input type="file" id="file-input-board" accept="image/*" multiple style="display:none;" />
+
+      <button class="top-btn" id="btn-upload-piece" title="コマ・トークンを配置">
+        <span>♟ コマを追加</span>
+      </button>
+      <input type="file" id="file-input-piece" accept="image/*" multiple style="display:none;" />
+
+      <div style="width:1px; height:24px; background:var(--border-color); margin:0 4px;"></div>
+
+      <button class="top-btn danger" id="btn-exit-lobby" title="ロビーに戻る">
+        <span>🚪 ロビーへ</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <div id="workspace">
+    <!-- Left Sidebar: Developer Control Panel -->
+    <aside id="dev-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">
+          <span>⚙️</span>
+          <span>開発者パネル</span>
+        </div>
+      </div>
+
+      <div class="sidebar-content">
+        <!-- Category 1: 開発者モード -->
+        <div class="panel-category">
+          <div class="category-header">
+            <span>📐</span>
+            <span>「開発者モード」設定</span>
+          </div>
+          <div class="category-body">
+            <button class="action-btn" id="dev-add-area-btn">
+              <span>➕ エリア追加</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Category 2: プレイ用 -->
+        <div class="panel-category">
+          <div class="category-header">
+            <span>🎮</span>
+            <span>「プレイ用」設定</span>
+          </div>
+          <div class="category-body">
+            <button class="action-btn primary" id="dev-card-schema-btn">
+              <span>🗂️ カード全般設定（タイプ・タグ）</span>
+            </button>
+            <button class="action-btn" id="dev-add-button-btn">
+              <span>🔘 ボタン追加</span>
+            </button>
+
+            <!-- プレイ用ボタン表示領域 -->
+            <div style="font-size:11px; font-weight:700; color:#94a3b8; margin-top:8px; text-transform:uppercase;">
+              実行ボタン一覧:
+            </div>
+            <div class="play-buttons-list" id="play-buttons-container">
+              <div class="empty-notice" id="play-buttons-empty">ボタンが未設定です</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Field & Canvas Viewport -->
+    <main id="canvas-viewport">
+      <!-- Full-field Grid/Ruler Canvas -->
+      <canvas id="ruler-canvas"></canvas>
+
+      <!-- World Container (Scalable & Pannable) -->
+      <div id="world">
+        <div class="world-bounds"></div>
+        <!-- Areas Layer -->
+        <div id="areas-layer"></div>
+        <!-- Entities Layer (Cards, Boards, Pieces) -->
+        <div id="entities-layer"></div>
+      </div>
+
+      <!-- Viewport HUD Overlay -->
+      <div class="viewport-hud">
+        <button class="hud-btn" id="btn-zoom-out" title="縮小">−</button>
+        <span id="hud-zoom-text">100%</span>
+        <button class="hud-btn" id="btn-zoom-in" title="拡大">+</button>
+        <button class="hud-btn" id="btn-zoom-reset" title="全体表示リセット">⟲</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Custom Context Menu for Objects -->
+  <div id="dev-context-menu">
+    <div class="ctx-item primary" id="ctx-properties">
+      <span>⚙️</span>
+      <span>プロパティ</span>
+    </div>
+    <div class="ctx-divider"></div>
+    <div class="ctx-item" id="ctx-rotate">
+      <span>🔄</span>
+      <span>90° 回転</span>
+    </div>
+    <div class="ctx-item" id="ctx-flip">
+      <span>🂠</span>
+      <span>表裏反転</span>
+    </div>
+    <div class="ctx-divider"></div>
+    <div class="ctx-item danger" id="ctx-delete">
+      <span>🗑️</span>
+      <span>削除</span>
+    </div>
+  </div>
+
+  <!-- ================= Modals ================= -->
+
+  <!-- 1. エリア追加モーダル -->
+  <div class="dev-modal-overlay" id="modal-add-area">
+    <div class="dev-modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>📐</span>
+          <span>エリア追加</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-add-area">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">エリアの種類</label>
+          <select class="form-select" id="area-type-select">
+            <option value="hand">手札エリア</option>
+            <option value="deck">デッキエリア</option>
+            <option value="deck2">デッキエリア2</option>
+            <option value="discard">捨て札エリア</option>
+            <option value="special">特殊エリア</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">対象プレイヤー</label>
+          <select class="form-select" id="area-owner-select">
+            <option value="shared">共有</option>
+            <option value="player1">プレイヤー1</option>
+            <option value="player2">プレイヤー2</option>
+            <option value="player3">プレイヤー3</option>
+            <option value="player4">プレイヤー4</option>
+            <option value="player5">プレイヤー5</option>
+            <option value="player6">プレイヤー6</option>
+            <option value="player7">プレイヤー7</option>
+            <option value="player8">プレイヤー8</option>
+            <option value="player9">プレイヤー9</option>
+            <option value="player10">プレイヤー10</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn secondary" data-close="modal-add-area" style="width:auto;">キャンセル</button>
+        <button class="action-btn primary" id="btn-confirm-add-area" style="width:auto;">追加する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. カード全般設定モーダル（カードタイプ・タグ定義） -->
+  <div class="dev-modal-overlay" id="modal-card-schema">
+    <div class="dev-modal-sheet" style="max-width:680px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🗂️</span>
+          <span>カード全般設定（構造体定義）</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-card-schema">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:#94a3b8; font-size:12px;">
+          カードに持たせるデータ型（カードタイプ）と、その属性（タグ）を定義します。<br>
+          例: タイプ「トランプ」にタグ「Mark」「Number」を追加
+        </p>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+          <span style="font-weight:700; color:#e2e8f0;">定義済みカードタイプ一覧</span>
+          <button class="action-btn primary" id="btn-add-card-type" style="width:auto; padding:6px 12px; font-size:12px;">
+            <span>➕ カードタイプ追加</span>
+          </button>
+        </div>
+
+        <!-- スキーマ一覧コンテナ -->
+        <div id="schema-types-list" style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+          <div class="empty-notice" id="schemas-empty">カードタイプがまだ登録されていません。「カードタイプ追加」を押してください。</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn primary" data-close="modal-card-schema" style="width:auto;">保存して閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. ボタン追加モーダル（プレイ用） -->
+  <div class="dev-modal-overlay" id="modal-add-button">
+    <div class="dev-modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🔘</span>
+          <span>プレイ用ボタン追加</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-add-button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">ボタン名</label>
+          <input type="text" class="form-input" id="btn-def-label" placeholder="例: 手札を全裏返し / 選択カードをタップ" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">なにを（対象）</label>
+          <select class="form-select" id="btn-def-target">
+            <option value="all_hand">手札エリア内にあるカードすべて</option>
+            <option value="selected">左クリックで選択したカード</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">どうする（動作）</label>
+          <select class="form-select" id="btn-def-action">
+            <option value="flip_toggle">表裏を変える（反転）</option>
+            <option value="flip_down">裏にする</option>
+            <option value="flip_up">表にする</option>
+            <option value="rotate_90">90度回転させる（タップ）</option>
+            <option value="rotate_180">180度回転させる</option>
+            <option value="move_discard">捨て札エリアに移動させる</option>
+            <option value="move_deck">デッキエリアに移動させる</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn secondary" data-close="modal-add-button" style="width:auto;">キャンセル</button>
+        <button class="action-btn primary" id="btn-confirm-add-button" style="width:auto;">追加する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. オブジェクト プロパティ設定モーダル -->
+  <div class="dev-modal-overlay" id="modal-properties">
+    <div class="dev-modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>⚙️</span>
+          <span id="prop-modal-title">オブジェクト プロパティ</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-properties">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- カード用タイプ選択 -->
+        <div class="form-group" id="prop-card-type-group">
+          <label class="form-label">カードタイプ</label>
+          <select class="form-select" id="prop-card-type-select">
+            <option value="">(なし / 一般画像)</option>
+          </select>
+        </div>
+
+        <!-- タグ値入力領域（選択されたカードタイプに応じて動的生成） -->
+        <div id="prop-tags-container" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn secondary" data-close="modal-properties" style="width:auto;">キャンセル</button>
+        <button class="action-btn primary" id="btn-save-properties" style="width:auto;">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="scripts/polyfills.js"></script>
+  <script type="module" src="scripts/game-dev.module.js?v=20261012-1"></script>
+</body>
+
+</html>
