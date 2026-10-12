@@ -993,7 +993,7 @@ function executePlayAction(btnDef) {
     const handAreas = AREAS.filter(a => a.type === 'hand');
     targets = ENTITIES.filter(ent => {
       if (ent.type !== 'card') return false;
-      return handAreas.some(area => isPointInArea(ent.x + ent.w / 2, ent.y + ent.h / 2, area));
+      return handAreas.some(area => isEntityOverlappingArea(ent, area));
     });
   }
 
@@ -1053,6 +1053,17 @@ function executePlayAction(btnDef) {
   });
 
   scheduleSaveRoom();
+}
+
+function isEntityOverlappingArea(ent, area) {
+  const w = ent.w || 120;
+  const h = ent.h || 160;
+  return !(
+    ent.x + w < area.x ||
+    ent.x > area.x + area.w ||
+    ent.y + h < area.y ||
+    ent.y > area.y + area.h
+  );
 }
 
 function isPointInArea(px, py, area) {
