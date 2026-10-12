@@ -45,7 +45,7 @@ async function sendPremiumWelcomeEmail({ email, displayName }) {
         <h3 style="color: #6d28d9; margin-top: 0; margin-bottom: 12px; font-size: 15px;">🎁 プレミアム会員の限定特典</h3>
         <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #4b5563; line-height: 1.8;">
           <li><strong>マイセット保存枠の大幅拡張</strong>: 最大100スロット（10スロット×10ページ）まで自由に保存可能</li>
-          <li><strong>高画質・大容量画像アップロード</strong>: 1枚あたり最大20MBまで対応</li>
+          <li><strong>高画質・大容量画像アップロード</strong>: 1枚あたり最大50MB、合計最大2GBまで対応</li>
           <li><strong>ルーム作成が無制限</strong>: 1日の作成制限なし、最大100部屋まで同時に保持可能</li>
           <li><strong>1部屋あたり最大1,000枚のカード</strong> を配置可能</li>
           <li><strong>盤面・裏面デザイン</strong> の自由なカスタマイズ</li>

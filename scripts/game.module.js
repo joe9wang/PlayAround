@@ -6403,6 +6403,9 @@ function createCardDom(cardId, imageSrc, state) {
   if (state?.backImageUrl) {
     card.dataset.backImageUrl = state.backImageUrl;
   }
+  if (state?.fileSize) {
+    card.dataset.fileSize = String(state.fileSize);
+  }
 
 
 
@@ -7504,52 +7507,51 @@ function handleFiles(files, kind = 'card') {
 
 
   const limits = getLimits(IS_PREMIUM);
-
   const maxBytes = limits.maxImageMB * 1024 * 1024;
-
-
+  const maxTotalBytes = (limits.totalStorageMB || 500) * 1024 * 1024;
 
   const imgs = [...files].filter(f => f.type.startsWith('image/'));
 
-
-
-  // ===== 画像サイズ制限 =====
-
+  // ===== 画像1枚あたりのサイズ制限 =====
   const oversized = imgs.filter(f => f.size > maxBytes);
-
-  const valid = imgs.filter(f => f.size <= maxBytes);
+  const validSize = imgs.filter(f => f.size <= maxBytes);
 
   if (oversized.length > 0) {
-
-    alert(`${oversized.length}枚の画像が${limits.maxImageMB}MBの上限を超えています。\n超過した画像はスキップされます。${IS_PREMIUM ? '' : '\nプレミアム会員は20MBまでアップロード可能です。'}`);
-
+    alert(`${oversized.length}枚の画像が1枚あたり${limits.maxImageMB}MBの上限を超えています。\n超過した画像はスキップされます。${IS_PREMIUM ? '' : '\nプレミアム会員は50MBまでアップロード可能です。'}`);
   }
 
+  // ===== ルーム内合計容量制限（現在の所持カード + キュー + 新規） =====
+  const currentCards = Array.from(document.querySelectorAll(`#game-field .card[data-owner="${CURRENT_PLAYER}"]`));
+  const currentBytes = currentCards.reduce((acc, el) => acc + (parseInt(el.dataset.fileSize, 10) || 500 * 1024), 0);
+  const queuedBytes = fileQueue.reduce((acc, item) => acc + (item.file?.size || 0), 0);
 
+  let allowedFiles = [];
+  let accumulatedBytes = currentBytes + queuedBytes;
+
+  for (const f of validSize) {
+    if (accumulatedBytes + f.size <= maxTotalBytes) {
+      allowedFiles.push(f);
+      accumulatedBytes += f.size;
+    }
+  }
+
+  if (allowedFiles.length < validSize.length) {
+    const totalLimitText = limits.totalStorageMB >= 1024 ? `${limits.totalStorageMB / 1024}GB` : `${limits.totalStorageMB}MB`;
+    const curMB = (currentBytes / (1024 * 1024)).toFixed(1);
+    alert(`ルーム内の合計画像容量上限（${totalLimitText}）を超えます。\n現在使用中: ${curMB}MB（スキップ: ${validSize.length - allowedFiles.length}枚）${IS_PREMIUM ? '' : '\nプレミアム会員は最大2GBまで利用可能です。'}`);
+  }
 
   // ===== 枚数制限（現在の枚数 + キュー + 新規） =====
-
-  const currentCount = document.querySelectorAll(`#game-field .card[data-owner="${CURRENT_PLAYER}"]`).length;
-
-  const afterCount = currentCount + fileQueue.length + valid.length;
+  const currentCount = currentCards.length;
+  const afterCount = currentCount + fileQueue.length + allowedFiles.length;
 
   if (afterCount > limits.cardsPerRoom) {
-
     const remaining = Math.max(0, limits.cardsPerRoom - currentCount - fileQueue.length);
-
     alert(`カード枚数の上限（${limits.cardsPerRoom}枚）を超えます。\n追加可能: ${remaining}枚${IS_PREMIUM ? '' : '\nプレミアム会員は1,000枚まで利用可能です。'}`);
-
-    // 上限まで追加可能な分だけ入れる
-
-    for (const f of valid.slice(0, remaining)) fileQueue.push({ file: f, kind });
-
+    for (const f of allowedFiles.slice(0, remaining)) fileQueue.push({ file: f, kind });
   } else {
-
-    for (const f of valid) fileQueue.push({ file: f, kind });
-
+    for (const f of allowedFiles) fileQueue.push({ file: f, kind });
   }
-
-
 
   if (!processing && fileQueue.length > 0) processQueue();
 
@@ -7683,6 +7685,7 @@ async function processQueue() {
             width: isBoard ? sw : null,
             height: isBoard ? sh : null,
             backImageUrl: isToken ? '' : (seatBackUrl(CURRENT_PLAYER) || ''),
+            fileSize: file.size,
             createdAt: serverTimestamp(), updatedAt: serverTimestamp()
           });
 

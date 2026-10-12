@@ -11,7 +11,8 @@ export const LIMITS = {
     FREE: {
         roomsPerDay: 10,
         cardsPerRoom: 200,
-        maxImageMB: 1,
+        maxImageMB: 20,
+        totalStorageMB: 500,
         saveSlots: 10,
         roomSaveSlots: 10,
         maxActiveRooms: 10,
@@ -19,7 +20,8 @@ export const LIMITS = {
     PREMIUM: {
         roomsPerDay: Infinity,
         cardsPerRoom: 1000,
-        maxImageMB: 20,
+        maxImageMB: 50,
+        totalStorageMB: 2048,
         saveSlots: 100,
         roomSaveSlots: 100,
         maxActiveRooms: 100,
