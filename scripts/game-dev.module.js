@@ -43,6 +43,9 @@ let CARD_SCHEMAS = {
 
 let PLAY_BUTTONS = [];
 
+// 「自分の〇〇エリア」を解決する際の操作プレイヤー（ブラウザごとに記憶）
+const ACTING_PLAYER_STORAGE_KEY = 'pa:dev-acting-player';
+
 let AREAS = [
   {
     id: 'area_play_center',
@@ -109,6 +112,18 @@ const btnConfirmAddButton = document.getElementById('btn-confirm-add-button');
 const btnDefLabel = document.getElementById('btn-def-label');
 const btnDefTarget = document.getElementById('btn-def-target');
 const btnDefAction = document.getElementById('btn-def-action');
+const btnDefDest = document.getElementById('btn-def-dest');
+const btnDefPlacement = document.getElementById('btn-def-placement');
+const btnDefAngle = document.getElementById('btn-def-angle');
+const btnDefAngleLabel = document.getElementById('btn-def-angle-label');
+const btnDefDirection = document.getElementById('btn-def-direction');
+const btnDefHint = document.getElementById('btn-def-hint');
+const btnDefTargetGroup = document.getElementById('btn-def-target-group');
+const btnDefDestGroup = document.getElementById('btn-def-dest-group');
+const btnDefPlacementGroup = document.getElementById('btn-def-placement-group');
+const btnDefAngleGroup = document.getElementById('btn-def-angle-group');
+const btnDefDirectionGroup = document.getElementById('btn-def-direction-group');
+const devActingPlayerSelect = document.getElementById('dev-acting-player');
 const playButtonsContainer = document.getElementById('play-buttons-container');
 
 const modalProperties = document.getElementById('modal-properties');
@@ -501,6 +516,7 @@ function createAreaDOM(area) {
     if (confirm(`エリア「${area.name || getAreaTypeName(area.type)}」を削除しますか？`)) {
       AREAS = AREAS.filter(a => a.id !== area.id);
       el.remove();
+      renderPlayButtons(); // 参照先が消えたボタンに警告を出す
       scheduleSaveRoom();
     }
   });
@@ -776,9 +792,19 @@ function setupSidebarEvents() {
 
   // Play Button Modal
   devAddButtonBtn?.addEventListener('click', () => {
-    if (btnDefLabel) btnDefLabel.value = '';
-    if (modalAddButton) modalAddButton.style.display = 'flex';
+    openAddButtonModal();
   });
+
+  // 操作プレイヤー（「自分の〜エリア」の解決に使用）
+  if (devActingPlayerSelect) {
+    const saved = localStorage.getItem(ACTING_PLAYER_STORAGE_KEY);
+    if (saved && devActingPlayerSelect.querySelector(`option[value="${saved}"]`)) {
+      devActingPlayerSelect.value = saved;
+    }
+    devActingPlayerSelect.addEventListener('change', () => {
+      localStorage.setItem(ACTING_PLAYER_STORAGE_KEY, devActingPlayerSelect.value);
+    });
+  }
 }
 
 function setupModalEvents() {
@@ -823,6 +849,7 @@ function setupModalEvents() {
 
     AREAS.push(newArea);
     createAreaDOM(newArea);
+    renderPlayButtons();
     if (modalAddArea) modalAddArea.style.display = 'none';
     scheduleSaveRoom();
   });
@@ -843,26 +870,20 @@ function setupModalEvents() {
     scheduleSaveRoom();
   });
 
-  // Play Button: Confirm Add Button
-  btnConfirmAddButton?.addEventListener('click', () => {
-    const label = (btnDefLabel?.value || '').trim();
-    if (!label) {
-      alert('ボタン名を入力してください。');
-      return;
-    }
-
-    const newBtn = {
-      id: `btn_${Date.now()}`,
-      label: label,
-      target: btnDefTarget?.value || 'all_hand',
-      action: btnDefAction?.value || 'flip_toggle'
-    };
-
-    PLAY_BUTTONS.push(newBtn);
-    renderPlayButtons();
-    if (modalAddButton) modalAddButton.style.display = 'none';
-    scheduleSaveRoom();
+  // Play Button: 動的フォーム
+  btnDefAction?.addEventListener('change', updateButtonFormVisibility);
+  btnDefTarget?.addEventListener('change', () => { rebuildDestOptions(); updateButtonFormHint(); });
+  btnDefDest?.addEventListener('change', updateButtonFormHint);
+  btnDefAngle?.addEventListener('input', syncAnglePresetActive);
+  document.querySelectorAll('.angle-preset').forEach(chip => {
+    chip.addEventListener('click', () => {
+      if (btnDefAngle) btnDefAngle.value = chip.getAttribute('data-angle');
+      syncAnglePresetActive();
+    });
   });
+
+  // Play Button: Confirm Add Button
+  btnConfirmAddButton?.addEventListener('click', confirmAddPlayButton);
 
   // Save Properties
   btnSaveProperties?.addEventListener('click', saveEntityProperties);
@@ -948,9 +969,303 @@ function renderSchemaList() {
 // ============================================================================
 // Play Buttons Management & Execution (プレイ用ボタン)
 // ============================================================================
+// ---- 参照（対象・移動先）のエンコード ----
+// 'selected'            : 選択中のカード
+// 'own:<areaType>'      : 自分（操作プレイヤー）の〇〇エリア
+// 'area:<areaId>'       : 特定のエリア
+function refToValue(ref) {
+  if (!ref) return '';
+  if (ref.kind === 'selected') return 'selected';
+  if (ref.kind === 'own') return `own:${ref.areaType}`;
+  if (ref.kind === 'area') return `area:${ref.areaId}`;
+  return '';
+}
+
+function valueToRef(value) {
+  if (!value) return null;
+  if (value === 'selected') return { kind: 'selected' };
+  if (value.startsWith('own:')) return { kind: 'own', areaType: value.slice(4) };
+  if (value.startsWith('area:')) return { kind: 'area', areaId: value.slice(5) };
+  return null;
+}
+
+function getActingPlayer() {
+  return devActingPlayerSelect?.value || 'player1';
+}
+
+function getAreaDisplayName(area) {
+  return area.name || `${getOwnerLabel(area.owner)} ${getAreaTypeName(area.type)}`;
+}
+
+// プレイヤー所属のエリアが1つでもある種類（＝「自分の〇〇エリア」を選択肢に出せる種類）
+function getOwnableAreaTypes() {
+  const types = [];
+  AREAS.forEach(a => {
+    if (a.owner && a.owner.startsWith('player') && !types.includes(a.type)) types.push(a.type);
+  });
+  return types;
+}
+
+function refLabel(ref) {
+  if (!ref) return '（未設定）';
+  if (ref.kind === 'selected') return '選択中のカード';
+  if (ref.kind === 'own') return `自分の${getAreaTypeName(ref.areaType)}`;
+  if (ref.kind === 'area') {
+    const area = AREAS.find(a => a.id === ref.areaId);
+    return area ? getAreaDisplayName(area) : '（削除済みエリア）';
+  }
+  return '（不明）';
+}
+
+function resolveAreaRef(ref) {
+  if (!ref) return null;
+  if (ref.kind === 'area') return AREAS.find(a => a.id === ref.areaId) || null;
+  if (ref.kind === 'own') {
+    const me = getActingPlayer();
+    return AREAS.find(a => a.type === ref.areaType && a.owner === me) || null;
+  }
+  return null;
+}
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
+function showToast(message) {
+  let toast = document.getElementById('dev-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'dev-toast';
+    toast.className = 'dev-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+const ACTION_LABELS = {
+  move: '移動',
+  flip_toggle: '裏表を変える',
+  flip_down: '裏にする',
+  flip_up: '表にする',
+  rotate: '回転',
+  set_angle: '向きをそろえる'
+};
+
+// 旧形式（target: 'all_hand' / action: 'rotate_90' など）のボタンを新形式へ変換
+function normalizeButtonDef(def) {
+  if (!def || typeof def !== 'object') return def;
+  if (def.target && typeof def.target === 'object') return def; // 既に新形式
+
+  const out = { id: def.id, label: def.label };
+  out.target = def.target === 'selected'
+    ? { kind: 'selected' }
+    : { kind: 'own', areaType: 'hand' };
+
+  const findAreaRef = (type) => {
+    const area = AREAS.find(a => a.type === type);
+    return area ? { kind: 'area', areaId: area.id } : { kind: 'own', areaType: type };
+  };
+
+  switch (def.action) {
+    case 'rotate_90': Object.assign(out, { action: 'rotate', angle: 90, direction: 'cw' }); break;
+    case 'rotate_180': Object.assign(out, { action: 'rotate', angle: 180, direction: 'cw' }); break;
+    case 'move_discard': Object.assign(out, { action: 'move', dest: findAreaRef('discard'), placement: 'auto' }); break;
+    case 'move_deck': Object.assign(out, { action: 'move', dest: findAreaRef('deck'), placement: 'auto' }); break;
+    default: out.action = def.action || 'flip_toggle';
+  }
+  return out;
+}
+
+// ボタンが実行不能になっていないか（参照エリアの削除など）
+function getButtonIssue(def) {
+  const check = (ref, role) => {
+    if (!ref) return `${role}が未設定です`;
+    if (ref.kind === 'area' && !AREAS.some(a => a.id === ref.areaId)) {
+      return `${role}のエリアが削除されています`;
+    }
+    if (ref.kind === 'own' && !AREAS.some(a => a.type === ref.areaType && a.owner?.startsWith('player'))) {
+      return `プレイヤー用の${getAreaTypeName(ref.areaType)}がありません`;
+    }
+    return null;
+  };
+  return check(def.target, '対象') || (def.action === 'move' ? check(def.dest, '移動先') : null);
+}
+
+function describeButton(def) {
+  let text = `${ACTION_LABELS[def.action] || def.action}：${refLabel(def.target)}`;
+  if (def.action === 'move') text += ` → ${refLabel(def.dest)}`;
+  if (def.action === 'rotate') text += ` ${def.direction === 'ccw' ? '左' : '右'}${def.angle}°`;
+  if (def.action === 'set_angle') text += ` ${def.angle}°`;
+  return text;
+}
+
+// ---- モーダル（動的フォーム） ----
+function openAddButtonModal() {
+  if (btnDefLabel) btnDefLabel.value = '';
+  if (btnDefAction) btnDefAction.value = 'move';
+  if (btnDefPlacement) btnDefPlacement.value = 'auto';
+  if (btnDefAngle) btnDefAngle.value = '90';
+  if (btnDefDirection) btnDefDirection.value = 'cw';
+  rebuildTargetOptions();
+  rebuildDestOptions();
+  updateButtonFormVisibility();
+  syncAnglePresetActive();
+  if (modalAddButton) modalAddButton.style.display = 'flex';
+  btnDefLabel?.focus();
+}
+
+function fillSelect(selectEl, options, preferredValue) {
+  if (!selectEl) return;
+  selectEl.innerHTML = '';
+  options.forEach(opt => {
+    if (opt.group) {
+      const og = document.createElement('optgroup');
+      og.label = opt.group;
+      opt.items.forEach(item => {
+        const o = document.createElement('option');
+        o.value = item.value;
+        o.textContent = item.label;
+        og.appendChild(o);
+      });
+      if (opt.items.length > 0) selectEl.appendChild(og);
+    } else {
+      const o = document.createElement('option');
+      o.value = opt.value;
+      o.textContent = opt.label;
+      selectEl.appendChild(o);
+    }
+  });
+  if (preferredValue && selectEl.querySelector(`option[value="${CSS.escape(preferredValue)}"]`)) {
+    selectEl.value = preferredValue;
+  }
+}
+
+function buildAreaRefOptions(suffix, excludeValue) {
+  const ownItems = getOwnableAreaTypes()
+    .map(type => ({ value: `own:${type}`, label: `自分の${getAreaTypeName(type)}${suffix}` }))
+    .filter(item => item.value !== excludeValue);
+  const areaItems = AREAS
+    .map(area => ({ value: `area:${area.id}`, label: `${getAreaDisplayName(area)}${suffix}` }))
+    .filter(item => item.value !== excludeValue);
+  return [
+    { group: '自分のエリア（押した人に合わせて変わる）', items: ownItems },
+    { group: 'フィールド上のエリア', items: areaItems }
+  ];
+}
+
+function rebuildTargetOptions() {
+  const prev = btnDefTarget?.value;
+  fillSelect(btnDefTarget, [
+    { value: 'selected', label: '選択中のカード' },
+    ...buildAreaRefOptions('の全カード', null)
+  ], prev);
+}
+
+function rebuildDestOptions() {
+  const prev = btnDefDest?.value;
+  const targetValue = btnDefTarget?.value;
+  // 移動元と同じエリアは移動先に出さない
+  fillSelect(btnDefDest, buildAreaRefOptions('', targetValue), prev);
+}
+
+function updateButtonFormVisibility() {
+  const action = btnDefAction?.value || 'move';
+  const show = (el, visible) => { if (el) el.style.display = visible ? '' : 'none'; };
+
+  show(btnDefTargetGroup, true);
+  show(btnDefDestGroup, action === 'move');
+  show(btnDefPlacementGroup, action === 'move');
+  show(btnDefAngleGroup, action === 'rotate' || action === 'set_angle');
+  show(btnDefDirectionGroup, action === 'rotate');
+
+  if (btnDefAngleLabel) {
+    btnDefAngleLabel.textContent = action === 'set_angle'
+      ? 'そろえる向き（0°＝縦向き／右回りの角度）'
+      : '回転量（どれくらい）';
+  }
+  updateButtonFormHint();
+}
+
+function updateButtonFormHint() {
+  if (!btnDefHint) return;
+  const action = btnDefAction?.value;
+  let hint = '';
+  if (AREAS.length === 0) {
+    hint = 'フィールドにエリアがありません。「エリア追加」で作成すると、ここに選択肢として表示されます。';
+  } else if (action === 'move' && (!btnDefDest || btnDefDest.options.length === 0)) {
+    hint = '移動先にできるエリアがありません。別のエリアを追加してください。';
+  }
+  btnDefHint.textContent = hint;
+}
+
+function syncAnglePresetActive() {
+  const val = String(parseInt(btnDefAngle?.value, 10));
+  document.querySelectorAll('.angle-preset').forEach(chip => {
+    chip.classList.toggle('active', chip.getAttribute('data-angle') === val);
+  });
+}
+
+function confirmAddPlayButton() {
+  const label = (btnDefLabel?.value || '').trim();
+  if (!label) {
+    alert('ボタン名を入力してください。');
+    return;
+  }
+
+  const action = btnDefAction?.value || 'move';
+  const target = valueToRef(btnDefTarget?.value);
+  if (!target) {
+    alert('対象（なにを）を選択してください。');
+    return;
+  }
+
+  const newBtn = { id: `btn_${Date.now()}`, label, action, target };
+
+  if (action === 'move') {
+    const dest = valueToRef(btnDefDest?.value);
+    if (!dest) {
+      alert('移動先（どこに）を選択してください。');
+      return;
+    }
+    if (refToValue(dest) === refToValue(target)) {
+      alert('移動元と移動先が同じエリアです。');
+      return;
+    }
+    newBtn.dest = dest;
+    newBtn.placement = btnDefPlacement?.value || 'auto';
+  }
+
+  if (action === 'rotate' || action === 'set_angle') {
+    const angle = parseInt(btnDefAngle?.value, 10);
+    if (Number.isNaN(angle) || angle < 0 || angle > 360) {
+      alert('角度は 0〜360 の数値で入力してください。');
+      return;
+    }
+    if (action === 'rotate' && angle % 360 === 0) {
+      alert('0° / 360° の回転では向きが変わりません。別の角度を指定してください。');
+      return;
+    }
+    newBtn.angle = angle % 360;
+    if (action === 'rotate') newBtn.direction = btnDefDirection?.value === 'ccw' ? 'ccw' : 'cw';
+  }
+
+  PLAY_BUTTONS.push(newBtn);
+  renderPlayButtons();
+  if (modalAddButton) modalAddButton.style.display = 'none';
+  scheduleSaveRoom();
+}
+
+// ---- サイドバーのボタン一覧 ----
 function renderPlayButtons() {
   if (!playButtonsContainer) return;
   playButtonsContainer.innerHTML = '';
+
+  PLAY_BUTTONS = PLAY_BUTTONS.map(normalizeButtonDef);
 
   if (PLAY_BUTTONS.length === 0) {
     playButtonsContainer.innerHTML = '<div class="empty-notice">ボタンが未設定です</div>';
@@ -958,16 +1273,25 @@ function renderPlayButtons() {
   }
 
   PLAY_BUTTONS.forEach(btnDef => {
+    const issue = getButtonIssue(btnDef);
     const item = document.createElement('div');
-    item.className = 'play-btn-item';
+    item.className = `play-btn-item${issue ? ' is-broken' : ''}`;
+    item.title = issue ? `⚠ ${issue}` : describeButton(btnDef);
     item.innerHTML = `
-      <span>▶ ${btnDef.label}</span>
+      <span class="play-btn-label">
+        <span>${issue ? '⚠' : '▶'} ${escapeHtml(btnDef.label)}</span>
+        <span class="play-btn-sub">${escapeHtml(issue || describeButton(btnDef))}</span>
+      </span>
       <button class="play-btn-delete" title="このボタンを削除">✕</button>
     `;
 
     // Click to execute action
     item.addEventListener('click', (e) => {
       if (e.target.classList.contains('play-btn-delete')) return;
+      if (issue) {
+        showToast(`このボタンは実行できません：${issue}`);
+        return;
+      }
       executePlayAction(btnDef);
     });
 
@@ -983,77 +1307,141 @@ function renderPlayButtons() {
   });
 }
 
-function executePlayAction(btnDef) {
-  let targets = [];
+// ---- 実行 ----
+function getCardsInArea(area) {
+  return ENTITIES.filter(ent => ent.type === 'card' && isEntityOverlappingArea(ent, area));
+}
 
-  if (btnDef.target === 'selected') {
-    if (SELECTED_ENTITY_ID) {
-      const ent = ENTITIES.find(e => e.id === SELECTED_ENTITY_ID);
-      if (ent) targets.push(ent);
-    }
-  } else if (btnDef.target === 'all_hand') {
-    // Collect all cards currently overlapping any hand area
-    const handAreas = AREAS.filter(a => a.type === 'hand');
-    targets = ENTITIES.filter(ent => {
-      if (ent.type !== 'card') return false;
-      return handAreas.some(area => isEntityOverlappingArea(ent, area));
+function applyEntityPosition(ent) {
+  const dom = document.getElementById(ent.id);
+  if (!dom) return;
+  dom.style.left = `${ent.x}px`;
+  dom.style.top = `${ent.y}px`;
+  dom.style.zIndex = ent.z;
+}
+
+function applyEntityAngle(ent) {
+  const dom = document.getElementById(ent.id);
+  if (dom) dom.style.transform = `rotate(${ent.angle || 0}deg)`;
+}
+
+function placeEntitiesInArea(movingEnts, area, placement) {
+  const mode = placement === 'auto' || !placement
+    ? (area.type === 'hand' ? 'spread' : 'stack')
+    : placement;
+
+  if (mode === 'stack') {
+    movingEnts.forEach(ent => {
+      const w = ent.w || 120;
+      const h = ent.h || 160;
+      ent.x = Math.round(area.x + area.w / 2 - w / 2);
+      ent.y = Math.round(area.y + area.h / 2 - h / 2);
+      HIGHEST_Z += 1;
+      ent.z = HIGHEST_Z;
+      applyEntityPosition(ent);
     });
-  }
-
-  if (targets.length === 0) {
-    alert(`対象となるカードがありません（対象設定: ${btnDef.target === 'selected' ? '選択カード' : '手札内のカード'}）`);
     return;
   }
 
-  targets.forEach(ent => {
-    const dom = document.getElementById(ent.id);
-    switch (btnDef.action) {
-      case 'flip_toggle':
-        ent.isFaceDown = !ent.isFaceDown;
-        if (dom) updateEntityInnerDOM(dom, ent);
-        break;
-      case 'flip_down':
-        ent.isFaceDown = true;
-        if (dom) updateEntityInnerDOM(dom, ent);
-        break;
-      case 'flip_up':
-        ent.isFaceDown = false;
-        if (dom) updateEntityInnerDOM(dom, ent);
-        break;
-      case 'rotate_90':
-        ent.angle = ((ent.angle || 0) + 90) % 360;
-        if (dom) dom.style.transform = `rotate(${ent.angle}deg)`;
-        break;
-      case 'rotate_180':
-        ent.angle = ((ent.angle || 0) + 180) % 360;
-        if (dom) dom.style.transform = `rotate(${ent.angle}deg)`;
-        break;
-      case 'move_discard': {
-        const discardArea = AREAS.find(a => a.type === 'discard');
-        if (discardArea) {
-          ent.x = discardArea.x + 20;
-          ent.y = discardArea.y + 20;
-          if (dom) {
-            dom.style.left = `${ent.x}px`;
-            dom.style.top = `${ent.y}px`;
-          }
-        }
-        break;
-      }
-      case 'move_deck': {
-        const deckArea = AREAS.find(a => a.type === 'deck');
-        if (deckArea) {
-          ent.x = deckArea.x + 20;
-          ent.y = deckArea.y + 20;
-          if (dom) {
-            dom.style.left = `${ent.x}px`;
-            dom.style.top = `${ent.y}px`;
-          }
-        }
-        break;
-      }
-    }
+  // spread: 既にエリア内にあるカードも含めて横一列に並べ直す（重なり防止）
+  const movingIds = new Set(movingEnts.map(e => e.id));
+  const existing = getCardsInArea(area)
+    .filter(e => !movingIds.has(e.id))
+    .sort((a, b) => a.x - b.x);
+  const all = [...existing, ...movingEnts];
+  const n = all.length;
+  if (n === 0) return;
+
+  const cardW = Math.max(...all.map(e => e.w || 120));
+  const gap = 10;
+  const padding = 10;
+  const usable = Math.max(area.w - padding * 2, cardW);
+  let step = cardW + gap;
+  if (n > 1 && cardW + step * (n - 1) > usable) {
+    step = (usable - cardW) / (n - 1); // 入りきらない場合は重ねて詰める
+  }
+  const totalW = cardW + step * (n - 1);
+  const startX = area.x + (area.w - totalW) / 2;
+
+  all.forEach((ent, i) => {
+    const h = ent.h || 160;
+    ent.x = Math.round(startX + step * i);
+    ent.y = Math.round(area.y + area.h / 2 - h / 2);
+    HIGHEST_Z += 1;
+    ent.z = HIGHEST_Z;
+    applyEntityPosition(ent);
   });
+}
+
+function executePlayAction(rawDef) {
+  const btnDef = normalizeButtonDef(rawDef);
+  let targets = [];
+
+  if (btnDef.target?.kind === 'selected') {
+    const ent = SELECTED_ENTITY_ID ? ENTITIES.find(e => e.id === SELECTED_ENTITY_ID) : null;
+    if (!ent) {
+      showToast('カードを選択してください');
+      return;
+    }
+    targets = [ent];
+  } else {
+    const srcArea = resolveAreaRef(btnDef.target);
+    if (!srcArea) {
+      showToast(btnDef.target?.kind === 'own'
+        ? `${getOwnerLabel(getActingPlayer())} の${getAreaTypeName(btnDef.target.areaType)}がありません`
+        : '対象のエリアが見つかりません');
+      return;
+    }
+    targets = getCardsInArea(srcArea);
+    if (targets.length === 0) {
+      showToast(`${getAreaDisplayName(srcArea)}にカードがありません`);
+      return;
+    }
+  }
+
+  switch (btnDef.action) {
+    case 'move': {
+      const destArea = resolveAreaRef(btnDef.dest);
+      if (!destArea) {
+        showToast(btnDef.dest?.kind === 'own'
+          ? `${getOwnerLabel(getActingPlayer())} の${getAreaTypeName(btnDef.dest.areaType)}がありません`
+          : '移動先のエリアが見つかりません');
+        return;
+      }
+      placeEntitiesInArea(targets, destArea, btnDef.placement);
+      break;
+    }
+    case 'flip_toggle':
+    case 'flip_down':
+    case 'flip_up':
+      targets.forEach(ent => {
+        if (ent.type !== 'card') return;
+        if (btnDef.action === 'flip_toggle') ent.isFaceDown = !ent.isFaceDown;
+        else ent.isFaceDown = (btnDef.action === 'flip_down');
+        const dom = document.getElementById(ent.id);
+        if (dom) updateEntityInnerDOM(dom, ent);
+      });
+      break;
+    case 'rotate': {
+      const delta = (Number(btnDef.angle) || 0) * (btnDef.direction === 'ccw' ? -1 : 1);
+      targets.forEach(ent => {
+        ent.angle = (((ent.angle || 0) + delta) % 360 + 360) % 360;
+        applyEntityAngle(ent);
+      });
+      break;
+    }
+    case 'set_angle': {
+      const angle = ((Number(btnDef.angle) || 0) % 360 + 360) % 360;
+      targets.forEach(ent => {
+        ent.angle = angle;
+        applyEntityAngle(ent);
+      });
+      break;
+    }
+    default:
+      showToast('未対応の動作です');
+      return;
+  }
 
   scheduleSaveRoom();
 }
