@@ -145,6 +145,10 @@ async function init() {
       
       whoamiSpan.textContent = user.displayName || user.email || 'Anonymous';
       
+      // 開発者モード利用可能アカウント（先行開発用。完成後は全非匿名ユーザーに開放予定）
+      const DEV_ACCOUNTS = ['joe9bk@gmail.com'];
+      const isDevUser = !user.isAnonymous && DEV_ACCOUNTS.includes(user.email);
+
       // 匿名ログイン時は「ログイン」ボタンのみ表示し、ログアウト／マイページは隠す
       if (user.isAnonymous) {
         authFormArea.style.display = 'flex';
@@ -157,7 +161,11 @@ async function init() {
       } else {
         authFormArea.style.display = 'none';
         authLoggedinArea.style.display = 'block';
-        if (pickModeDevBtn) pickModeDevBtn.style.display = 'inline-block';
+        if (pickModeDevBtn) pickModeDevBtn.style.display = isDevUser ? 'inline-block' : 'none';
+        if (!isDevUser && CREATE_FIELD_MODE === 'dev') {
+          CREATE_FIELD_MODE = 'card';
+          updateModePickButtons();
+        }
 
         // プレミアムバッジ表示
         fetchPremiumStatus(user.uid).then(pStatus => {
@@ -694,6 +702,14 @@ function openRoomLimitManageModal(currentRooms, maxRooms) {
 
 function showLayoutModal() {
   if (CREATE_FIELD_MODE === 'dev') {
+    const user = auth.currentUser;
+    const DEV_ACCOUNTS = ['joe9bk@gmail.com'];
+    if (!user || user.isAnonymous || !DEV_ACCOUNTS.includes(user.email)) {
+      alert('開発者モードは現在、特定のアカウントのみ先行公開されています。');
+      CREATE_FIELD_MODE = 'card';
+      updateModePickButtons();
+      return;
+    }
     executeRoomCreation('dev');
     return;
   }

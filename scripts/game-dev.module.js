@@ -145,11 +145,14 @@ async function init() {
 
   // Auth Listener
   onAuthStateChanged(auth, async (user) => {
-    if (user) {
+    const DEV_ACCOUNTS = ['joe9bk@gmail.com'];
+    if (user && !user.isAnonymous && DEV_ACCOUNTS.includes(user.email)) {
       CURRENT_UID = user.uid;
       await loadRoomData();
     } else {
       CURRENT_UID = null;
+      alert('開発者モードは現在、特定のアカウントのみ先行公開されています。ロビーへ戻ります。');
+      window.location.href = './lobby.html';
     }
   });
 }
