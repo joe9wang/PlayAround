@@ -407,6 +407,200 @@ body {
   display: none;
 }
 
+/* 置き方セレクター (並べる + 9方向重ねグリッド) */
+.placement-selector-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.placement-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #1e293b;
+  border: 1px solid #475569;
+  color: #cbd5e1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.placement-mode-btn:hover {
+  border-color: #8b5cf6;
+  color: #fff;
+}
+
+.placement-mode-btn.active {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  border-color: #a78bfa;
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.placement-grid-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.placement-9grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  width: 100%;
+  max-width: 240px;
+  margin: 0 auto;
+}
+
+.grid-cell-btn {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  transition: all 0.15s ease;
+}
+
+.grid-cell-btn:hover {
+  background: #334155;
+  color: #fff;
+  border-color: #8b5cf6;
+}
+
+.grid-cell-btn.active {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  border-color: #a78bfa;
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.grid-cell-arrow {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.grid-cell-text {
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* タグ指定条件ビルダー */
+.tag-conditions-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.tag-condition-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+}
+
+.tag-condition-op-select {
+  width: 80px;
+  padding: 6px;
+  font-size: 12px;
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  color: #f8fafc;
+}
+
+.tag-condition-key-select {
+  flex: 1;
+  min-width: 110px;
+  padding: 6px;
+  font-size: 12px;
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  color: #f8fafc;
+}
+
+.tag-condition-comp-select {
+  width: 100px;
+  padding: 6px;
+  font-size: 12px;
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  color: #f8fafc;
+}
+
+.tag-condition-val-input {
+  flex: 1;
+  min-width: 80px;
+  padding: 6px;
+  font-size: 12px;
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  color: #f8fafc;
+}
+
+.tag-condition-del-btn {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 14px;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.tag-condition-del-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.btn-add-condition {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px dashed #64748b;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: all 0.15s ease;
+}
+
+.btn-add-condition:hover {
+  border-color: #8b5cf6;
+  color: #c084fc;
+}
+
 /* 軽量トースト */
 .dev-toast {
   position: fixed;

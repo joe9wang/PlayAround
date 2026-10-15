@@ -110,17 +110,26 @@ const modalAddButton = document.getElementById('modal-add-button');
 const devAddButtonBtn = document.getElementById('dev-add-button-btn');
 const btnConfirmAddButton = document.getElementById('btn-confirm-add-button');
 const btnDefLabel = document.getElementById('btn-def-label');
-const btnDefTarget = document.getElementById('btn-def-target');
 const btnDefAction = document.getElementById('btn-def-action');
+const btnDefWhat = document.getElementById('btn-def-what');
+const btnDefSrcArea = document.getElementById('btn-def-src-area');
+const btnDefSrcOwner = document.getElementById('btn-def-src-owner');
 const btnDefDest = document.getElementById('btn-def-dest');
-const btnDefPlacement = document.getElementById('btn-def-placement');
+const btnDefWhatGroup = document.getElementById('btn-def-what-group');
+const btnDefSrcAreaGroup = document.getElementById('btn-def-src-area-group');
+const btnDefSrcOwnerGroup = document.getElementById('btn-def-src-owner-group');
+const btnDefTagConditionsGroup = document.getElementById('btn-def-tag-conditions-group');
+const tagConditionsList = document.getElementById('tag-conditions-list');
+const btnAddTagCondition = document.getElementById('btn-add-tag-condition');
+const btnDefDestGroup = document.getElementById('btn-def-dest-group');
+const btnDefPlacementGroup = document.getElementById('btn-def-placement-group');
+const btnDefPlacementVal = document.getElementById('btn-def-placement-val');
+const btnPlacementSpread = document.getElementById('btn-placement-spread');
+const placementGridContainer = document.getElementById('placement-grid-container');
 const btnDefAngle = document.getElementById('btn-def-angle');
 const btnDefAngleLabel = document.getElementById('btn-def-angle-label');
 const btnDefDirection = document.getElementById('btn-def-direction');
 const btnDefHint = document.getElementById('btn-def-hint');
-const btnDefTargetGroup = document.getElementById('btn-def-target-group');
-const btnDefDestGroup = document.getElementById('btn-def-dest-group');
-const btnDefPlacementGroup = document.getElementById('btn-def-placement-group');
 const btnDefAngleGroup = document.getElementById('btn-def-angle-group');
 const btnDefDirectionGroup = document.getElementById('btn-def-direction-group');
 const devActingPlayerSelect = document.getElementById('dev-acting-player');
@@ -872,9 +881,27 @@ function setupModalEvents() {
 
   // Play Button: 動的フォーム
   btnDefAction?.addEventListener('change', updateButtonFormVisibility);
-  btnDefTarget?.addEventListener('change', () => { rebuildDestOptions(); updateButtonFormHint(); });
+  btnDefWhat?.addEventListener('change', updateButtonFormVisibility);
+  btnDefSrcArea?.addEventListener('change', updateButtonFormHint);
   btnDefDest?.addEventListener('change', updateButtonFormHint);
   btnDefAngle?.addEventListener('input', syncAnglePresetActive);
+
+  // 置き方ボタン (並べる vs 9方向グリッド)
+  btnPlacementSpread?.addEventListener('click', () => {
+    selectPlacementOption('spread');
+  });
+
+  placementGridContainer?.querySelectorAll('.grid-cell-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectPlacementOption(btn.getAttribute('data-placement'));
+    });
+  });
+
+  // タグ条件追加ボタン
+  btnAddTagCondition?.addEventListener('click', () => {
+    addTagConditionRow();
+  });
+
   document.querySelectorAll('.angle-preset').forEach(chip => {
     chip.addEventListener('click', () => {
       if (btnDefAngle) btnDefAngle.value = chip.getAttribute('data-angle');
@@ -969,12 +996,13 @@ function renderSchemaList() {
 // ============================================================================
 // Play Buttons Management & Execution (プレイ用ボタン)
 // ============================================================================
-// ---- 参照（対象・移動先）のエンコード ----
-// 'selected'            : 選択中のカード
+// ---- 参照（エリア）のエンコード ----
+// 'all'                 : 全領域
 // 'own:<areaType>'      : 自分（操作プレイヤー）の〇〇エリア
 // 'area:<areaId>'       : 特定のエリア
 function refToValue(ref) {
   if (!ref) return '';
+  if (ref.kind === 'all') return 'all';
   if (ref.kind === 'selected') return 'selected';
   if (ref.kind === 'own') return `own:${ref.areaType}`;
   if (ref.kind === 'area') return `area:${ref.areaId}`;
@@ -983,6 +1011,7 @@ function refToValue(ref) {
 
 function valueToRef(value) {
   if (!value) return null;
+  if (value === 'all') return { kind: 'all' };
   if (value === 'selected') return { kind: 'selected' };
   if (value.startsWith('own:')) return { kind: 'own', areaType: value.slice(4) };
   if (value.startsWith('area:')) return { kind: 'area', areaId: value.slice(5) };
@@ -1008,7 +1037,8 @@ function getOwnableAreaTypes() {
 
 function refLabel(ref) {
   if (!ref) return '（未設定）';
-  if (ref.kind === 'selected') return '選択中のカード';
+  if (ref.kind === 'all') return '全領域';
+  if (ref.kind === 'selected') return '選択中のアイテム';
   if (ref.kind === 'own') return `自分の${getAreaTypeName(ref.areaType)}`;
   if (ref.kind === 'area') {
     const area = AREAS.find(a => a.id === ref.areaId);
@@ -1044,7 +1074,7 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add('show');
   clearTimeout(showToast._timer);
-  showToast._timer = setTimeout(() => toast.classList.remove('show'), 2400);
+  showToast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
 }
 
 const ACTION_LABELS = {
@@ -1056,65 +1086,135 @@ const ACTION_LABELS = {
   set_angle: '向きをそろえる'
 };
 
-// 旧形式（target: 'all_hand' / action: 'rotate_90' など）のボタンを新形式へ変換
+const ITEM_TYPE_LABELS = {
+  selected: '選択中のアイテム',
+  all_cards: '全てのカード',
+  all_pieces: '全てのコマ',
+  all_boards: '全てのボード',
+  tag_filter: 'タグ指定のカード'
+};
+
+const PLACEMENT_LABELS = {
+  spread: '横に並べる',
+  stack_center: '中央に重ねる',
+  stack_top_left: '左上に重ねる',
+  stack_top_center: '上に重ねる',
+  stack_top_right: '右上に重ねる',
+  stack_center_left: '左に重ねる',
+  stack_center_right: '右に重ねる',
+  stack_bottom_left: '左下に重ねる',
+  stack_bottom_center: '下に重ねる',
+  stack_bottom_right: '右下に重ねる',
+  auto: '自動'
+};
+
+// 全カードタイプからユニークなタグ一覧を取得
+function getAllDefinedTags() {
+  const map = new Map();
+  Object.values(CARD_SCHEMAS).forEach(schema => {
+    (schema.tags || []).forEach(t => {
+      if (!map.has(t.name)) {
+        map.set(t.name, { id: t.id, name: t.name, type: t.type });
+      }
+    });
+  });
+  return Array.from(map.values());
+}
+
+// 旧形式（target: {kind:'selected'}等）のボタンを新形式へ変換
 function normalizeButtonDef(def) {
   if (!def || typeof def !== 'object') return def;
-  if (def.target && typeof def.target === 'object') return def; // 既に新形式
 
-  const out = { id: def.id, label: def.label };
-  out.target = def.target === 'selected'
-    ? { kind: 'selected' }
-    : { kind: 'own', areaType: 'hand' };
+  // すでに新形式の場合
+  if (def.itemType !== undefined) {
+    return def;
+  }
 
-  const findAreaRef = (type) => {
-    const area = AREAS.find(a => a.type === type);
-    return area ? { kind: 'area', areaId: area.id } : { kind: 'own', areaType: type };
+  // 旧形式からの移行
+  const out = {
+    id: def.id,
+    label: def.label,
+    action: def.action || 'move',
+    itemType: (def.target && def.target.kind === 'selected') ? 'selected' : 'all_cards',
+    sourceArea: (def.target && def.target.kind !== 'selected') ? refToValue(def.target) : 'all',
+    sourceOwner: (def.target && def.target.kind === 'own') ? 'mine' : 'any',
+    dest: def.dest || null,
+    placement: def.placement || 'spread',
+    angle: def.angle !== undefined ? def.angle : 90,
+    direction: def.direction || 'cw',
+    tagConditions: []
   };
 
-  switch (def.action) {
-    case 'rotate_90': Object.assign(out, { action: 'rotate', angle: 90, direction: 'cw' }); break;
-    case 'rotate_180': Object.assign(out, { action: 'rotate', angle: 180, direction: 'cw' }); break;
-    case 'move_discard': Object.assign(out, { action: 'move', dest: findAreaRef('discard'), placement: 'auto' }); break;
-    case 'move_deck': Object.assign(out, { action: 'move', dest: findAreaRef('deck'), placement: 'auto' }); break;
-    default: out.action = def.action || 'flip_toggle';
-  }
   return out;
 }
 
 // ボタンが実行不能になっていないか（参照エリアの削除など）
 function getButtonIssue(def) {
-  const check = (ref, role) => {
-    if (!ref) return `${role}が未設定です`;
-    if (ref.kind === 'area' && !AREAS.some(a => a.id === ref.areaId)) {
-      return `${role}のエリアが削除されています`;
+  const norm = normalizeButtonDef(def);
+  if (norm.itemType !== 'selected' && norm.sourceArea && norm.sourceArea !== 'all') {
+    const srcRef = valueToRef(norm.sourceArea);
+    if (srcRef && srcRef.kind === 'area' && !AREAS.some(a => a.id === srcRef.areaId)) {
+      return '対象エリアが削除されています';
     }
-    if (ref.kind === 'own' && !AREAS.some(a => a.type === ref.areaType && a.owner?.startsWith('player'))) {
-      return `プレイヤー用の${getAreaTypeName(ref.areaType)}がありません`;
+  }
+
+  if (norm.action === 'move') {
+    if (!norm.dest) return '移動先が未設定です';
+    if (norm.dest.kind === 'area' && !AREAS.some(a => a.id === norm.dest.areaId)) {
+      return '移動先エリアが削除されています';
     }
-    return null;
-  };
-  return check(def.target, '対象') || (def.action === 'move' ? check(def.dest, '移動先') : null);
+  }
+  return null;
 }
 
 function describeButton(def) {
-  let text = `${ACTION_LABELS[def.action] || def.action}：${refLabel(def.target)}`;
-  if (def.action === 'move') text += ` → ${refLabel(def.dest)}`;
-  if (def.action === 'rotate') text += ` ${def.direction === 'ccw' ? '左' : '右'}${def.angle}°`;
-  if (def.action === 'set_angle') text += ` ${def.angle}°`;
-  return text;
+  const norm = normalizeButtonDef(def);
+  const actName = ACTION_LABELS[norm.action] || norm.action;
+
+  let whatText = ITEM_TYPE_LABELS[norm.itemType] || norm.itemType;
+  if (norm.itemType === 'tag_filter' && norm.tagConditions && norm.tagConditions.length > 0) {
+    const condStr = norm.tagConditions.map(c => `${c.tagName}${c.op}${c.value}`).join(' & ');
+    whatText = `カード(${condStr})`;
+  }
+
+  if (norm.itemType === 'selected') {
+    if (norm.action === 'move') {
+      return `${actName}：選択アイテム → ${refLabel(norm.dest)} [${PLACEMENT_LABELS[norm.placement] || norm.placement}]`;
+    }
+    if (norm.action === 'rotate') return `${actName}：選択アイテム ${norm.direction === 'ccw' ? '左' : '右'}${norm.angle}°`;
+    if (norm.action === 'set_angle') return `${actName}：選択アイテム ${norm.angle}°`;
+    return `${actName}：選択アイテム`;
+  }
+
+  const whereText = norm.sourceArea === 'all' ? '全領域' : refLabel(valueToRef(norm.sourceArea));
+  const ownerText = norm.sourceOwner === 'any' ? '' : norm.sourceOwner === 'mine' ? '自分の' : `${norm.sourceOwner}の`;
+
+  let desc = `${actName}：${whereText}の${ownerText}${whatText}`;
+  if (norm.action === 'move') {
+    desc += ` → ${refLabel(norm.dest)} [${PLACEMENT_LABELS[norm.placement] || norm.placement}]`;
+  } else if (norm.action === 'rotate') {
+    desc += ` (${norm.direction === 'ccw' ? '左' : '右'}${norm.angle}°)`;
+  } else if (norm.action === 'set_angle') {
+    desc += ` (${norm.angle}°)`;
+  }
+  return desc;
 }
 
 // ---- モーダル（動的フォーム） ----
 function openAddButtonModal() {
   if (btnDefLabel) btnDefLabel.value = '';
   if (btnDefAction) btnDefAction.value = 'move';
-  if (btnDefPlacement) btnDefPlacement.value = 'auto';
+  if (btnDefWhat) btnDefWhat.value = 'all_cards';
+  if (btnDefSrcOwner) btnDefSrcOwner.value = 'any';
   if (btnDefAngle) btnDefAngle.value = '90';
   if (btnDefDirection) btnDefDirection.value = 'cw';
-  rebuildTargetOptions();
-  rebuildDestOptions();
+
+  selectPlacementOption('spread');
+  rebuildAreaOptions();
+  clearTagConditions();
   updateButtonFormVisibility();
   syncAnglePresetActive();
+
   if (modalAddButton) modalAddButton.style.display = 'flex';
   btnDefLabel?.focus();
 }
@@ -1153,33 +1253,137 @@ function buildAreaRefOptions(suffix, excludeValue) {
     .map(area => ({ value: `area:${area.id}`, label: `${getAreaDisplayName(area)}${suffix}` }))
     .filter(item => item.value !== excludeValue);
   return [
-    { group: '自分のエリア（押した人に合わせて変わる）', items: ownItems },
-    { group: 'フィールド上のエリア', items: areaItems }
+    { group: '自分のエリア（操作者に合わせて変化）', items: ownItems },
+    { group: 'フィールド上の実在エリア', items: areaItems }
   ];
 }
 
-function rebuildTargetOptions() {
-  const prev = btnDefTarget?.value;
-  fillSelect(btnDefTarget, [
-    { value: 'selected', label: '選択中のカード' },
-    ...buildAreaRefOptions('の全カード', null)
-  ], prev);
+function rebuildAreaOptions() {
+  const prevSrc = btnDefSrcArea?.value;
+  fillSelect(btnDefSrcArea, [
+    { value: 'all', label: '全領域にある' },
+    ...buildAreaRefOptions('にある', null)
+  ], prevSrc || 'all');
+
+  const prevDest = btnDefDest?.value;
+  fillSelect(btnDefDest, buildAreaRefOptions('へ', null), prevDest);
 }
 
-function rebuildDestOptions() {
-  const prev = btnDefDest?.value;
-  const targetValue = btnDefTarget?.value;
-  // 移動元と同じエリアは移動先に出さない
-  fillSelect(btnDefDest, buildAreaRefOptions('', targetValue), prev);
+function selectPlacementOption(placementKey) {
+  const targetKey = placementKey || 'spread';
+  if (btnDefPlacementVal) btnDefPlacementVal.value = targetKey;
+
+  if (targetKey === 'spread') {
+    btnPlacementSpread?.classList.add('active');
+    placementGridContainer?.querySelectorAll('.grid-cell-btn').forEach(b => b.classList.remove('active'));
+  } else {
+    btnPlacementSpread?.classList.remove('active');
+    placementGridContainer?.querySelectorAll('.grid-cell-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-placement') === targetKey);
+    });
+  }
+}
+
+// ---- タグ条件ビルダー ----
+function clearTagConditions() {
+  if (!tagConditionsList) return;
+  tagConditionsList.innerHTML = '';
+  addTagConditionRow(); // 初期1行
+}
+
+function addTagConditionRow(data = null) {
+  if (!tagConditionsList) return;
+
+  const definedTags = getAllDefinedTags();
+  const rowCount = tagConditionsList.children.length;
+  const row = document.createElement('div');
+  row.className = 'tag-condition-row';
+
+  // 2行目以降は「かつ (AND) / または (OR)」セレクト
+  let logicHtml = '';
+  if (rowCount > 0) {
+    logicHtml = `
+      <select class="tag-condition-op-select">
+        <option value="and"${data?.logical === 'and' ? ' selected' : ''}>かつ</option>
+        <option value="or"${data?.logical === 'or' ? ' selected' : ''}>または</option>
+      </select>
+    `;
+  } else {
+    logicHtml = `<span style="font-size:11px; font-weight:700; color:#a78bfa; width:40px;">条件:</span>`;
+  }
+
+  // タグ名ドロップダウン
+  let tagOptionsHtml = '';
+  if (definedTags.length === 0) {
+    tagOptionsHtml = '<option value="">(タグが未定義です)</option>';
+  } else {
+    tagOptionsHtml = definedTags.map(t =>
+      `<option value="${escapeHtml(t.name)}"${data?.tagName === t.name ? ' selected' : ''}>🏷️ ${escapeHtml(t.name)}</option>`
+    ).join('');
+  }
+
+  row.innerHTML = `
+    ${logicHtml}
+    <select class="tag-condition-key-select">${tagOptionsHtml}</select>
+    <select class="tag-condition-comp-select">
+      <option value=="${data?.op === '==' ? ' selected' : ''}">と同じ (==)</option>
+      <option value=">"${data?.op === '>' ? ' selected' : ''}>より大きい (&gt;)</option>
+      <option value=">="${data?.op === '>=' ? ' selected' : ''}>以上 (&gt;=)</option>
+      <option value="<"${data?.op === '<' ? ' selected' : ''}>より小さい (&lt;)</option>
+      <option value="<="${data?.op === '<=' ? ' selected' : ''}>以下 (&lt;=)</option>
+    </select>
+    <input type="text" class="tag-condition-val-input" placeholder="値" value="${escapeHtml(data?.value || '')}" />
+    ${rowCount > 0 ? '<button type="button" class="tag-condition-del-btn" title="条件を削除">✕</button>' : ''}
+  `;
+
+  if (rowCount > 0) {
+    row.querySelector('.tag-condition-del-btn')?.addEventListener('click', () => {
+      row.remove();
+    });
+  }
+
+  tagConditionsList.appendChild(row);
+}
+
+function getTagConditionsFromUI() {
+  if (!tagConditionsList) return [];
+  const rows = Array.from(tagConditionsList.querySelectorAll('.tag-condition-row'));
+  const conditions = [];
+
+  rows.forEach((row, index) => {
+    const logical = index === 0 ? 'and' : (row.querySelector('.tag-condition-op-select')?.value || 'and');
+    const tagName = row.querySelector('.tag-condition-key-select')?.value || '';
+    const op = row.querySelector('.tag-condition-comp-select')?.value || '==';
+    const valInput = row.querySelector('.tag-condition-val-input')?.value ?? '';
+
+    if (tagName) {
+      conditions.push({ logical, tagName, op, value: valInput.trim() });
+    }
+  });
+
+  return conditions;
 }
 
 function updateButtonFormVisibility() {
   const action = btnDefAction?.value || 'move';
+  const what = btnDefWhat?.value || 'all_cards';
   const show = (el, visible) => { if (el) el.style.display = visible ? '' : 'none'; };
 
-  show(btnDefTargetGroup, true);
+  const isSelected = (what === 'selected');
+  const isTagFilter = (what === 'tag_filter');
+
+  // 対象（どこのエリア） & 対象（誰の）: 選択中アイテム時はスキップ
+  show(btnDefSrcAreaGroup, !isSelected);
+  show(btnDefSrcOwnerGroup, !isSelected);
+
+  // タグ指定条件群: 項目3で「タグ指定」を選んだ時のみ
+  show(btnDefTagConditionsGroup, isTagFilter && !isSelected);
+
+  // 移動先 & 置き方: 移動する時のみ
   show(btnDefDestGroup, action === 'move');
   show(btnDefPlacementGroup, action === 'move');
+
+  // 回転 & 角度
   show(btnDefAngleGroup, action === 'rotate' || action === 'set_angle');
   show(btnDefDirectionGroup, action === 'rotate');
 
@@ -1188,17 +1392,22 @@ function updateButtonFormVisibility() {
       ? 'そろえる向き（0°＝縦向き／右回りの角度）'
       : '回転量（どれくらい）';
   }
+
   updateButtonFormHint();
 }
 
 function updateButtonFormHint() {
   if (!btnDefHint) return;
   const action = btnDefAction?.value;
+  const what = btnDefWhat?.value;
   let hint = '';
+
   if (AREAS.length === 0) {
-    hint = 'フィールドにエリアがありません。「エリア追加」で作成すると、ここに選択肢として表示されます。';
+    hint = '💡 フィールドにエリアがありません。「エリア追加」で作成すると、ここに選択肢として表示されます。';
   } else if (action === 'move' && (!btnDefDest || btnDefDest.options.length === 0)) {
-    hint = '移動先にできるエリアがありません。別のエリアを追加してください。';
+    hint = '⚠️ 移動先にできるエリアがありません。別のエリアを追加してください。';
+  } else if (what === 'tag_filter' && getAllDefinedTags().length === 0) {
+    hint = '💡 カードタイプにタグが定義されていません。「カード全般設定」からタグ（例: Cost, Mark）を追加してください。';
   }
   btnDefHint.textContent = hint;
 }
@@ -1218,26 +1427,40 @@ function confirmAddPlayButton() {
   }
 
   const action = btnDefAction?.value || 'move';
-  const target = valueToRef(btnDefTarget?.value);
-  if (!target) {
-    alert('対象（なにを）を選択してください。');
-    return;
-  }
+  const itemType = btnDefWhat?.value || 'all_cards';
+  const sourceArea = btnDefSrcArea?.value || 'all';
+  const sourceOwner = btnDefSrcOwner?.value || 'any';
 
-  const newBtn = { id: `btn_${Date.now()}`, label, action, target };
+  const newBtn = {
+    id: `btn_${Date.now()}`,
+    label,
+    action,
+    itemType,
+    sourceArea,
+    sourceOwner
+  };
+
+  if (itemType === 'tag_filter') {
+    const conditions = getTagConditionsFromUI();
+    if (conditions.length === 0 || !conditions[0].tagName) {
+      alert('タグ指定の条件を設定してください（タグ名が未選択です）。');
+      return;
+    }
+    newBtn.tagConditions = conditions;
+  }
 
   if (action === 'move') {
     const dest = valueToRef(btnDefDest?.value);
     if (!dest) {
-      alert('移動先（どこに）を選択してください。');
+      alert('移動先（どこへ）を選択してください。');
       return;
     }
-    if (refToValue(dest) === refToValue(target)) {
-      alert('移動元と移動先が同じエリアです。');
+    if (itemType !== 'selected' && sourceArea === refToValue(dest)) {
+      alert('移動元エリアと移動先エリアが同じです。別の移動先を選択してください。');
       return;
     }
     newBtn.dest = dest;
-    newBtn.placement = btnDefPlacement?.value || 'auto';
+    newBtn.placement = btnDefPlacementVal?.value || 'spread';
   }
 
   if (action === 'rotate' || action === 'set_angle') {
@@ -1276,10 +1499,10 @@ function renderPlayButtons() {
     const issue = getButtonIssue(btnDef);
     const item = document.createElement('div');
     item.className = `play-btn-item${issue ? ' is-broken' : ''}`;
-    item.title = issue ? `⚠ ${issue}` : describeButton(btnDef);
+    item.title = issue ? `⚠️ ${issue}` : describeButton(btnDef);
     item.innerHTML = `
       <span class="play-btn-label">
-        <span>${issue ? '⚠' : '▶'} ${escapeHtml(btnDef.label)}</span>
+        <span>${issue ? '⚠️' : '▶'} ${escapeHtml(btnDef.label)}</span>
         <span class="play-btn-sub">${escapeHtml(issue || describeButton(btnDef))}</span>
       </span>
       <button class="play-btn-delete" title="このボタンを削除">✕</button>
@@ -1307,11 +1530,103 @@ function renderPlayButtons() {
   });
 }
 
-// ---- 実行 ----
-function getCardsInArea(area) {
-  return ENTITIES.filter(ent => ent.type === 'card' && isEntityOverlappingArea(ent, area));
+// ---- 対象抽出ロジック ----
+function getTargetEntities(btnDef) {
+  if (btnDef.itemType === 'selected') {
+    if (SELECTED_ENTITY_ID) {
+      const ent = ENTITIES.find(e => e.id === SELECTED_ENTITY_ID);
+      return ent ? [ent] : [];
+    }
+    return [];
+  }
+
+  const actingPlayer = getActingPlayer();
+
+  return ENTITIES.filter(ent => {
+    // 1. アイテム種類（なにを）
+    if (btnDef.itemType === 'all_cards' && ent.type !== 'card') return false;
+    if (btnDef.itemType === 'all_pieces' && ent.type !== 'piece') return false;
+    if (btnDef.itemType === 'all_boards' && ent.type !== 'board') return false;
+    if (btnDef.itemType === 'tag_filter' && ent.type !== 'card') return false;
+
+    // 2. エリア（どこの）
+    if (btnDef.sourceArea && btnDef.sourceArea !== 'all') {
+      const srcRef = valueToRef(btnDef.sourceArea);
+      const srcArea = resolveAreaRef(srcRef);
+      if (!srcArea || !isEntityOverlappingArea(ent, srcArea)) return false;
+    }
+
+    // 3. 所有者（誰の）
+    if (btnDef.sourceOwner && btnDef.sourceOwner !== 'any') {
+      const targetOwner = (btnDef.sourceOwner === 'mine') ? actingPlayer : btnDef.sourceOwner;
+      const curArea = AREAS.find(a => isEntityOverlappingArea(ent, a));
+      const entOwner = ent.owner || (curArea ? curArea.owner : 'shared');
+      if (entOwner !== targetOwner) return false;
+    }
+
+    // 4. タグ条件（タグ指定の場合）
+    if (btnDef.itemType === 'tag_filter' && Array.isArray(btnDef.tagConditions) && btnDef.tagConditions.length > 0) {
+      if (!matchesTagConditions(ent, btnDef.tagConditions)) return false;
+    }
+
+    return true;
+  });
 }
 
+function matchesTagConditions(ent, conditions) {
+  if (!conditions || conditions.length === 0) return true;
+  if (!ent.cardTypeId || !CARD_SCHEMAS[ent.cardTypeId]) return false;
+
+  const schema = CARD_SCHEMAS[ent.cardTypeId];
+  const tagValues = ent.tagValues || {};
+
+  let result = null;
+
+  for (const cond of conditions) {
+    const tagDef = schema.tags.find(t => t.name === cond.tagName || t.id === cond.tagName);
+    const rawVal = tagDef ? (tagValues[tagDef.id] ?? '') : '';
+    const condVal = cond.value ?? '';
+
+    let match = false;
+    const numRaw = parseFloat(rawVal);
+    const numCond = parseFloat(condVal);
+    const isBothNum = !isNaN(numRaw) && !isNaN(numCond);
+
+    switch (cond.op) {
+      case '==':
+        match = isBothNum ? numRaw === numCond : String(rawVal).toLowerCase() === String(condVal).toLowerCase();
+        break;
+      case '>':
+        match = isBothNum ? numRaw > numCond : String(rawVal) > String(condVal);
+        break;
+      case '>=':
+        match = isBothNum ? numRaw >= numCond : String(rawVal) >= String(condVal);
+        break;
+      case '<':
+        match = isBothNum ? numRaw < numCond : String(rawVal) < String(condVal);
+        break;
+      case '<=':
+        match = isBothNum ? numRaw <= numCond : String(rawVal) <= String(condVal);
+        break;
+      default:
+        match = false;
+    }
+
+    if (result === null) {
+      result = match;
+    } else {
+      if (cond.logical === 'or') {
+        result = result || match;
+      } else {
+        result = result && match;
+      }
+    }
+  }
+
+  return !!result;
+}
+
+// ---- 実行と配置計算 ----
 function applyEntityPosition(ent) {
   const dom = document.getElementById(ent.id);
   if (!dom) return;
@@ -1326,15 +1641,31 @@ function applyEntityAngle(ent) {
 }
 
 function placeEntitiesInArea(movingEnts, area, placement) {
-  const mode = placement === 'auto' || !placement
-    ? (area.type === 'hand' ? 'spread' : 'stack')
-    : placement;
+  const mode = placement || 'spread';
 
-  if (mode === 'stack') {
-    movingEnts.forEach(ent => {
-      const w = ent.w || 120;
+  // 1. 横に並べる
+  if (mode === 'spread') {
+    const movingIds = new Set(movingEnts.map(e => e.id));
+    const existing = ENTITIES.filter(ent => isEntityOverlappingArea(ent, area) && !movingIds.has(ent.id))
+      .sort((a, b) => a.x - b.x);
+    const all = [...existing, ...movingEnts];
+    const n = all.length;
+    if (n === 0) return;
+
+    const cardW = Math.max(...all.map(e => e.w || 120));
+    const gap = 10;
+    const padding = 15;
+    const usable = Math.max(area.w - padding * 2, cardW);
+    let step = cardW + gap;
+    if (n > 1 && cardW + step * (n - 1) > usable) {
+      step = (usable - cardW) / (n - 1);
+    }
+    const totalW = cardW + step * (n - 1);
+    const startX = area.x + (area.w - totalW) / 2;
+
+    all.forEach((ent, i) => {
       const h = ent.h || 160;
-      ent.x = Math.round(area.x + area.w / 2 - w / 2);
+      ent.x = Math.round(startX + step * i);
       ent.y = Math.round(area.y + area.h / 2 - h / 2);
       HIGHEST_Z += 1;
       ent.z = HIGHEST_Z;
@@ -1343,30 +1674,31 @@ function placeEntitiesInArea(movingEnts, area, placement) {
     return;
   }
 
-  // spread: 既にエリア内にあるカードも含めて横一列に並べ直す（重なり防止）
-  const movingIds = new Set(movingEnts.map(e => e.id));
-  const existing = getCardsInArea(area)
-    .filter(e => !movingIds.has(e.id))
-    .sort((a, b) => a.x - b.x);
-  const all = [...existing, ...movingEnts];
-  const n = all.length;
-  if (n === 0) return;
-
-  const cardW = Math.max(...all.map(e => e.w || 120));
-  const gap = 10;
-  const padding = 10;
-  const usable = Math.max(area.w - padding * 2, cardW);
-  let step = cardW + gap;
-  if (n > 1 && cardW + step * (n - 1) > usable) {
-    step = (usable - cardW) / (n - 1); // 入りきらない場合は重ねて詰める
-  }
-  const totalW = cardW + step * (n - 1);
-  const startX = area.x + (area.w - totalW) / 2;
-
-  all.forEach((ent, i) => {
+  // 2. 9方向グリッド重ね
+  const pad = 15;
+  movingEnts.forEach(ent => {
+    const w = ent.w || 120;
     const h = ent.h || 160;
-    ent.x = Math.round(startX + step * i);
-    ent.y = Math.round(area.y + area.h / 2 - h / 2);
+
+    let targetX = area.x + (area.w - w) / 2;
+    let targetY = area.y + (area.h - h) / 2;
+
+    // X軸
+    if (mode.includes('left')) {
+      targetX = area.x + pad;
+    } else if (mode.includes('right')) {
+      targetX = area.x + area.w - w - pad;
+    }
+
+    // Y軸
+    if (mode.includes('top')) {
+      targetY = area.y + pad;
+    } else if (mode.includes('bottom')) {
+      targetY = area.y + area.h - h - pad;
+    }
+
+    ent.x = Math.round(targetX);
+    ent.y = Math.round(targetY);
     HIGHEST_Z += 1;
     ent.z = HIGHEST_Z;
     applyEntityPosition(ent);
@@ -1375,28 +1707,16 @@ function placeEntitiesInArea(movingEnts, area, placement) {
 
 function executePlayAction(rawDef) {
   const btnDef = normalizeButtonDef(rawDef);
-  let targets = [];
+  const targets = getTargetEntities(btnDef);
 
-  if (btnDef.target?.kind === 'selected') {
-    const ent = SELECTED_ENTITY_ID ? ENTITIES.find(e => e.id === SELECTED_ENTITY_ID) : null;
-    if (!ent) {
-      showToast('カードを選択してください');
-      return;
-    }
-    targets = [ent];
-  } else {
-    const srcArea = resolveAreaRef(btnDef.target);
-    if (!srcArea) {
-      showToast(btnDef.target?.kind === 'own'
-        ? `${getOwnerLabel(getActingPlayer())} の${getAreaTypeName(btnDef.target.areaType)}がありません`
-        : '対象のエリアが見つかりません');
-      return;
-    }
-    targets = getCardsInArea(srcArea);
-    if (targets.length === 0) {
-      showToast(`${getAreaDisplayName(srcArea)}にカードがありません`);
-      return;
-    }
+  if (btnDef.itemType === 'selected' && (!SELECTED_ENTITY_ID || targets.length === 0)) {
+    showToast('カードまたはアイテムを選択してください');
+    return;
+  }
+
+  if (targets.length === 0) {
+    showToast('対象となるアイテムがありません');
+    return;
   }
 
   switch (btnDef.action) {
@@ -1405,29 +1725,35 @@ function executePlayAction(rawDef) {
       if (!destArea) {
         showToast(btnDef.dest?.kind === 'own'
           ? `${getOwnerLabel(getActingPlayer())} の${getAreaTypeName(btnDef.dest.areaType)}がありません`
-          : '移動先のエリアが見つかりません');
+          : '移動先エリアが見つかりません');
         return;
       }
       placeEntitiesInArea(targets, destArea, btnDef.placement);
+      showToast(`${targets.length}個のアイテムを「${getAreaDisplayName(destArea)}」へ移動しました`);
       break;
     }
     case 'flip_toggle':
     case 'flip_down':
-    case 'flip_up':
+    case 'flip_up': {
+      let count = 0;
       targets.forEach(ent => {
         if (ent.type !== 'card') return;
+        count++;
         if (btnDef.action === 'flip_toggle') ent.isFaceDown = !ent.isFaceDown;
         else ent.isFaceDown = (btnDef.action === 'flip_down');
         const dom = document.getElementById(ent.id);
         if (dom) updateEntityInnerDOM(dom, ent);
       });
+      showToast(`${count}枚のカードの表裏を変更しました`);
       break;
+    }
     case 'rotate': {
       const delta = (Number(btnDef.angle) || 0) * (btnDef.direction === 'ccw' ? -1 : 1);
       targets.forEach(ent => {
         ent.angle = (((ent.angle || 0) + delta) % 360 + 360) % 360;
         applyEntityAngle(ent);
       });
+      showToast(`${targets.length}個のアイテムを${btnDef.direction === 'ccw' ? '左' : '右'}に${btnDef.angle}°回転しました`);
       break;
     }
     case 'set_angle': {
@@ -1436,6 +1762,7 @@ function executePlayAction(rawDef) {
         ent.angle = angle;
         applyEntityAngle(ent);
       });
+      showToast(`${targets.length}個のアイテムの向きを${angle}°にそろえました`);
       break;
     }
     default:

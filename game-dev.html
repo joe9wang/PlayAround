@@ -258,12 +258,14 @@
         </div>
         <button class="modal-close-btn" data-close="modal-add-button">✕</button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="max-height:75vh; overflow-y:auto; display:flex; flex-direction:column; gap:12px;">
+        <!-- ボタン名 -->
         <div class="form-group">
-          <label class="form-label">ボタン名</label>
-          <input type="text" class="form-input" id="btn-def-label" placeholder="例: 手札を全裏返し / 選択カードをタップ" />
+          <label class="form-label" for="btn-def-label">ボタン名</label>
+          <input type="text" class="form-input" id="btn-def-label" placeholder="例: 手札を全裏返し / 自分のカードを回収 / 選択カードをタップ" />
         </div>
 
+        <!-- 動作（なにする） -->
         <div class="form-group">
           <label class="form-label" for="btn-def-action">動作（なにする）</label>
           <select class="form-select" id="btn-def-action">
@@ -276,25 +278,110 @@
           </select>
         </div>
 
-        <div class="form-group" id="btn-def-target-group">
-          <label class="form-label" for="btn-def-target">対象（なにを）</label>
-          <select class="form-select" id="btn-def-target"></select>
-        </div>
-
-        <div class="form-group" id="btn-def-dest-group">
-          <label class="form-label" for="btn-def-dest">移動先（どこに）</label>
-          <select class="form-select" id="btn-def-dest"></select>
-        </div>
-
-        <div class="form-group" id="btn-def-placement-group">
-          <label class="form-label" for="btn-def-placement">置き方</label>
-          <select class="form-select" id="btn-def-placement">
-            <option value="auto">自動（手札は並べる／それ以外は重ねる）</option>
-            <option value="stack">重ねる（エリア中央）</option>
-            <option value="spread">横に並べる</option>
+        <!-- 項目3: 対象（なにを） -->
+        <div class="form-group" id="btn-def-what-group">
+          <label class="form-label" for="btn-def-what">対象（なにを）</label>
+          <select class="form-select" id="btn-def-what">
+            <option value="selected">選択中のアイテム</option>
+            <option value="all_cards" selected>全てのカード</option>
+            <option value="all_pieces">全てのコマ</option>
+            <option value="all_boards">全てのボード</option>
+            <option value="tag_filter">タグ指定のカード</option>
           </select>
         </div>
 
+        <!-- 項目1: 対象（どこのエリアにあるか） -->
+        <div class="form-group" id="btn-def-src-area-group">
+          <label class="form-label" for="btn-def-src-area">対象（どこのエリア）</label>
+          <select class="form-select" id="btn-def-src-area"></select>
+        </div>
+
+        <!-- 項目2: 対象（誰の所有か） -->
+        <div class="form-group" id="btn-def-src-owner-group">
+          <label class="form-label" for="btn-def-src-owner">対象（誰の）</label>
+          <select class="form-select" id="btn-def-src-owner">
+            <option value="any">指定なし（だれでも）</option>
+            <option value="mine">自分の</option>
+            <option value="shared">共有の</option>
+            <option value="player1">P1の</option>
+            <option value="player2">P2の</option>
+            <option value="player3">P3の</option>
+            <option value="player4">P4の</option>
+            <option value="player5">P5の</option>
+            <option value="player6">P6の</option>
+            <option value="player7">P7の</option>
+            <option value="player8">P8の</option>
+          </select>
+        </div>
+
+        <!-- 項目4: タグ指定条件群（項目3で「タグ指定」を選択した場合のみ表示） -->
+        <div class="form-group" id="btn-def-tag-conditions-group" style="display:none;">
+          <label class="form-label">タグ条件（絞り込み）</label>
+          <div class="tag-conditions-wrap">
+            <div id="tag-conditions-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+            <button type="button" class="btn-add-condition" id="btn-add-tag-condition">
+              <span>➕ 条件を追加</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 項目5: 移動先（どこへ） （移動する時のみ表示） -->
+        <div class="form-group" id="btn-def-dest-group">
+          <label class="form-label" for="btn-def-dest">移動先（どこへ）</label>
+          <select class="form-select" id="btn-def-dest"></select>
+        </div>
+
+        <!-- 項目6: 置き方 （移動する時のみ表示） -->
+        <div class="form-group" id="btn-def-placement-group">
+          <label class="form-label">置き方</label>
+          <input type="hidden" id="btn-def-placement-val" value="spread" />
+          <div class="placement-selector-wrap">
+            <button type="button" class="placement-mode-btn active" id="btn-placement-spread" data-placement="spread">
+              <span>☰ 横に並べる</span>
+            </button>
+            <div class="placement-grid-title">重ねる位置（エリア内 9方向）:</div>
+            <div class="placement-9grid" id="placement-grid-container">
+              <button type="button" class="grid-cell-btn" data-placement="stack_top_left" title="左上に重ねる">
+                <span class="grid-cell-arrow">↖</span>
+                <span class="grid-cell-text">左上</span>
+              </button>
+              <button type="button" class="grid-cell-btn" data-placement="stack_top_center" title="上に重ねる">
+                <span class="grid-cell-arrow">↑</span>
+                <span class="grid-cell-text">上</span>
+              </button>
+              <button type="button" class="grid-cell-btn" data-placement="stack_top_right" title="右上に重ねる">
+                <span class="grid-cell-arrow">↗</span>
+                <span class="grid-cell-text">右上</span>
+              </button>
+              <button type="button" class="grid-cell-btn" data-placement="stack_center_left" title="左に重ねる">
+                <span class="grid-cell-arrow">←</span>
+                <span class="grid-cell-text">左</span>
+              </button>
+              <button type="button" class="grid-cell-btn" data-placement="stack_center" title="中央に重ねる">
+                <span class="grid-cell-arrow">・</span>
+                <span class="grid-cell-text">中央</span>
+              </button>
+              <button type="button" class="grid-cell-btn" data-placement="stack_center_right" title="右に重ねる">
+                <span class="grid-cell-arrow">→</span>
+                <span class="grid-cell-text">右</span>
+              </button>
+              <button type="button" class="grid-cell-btn" data-placement="stack_bottom_left" title="左下に重ねる">
+                <span class="grid-cell-arrow">↙</span>
+                <span class="grid-cell-text">左下</span>
+              </button>
+              <button type="button" class="grid-cell-btn" data-placement="stack_bottom_center" title="下に重ねる">
+                <span class="grid-cell-arrow">↓</span>
+                <span class="grid-cell-text">下</span>
+              </button>
+              <button type="button" class="grid-cell-btn" data-placement="stack_bottom_right" title="右下に重ねる">
+                <span class="grid-cell-arrow">↘</span>
+                <span class="grid-cell-text">右下</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 回転量 / そろえる向き -->
         <div class="form-group" id="btn-def-angle-group">
           <label class="form-label" for="btn-def-angle" id="btn-def-angle-label">回転量（どれくらい）</label>
           <div class="angle-presets" id="btn-def-angle-presets">
@@ -309,6 +396,7 @@
           </div>
         </div>
 
+        <!-- 方向（右回り／左回り） -->
         <div class="form-group" id="btn-def-direction-group">
           <label class="form-label" for="btn-def-direction">方向（どっち回り）</label>
           <select class="form-select" id="btn-def-direction">
@@ -357,7 +445,7 @@
 
   <!-- Scripts -->
   <script src="scripts/polyfills.js"></script>
-  <script type="module" src="scripts/game-dev.module.js?v=20261013-1"></script>
+  <script type="module" src="scripts/game-dev.module.js?v=20261015-1"></script>
 </body>
 
 </html>
