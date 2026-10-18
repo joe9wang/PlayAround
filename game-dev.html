@@ -517,38 +517,9 @@
     </div>
   </div>
 
-  <!-- 4. オブジェクト プロパティ設定モーダル -->
-  <div class="dev-modal-overlay" id="modal-properties">
-    <div class="dev-modal-sheet">
-      <div class="modal-header">
-        <div class="modal-title">
-          <span>⚙️</span>
-          <span id="prop-modal-title">オブジェクト プロパティ</span>
-        </div>
-        <button class="modal-close-btn" data-close="modal-properties">✕</button>
-      </div>
-      <div class="modal-body">
-        <!-- カード用タイプ選択 -->
-        <div class="form-group" id="prop-card-type-group">
-          <label class="form-label">カードタイプ</label>
-          <select class="form-select" id="prop-card-type-select">
-            <option value="">(なし / 一般画像)</option>
-          </select>
-        </div>
-
-        <!-- タグ値入力領域（選択されたカードタイプに応じて動的生成） -->
-        <div id="prop-tags-container" style="display:flex; flex-direction:column; gap:8px;"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="action-btn secondary" data-close="modal-properties" style="width:auto;">キャンセル</button>
-        <button class="action-btn primary" id="btn-save-properties" style="width:auto;">保存する</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Scripts -->
   <script src="scripts/polyfills.js"></script>
-  <script type="module" src="scripts/game-dev.module.js?v=20261018-3"></script>
+  <script type="module" src="scripts/game-dev.module.js?v=20261018-4"></script>
 </body>
 
 </html>

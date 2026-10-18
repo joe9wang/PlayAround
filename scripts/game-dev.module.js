@@ -146,11 +146,6 @@ const btnDefDrawFace = document.getElementById('btn-def-draw-face');
 const devActingPlayerSelect = document.getElementById('dev-acting-player');
 const playButtonsContainer = document.getElementById('play-buttons-container');
 
-const modalProperties = document.getElementById('modal-properties');
-const propCardTypeSelect = document.getElementById('prop-card-type-select');
-const propTagsContainer = document.getElementById('prop-tags-container');
-const btnSaveProperties = document.getElementById('btn-save-properties');
-
 // Right Inspector
 const devInspector = document.getElementById('dev-inspector');
 const toggleInspector = document.getElementById('toggle-inspector');
@@ -1037,9 +1032,6 @@ function setupModalEvents() {
 
   // Play Button: Confirm Add Button
   btnConfirmAddButton?.addEventListener('click', confirmAddPlayButton);
-
-  // Save Properties
-  btnSaveProperties?.addEventListener('click', saveEntityProperties);
 }
 
 // ============================================================================
