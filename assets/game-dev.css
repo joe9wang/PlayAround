@@ -1363,3 +1363,71 @@ body {
   gap: 4px;
   opacity: 0.85;
 }
+
+/* Deal Destinations Chips & Tools */
+.mini-tool-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mini-tool-btn:hover {
+  background: rgba(139, 92, 246, 0.25);
+  border-color: #8b5cf6;
+  color: #fff;
+}
+
+.deal-dests-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px;
+  min-height: 48px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.deal-dest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #1e293b;
+  border: 1px solid #475569;
+  color: #94a3b8;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.deal-dest-chip:hover {
+  border-color: #8b5cf6;
+  color: #e2e8f0;
+}
+
+.deal-dest-chip.active {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border-color: #a78bfa;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+}
+
+.deal-dest-chip .chip-check {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.deal-dest-chip.active .chip-check {
+  opacity: 1;
+}

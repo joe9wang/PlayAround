@@ -147,6 +147,21 @@ const btnDefDrawPosGroup = document.getElementById('btn-def-draw-pos-group');
 const btnDefDrawPos = document.getElementById('btn-def-draw-pos');
 const btnDefDrawFaceGroup = document.getElementById('btn-def-draw-face-group');
 const btnDefDrawFace = document.getElementById('btn-def-draw-face');
+
+// 配る専用
+const btnDefDealFields = document.getElementById('btn-def-deal-fields');
+const btnDefDealSrc = document.getElementById('btn-def-deal-src');
+const btnDealSelectHands = document.getElementById('btn-deal-select-hands');
+const btnDealSelectAll = document.getElementById('btn-deal-select-all');
+const btnDealClear = document.getElementById('btn-deal-clear');
+const dealDestsContainer = document.getElementById('deal-dests-container');
+const btnDefDealCount = document.getElementById('btn-def-deal-count');
+const btnDefDealAll = document.getElementById('btn-def-deal-all');
+const btnDefDealMethod = document.getElementById('btn-def-deal-method');
+const btnDefDealPlacement = document.getElementById('btn-def-deal-placement');
+const btnDefDealFace = document.getElementById('btn-def-deal-face');
+let SELECTED_DEAL_DESTS = new Set();
+
 const devActingPlayerSelect = document.getElementById('dev-acting-player');
 const playButtonsContainer = document.getElementById('play-buttons-container');
 
@@ -1493,8 +1508,17 @@ function setupModalEvents() {
   btnDefWhat?.addEventListener('change', updateButtonFormVisibility);
   btnDefSrcArea?.addEventListener('change', updateButtonFormHint);
   btnDefDrawSrc?.addEventListener('change', updateButtonFormHint);
+  btnDefDealSrc?.addEventListener('change', updateButtonFormHint);
   btnDefDest?.addEventListener('change', updateButtonFormHint);
   btnDefAngle?.addEventListener('input', syncAnglePresetActive);
+
+  // 配る専用イベント
+  btnDefDealAll?.addEventListener('change', () => {
+    if (btnDefDealCount) btnDefDealCount.disabled = !!btnDefDealAll?.checked;
+  });
+  btnDealSelectHands?.addEventListener('click', selectDealHandsOnly);
+  btnDealSelectAll?.addEventListener('click', selectDealAll);
+  btnDealClear?.addEventListener('click', clearDealDests);
 
   // 置き方ボタン (並べる vs 9方向グリッド)
   btnPlacementSpread?.addEventListener('click', () => {
@@ -1691,6 +1715,7 @@ function showToast(message) {
 const ACTION_LABELS = {
   move: '移動',
   draw: 'ドロー',
+  deal: '配る',
   flip_toggle: '裏表を変える',
   flip_down: '裏にする',
   flip_up: '表にする',
@@ -1708,6 +1733,11 @@ const ITEM_TYPE_LABELS = {
 
 const PLACEMENT_LABELS = {
   spread: '横に並べる',
+  spread_lr: '左から右へ',
+  spread_rl: '右から左へ',
+  spread_tb: '上から下へ',
+  spread_bt: '下から上へ',
+  stack: '中央に重ねる',
   stack_center: '中央に重ねる',
   stack_top_left: '左上に重ねる',
   stack_top_center: '上に重ねる',
@@ -1737,8 +1767,8 @@ function getAllDefinedTags() {
 function normalizeButtonDef(def) {
   if (!def || typeof def !== 'object') return def;
 
-  // すでに新形式またはドローの場合
-  if (def.itemType !== undefined || def.action === 'draw') {
+  // すでに新形式またはドロー・配るの場合
+  if (def.itemType !== undefined || def.action === 'draw' || def.action === 'deal') {
     return def;
   }
 
@@ -1776,6 +1806,21 @@ function getButtonIssue(def) {
     return null;
   }
 
+  if (norm.action === 'deal') {
+    if (!norm.dealSrc) return '配布元が未設定です';
+    if (norm.dealSrc.kind === 'area' && !AREAS.some(a => a.id === norm.dealSrc.areaId)) {
+      return '配布元エリアが削除されています';
+    }
+    if (!norm.dealDests || norm.dealDests.length === 0) {
+      return '配布先エリアが未設定です';
+    }
+    const validDests = norm.dealDests.filter(id => AREAS.some(a => a.id === id));
+    if (validDests.length === 0) {
+      return '配布先エリアがすべて削除されています';
+    }
+    return null;
+  }
+
   if (norm.itemType !== 'selected' && norm.sourceArea && norm.sourceArea !== 'all') {
     const srcRef = valueToRef(norm.sourceArea);
     if (srcRef && srcRef.kind === 'area' && !AREAS.some(a => a.id === srcRef.areaId)) {
@@ -1804,6 +1849,19 @@ function describeButton(def) {
     const faceText = norm.drawFace === 'face_up' ? ' (表)' : norm.drawFace === 'face_down' ? ' (裏)' : '';
     const placeText = PLACEMENT_LABELS[norm.placement] || norm.placement;
     return `${actName}：${srcText}の${posText}${countText}${faceText} → ${destText} [${placeText}]`;
+  }
+
+  if (norm.action === 'deal') {
+    const srcText = norm.dealSrc ? refLabel(norm.dealSrc) : '未設定';
+    const destNames = (norm.dealDests || [])
+      .map(id => {
+        const a = AREAS.find(area => area.id === id);
+        return a ? `${getOwnerLabel(a.owner)}${a.name || getAreaTypeName(a.type)}` : id;
+      })
+      .join(', ');
+    const countText = norm.dealAll ? '全配り切り' : `各${norm.dealCount || 5}枚`;
+    const methodText = (norm.dealMethod === 'bulk') ? 'まとめて' : '1枚ずつ';
+    return `${actName}：${srcText} → ${destNames || '未設定'}（${countText} / ${methodText}）`;
   }
 
   let whatText = ITEM_TYPE_LABELS[norm.itemType] || norm.itemType;
@@ -1835,6 +1893,76 @@ function describeButton(def) {
   return desc;
 }
 
+// ---- 配布先エリアチップ管理 ----
+function rebuildDealDestButtons() {
+  if (!dealDestsContainer) return;
+  dealDestsContainer.innerHTML = '';
+
+  if (AREAS.length === 0) {
+    dealDestsContainer.innerHTML = '<div class="empty-notice" style="padding:4px; font-size:11px;">エリアがありません</div>';
+    return;
+  }
+
+  AREAS.forEach(area => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'deal-dest-chip';
+    chip.dataset.areaId = area.id;
+
+    const isSelected = SELECTED_DEAL_DESTS.has(area.id);
+    if (isSelected) chip.classList.add('active');
+
+    chip.innerHTML = `
+      <span class="chip-check">${isSelected ? '✅' : '⬜'}</span>
+      <span>${getOwnerLabel(area.owner)} ${escapeHtml(area.name || getAreaTypeName(area.type))}</span>
+    `;
+
+    chip.addEventListener('click', () => {
+      if (SELECTED_DEAL_DESTS.has(area.id)) {
+        SELECTED_DEAL_DESTS.delete(area.id);
+        chip.classList.remove('active');
+        const chk = chip.querySelector('.chip-check');
+        if (chk) chk.textContent = '⬜';
+      } else {
+        SELECTED_DEAL_DESTS.add(area.id);
+        chip.classList.add('active');
+        const chk = chip.querySelector('.chip-check');
+        if (chk) chk.textContent = '✅';
+      }
+    });
+
+    dealDestsContainer.appendChild(chip);
+  });
+}
+
+function selectDealHandsOnly() {
+  SELECTED_DEAL_DESTS.clear();
+  AREAS.filter(a => a.type === 'hand').forEach(a => SELECTED_DEAL_DESTS.add(a.id));
+  updateDealDestChipsUI();
+}
+
+function selectDealAll() {
+  SELECTED_DEAL_DESTS.clear();
+  AREAS.forEach(a => SELECTED_DEAL_DESTS.add(a.id));
+  updateDealDestChipsUI();
+}
+
+function clearDealDests() {
+  SELECTED_DEAL_DESTS.clear();
+  updateDealDestChipsUI();
+}
+
+function updateDealDestChipsUI() {
+  if (!dealDestsContainer) return;
+  dealDestsContainer.querySelectorAll('.deal-dest-chip').forEach(chip => {
+    const aId = chip.dataset.areaId;
+    const active = SELECTED_DEAL_DESTS.has(aId);
+    chip.classList.toggle('active', active);
+    const chk = chip.querySelector('.chip-check');
+    if (chk) chk.textContent = active ? '✅' : '⬜';
+  });
+}
+
 // ---- モーダル（動的フォーム） ----
 function openAddButtonModal() {
   if (btnDefLabel) btnDefLabel.value = '';
@@ -1846,6 +1974,17 @@ function openAddButtonModal() {
   if (btnDefDrawPos) btnDefDrawPos.value = 'top';
   if (btnDefDrawCount) btnDefDrawCount.value = '1';
   if (btnDefDrawFace) btnDefDrawFace.value = 'keep';
+
+  // 配る初期値
+  if (btnDefDealCount) {
+    btnDefDealCount.value = '5';
+    btnDefDealCount.disabled = false;
+  }
+  if (btnDefDealAll) btnDefDealAll.checked = false;
+  if (btnDefDealMethod) btnDefDealMethod.value = 'round_robin';
+  if (btnDefDealPlacement) btnDefDealPlacement.value = 'spread_lr';
+  if (btnDefDealFace) btnDefDealFace.value = 'face_down';
+  SELECTED_DEAL_DESTS.clear();
 
   selectPlacementOption('spread');
   rebuildAreaOptions();
@@ -1909,8 +2048,16 @@ function rebuildAreaOptions() {
     ...buildAreaRefOptions('にある', null)
   ], prevDrawSrc || 'own:deck');
 
+  const prevDealSrc = btnDefDealSrc?.value;
+  fillSelect(btnDefDealSrc, [
+    { value: 'all', label: '全領域にある' },
+    ...buildAreaRefOptions('にある', null)
+  ], prevDealSrc || 'own:deck');
+
   const prevDest = btnDefDest?.value;
   fillSelect(btnDefDest, buildAreaRefOptions('へ', null), prevDest || 'own:hand');
+
+  rebuildDealDestButtons();
 }
 
 function selectPlacementOption(placementKey) {
@@ -2014,8 +2161,15 @@ function updateButtonFormVisibility() {
   const show = (el, visible) => { if (el) el.style.display = visible ? '' : 'none'; };
 
   const isDraw = (action === 'draw');
+  const isDeal = (action === 'deal');
   const isSelected = (what === 'selected');
   const isTagFilter = (what === 'tag_filter');
+
+  // 配る専用フィールド群
+  show(btnDefDealFields, isDeal);
+  if (isDeal && SELECTED_DEAL_DESTS.size === 0) {
+    selectDealHandsOnly();
+  }
 
   // ドロー専用フィールド群
   show(btnDefDrawSrcGroup, isDraw);
@@ -2023,13 +2177,13 @@ function updateButtonFormVisibility() {
   show(btnDefDrawPosGroup, isDraw);
   show(btnDefDrawFaceGroup, isDraw);
 
-  // 対象（なにを / どこのエリア / 誰の）: ドロー時は非表示
-  show(btnDefWhatGroup, !isDraw);
-  show(btnDefSrcAreaGroup, !isDraw && !isSelected);
-  show(btnDefSrcOwnerGroup, !isDraw && !isSelected);
+  // 対象（なにを / どこのエリア / 誰の）: ドロー・配る時は非表示
+  show(btnDefWhatGroup, !isDraw && !isDeal);
+  show(btnDefSrcAreaGroup, !isDraw && !isDeal && !isSelected);
+  show(btnDefSrcOwnerGroup, !isDraw && !isDeal && !isSelected);
 
   // タグ指定条件群: 項目3で「タグ指定」を選んだ時のみ
-  show(btnDefTagConditionsGroup, !isDraw && isTagFilter && !isSelected);
+  show(btnDefTagConditionsGroup, !isDraw && !isDeal && isTagFilter && !isSelected);
 
   // 移動先／ドロー先 & 置き方: 移動またはドロー時
   show(btnDefDestGroup, action === 'move' || isDraw);
@@ -2060,6 +2214,12 @@ function updateButtonFormHint() {
 
   if (AREAS.length === 0) {
     hint = '💡 フィールドにエリアがありません。「エリア追加」で作成すると、ここに選択肢として表示されます。';
+  } else if (action === 'deal') {
+    if (AREAS.length === 0) {
+      hint = '⚠️ 配布先のエリアがありません。手札エリア等を追加してください。';
+    } else {
+      hint = '💡 デッキ等の山札から、指定した複数のエリア（手札など）へカードを一括・均等配布します。';
+    }
   } else if (action === 'draw') {
     if (!btnDefDest || btnDefDest.options.length === 0) {
       hint = '⚠️ ドロー先にできるエリアがありません。手札エリア等を追加してください。';
@@ -2090,7 +2250,46 @@ function confirmAddPlayButton() {
 
   const action = btnDefAction?.value || 'move';
 
-  // 1. ドローする場合
+  // 1. 配る場合 (deal)
+  if (action === 'deal') {
+    const dealSrc = valueToRef(btnDefDealSrc?.value);
+    if (!dealSrc) {
+      alert('配布元エリアを選択してください。');
+      return;
+    }
+    if (SELECTED_DEAL_DESTS.size === 0) {
+      alert('配布先エリア（どこに）を少なくとも1つ選択してください。');
+      return;
+    }
+    const dealAll = !!btnDefDealAll?.checked;
+    const count = parseInt(btnDefDealCount?.value, 10);
+    if (!dealAll && (Number.isNaN(count) || count < 1)) {
+      alert('枚数は 1 以上の数値を入力してください。');
+      return;
+    }
+
+    const newBtn = {
+      id: `btn_${Date.now()}`,
+      label,
+      action: 'deal',
+      itemType: 'all_cards',
+      dealSrc,
+      dealDests: Array.from(SELECTED_DEAL_DESTS),
+      dealAll,
+      dealCount: dealAll ? 0 : count,
+      dealMethod: btnDefDealMethod?.value || 'round_robin',
+      dealPlacement: btnDefDealPlacement?.value || 'spread_lr',
+      dealFace: btnDefDealFace?.value || 'face_down'
+    };
+
+    PLAY_BUTTONS.push(newBtn);
+    renderPlayButtons();
+    if (modalAddButton) modalAddButton.style.display = 'none';
+    scheduleSaveRoom();
+    return;
+  }
+
+  // 2. ドローする場合
   if (action === 'draw') {
     const drawSrc = valueToRef(btnDefDrawSrc?.value);
     if (!drawSrc) {
@@ -2349,12 +2548,14 @@ function applyEntityAngle(ent) {
 function placeEntitiesInArea(movingEnts, area, placement) {
   const mode = placement || 'spread';
 
-  // 1. 横に並べる
-  if (mode === 'spread') {
+  // 1. 横並び (spread, spread_lr: 左から右へ, spread_rl: 右から左へ)
+  if (mode === 'spread' || mode === 'spread_lr' || mode === 'spread_rl') {
     const movingIds = new Set(movingEnts.map(e => e.id));
     const existing = ENTITIES.filter(ent => isEntityOverlappingArea(ent, area) && !movingIds.has(ent.id))
       .sort((a, b) => a.x - b.x);
-    const all = [...existing, ...movingEnts];
+    const all = (mode === 'spread_rl')
+      ? [...existing, ...movingEnts.slice().reverse()]
+      : [...existing, ...movingEnts];
     const n = all.length;
     if (n === 0) return;
 
@@ -2380,7 +2581,40 @@ function placeEntitiesInArea(movingEnts, area, placement) {
     return;
   }
 
-  // 2. 9方向グリッド重ね
+  // 2. 縦並び (spread_tb: 上から下へ, spread_bt: 下から上へ)
+  if (mode === 'spread_tb' || mode === 'spread_bt') {
+    const movingIds = new Set(movingEnts.map(e => e.id));
+    const existing = ENTITIES.filter(ent => isEntityOverlappingArea(ent, area) && !movingIds.has(ent.id))
+      .sort((a, b) => a.y - b.y);
+    const all = (mode === 'spread_bt')
+      ? [...existing, ...movingEnts.slice().reverse()]
+      : [...existing, ...movingEnts];
+    const n = all.length;
+    if (n === 0) return;
+
+    const cardH = Math.max(...all.map(e => e.h || 160));
+    const gap = 10;
+    const padding = 15;
+    const usable = Math.max(area.h - padding * 2, cardH);
+    let step = cardH + gap;
+    if (n > 1 && cardH + step * (n - 1) > usable) {
+      step = (usable - cardH) / (n - 1);
+    }
+    const totalH = cardH + step * (n - 1);
+    const startY = area.y + (area.h - totalH) / 2;
+
+    all.forEach((ent, i) => {
+      const w = ent.w || 120;
+      ent.x = Math.round(area.x + area.w / 2 - w / 2);
+      ent.y = Math.round(startY + step * i);
+      HIGHEST_Z += 1;
+      ent.z = HIGHEST_Z;
+      applyEntityPosition(ent);
+    });
+    return;
+  }
+
+  // 3. 重ねる / 9方向グリッド重ね
   const pad = 15;
   movingEnts.forEach(ent => {
     const w = ent.w || 120;
@@ -2414,7 +2648,135 @@ function placeEntitiesInArea(movingEnts, area, placement) {
 function executePlayAction(rawDef) {
   const btnDef = normalizeButtonDef(rawDef);
 
-  // 1. ドロー処理
+  // 1. 配る処理 (deal)
+  if (btnDef.action === 'deal') {
+    let sourceCards = [];
+    let sourceName = '';
+
+    if (btnDef.dealSrc?.kind === 'all') {
+      sourceCards = ENTITIES.filter(e => e.type === 'card');
+      sourceName = '全領域';
+    } else {
+      const srcArea = resolveAreaRef(btnDef.dealSrc);
+      if (!srcArea) {
+        showToast(btnDef.dealSrc?.kind === 'own'
+          ? `${getOwnerLabel(getActingPlayer())} の${getAreaTypeName(btnDef.dealSrc.areaType)}がありません`
+          : '配布元エリアが見つかりません');
+        return;
+      }
+      sourceName = `「${getAreaDisplayName(srcArea)}」`;
+      sourceCards = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, srcArea));
+    }
+
+    if (sourceCards.length === 0) {
+      showToast(`${sourceName}にカードがありません`);
+      return;
+    }
+
+    // 配布先エリアの解決
+    const destAreas = [];
+    (btnDef.dealDests || []).forEach(refOrId => {
+      let resolved = null;
+      if (typeof refOrId === 'string' && (refOrId.startsWith('area:') || refOrId.startsWith('own:'))) {
+        resolved = resolveAreaRef(valueToRef(refOrId));
+      } else if (typeof refOrId === 'object') {
+        resolved = resolveAreaRef(refOrId);
+      } else {
+        resolved = AREAS.find(a => a.id === refOrId);
+      }
+      if (resolved && !destAreas.some(d => d.id === resolved.id)) {
+        destAreas.push(resolved);
+      }
+    });
+
+    if (destAreas.length === 0) {
+      showToast('配布先のエリアが見つかりません');
+      return;
+    }
+
+    // 山札の上から配る (z降順: 大きい順)
+    sourceCards.sort((a, b) => (b.z || 0) - (a.z || 0));
+
+    let cardsPerArea = 0;
+    if (btnDef.dealAll) {
+      cardsPerArea = Math.floor(sourceCards.length / destAreas.length);
+    } else {
+      cardsPerArea = Math.max(1, Number(btnDef.dealCount) || 1);
+    }
+
+    if (cardsPerArea < 1) {
+      showToast('配布できるカード枚数が足りません');
+      return;
+    }
+
+    const distributedMap = new Map();
+    destAreas.forEach(a => distributedMap.set(a.id, []));
+
+    let cardIndex = 0;
+    let shortage = false;
+
+    if (btnDef.dealMethod === 'bulk') {
+      for (const area of destAreas) {
+        for (let i = 0; i < cardsPerArea; i++) {
+          if (cardIndex < sourceCards.length) {
+            distributedMap.get(area.id).push(sourceCards[cardIndex]);
+            cardIndex++;
+          } else {
+            shortage = true;
+            break;
+          }
+        }
+        if (shortage) break;
+      }
+    } else {
+      // 1枚ずつ (ラウンドロビン)
+      for (let round = 0; round < cardsPerArea; round++) {
+        for (const area of destAreas) {
+          if (cardIndex < sourceCards.length) {
+            distributedMap.get(area.id).push(sourceCards[cardIndex]);
+            cardIndex++;
+          } else {
+            shortage = true;
+            break;
+          }
+        }
+        if (shortage) break;
+      }
+    }
+
+    destAreas.forEach(area => {
+      const cards = distributedMap.get(area.id);
+      if (!cards || cards.length === 0) return;
+
+      if (btnDef.dealFace === 'face_up') {
+        cards.forEach(c => {
+          c.isFaceDown = false;
+          const dom = document.getElementById(c.id);
+          if (dom) updateEntityInnerDOM(dom, c);
+        });
+      } else if (btnDef.dealFace === 'face_down') {
+        cards.forEach(c => {
+          c.isFaceDown = true;
+          const dom = document.getElementById(c.id);
+          if (dom) updateEntityInnerDOM(dom, c);
+        });
+      }
+
+      placeEntitiesInArea(cards, area, btnDef.dealPlacement || 'spread_lr');
+    });
+
+    const totalDistributed = cardIndex;
+    if (shortage) {
+      showToast(`山札が途中で不足したため、計${totalDistributed}枚を配布して終了しました`);
+    } else {
+      showToast(`${sourceName}から各${cardsPerArea}枚（計${totalDistributed}枚）を配布しました`);
+    }
+
+    scheduleSaveRoom();
+    return;
+  }
+
+  // 2. ドロー処理
   if (btnDef.action === 'draw') {
     let sourceCards = [];
     let sourceName = '';

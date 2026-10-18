@@ -15,7 +15,7 @@
   <link href="/site.webmanifest" rel="manifest" />
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="assets/game-dev.css?v=20261018-7">
+  <link rel="stylesheet" href="assets/game-dev.css?v=20261019-1">
 </head>
 
 <body>
@@ -351,6 +351,7 @@
           <select class="form-select" id="btn-def-action">
             <option value="move">移動する</option>
             <option value="draw">ドローする</option>
+            <option value="deal">配る（指定エリアへ複数配布）</option>
             <option value="flip_toggle">裏表を変える</option>
             <option value="flip_down">裏にする</option>
             <option value="flip_up">表にする</option>
@@ -388,6 +389,72 @@
             <option value="face_up">表にする（オープンして引く）</option>
             <option value="face_down">裏にする</option>
           </select>
+        </div>
+
+        <!-- 配る専用フィールド群 -->
+        <div id="btn-def-deal-fields" style="display:none; flex-direction:column; gap:12px;">
+          <!-- 項目1: 配布元（どこから） -->
+          <div class="form-group">
+            <label class="form-label" for="btn-def-deal-src">配布元（どこから）</label>
+            <select class="form-select" id="btn-def-deal-src"></select>
+          </div>
+
+          <!-- 項目2: 配布先（どこに） -->
+          <div class="form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <label class="form-label" style="margin:0;">配布先（どこに・複数選択可）</label>
+              <div style="display:flex; gap:6px;">
+                <button type="button" class="mini-tool-btn" id="btn-deal-select-hands" title="全プレイヤーの手札エリアを選択">✋ 手札を一括選択</button>
+                <button type="button" class="mini-tool-btn" id="btn-deal-select-all" title="全エリアを選択">全選択</button>
+                <button type="button" class="mini-tool-btn" id="btn-deal-clear" title="選択解除">クリア</button>
+              </div>
+            </div>
+            <div class="deal-dests-container" id="deal-dests-container"></div>
+            <div class="form-hint" style="margin-top:4px;">クリックで配布先の ON / OFF を切り替えられます</div>
+          </div>
+
+          <!-- 項目3: 枚数（各何枚） -->
+          <div class="form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label class="form-label" for="btn-def-deal-count" style="margin:0;">枚数（各何枚）</label>
+              <label style="font-size:12px; color:#cbd5e1; display:flex; align-items:center; gap:4px; cursor:pointer;">
+                <input type="checkbox" id="btn-def-deal-all" />
+                <span>全カードを均等に配り切る</span>
+              </label>
+            </div>
+            <input type="number" class="form-input" id="btn-def-deal-count" min="1" max="99" value="5" />
+          </div>
+
+          <!-- 項目4: 配布方法（どうやって） -->
+          <div class="form-group">
+            <label class="form-label" for="btn-def-deal-method">配布方法（どうやって）</label>
+            <select class="form-select" id="btn-def-deal-method">
+              <option value="round_robin" selected>デッキの上から 1枚ずつ順番に配布（ラウンドロビン）</option>
+              <option value="bulk">デッキの上から 各自の枚数ずつまとめて配布</option>
+            </select>
+          </div>
+
+          <!-- 項目5: 置き方 -->
+          <div class="form-group">
+            <label class="form-label" for="btn-def-deal-placement">置き方</label>
+            <select class="form-select" id="btn-def-deal-placement">
+              <option value="spread_lr" selected>左から右へ（横並び）</option>
+              <option value="spread_rl">右から左へ</option>
+              <option value="spread_tb">上から下へ（縦並び）</option>
+              <option value="spread_bt">下から上へ</option>
+              <option value="stack_center">中央に重ねる</option>
+            </select>
+          </div>
+
+          <!-- 表裏（めくるかどうか） -->
+          <div class="form-group">
+            <label class="form-label" for="btn-def-deal-face">表裏（めくるかどうか）</label>
+            <select class="form-select" id="btn-def-deal-face">
+              <option value="face_down" selected>裏にする（手札への配布など）</option>
+              <option value="face_up">表にする（場へのオープン配布）</option>
+              <option value="keep">そのまま（変更しない）</option>
+            </select>
+          </div>
         </div>
 
         <!-- 項目3: 対象（なにを） -->
@@ -529,7 +596,7 @@
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="scripts/polyfills.js"></script>
-  <script type="module" src="scripts/game-dev.module.js?v=20261018-8"></script>
+  <script type="module" src="scripts/game-dev.module.js?v=20261019-1"></script>
 </body>
 
 </html>
