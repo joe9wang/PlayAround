@@ -1,7 +1,7 @@
 # BatriTable 開発者モード（Developer Mode）仕様書
 
-> **バージョン**: v1.2.0 (右インスペクター縦並び最適化・ZIP一括インポート/エクスポート・プレイヤー人数完全連動)  
-> **更新日**: 2026-10-18 (初版: 2026-10-12)  
+> **バージョン**: v1.3.0 (カード配布ディールアクション・パン操作最適化・ZIP一括インポート/エクスポート・プレイヤー人数完全連動)  
+> **更新日**: 2026-10-19 (初版: 2026-10-12)  
 > **運営**: SOLVENTER  
 > **ステータス**: 実装完了・本番運用中  
 
@@ -67,6 +67,9 @@
   - 初回入場時は、フィールド中央に「共有プレイエリア」が1つのみ配置されたクリーンな状態。
 - **エリアのドラッグ＆リサイズ**:
   - エリア枠のヘッダーをドラッグして移動、右下リサイズハンドルをドラッグしてサイズを直感的に変更可能。
+- **視点移動（パン操作 & ホイールズーム）**:
+  - **左ボタンドラッグ / 中クリックドラッグ**: カードやボタン等の操作UI以外の場所（盤面の空き地や、カードのないエリア内余白）を長押しドラッグすると、手アイコン（✊ `grabbing`）が表示され、盤面全体をスムーズにパン移動可能。テキスト誤選択防止（`user-select: none`）を完備。
+  - **ホイールズーム**: マウスホイールで20%〜300%の無段階拡大縮小。画面右下の HUD ボタン（`+` / `−` / `⟲ 全体表示リセット`）でも操作可能。
 
 ### 3.3 左側操作パネル（Sidebar）
 開発者モード専用に刷新されたサイドバー。2つの大カテゴリで構成される：
@@ -375,10 +378,22 @@ Excel等の表計算ソフトで直接開いて編集・保存できます。
     "drawFace": "keep",
     "dest": { "kind": "own", "areaType": "hand" },
     "placement": "spread"
+  },
+  {
+    "id": "btn_3",
+    "label": "全員に手札を5枚ずつ配る",
+    "action": "deal",
+    "dealSrc": { "kind": "area", "areaId": "area_deck_shared" },
+    "dealDests": ["area_hand_p1", "area_hand_p2", "area_hand_p3", "area_hand_p4"],
+    "dealAll": false,
+    "dealCount": 5,
+    "dealMethod": "round_robin",
+    "dealPlacement": "spread_lr",
+    "dealFace": "face_down"
   }
 ]
 ```
-- `action`: `move` / `draw` / `flip_toggle` / `flip_down` / `flip_up` / `rotate` / `set_angle`
+- `action`: `move` / `draw` / `deal` / `flip_toggle` / `flip_down` / `flip_up` / `rotate` / `set_angle`
 - `itemType`: `selected` / `all_cards` / `all_pieces` / `all_boards` / `tag_filter`
 - `sourceArea`: `all` / `own:<areaType>` / `area:<areaId>`
 - `sourceOwner`: `any` / `mine` / `shared` / `player1`〜`player10`
@@ -386,7 +401,14 @@ Excel等の表計算ソフトで直接開いて編集・保存できます。
 - `drawPos`（draw のみ）: `top`（上から） / `bottom`（下から）
 - `drawCount`（draw のみ）: ドロー枚数（整数）
 - `drawFace`（draw のみ）: `keep`（そのまま） / `face_up`（表にする） / `face_down`（裏にする）
-- `placement`: `spread` / `stack_center` / `stack_top_left` / `stack_top_center` / `stack_top_right` / `stack_center_left` / `stack_center_right` / `stack_bottom_left` / `stack_bottom_center` / `stack_bottom_right`
+- `dealSrc`（deal のみ）: 配布元 `{ kind: "own", areaType: string }` / `{ kind: "area", areaId: string }` / `{ kind: "all" }`
+- `dealDests`（deal のみ）: 配布先エリアIDの配列（複数エリア指定）
+- `dealAll`（deal のみ）: 全カード配り切りフラグ（boolean）
+- `dealCount`（deal のみ）: 各エリアへの配布枚数（整数）
+- `dealMethod`（deal のみ）: `round_robin`（1枚ずつ順番） / `bulk`（まとめて配布）
+- `dealPlacement`（deal のみ）: `spread_lr`（左から右） / `spread_rl`（右から左） / `spread_tb`（上から下） / `spread_bt`（下から上） / `stack_center`（中央に重ねる）
+- `dealFace`（deal のみ）: `face_down`（裏にする） / `face_up`（表にする） / `keep`（変更しない）
+- `placement`: `spread` / `spread_lr` / `spread_rl` / `spread_tb` / `spread_bt` / `stack_center` / `stack_top_left` / `stack_top_center` / `stack_top_right` / `stack_center_left` / `stack_center_right` / `stack_bottom_left` / `stack_bottom_center` / `stack_bottom_right`
 - `tagConditions`: 各オブジェクト `{ logical: 'and' | 'or', tagName: string, op: '==' | '>' | '>=' | '<' | '<=', value: string }`
 - `direction`（rotate のみ）: `cw`（右回り）/ `ccw`（左回り）
 - 旧形式のボタンデータも読み込み時に自動で新スキーマへ透過変換される。
