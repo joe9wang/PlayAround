@@ -151,6 +151,18 @@ const propCardTypeSelect = document.getElementById('prop-card-type-select');
 const propTagsContainer = document.getElementById('prop-tags-container');
 const btnSaveProperties = document.getElementById('btn-save-properties');
 
+// Right Inspector
+const devInspector = document.getElementById('dev-inspector');
+const toggleInspector = document.getElementById('toggle-inspector');
+const inspectorEmpty = document.getElementById('inspector-empty');
+const inspectorContent = document.getElementById('inspector-content');
+const inspectorPreviewImg = document.getElementById('inspector-preview-img');
+const inspectorBadge = document.getElementById('inspector-badge');
+const inspectorStatus = document.getElementById('inspector-status');
+const inspectorCardTypeSelect = document.getElementById('inspector-card-type-select');
+const inspectorTagsContainer = document.getElementById('inspector-tags-container');
+const inspectorSaveNotice = document.getElementById('inspector-save-notice');
+
 // ============================================================================
 // Initialization
 // ============================================================================
@@ -177,6 +189,7 @@ async function init() {
   setupSidebarEvents();
   setupModalEvents();
   setupContextMenuEvents();
+  setupInspectorEvents();
   updatePlayerCountUI();
 
   // Auth Listener
@@ -732,11 +745,13 @@ function selectEntity(id) {
   document.querySelectorAll('.dev-entity').forEach(el => {
     el.classList.toggle('selected', el.id === id);
   });
+  updateInspector(id);
 }
 
 function deselectEntity() {
   SELECTED_ENTITY_ID = null;
   document.querySelectorAll('.dev-entity').forEach(el => el.classList.remove('selected'));
+  updateInspector(null);
 }
 
 // ============================================================================
@@ -751,7 +766,17 @@ function setupContextMenuEvents() {
     e.stopPropagation();
     const targetId = CTX_TARGET_ENTITY_ID;
     hideContextMenu();
-    if (targetId) openPropertiesModal(targetId);
+    if (targetId) {
+      selectEntity(targetId);
+      if (devInspector?.classList.contains('is-collapsed')) {
+        devInspector.classList.remove('is-collapsed');
+        if (toggleInspector) {
+          toggleInspector.textContent = '▶';
+          toggleInspector.title = 'パネルを折り畳む';
+        }
+        handleResize();
+      }
+    }
   });
 
   ctxRotate?.addEventListener('click', (e) => {
@@ -763,6 +788,7 @@ function setupContextMenuEvents() {
       ent.angle = ((ent.angle || 0) + 90) % 360;
       const dom = document.getElementById(ent.id);
       if (dom) dom.style.transform = `rotate(${ent.angle}deg)`;
+      if (SELECTED_ENTITY_ID === ent.id) updateInspector(ent.id);
       scheduleSaveRoom();
     }
   });
@@ -776,6 +802,7 @@ function setupContextMenuEvents() {
       ent.isFaceDown = !ent.isFaceDown;
       const dom = document.getElementById(ent.id);
       if (dom) updateEntityInnerDOM(dom, ent);
+      if (SELECTED_ENTITY_ID === ent.id) updateInspector(ent.id);
       scheduleSaveRoom();
     }
   });
@@ -788,6 +815,7 @@ function setupContextMenuEvents() {
     if (ent) {
       ENTITIES = ENTITIES.filter(e => e.id !== ent.id);
       document.getElementById(ent.id)?.remove();
+      if (SELECTED_ENTITY_ID === ent.id) deselectEntity();
       scheduleSaveRoom();
     }
   });
@@ -1089,6 +1117,10 @@ function renderSchemaList() {
 
     schemaTypesList.appendChild(cardEl);
   });
+
+  if (SELECTED_ENTITY_ID) {
+    updateInspector(SELECTED_ENTITY_ID);
+  }
 }
 
 // ============================================================================
@@ -2057,50 +2089,110 @@ function isPointInArea(px, py, area) {
 }
 
 // ============================================================================
-// Entity Properties Inspector (カードタイプ・各タグ値入力)
+// Right Sidebar Inspector (プレビュー & リアルタイム属性編集)
 // ============================================================================
-let INSPECTING_ENTITY_ID = null;
+function setupInspectorEvents() {
+  toggleInspector?.addEventListener('click', () => {
+    if (!devInspector) return;
+    devInspector.classList.toggle('is-collapsed');
+    const isCollapsed = devInspector.classList.contains('is-collapsed');
+    toggleInspector.textContent = isCollapsed ? '◀' : '▶';
+    toggleInspector.title = isCollapsed ? 'パネルを展開' : 'パネルを折り畳む';
+    setTimeout(handleResize, 220);
+    handleResize();
+  });
 
-function openPropertiesModal(entityId) {
-  INSPECTING_ENTITY_ID = entityId;
-  const entity = ENTITIES.find(e => e.id === entityId);
-  if (!entity || !modalProperties) return;
+  inspectorCardTypeSelect?.addEventListener('change', () => {
+    if (!SELECTED_ENTITY_ID) return;
+    const entity = ENTITIES.find(e => e.id === SELECTED_ENTITY_ID);
+    if (!entity || entity.type !== 'card') return;
 
-  const titleEl = document.getElementById('prop-modal-title');
-  if (titleEl) {
-    titleEl.textContent = `${entity.type === 'card' ? '🃏 カード' : entity.type === 'board' ? '🗺️ ボード' : '♟ コマ'} プロパティ`;
-  }
+    entity.cardTypeId = inspectorCardTypeSelect.value || '';
+    renderInspectorTags(entity.cardTypeId, entity);
 
-  // Populate Card Types Select
-  if (propCardTypeSelect) {
-    propCardTypeSelect.innerHTML = '<option value="">(なし / 一般画像)</option>';
-    Object.entries(CARD_SCHEMAS).forEach(([typeId, schema]) => {
-      const opt = document.createElement('option');
-      opt.value = typeId;
-      opt.textContent = schema.name;
-      if (entity.cardTypeId === typeId) opt.selected = true;
-      propCardTypeSelect.appendChild(opt);
-    });
-
-    propCardTypeSelect.onchange = () => renderPropertyTags(propCardTypeSelect.value, entity);
-    renderPropertyTags(propCardTypeSelect.value, entity);
-  }
-
-  modalProperties.style.display = 'flex';
+    const dom = document.getElementById(entity.id);
+    if (dom) updateEntityInnerDOM(dom, entity);
+    flashInspectorSaveNotice();
+    scheduleSaveRoom();
+  });
 }
 
-function renderPropertyTags(cardTypeId, entity) {
-  if (!propTagsContainer) return;
-  propTagsContainer.innerHTML = '';
+function updateInspector(entityId) {
+  if (!devInspector) return;
+
+  if (!entityId) {
+    if (inspectorEmpty) inspectorEmpty.style.display = 'flex';
+    if (inspectorContent) inspectorContent.style.display = 'none';
+    return;
+  }
+
+  const entity = ENTITIES.find(e => e.id === entityId);
+  if (!entity) {
+    if (inspectorEmpty) inspectorEmpty.style.display = 'flex';
+    if (inspectorContent) inspectorContent.style.display = 'none';
+    return;
+  }
+
+  if (inspectorEmpty) inspectorEmpty.style.display = 'none';
+  if (inspectorContent) inspectorContent.style.display = 'flex';
+
+  // 1. プレビュー画像とステータス
+  const displayUrl = (entity.type === 'card' && entity.isFaceDown)
+    ? (entity.backUrl || 'PlayExample.webp')
+    : (entity.frontUrl || entity.url || 'PlayExample.webp');
+
+  if (inspectorPreviewImg) {
+    inspectorPreviewImg.src = displayUrl;
+    inspectorPreviewImg.style.transform = `rotate(${entity.angle || 0}deg)`;
+  }
+
+  if (inspectorBadge) {
+    inspectorBadge.textContent = entity.type === 'card' ? '🃏 カード'
+      : entity.type === 'board' ? '🗺️ ボード'
+      : '♟ コマ';
+  }
+
+  if (inspectorStatus) {
+    const faceText = entity.type === 'card' ? (entity.isFaceDown ? '裏向き' : '表向き') : '';
+    const angleText = `${entity.angle || 0}°`;
+    inspectorStatus.textContent = faceText ? `${faceText} (${angleText})` : angleText;
+  }
+
+  // 2. カード属性（タグ）の表示・編集
+  const cardPropsSec = document.getElementById('inspector-card-props');
+  if (entity.type === 'card') {
+    if (cardPropsSec) cardPropsSec.style.display = '';
+
+    // カードタイプ一覧を同期
+    if (inspectorCardTypeSelect) {
+      inspectorCardTypeSelect.innerHTML = '<option value="">(なし / 一般画像)</option>';
+      Object.entries(CARD_SCHEMAS).forEach(([typeId, schema]) => {
+        const opt = document.createElement('option');
+        opt.value = typeId;
+        opt.textContent = schema.name;
+        if (entity.cardTypeId === typeId) opt.selected = true;
+        inspectorCardTypeSelect.appendChild(opt);
+      });
+    }
+
+    renderInspectorTags(entity.cardTypeId, entity);
+  } else {
+    if (cardPropsSec) cardPropsSec.style.display = 'none';
+  }
+}
+
+function renderInspectorTags(cardTypeId, entity) {
+  if (!inspectorTagsContainer) return;
+  inspectorTagsContainer.innerHTML = '';
 
   if (!cardTypeId || !CARD_SCHEMAS[cardTypeId]) {
-    propTagsContainer.innerHTML = '<div style="font-size:12px; color:#6b7280; padding:8px;">カードタイプを選択すると属性（タグ）の入力欄が表示されます。</div>';
+    inspectorTagsContainer.innerHTML = '<div style="font-size:12px; color:#64748b; padding:6px 0;">カードタイプを選択すると属性（タグ）の入力欄が表示されます。</div>';
     return;
   }
 
   const schema = CARD_SCHEMAS[cardTypeId];
-  if (schema.tags.length === 0) {
-    propTagsContainer.innerHTML = '<div style="font-size:12px; color:#6b7280; padding:8px;">このタイプにはタグが定義されていません。「カード全般設定」からタグを追加できます。</div>';
+  if (!schema.tags || schema.tags.length === 0) {
+    inspectorTagsContainer.innerHTML = '<div style="font-size:12px; color:#64748b; padding:6px 0;">このタイプにはタグが定義されていません。「カード全般設定」からタグを追加できます。</div>';
     return;
   }
 
@@ -2110,33 +2202,33 @@ function renderPropertyTags(cardTypeId, entity) {
     const currentVal = (entity.tagValues && entity.tagValues[tag.id] !== undefined) ? entity.tagValues[tag.id] : '';
 
     row.innerHTML = `
-      <span class="prop-tag-name">${tag.name}</span>
-      <input type="text" class="prop-tag-input" data-tag-id="${tag.id}" value="${currentVal}" placeholder="値を入力" />
+      <span class="prop-tag-name">${escapeHtml(tag.name)}</span>
+      <input type="text" class="prop-tag-input" data-tag-id="${escapeHtml(tag.id)}" value="${escapeHtml(currentVal)}" placeholder="値を入力" />
     `;
-    propTagsContainer.appendChild(row);
+
+    const input = row.querySelector('.prop-tag-input');
+    input?.addEventListener('input', () => {
+      if (!entity.tagValues) entity.tagValues = {};
+      entity.tagValues[tag.id] = input.value.trim();
+
+      const dom = document.getElementById(entity.id);
+      if (dom) updateEntityInnerDOM(dom, entity);
+      flashInspectorSaveNotice();
+      scheduleSaveRoom();
+    });
+
+    inspectorTagsContainer.appendChild(row);
   });
 }
 
-function saveEntityProperties() {
-  if (!INSPECTING_ENTITY_ID) return;
-  const entity = ENTITIES.find(e => e.id === INSPECTING_ENTITY_ID);
-  if (!entity) return;
-
-  if (entity.type === 'card') {
-    entity.cardTypeId = propCardTypeSelect?.value || '';
-    entity.tagValues = {};
-
-    document.querySelectorAll('.prop-tag-input').forEach(input => {
-      const tId = input.getAttribute('data-tag-id');
-      if (tId) entity.tagValues[tId] = input.value.trim();
-    });
-
-    const dom = document.getElementById(entity.id);
-    if (dom) updateEntityInnerDOM(dom, entity);
-  }
-
-  if (modalProperties) modalProperties.style.display = 'none';
-  scheduleSaveRoom();
+let saveNoticeTimer = null;
+function flashInspectorSaveNotice() {
+  if (!inspectorSaveNotice) return;
+  inspectorSaveNotice.style.opacity = '1';
+  clearTimeout(saveNoticeTimer);
+  saveNoticeTimer = setTimeout(() => {
+    inspectorSaveNotice.style.opacity = '0.4';
+  }, 1200);
 }
 
 // Start

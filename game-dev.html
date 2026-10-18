@@ -160,6 +160,60 @@
         <button class="hud-btn" id="btn-zoom-reset" title="全体表示リセット">⟲</button>
       </div>
     </main>
+
+    <!-- Right Inspector: Object Properties & Preview -->
+    <aside class="dev-inspector" id="dev-inspector">
+      <div class="inspector-header">
+        <div class="inspector-title">
+          <span>⚙️</span>
+          <span class="inspector-title-text">オブジェクト情報</span>
+        </div>
+        <button class="inspector-toggle-btn" id="toggle-inspector" title="パネルを折り畳む">▶</button>
+      </div>
+
+      <div class="inspector-body" id="inspector-body">
+        <!-- 未選択時の案内 -->
+        <div class="inspector-empty" id="inspector-empty">
+          <div class="inspector-empty-icon">🃏</div>
+          <div class="inspector-empty-title">未選択</div>
+          <p class="inspector-empty-text">カードやアイテムをクリックすると、ここにプレビューとプロパティが表示されます</p>
+        </div>
+
+        <!-- 選択中のアイテム情報 -->
+        <div class="inspector-content" id="inspector-content" style="display:none;">
+          <!-- プレビュー枠 -->
+          <div class="inspector-preview-card">
+            <div class="inspector-preview-img-wrap">
+              <img id="inspector-preview-img" src="" alt="プレビュー" />
+            </div>
+            <div class="inspector-preview-meta">
+              <span class="inspector-badge" id="inspector-badge">🃏 カード</span>
+              <span class="inspector-status" id="inspector-status">表向き</span>
+            </div>
+          </div>
+
+          <!-- プロパティ編集部 -->
+          <div class="inspector-props-section" id="inspector-card-props">
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label" for="inspector-card-type-select">カードタイプ</label>
+              <select class="form-select" id="inspector-card-type-select">
+                <option value="">(なし / 一般画像)</option>
+              </select>
+            </div>
+
+            <!-- タグ値入力コンテナ -->
+            <div class="inspector-tags-wrap">
+              <div class="inspector-tags-title">属性（タグ）</div>
+              <div id="inspector-tags-container" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+
+            <div class="inspector-auto-save-notice" id="inspector-save-notice">
+              <span>⚡ 変更は自動保存されます</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
   </div>
 
   <!-- Custom Context Menu for Objects -->
@@ -494,7 +548,7 @@
 
   <!-- Scripts -->
   <script src="scripts/polyfills.js"></script>
-  <script type="module" src="scripts/game-dev.module.js?v=20261018-2"></script>
+  <script type="module" src="scripts/game-dev.module.js?v=20261018-3"></script>
 </body>
 
 </html>
