@@ -6,10 +6,11 @@
  */
 
 import {
-  auth, db,
+  auth, db, storage,
   onAuthStateChanged,
   doc, setDoc, getDoc, updateDoc,
-  serverTimestamp, onSnapshot
+  serverTimestamp, onSnapshot,
+  ref, uploadString, getDownloadURL
 } from './firebase.init.js';
 
 // === State ===
@@ -231,7 +232,7 @@ async function loadRoomData() {
 
     // Listen to remote changes
     onSnapshot(roomRef, (docSnap) => {
-      if (!docSnap.exists()) return;
+      if (!docSnap.exists() || isSavingRoom) return;
       const data = docSnap.data();
       if (data.playerCount && data.playerCount !== PLAYER_COUNT) {
         PLAYER_COUNT = Math.max(1, Math.min(10, Number(data.playerCount) || 4));
@@ -253,12 +254,71 @@ async function loadRoomData() {
   }
 }
 
+// Storage Upload Helper & Cache (Firestore 1MB 上限エラー回避用)
+const storageUploadCache = new Map();
+
+async function uploadDataUrlToStorage(dataUrl, pathHint = 'asset') {
+  if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
+    return dataUrl;
+  }
+  if (storageUploadCache.has(dataUrl)) {
+    return storageUploadCache.get(dataUrl);
+  }
+
+  try {
+    const extMatch = dataUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,/);
+    let ext = extMatch ? extMatch[1] : 'png';
+    if (ext === 'jpeg') ext = 'jpg';
+    if (ext.includes('svg')) ext = 'svg';
+
+    const safeRoom = CURRENT_ROOM || 'dev_common';
+    const cleanHint = pathHint.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+    const filename = `${cleanHint}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+    const storageRef = ref(storage, `rooms/${safeRoom}/dev_assets/${filename}`);
+
+    await uploadString(storageRef, dataUrl, 'data_url');
+    const downloadUrl = await getDownloadURL(storageRef);
+    storageUploadCache.set(dataUrl, downloadUrl);
+    return downloadUrl;
+  } catch (err) {
+    console.warn('[DevMode] Storage upload failed, keeping data URL:', err);
+    return dataUrl;
+  }
+}
+
 let syncTimeout = null;
+let isSavingRoom = false;
+
 function scheduleSaveRoom() {
   if (syncTimeout) clearTimeout(syncTimeout);
   syncTimeout = setTimeout(async () => {
-    if (!CURRENT_ROOM) return;
+    if (!CURRENT_ROOM || isSavingRoom) return;
+    isSavingRoom = true;
     try {
+      // 1. ENTITIES 内に Base64 画像が存在する場合、Firebase Storage へアップロードして URL に置換
+      const uploadTasks = [];
+      for (const ent of ENTITIES) {
+        if (ent.frontUrl && ent.frontUrl.startsWith('data:')) {
+          uploadTasks.push((async () => {
+            ent.frontUrl = await uploadDataUrlToStorage(ent.frontUrl, `front_${ent.id}`);
+            const dom = document.getElementById(ent.id);
+            if (dom) updateEntityInnerDOM(dom, ent);
+          })());
+        }
+        if (ent.backUrl && ent.backUrl.startsWith('data:')) {
+          uploadTasks.push((async () => {
+            ent.backUrl = await uploadDataUrlToStorage(ent.backUrl, `back_${ent.id}`);
+            const dom = document.getElementById(ent.id);
+            if (dom) updateEntityInnerDOM(dom, ent);
+          })());
+        }
+      }
+
+      if (uploadTasks.length > 0) {
+        await Promise.all(uploadTasks);
+      }
+
+      // 2. Firestore への保存実行 (Base64 が除外されサイズが数百KB以下になるため 1MB 上限エラーが解消)
       const roomRef = doc(db, `rooms/${CURRENT_ROOM}`);
       await setDoc(roomRef, {
         playerCount: PLAYER_COUNT,
@@ -268,8 +328,11 @@ function scheduleSaveRoom() {
         devEntities: ENTITIES,
         updatedAt: serverTimestamp()
       }, { merge: true });
+      console.log('[DevMode] Room successfully synced to Firestore');
     } catch (e) {
       console.warn('[DevMode] Sync failed:', e);
+    } finally {
+      isSavingRoom = false;
     }
   }, 500);
 }
@@ -471,6 +534,7 @@ async function handleFileUpload(e, type) {
   let index = 0;
   for (const file of files) {
     const dataUrl = await readFileAsDataURL(file);
+    const storageUrl = await uploadDataUrlToStorage(dataUrl, `upload_${type}_${file.name}`);
     const entityId = `entity_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     HIGHEST_Z += 1;
 
@@ -481,7 +545,7 @@ async function handleFileUpload(e, type) {
       y: vpCenterY + index * 25,
       z: HIGHEST_Z,
       angle: 0,
-      frontUrl: dataUrl,
+      frontUrl: storageUrl,
       backUrl: 'PlayExample.webp',
       isFaceDown: false
     };
@@ -806,7 +870,7 @@ async function importCardsFromZip(file) {
         }
       });
 
-      // 画像の取得
+      // 画像の取得 (Firebase Storage へ直接アップロードして軽量URL化)
       let frontUrl = 'PlayExample.webp';
       const zipImgEntry = findZipFile(zip, rawImage);
       if (zipImgEntry) {
@@ -816,10 +880,11 @@ async function importCardsFromZip(file) {
         if (ext === 'jpg' || ext === 'jpeg') mime = 'image/jpeg';
         else if (ext === 'webp') mime = 'image/webp';
         else if (ext === 'svg') mime = 'image/svg+xml';
-        frontUrl = `data:${mime};base64,${base64Data}`;
+        const dataUrl = `data:${mime};base64,${base64Data}`;
+        frontUrl = await uploadDataUrlToStorage(dataUrl, `zip_${rawImage}`);
       }
 
-      // 裏面画像の取得
+      // 裏面画像の取得 (Firebase Storage へ直接アップロードして軽量URL化)
       let backUrl = 'PlayExample.webp';
       if (rawBack) {
         const zipBackEntry = findZipFile(zip, rawBack);
@@ -829,7 +894,8 @@ async function importCardsFromZip(file) {
           let mime = 'image/png';
           if (ext === 'jpg' || ext === 'jpeg') mime = 'image/jpeg';
           else if (ext === 'webp') mime = 'image/webp';
-          backUrl = `data:${mime};base64,${base64Back}`;
+          const dataUrl = `data:${mime};base64,${base64Back}`;
+          backUrl = await uploadDataUrlToStorage(dataUrl, `zip_${rawBack}`);
         } else if (rawBack.startsWith('http') || rawBack.endsWith('.webp') || rawBack.endsWith('.png')) {
           backUrl = rawBack;
         }
