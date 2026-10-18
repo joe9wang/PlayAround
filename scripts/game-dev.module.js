@@ -427,18 +427,28 @@ function drawRuler() {
 function setupViewportEvents() {
   if (!viewportEl) return;
 
-  // Panning with Middle Click or Right Drag or Left Drag on background
+  // Panning with Middle Click or Left Drag on background/empty area
   viewportEl.addEventListener('mousedown', (e) => {
-    if (e.target === viewportEl || e.target === rulerCanvas || e.target === worldEl || e.target.classList.contains('world-bounds')) {
-      if (e.button === 0 || e.button === 1) { // Left or middle
-        IS_PANNING = true;
-        PAN_START_X = e.clientX - VIEW_X;
-        PAN_START_Y = e.clientY - VIEW_Y;
-        viewportEl.style.cursor = 'grabbing';
-        deselectEntity();
-        hideContextMenu();
-      }
+    if (e.button !== 0 && e.button !== 1) return;
+
+    // カード/コマ/ボード、エリアヘッダー、リサイズハンドル、削除ボタン、HUD操作時はパン開始しない
+    if (e.target.closest('.dev-entity') ||
+        e.target.closest('.dev-area-header') ||
+        e.target.closest('.dev-resize-handle') ||
+        e.target.closest('.area-delete-btn') ||
+        e.target.closest('.viewport-hud') ||
+        e.target.closest('#dev-context-menu')) {
+      return;
     }
+
+    IS_PANNING = true;
+    PAN_START_X = e.clientX - VIEW_X;
+    PAN_START_Y = e.clientY - VIEW_Y;
+    viewportEl.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+    deselectEntity();
+    hideContextMenu();
+    e.preventDefault();
   });
 
   window.addEventListener('mousemove', (e) => {
@@ -453,6 +463,7 @@ function setupViewportEvents() {
     if (IS_PANNING) {
       IS_PANNING = false;
       viewportEl.style.cursor = 'default';
+      document.body.style.userSelect = '';
     }
   });
 
