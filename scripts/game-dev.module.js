@@ -79,9 +79,12 @@ const btnZoomIn = document.getElementById('btn-zoom-in');
 const btnZoomOut = document.getElementById('btn-zoom-out');
 const btnZoomReset = document.getElementById('btn-zoom-reset');
 
-// Top Bar Uploads
+// Top Bar Uploads & ZIP
 const btnUploadCard = document.getElementById('btn-upload-card');
 const fileInputCard = document.getElementById('file-input-card');
+const btnImportZip = document.getElementById('btn-import-zip');
+const fileInputZip = document.getElementById('file-input-zip');
+const btnExportZip = document.getElementById('btn-export-zip');
 const btnUploadBoard = document.getElementById('btn-upload-board');
 const fileInputBoard = document.getElementById('file-input-board');
 const btnUploadPiece = document.getElementById('btn-upload-piece');
@@ -443,6 +446,19 @@ function setupTopbarEvents() {
   fileInputCard?.addEventListener('change', (e) => handleFileUpload(e, 'card'));
   fileInputBoard?.addEventListener('change', (e) => handleFileUpload(e, 'board'));
   fileInputPiece?.addEventListener('change', (e) => handleFileUpload(e, 'piece'));
+
+  // ZIP Import & Export
+  btnImportZip?.addEventListener('click', () => fileInputZip?.click());
+  fileInputZip?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await importCardsFromZip(file);
+      e.target.value = '';
+    }
+  });
+  btnExportZip?.addEventListener('click', async () => {
+    await exportCardsToZip();
+  });
 }
 
 async function handleFileUpload(e, type) {
@@ -499,6 +515,402 @@ function readFileAsDataURL(file) {
     reader.onload = (e) => resolve(e.target.result);
     reader.readAsDataURL(file);
   });
+}
+
+// ============================================================================
+// CSV Helpers (RFC 4180 with UTF-8 BOM Support for Excel)
+// ============================================================================
+function parseCSV(text) {
+  if (text.charCodeAt(0) === 0xFEFF) {
+    text = text.slice(1);
+  }
+  const lines = [];
+  let row = [];
+  let inQuotes = false;
+  let cur = '';
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const next = text[i + 1];
+
+    if (inQuotes) {
+      if (c === '"') {
+        if (next === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cur += c;
+      }
+    } else {
+      if (c === '"') {
+        inQuotes = true;
+      } else if (c === ',') {
+        row.push(cur.trim());
+        cur = '';
+      } else if (c === '\r') {
+        if (next === '\n') i++;
+        row.push(cur.trim());
+        if (row.some(cell => cell.length > 0)) lines.push(row);
+        row = [];
+        cur = '';
+      } else if (c === '\n') {
+        row.push(cur.trim());
+        if (row.some(cell => cell.length > 0)) lines.push(row);
+        row = [];
+        cur = '';
+      } else {
+        cur += c;
+      }
+    }
+  }
+  if (cur.length > 0 || row.length > 0) {
+    row.push(cur.trim());
+    if (row.some(cell => cell.length > 0)) lines.push(row);
+  }
+
+  if (lines.length === 0) return [];
+  const rawHeaders = lines[0].map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const obj = {};
+    rawHeaders.forEach((h, idx) => {
+      obj[h] = line[idx] !== undefined ? line[idx] : '';
+    });
+    return obj;
+  });
+}
+
+function serializeCSV(headers, rows) {
+  const escapeCell = (val) => {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const lines = [
+    headers.map(escapeCell).join(',')
+  ];
+  rows.forEach(r => {
+    lines.push(headers.map(h => escapeCell(r[h])).join(','));
+  });
+
+  return '\uFEFF' + lines.join('\r\n');
+}
+
+function findZipFile(zip, filePath) {
+  if (!filePath) return null;
+  const clean = filePath.replace(/^[./\\]+/, '').replace(/\\/g, '/');
+  const basename = clean.split('/').pop().toLowerCase();
+
+  if (zip.file(clean)) return zip.file(clean);
+  if (zip.file(`images/${basename}`)) return zip.file(`images/${basename}`);
+
+  for (const filename of Object.keys(zip.files)) {
+    const f = zip.files[filename];
+    if (f.dir) continue;
+    const norm = filename.replace(/\\/g, '/').toLowerCase();
+    if (norm === clean.toLowerCase() || norm.endsWith('/' + basename) || norm === basename) {
+      return f;
+    }
+  }
+  return null;
+}
+
+// ============================================================================
+// ZIP Export & Import (Cards, Attributes, Schemas)
+// ============================================================================
+async function exportCardsToZip() {
+  if (typeof JSZip === 'undefined') {
+    alert('JSZipライブラリの読み込みに失敗しました。ページを再読み込みしてください。');
+    return;
+  }
+
+  const cards = ENTITIES.filter(e => e.type === 'card');
+  if (cards.length === 0) {
+    alert('エクスポート対象のカードがキャンバスにありません。まずはカードを追加してください。');
+    return;
+  }
+
+  const zip = new JSZip();
+  const imgFolder = zip.folder('images');
+
+  // 1. 全スキーマからタグ名を抽出
+  const allTagNames = new Set();
+  Object.values(CARD_SCHEMAS).forEach(schema => {
+    (schema.tags || []).forEach(tag => {
+      if (tag.name) allTagNames.add(tag.name);
+    });
+  });
+  const tagColumns = Array.from(allTagNames);
+
+  // 2. manifest.json
+  const manifest = {
+    version: '1.0',
+    exportedAt: new Date().toISOString(),
+    deckName: 'BatriTable_Exported_Cards',
+    cardCount: cards.length,
+    cardSchemas: CARD_SCHEMAS
+  };
+  zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+
+  // 3. 画像収集とCSV行の生成
+  const csvHeaders = ['image', 'type', 'count', 'back_image', ...tagColumns];
+  const csvRows = [];
+
+  for (let i = 0; i < cards.length; i++) {
+    const card = cards[i];
+    const filename = `card_${String(i + 1).padStart(3, '0')}.png`;
+
+    if (card.frontUrl) {
+      if (card.frontUrl.startsWith('data:')) {
+        const parts = card.frontUrl.split(',');
+        const base64Data = parts[1];
+        imgFolder.file(filename, base64Data, { base64: true });
+      } else {
+        try {
+          const resp = await fetch(card.frontUrl);
+          const blob = await resp.blob();
+          imgFolder.file(filename, blob);
+        } catch (err) {
+          console.warn('Failed to fetch card frontUrl:', card.frontUrl, err);
+        }
+      }
+    }
+
+    const schema = card.cardTypeId ? CARD_SCHEMAS[card.cardTypeId] : null;
+    const typeName = schema ? schema.name : '';
+
+    const rowObj = {
+      image: `images/${filename}`,
+      type: typeName,
+      count: 1,
+      back_image: (card.backUrl && card.backUrl !== 'PlayExample.webp') ? card.backUrl : ''
+    };
+
+    tagColumns.forEach(tagName => {
+      rowObj[tagName] = '';
+      if (schema && card.tagValues) {
+        const tagDef = (schema.tags || []).find(t => t.name === tagName);
+        if (tagDef && card.tagValues[tagDef.id] !== undefined) {
+          rowObj[tagName] = card.tagValues[tagDef.id];
+        }
+      }
+    });
+
+    csvRows.push(rowObj);
+  }
+
+  // 4. cards.csv 生成
+  const csvContent = serializeCSV(csvHeaders, csvRows);
+  zip.file('cards.csv', csvContent);
+
+  // 5. ダウンロード実行
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const downloadUrl = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.download = `cards_export_${Date.now()}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(downloadUrl);
+}
+
+async function importCardsFromZip(file) {
+  if (typeof JSZip === 'undefined') {
+    alert('JSZipライブラリの読み込みに失敗しました。ページを再読み込みしてください。');
+    return;
+  }
+  if (!file) return;
+
+  try {
+    const zip = await JSZip.loadAsync(file);
+
+    // 1. manifest.json 読み込み (カードタイプ・タグ定義の復元)
+    const manifestFile = zip.file('manifest.json');
+    if (manifestFile) {
+      try {
+        const manifestStr = await manifestFile.async('string');
+        const manifest = JSON.parse(manifestStr);
+        if (manifest.cardSchemas && typeof manifest.cardSchemas === 'object') {
+          Object.entries(manifest.cardSchemas).forEach(([typeId, schema]) => {
+            let existing = Object.values(CARD_SCHEMAS).find(s => s.name === schema.name || s.id === typeId);
+            if (!existing) {
+              CARD_SCHEMAS[typeId] = schema;
+            } else {
+              if (!existing.tags) existing.tags = [];
+              (schema.tags || []).forEach(t => {
+                if (!existing.tags.some(et => et.name === t.name || et.id === t.id)) {
+                  existing.tags.push(t);
+                }
+              });
+            }
+          });
+          renderSchemaList();
+        }
+      } catch (err) {
+        console.warn('Failed to parse manifest.json:', err);
+      }
+    }
+
+    // 2. cards.csv の検出
+    let csvFile = zip.file('cards.csv');
+    if (!csvFile) {
+      const candidate = Object.values(zip.files).find(f => f.name.toLowerCase().endsWith('.csv') && !f.dir);
+      if (candidate) csvFile = candidate;
+    }
+
+    if (!csvFile) {
+      alert('ZIP内に cards.csv が見つかりませんでした。');
+      return;
+    }
+
+    const csvStr = await csvFile.async('string');
+    const rows = parseCSV(csvStr);
+    if (rows.length === 0) {
+      alert('cards.csv にデータが含まれていません。');
+      return;
+    }
+
+    const vpCenterX = (-VIEW_X + (viewportEl?.clientWidth || 800) / 2) / VIEW_SCALE;
+    const vpCenterY = (-VIEW_Y + (viewportEl?.clientHeight || 600) / 2) / VIEW_SCALE;
+
+    let createdCount = 0;
+    let cardIndex = 0;
+
+    for (const row of rows) {
+      // カラム名のゆらぎ吸収 (大文字小文字/日本語名)
+      let rawImage = '';
+      let rawType = '';
+      let rawCount = 1;
+      let rawBack = '';
+      const customTagCells = {};
+
+      Object.entries(row).forEach(([colName, cellVal]) => {
+        const lower = colName.toLowerCase().trim();
+        if (['image', 'img', 'file', 'ファイル', '画像'].includes(lower)) {
+          rawImage = cellVal.trim();
+        } else if (['type', 'card_type', 'cardtype', 'タイプ', 'カードタイプ'].includes(lower)) {
+          rawType = cellVal.trim();
+        } else if (['count', 'qty', 'quantity', '枚数', '個数'].includes(lower)) {
+          rawCount = parseInt(cellVal, 10) || 1;
+        } else if (['back_image', 'backimage', 'back', '裏面', '裏面画像'].includes(lower)) {
+          rawBack = cellVal.trim();
+        } else {
+          customTagCells[colName.trim()] = cellVal.trim();
+        }
+      });
+
+      // 画像の取得
+      let frontUrl = 'PlayExample.webp';
+      const zipImgEntry = findZipFile(zip, rawImage);
+      if (zipImgEntry) {
+        const base64Data = await zipImgEntry.async('base64');
+        const ext = zipImgEntry.name.split('.').pop().toLowerCase();
+        let mime = 'image/png';
+        if (ext === 'jpg' || ext === 'jpeg') mime = 'image/jpeg';
+        else if (ext === 'webp') mime = 'image/webp';
+        else if (ext === 'svg') mime = 'image/svg+xml';
+        frontUrl = `data:${mime};base64,${base64Data}`;
+      }
+
+      // 裏面画像の取得
+      let backUrl = 'PlayExample.webp';
+      if (rawBack) {
+        const zipBackEntry = findZipFile(zip, rawBack);
+        if (zipBackEntry) {
+          const base64Back = await zipBackEntry.async('base64');
+          const ext = zipBackEntry.name.split('.').pop().toLowerCase();
+          let mime = 'image/png';
+          if (ext === 'jpg' || ext === 'jpeg') mime = 'image/jpeg';
+          else if (ext === 'webp') mime = 'image/webp';
+          backUrl = `data:${mime};base64,${base64Back}`;
+        } else if (rawBack.startsWith('http') || rawBack.endsWith('.webp') || rawBack.endsWith('.png')) {
+          backUrl = rawBack;
+        }
+      }
+
+      // カードタイプの特定または新規自動登録
+      let matchedSchema = null;
+      if (rawType) {
+        matchedSchema = Object.values(CARD_SCHEMAS).find(s => s.name === rawType || s.id === rawType);
+        if (!matchedSchema) {
+          const newTypeId = `type_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+          matchedSchema = {
+            id: newTypeId,
+            name: rawType,
+            tags: []
+          };
+          CARD_SCHEMAS[newTypeId] = matchedSchema;
+          renderSchemaList();
+        }
+      }
+
+      // タグ値の解決 (未登録タグは自動でスキーマに追加)
+      const tagValues = {};
+      if (matchedSchema) {
+        if (!matchedSchema.tags) matchedSchema.tags = [];
+        Object.entries(customTagCells).forEach(([colKey, colVal]) => {
+          if (colVal !== '') {
+            let tagDef = matchedSchema.tags.find(t => t.name === colKey || t.id === colKey);
+            if (!tagDef) {
+              const newTagId = `tag_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+              tagDef = { id: newTagId, name: colKey };
+              matchedSchema.tags.push(tagDef);
+            }
+            tagValues[tagDef.id] = colVal;
+          }
+        });
+      }
+
+      const count = Math.min(100, Math.max(1, rawCount));
+      const cols = 8;
+
+      for (let c = 0; c < count; c++) {
+        const entityId = `entity_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        HIGHEST_Z += 1;
+
+        const col = cardIndex % cols;
+        const rowIdx = Math.floor(cardIndex / cols);
+        const cardX = Math.round(vpCenterX + (col - cols / 2) * 135);
+        const cardY = Math.round(vpCenterY + (rowIdx - 2) * 175);
+
+        const entity = {
+          id: entityId,
+          type: 'card',
+          x: cardX,
+          y: cardY,
+          z: HIGHEST_Z,
+          w: 120,
+          h: 160,
+          angle: 0,
+          frontUrl: frontUrl,
+          backUrl: backUrl,
+          isFaceDown: false,
+          cardTypeId: matchedSchema ? matchedSchema.id : '',
+          tagValues: tagValues
+        };
+
+        ENTITIES.push(entity);
+        createEntityDOM(entity);
+        createdCount++;
+        cardIndex++;
+      }
+    }
+
+    renderSchemaList();
+    if (SELECTED_ENTITY_ID) updateInspector(SELECTED_ENTITY_ID);
+    scheduleSaveRoom();
+    alert(`合計 ${createdCount} 枚のカードを正常にインポートしました！`);
+  } catch (err) {
+    console.error('ZIP import error:', err);
+    alert('ZIPファイルの読み込み中にエラーが発生しました: ' + err.message);
+  }
 }
 
 // ============================================================================

@@ -37,6 +37,15 @@
       </button>
       <input type="file" id="file-input-card" accept="image/*" multiple style="display:none;" />
 
+      <button class="top-btn" id="btn-import-zip" title="ZIPファイル（画像＋CSV）からカードを一括インポート">
+        <span>📦 ZIPインポート</span>
+      </button>
+      <input type="file" id="file-input-zip" accept=".zip" style="display:none;" />
+
+      <button class="top-btn" id="btn-export-zip" title="現在のカードデータと画像をZIP出力">
+        <span>💾 ZIPエクスポート</span>
+      </button>
+
       <button class="top-btn" id="btn-upload-board" title="盤面・マップ用背景画像を配置">
         <span>🗺️ ボードを追加</span>
       </button>
@@ -518,8 +527,9 @@
   </div>
 
   <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="scripts/polyfills.js"></script>
-  <script type="module" src="scripts/game-dev.module.js?v=20261018-5"></script>
+  <script type="module" src="scripts/game-dev.module.js?v=20261018-6"></script>
 </body>
 
 </html>
