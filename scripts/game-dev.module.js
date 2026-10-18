@@ -115,6 +115,7 @@ const btnDefWhat = document.getElementById('btn-def-what');
 const btnDefSrcArea = document.getElementById('btn-def-src-area');
 const btnDefSrcOwner = document.getElementById('btn-def-src-owner');
 const btnDefDest = document.getElementById('btn-def-dest');
+const btnDefDestLabel = document.getElementById('btn-def-dest-label');
 const btnDefWhatGroup = document.getElementById('btn-def-what-group');
 const btnDefSrcAreaGroup = document.getElementById('btn-def-src-area-group');
 const btnDefSrcOwnerGroup = document.getElementById('btn-def-src-owner-group');
@@ -132,6 +133,14 @@ const btnDefDirection = document.getElementById('btn-def-direction');
 const btnDefHint = document.getElementById('btn-def-hint');
 const btnDefAngleGroup = document.getElementById('btn-def-angle-group');
 const btnDefDirectionGroup = document.getElementById('btn-def-direction-group');
+const btnDefDrawSrcGroup = document.getElementById('btn-def-draw-src-group');
+const btnDefDrawSrc = document.getElementById('btn-def-draw-src');
+const btnDefDrawCountGroup = document.getElementById('btn-def-draw-count-group');
+const btnDefDrawCount = document.getElementById('btn-def-draw-count');
+const btnDefDrawPosGroup = document.getElementById('btn-def-draw-pos-group');
+const btnDefDrawPos = document.getElementById('btn-def-draw-pos');
+const btnDefDrawFaceGroup = document.getElementById('btn-def-draw-face-group');
+const btnDefDrawFace = document.getElementById('btn-def-draw-face');
 const devActingPlayerSelect = document.getElementById('dev-acting-player');
 const playButtonsContainer = document.getElementById('play-buttons-container');
 
@@ -883,6 +892,7 @@ function setupModalEvents() {
   btnDefAction?.addEventListener('change', updateButtonFormVisibility);
   btnDefWhat?.addEventListener('change', updateButtonFormVisibility);
   btnDefSrcArea?.addEventListener('change', updateButtonFormHint);
+  btnDefDrawSrc?.addEventListener('change', updateButtonFormHint);
   btnDefDest?.addEventListener('change', updateButtonFormHint);
   btnDefAngle?.addEventListener('input', syncAnglePresetActive);
 
@@ -1079,6 +1089,7 @@ function showToast(message) {
 
 const ACTION_LABELS = {
   move: '移動',
+  draw: 'ドロー',
   flip_toggle: '裏表を変える',
   flip_down: '裏にする',
   flip_up: '表にする',
@@ -1125,8 +1136,8 @@ function getAllDefinedTags() {
 function normalizeButtonDef(def) {
   if (!def || typeof def !== 'object') return def;
 
-  // すでに新形式の場合
-  if (def.itemType !== undefined) {
+  // すでに新形式またはドローの場合
+  if (def.itemType !== undefined || def.action === 'draw') {
     return def;
   }
 
@@ -1151,6 +1162,19 @@ function normalizeButtonDef(def) {
 // ボタンが実行不能になっていないか（参照エリアの削除など）
 function getButtonIssue(def) {
   const norm = normalizeButtonDef(def);
+
+  if (norm.action === 'draw') {
+    if (!norm.drawSrc) return 'ドロー元が未設定です';
+    if (norm.drawSrc.kind === 'area' && !AREAS.some(a => a.id === norm.drawSrc.areaId)) {
+      return 'ドロー元エリアが削除されています';
+    }
+    if (!norm.dest) return 'ドロー先が未設定です';
+    if (norm.dest.kind === 'area' && !AREAS.some(a => a.id === norm.dest.areaId)) {
+      return 'ドロー先エリアが削除されています';
+    }
+    return null;
+  }
+
   if (norm.itemType !== 'selected' && norm.sourceArea && norm.sourceArea !== 'all') {
     const srcRef = valueToRef(norm.sourceArea);
     if (srcRef && srcRef.kind === 'area' && !AREAS.some(a => a.id === srcRef.areaId)) {
@@ -1170,6 +1194,16 @@ function getButtonIssue(def) {
 function describeButton(def) {
   const norm = normalizeButtonDef(def);
   const actName = ACTION_LABELS[norm.action] || norm.action;
+
+  if (norm.action === 'draw') {
+    const srcText = norm.drawSrc ? refLabel(norm.drawSrc) : '未設定';
+    const destText = norm.dest ? refLabel(norm.dest) : '未設定';
+    const posText = norm.drawPos === 'bottom' ? '下から' : '上から';
+    const countText = `${norm.drawCount || 1}枚`;
+    const faceText = norm.drawFace === 'face_up' ? ' (表)' : norm.drawFace === 'face_down' ? ' (裏)' : '';
+    const placeText = PLACEMENT_LABELS[norm.placement] || norm.placement;
+    return `${actName}：${srcText}の${posText}${countText}${faceText} → ${destText} [${placeText}]`;
+  }
 
   let whatText = ITEM_TYPE_LABELS[norm.itemType] || norm.itemType;
   if (norm.itemType === 'tag_filter' && norm.tagConditions && norm.tagConditions.length > 0) {
@@ -1208,6 +1242,9 @@ function openAddButtonModal() {
   if (btnDefSrcOwner) btnDefSrcOwner.value = 'any';
   if (btnDefAngle) btnDefAngle.value = '90';
   if (btnDefDirection) btnDefDirection.value = 'cw';
+  if (btnDefDrawPos) btnDefDrawPos.value = 'top';
+  if (btnDefDrawCount) btnDefDrawCount.value = '1';
+  if (btnDefDrawFace) btnDefDrawFace.value = 'keep';
 
   selectPlacementOption('spread');
   rebuildAreaOptions();
@@ -1265,8 +1302,14 @@ function rebuildAreaOptions() {
     ...buildAreaRefOptions('にある', null)
   ], prevSrc || 'all');
 
+  const prevDrawSrc = btnDefDrawSrc?.value;
+  fillSelect(btnDefDrawSrc, [
+    { value: 'all', label: '全領域にある' },
+    ...buildAreaRefOptions('にある', null)
+  ], prevDrawSrc || 'own:deck');
+
   const prevDest = btnDefDest?.value;
-  fillSelect(btnDefDest, buildAreaRefOptions('へ', null), prevDest);
+  fillSelect(btnDefDest, buildAreaRefOptions('へ', null), prevDest || 'own:hand');
 }
 
 function selectPlacementOption(placementKey) {
@@ -1369,19 +1412,31 @@ function updateButtonFormVisibility() {
   const what = btnDefWhat?.value || 'all_cards';
   const show = (el, visible) => { if (el) el.style.display = visible ? '' : 'none'; };
 
+  const isDraw = (action === 'draw');
   const isSelected = (what === 'selected');
   const isTagFilter = (what === 'tag_filter');
 
-  // 対象（どこのエリア） & 対象（誰の）: 選択中アイテム時はスキップ
-  show(btnDefSrcAreaGroup, !isSelected);
-  show(btnDefSrcOwnerGroup, !isSelected);
+  // ドロー専用フィールド群
+  show(btnDefDrawSrcGroup, isDraw);
+  show(btnDefDrawCountGroup, isDraw);
+  show(btnDefDrawPosGroup, isDraw);
+  show(btnDefDrawFaceGroup, isDraw);
+
+  // 対象（なにを / どこのエリア / 誰の）: ドロー時は非表示
+  show(btnDefWhatGroup, !isDraw);
+  show(btnDefSrcAreaGroup, !isDraw && !isSelected);
+  show(btnDefSrcOwnerGroup, !isDraw && !isSelected);
 
   // タグ指定条件群: 項目3で「タグ指定」を選んだ時のみ
-  show(btnDefTagConditionsGroup, isTagFilter && !isSelected);
+  show(btnDefTagConditionsGroup, !isDraw && isTagFilter && !isSelected);
 
-  // 移動先 & 置き方: 移動する時のみ
-  show(btnDefDestGroup, action === 'move');
-  show(btnDefPlacementGroup, action === 'move');
+  // 移動先／ドロー先 & 置き方: 移動またはドロー時
+  show(btnDefDestGroup, action === 'move' || isDraw);
+  show(btnDefPlacementGroup, action === 'move' || isDraw);
+
+  if (btnDefDestLabel) {
+    btnDefDestLabel.textContent = isDraw ? 'ドロー先（どこへ）' : '移動先（どこへ）';
+  }
 
   // 回転 & 角度
   show(btnDefAngleGroup, action === 'rotate' || action === 'set_angle');
@@ -1404,6 +1459,12 @@ function updateButtonFormHint() {
 
   if (AREAS.length === 0) {
     hint = '💡 フィールドにエリアがありません。「エリア追加」で作成すると、ここに選択肢として表示されます。';
+  } else if (action === 'draw') {
+    if (!btnDefDest || btnDefDest.options.length === 0) {
+      hint = '⚠️ ドロー先にできるエリアがありません。手札エリア等を追加してください。';
+    } else {
+      hint = '💡 山札（デッキエリアなど）からカードを指定枚数ドローします。';
+    }
   } else if (action === 'move' && (!btnDefDest || btnDefDest.options.length === 0)) {
     hint = '⚠️ 移動先にできるエリアがありません。別のエリアを追加してください。';
   } else if (what === 'tag_filter' && getAllDefinedTags().length === 0) {
@@ -1427,6 +1488,50 @@ function confirmAddPlayButton() {
   }
 
   const action = btnDefAction?.value || 'move';
+
+  // 1. ドローする場合
+  if (action === 'draw') {
+    const drawSrc = valueToRef(btnDefDrawSrc?.value);
+    if (!drawSrc) {
+      alert('ドロー元エリアを選択してください。');
+      return;
+    }
+    const dest = valueToRef(btnDefDest?.value);
+    if (!dest) {
+      alert('ドロー先（どこへ）を選択してください。');
+      return;
+    }
+    if (refToValue(drawSrc) === refToValue(dest)) {
+      alert('ドロー元エリアとドロー先エリアが同じです。別のドロー先を選択してください。');
+      return;
+    }
+    const count = parseInt(btnDefDrawCount?.value, 10);
+    if (Number.isNaN(count) || count < 1) {
+      alert('枚数は 1 以上の数値を入力してください。');
+      return;
+    }
+
+    const newBtn = {
+      id: `btn_${Date.now()}`,
+      label,
+      action: 'draw',
+      itemType: 'all_cards',
+      drawSrc,
+      drawPos: btnDefDrawPos?.value === 'bottom' ? 'bottom' : 'top',
+      drawCount: count,
+      drawFace: btnDefDrawFace?.value || 'keep',
+      dest,
+      placement: btnDefPlacementVal?.value || 'spread'
+    };
+
+    PLAY_BUTTONS.push(newBtn);
+    renderPlayButtons();
+    if (modalAddButton) modalAddButton.style.display = 'none';
+    scheduleSaveRoom();
+    return;
+  }
+
+  // 2. 移動 / 裏表 / 回転
   const itemType = btnDefWhat?.value || 'all_cards';
   const sourceArea = btnDefSrcArea?.value || 'all';
   const sourceOwner = btnDefSrcOwner?.value || 'any';
@@ -1707,6 +1812,81 @@ function placeEntitiesInArea(movingEnts, area, placement) {
 
 function executePlayAction(rawDef) {
   const btnDef = normalizeButtonDef(rawDef);
+
+  // 1. ドロー処理
+  if (btnDef.action === 'draw') {
+    let sourceCards = [];
+    let sourceName = '';
+
+    if (btnDef.drawSrc?.kind === 'all') {
+      sourceCards = ENTITIES.filter(e => e.type === 'card');
+      sourceName = '全領域';
+    } else {
+      const srcArea = resolveAreaRef(btnDef.drawSrc);
+      if (!srcArea) {
+        showToast(btnDef.drawSrc?.kind === 'own'
+          ? `${getOwnerLabel(getActingPlayer())} の${getAreaTypeName(btnDef.drawSrc.areaType)}がありません`
+          : 'ドロー元エリアが見つかりません');
+        return;
+      }
+      sourceName = `「${getAreaDisplayName(srcArea)}」`;
+      sourceCards = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, srcArea));
+    }
+
+    if (sourceCards.length === 0) {
+      showToast(`${sourceName}にカードがありません`);
+      return;
+    }
+
+    const destArea = resolveAreaRef(btnDef.dest);
+    if (!destArea) {
+      showToast(btnDef.dest?.kind === 'own'
+        ? `${getOwnerLabel(getActingPlayer())} の${getAreaTypeName(btnDef.dest.areaType)}がありません`
+        : 'ドロー先エリアが見つかりません');
+      return;
+    }
+
+    // ソート: 上から(top) = z降順 (大きい順), 下から(bottom) = z昇順 (小さい順)
+    if (btnDef.drawPos === 'bottom') {
+      sourceCards.sort((a, b) => (a.z || 0) - (b.z || 0));
+    } else {
+      sourceCards.sort((a, b) => (b.z || 0) - (a.z || 0));
+    }
+
+    const reqCount = Math.max(1, Number(btnDef.drawCount) || 1);
+    const actualCount = Math.min(reqCount, sourceCards.length);
+    const drawn = sourceCards.slice(0, actualCount);
+
+    // 表裏の変更
+    if (btnDef.drawFace === 'face_up') {
+      drawn.forEach(c => {
+        c.isFaceDown = false;
+        const dom = document.getElementById(c.id);
+        if (dom) updateEntityInnerDOM(dom, c);
+      });
+    } else if (btnDef.drawFace === 'face_down') {
+      drawn.forEach(c => {
+        c.isFaceDown = true;
+        const dom = document.getElementById(c.id);
+        if (dom) updateEntityInnerDOM(dom, c);
+      });
+    }
+
+    // 移動先へ配置
+    placeEntitiesInArea(drawn, destArea, btnDef.placement);
+
+    const destName = `「${getAreaDisplayName(destArea)}」`;
+    if (actualCount < reqCount) {
+      showToast(`山札が不足しているため、${actualCount}枚のみドローしました（残り0枚）`);
+    } else {
+      showToast(`${sourceName}から${actualCount}枚ドローして${destName}へ置きました`);
+    }
+
+    scheduleSaveRoom();
+    return;
+  }
+
+  // 2. 移動 / 裏表 / 回転処理
   const targets = getTargetEntities(btnDef);
 
   if (btnDef.itemType === 'selected' && (!SELECTED_ENTITY_ID || targets.length === 0)) {

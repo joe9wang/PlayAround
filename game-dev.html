@@ -270,11 +270,43 @@
           <label class="form-label" for="btn-def-action">動作（なにする）</label>
           <select class="form-select" id="btn-def-action">
             <option value="move">移動する</option>
+            <option value="draw">ドローする</option>
             <option value="flip_toggle">裏表を変える</option>
             <option value="flip_down">裏にする</option>
             <option value="flip_up">表にする</option>
             <option value="rotate">回転する（今の向きから）</option>
             <option value="set_angle">向きをそろえる</option>
+          </select>
+        </div>
+
+        <!-- ドロー専用: 項目1 ドロー元（どこのエリア） -->
+        <div class="form-group" id="btn-def-draw-src-group" style="display:none;">
+          <label class="form-label" for="btn-def-draw-src">ドロー元（どこのエリア）</label>
+          <select class="form-select" id="btn-def-draw-src"></select>
+        </div>
+
+        <!-- ドロー専用: 項目2 枚数（何枚） -->
+        <div class="form-group" id="btn-def-draw-count-group" style="display:none;">
+          <label class="form-label" for="btn-def-draw-count">枚数（何枚）</label>
+          <input type="number" class="form-input" id="btn-def-draw-count" min="1" max="99" value="1" />
+        </div>
+
+        <!-- ドロー専用: 項目3 ドロー元（どこから） -->
+        <div class="form-group" id="btn-def-draw-pos-group" style="display:none;">
+          <label class="form-label" for="btn-def-draw-pos">ドロー元（どこから）</label>
+          <select class="form-select" id="btn-def-draw-pos">
+            <option value="top" selected>上から（山札の一番上）</option>
+            <option value="bottom">下から（山札の底）</option>
+          </select>
+        </div>
+
+        <!-- ドロー専用: 表裏（めくるかどうか） -->
+        <div class="form-group" id="btn-def-draw-face-group" style="display:none;">
+          <label class="form-label" for="btn-def-draw-face">表裏（めくるかどうか）</label>
+          <select class="form-select" id="btn-def-draw-face">
+            <option value="keep" selected>そのまま（裏向きなら裏のまま）</option>
+            <option value="face_up">表にする（オープンして引く）</option>
+            <option value="face_down">裏にする</option>
           </select>
         </div>
 
@@ -325,9 +357,9 @@
           </div>
         </div>
 
-        <!-- 項目5: 移動先（どこへ） （移動する時のみ表示） -->
+        <!-- 項目5: 移動先／ドロー先（どこへ） （移動・ドローする時のみ表示） -->
         <div class="form-group" id="btn-def-dest-group">
-          <label class="form-label" for="btn-def-dest">移動先（どこへ）</label>
+          <label class="form-label" for="btn-def-dest" id="btn-def-dest-label">移動先（どこへ）</label>
           <select class="form-select" id="btn-def-dest"></select>
         </div>
 
@@ -445,7 +477,7 @@
 
   <!-- Scripts -->
   <script src="scripts/polyfills.js"></script>
-  <script type="module" src="scripts/game-dev.module.js?v=20261015-1"></script>
+  <script type="module" src="scripts/game-dev.module.js?v=20261018-1"></script>
 </body>
 
 </html>
