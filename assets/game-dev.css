@@ -337,14 +337,17 @@ body {
   color: #fbbf24;
 }
 
+.player-count-group,
 .acting-player-group {
   margin-bottom: 4px;
 }
 
+.player-count-group .form-label,
 .acting-player-group .form-label {
   font-size: 11px;
 }
 
+.player-count-group .form-select,
 .acting-player-group .form-select {
   padding: 6px 10px;
   font-size: 12px;

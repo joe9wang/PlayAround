@@ -100,6 +100,8 @@ const devAddAreaBtn = document.getElementById('dev-add-area-btn');
 const btnConfirmAddArea = document.getElementById('btn-confirm-add-area');
 const areaTypeSelect = document.getElementById('area-type-select');
 const areaOwnerSelect = document.getElementById('area-owner-select');
+const devPlayerCountSelect = document.getElementById('dev-player-count');
+let PLAYER_COUNT = 4;
 
 const modalCardSchema = document.getElementById('modal-card-schema');
 const devCardSchemaBtn = document.getElementById('dev-card-schema-btn');
@@ -175,6 +177,7 @@ async function init() {
   setupSidebarEvents();
   setupModalEvents();
   setupContextMenuEvents();
+  updatePlayerCountUI();
 
   // Auth Listener
   onAuthStateChanged(auth, async (user) => {
@@ -200,12 +203,16 @@ async function loadRoomData() {
 
     if (snap.exists()) {
       ROOM_DATA = snap.data();
+      if (ROOM_DATA.playerCount) {
+        PLAYER_COUNT = Math.max(1, Math.min(10, Number(ROOM_DATA.playerCount) || 4));
+      }
       if (ROOM_DATA.cardSchemas) CARD_SCHEMAS = ROOM_DATA.cardSchemas;
       if (ROOM_DATA.playButtons) PLAY_BUTTONS = ROOM_DATA.playButtons;
       if (ROOM_DATA.devAreas && ROOM_DATA.devAreas.length > 0) AREAS = ROOM_DATA.devAreas;
       if (ROOM_DATA.devEntities) ENTITIES = ROOM_DATA.devEntities;
     }
 
+    updatePlayerCountUI();
     renderAllAreas();
     renderAllEntities();
     renderPlayButtons();
@@ -215,6 +222,10 @@ async function loadRoomData() {
     onSnapshot(roomRef, (docSnap) => {
       if (!docSnap.exists()) return;
       const data = docSnap.data();
+      if (data.playerCount && data.playerCount !== PLAYER_COUNT) {
+        PLAYER_COUNT = Math.max(1, Math.min(10, Number(data.playerCount) || 4));
+        updatePlayerCountUI();
+      }
       if (data.cardSchemas) CARD_SCHEMAS = data.cardSchemas;
       if (data.playButtons) {
         PLAY_BUTTONS = data.playButtons;
@@ -223,6 +234,7 @@ async function loadRoomData() {
     });
   } catch (err) {
     console.warn('[DevMode] Load room data failed, using local state:', err);
+    updatePlayerCountUI();
     renderAllAreas();
     renderAllEntities();
     renderPlayButtons();
@@ -238,6 +250,7 @@ function scheduleSaveRoom() {
     try {
       const roomRef = doc(db, `rooms/${CURRENT_ROOM}`);
       await setDoc(roomRef, {
+        playerCount: PLAYER_COUNT,
         cardSchemas: CARD_SCHEMAS,
         playButtons: PLAY_BUTTONS,
         devAreas: AREAS,
@@ -813,16 +826,91 @@ function setupSidebarEvents() {
     openAddButtonModal();
   });
 
+  // プレイヤー人数設定
+  if (devPlayerCountSelect) {
+    devPlayerCountSelect.value = String(PLAYER_COUNT);
+    devPlayerCountSelect.addEventListener('change', () => {
+      const count = parseInt(devPlayerCountSelect.value, 10);
+      if (!isNaN(count) && count >= 1 && count <= 10) {
+        PLAYER_COUNT = count;
+        updatePlayerCountUI();
+        scheduleSaveRoom();
+      }
+    });
+  }
+
   // 操作プレイヤー（「自分の〜エリア」の解決に使用）
   if (devActingPlayerSelect) {
-    const saved = localStorage.getItem(ACTING_PLAYER_STORAGE_KEY);
-    if (saved && devActingPlayerSelect.querySelector(`option[value="${saved}"]`)) {
-      devActingPlayerSelect.value = saved;
-    }
     devActingPlayerSelect.addEventListener('change', () => {
       localStorage.setItem(ACTING_PLAYER_STORAGE_KEY, devActingPlayerSelect.value);
     });
   }
+}
+
+function updatePlayerCountUI() {
+  if (devPlayerCountSelect && devPlayerCountSelect.value !== String(PLAYER_COUNT)) {
+    devPlayerCountSelect.value = String(PLAYER_COUNT);
+  }
+
+  // 1. エリア追加モーダルの「対象プレイヤー」
+  if (areaOwnerSelect) {
+    const prevVal = areaOwnerSelect.value;
+    areaOwnerSelect.innerHTML = '<option value="shared">共有</option>';
+    for (let i = 1; i <= PLAYER_COUNT; i++) {
+      const opt = document.createElement('option');
+      opt.value = `player${i}`;
+      opt.textContent = `プレイヤー${i}`;
+      areaOwnerSelect.appendChild(opt);
+    }
+    if (areaOwnerSelect.querySelector(`option[value="${prevVal}"]`)) {
+      areaOwnerSelect.value = prevVal;
+    } else {
+      areaOwnerSelect.value = 'shared';
+    }
+  }
+
+  // 2. 「プレイ用」設定の「操作プレイヤー」
+  if (devActingPlayerSelect) {
+    const saved = localStorage.getItem(ACTING_PLAYER_STORAGE_KEY);
+    const prevVal = devActingPlayerSelect.value || saved;
+    devActingPlayerSelect.innerHTML = '';
+    for (let i = 1; i <= PLAYER_COUNT; i++) {
+      const opt = document.createElement('option');
+      opt.value = `player${i}`;
+      opt.textContent = `プレイヤー${i}`;
+      devActingPlayerSelect.appendChild(opt);
+    }
+    if (prevVal && devActingPlayerSelect.querySelector(`option[value="${prevVal}"]`)) {
+      devActingPlayerSelect.value = prevVal;
+    } else {
+      devActingPlayerSelect.value = 'player1';
+      localStorage.setItem(ACTING_PLAYER_STORAGE_KEY, 'player1');
+    }
+  }
+
+  // 3. ボタン追加モーダルの「対象（誰の）」
+  if (btnDefSrcOwner) {
+    const prevOwner = btnDefSrcOwner.value;
+    btnDefSrcOwner.innerHTML = `
+      <option value="any">指定なし（だれでも）</option>
+      <option value="mine">自分の</option>
+      <option value="shared">共有の</option>
+    `;
+    for (let i = 1; i <= PLAYER_COUNT; i++) {
+      const opt = document.createElement('option');
+      opt.value = `player${i}`;
+      opt.textContent = `P${i}の`;
+      btnDefSrcOwner.appendChild(opt);
+    }
+    if (btnDefSrcOwner.querySelector(`option[value="${prevOwner}"]`)) {
+      btnDefSrcOwner.value = prevOwner;
+    } else {
+      btnDefSrcOwner.value = 'any';
+    }
+  }
+
+  // 4. エリア参照オプション再構築
+  rebuildAreaOptions();
 }
 
 function setupModalEvents() {

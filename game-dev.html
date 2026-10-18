@@ -74,6 +74,23 @@
             <span>「開発者モード」設定</span>
           </div>
           <div class="category-body">
+            <!-- プレイヤー人数設定 -->
+            <div class="form-group player-count-group">
+              <label class="form-label" for="dev-player-count">プレイヤー人数</label>
+              <select class="form-select" id="dev-player-count">
+                <option value="1">1人</option>
+                <option value="2">2人</option>
+                <option value="3">3人</option>
+                <option value="4" selected>4人</option>
+                <option value="5">5人</option>
+                <option value="6">6人</option>
+                <option value="7">7人</option>
+                <option value="8">8人</option>
+                <option value="9">9人</option>
+                <option value="10">10人</option>
+              </select>
+            </div>
+
             <button class="action-btn primary" id="dev-card-schema-btn">
               <span>🗂️ カード全般設定（タイプ・タグ）</span>
             </button>
@@ -477,7 +494,7 @@
 
   <!-- Scripts -->
   <script src="scripts/polyfills.js"></script>
-  <script type="module" src="scripts/game-dev.module.js?v=20261018-1"></script>
+  <script type="module" src="scripts/game-dev.module.js?v=20261018-2"></script>
 </body>
 
 </html>
