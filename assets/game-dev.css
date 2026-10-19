@@ -257,9 +257,6 @@ body {
   gap: 6px;
   margin-top: 6px;
   min-height: 40px;
-  max-height: 220px;
-  overflow-y: auto;
-  padding-right: 4px;
 }
 
 .play-btn-item {
@@ -1524,9 +1521,6 @@ body {
   flex-direction: column;
   gap: 6px;
   margin-top: 6px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding-right: 4px;
 }
 
 .cpu-rule-item {
@@ -1636,36 +1630,27 @@ body {
   padding-left: 2px;
 }
 
-/* ================= Sidebar & Lists Custom Scrollbars ================= */
-.sidebar-content::-webkit-scrollbar,
-.play-buttons-list::-webkit-scrollbar,
-.cpu-rules-list::-webkit-scrollbar {
-  width: 6px;
+/* ================= Sidebar Custom Scrollbar ================= */
+.sidebar-content::-webkit-scrollbar {
+  width: 8px;
 }
 
-.sidebar-content::-webkit-scrollbar-track,
-.play-buttons-list::-webkit-scrollbar-track,
-.cpu-rules-list::-webkit-scrollbar-track {
+.sidebar-content::-webkit-scrollbar-track {
   background: rgba(15, 23, 42, 0.4);
   border-radius: 4px;
 }
 
-.sidebar-content::-webkit-scrollbar-thumb,
-.play-buttons-list::-webkit-scrollbar-thumb,
-.cpu-rules-list::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
-}
-
-.sidebar-content::-webkit-scrollbar-thumb:hover,
-.play-buttons-list::-webkit-scrollbar-thumb:hover,
-.cpu-rules-list::-webkit-scrollbar-thumb:hover {
+.sidebar-content::-webkit-scrollbar-thumb {
   background: #64748b;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.sidebar-content,
-.play-buttons-list,
-.cpu-rules-list {
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: #8b5cf6;
+}
+
+.sidebar-content {
   scrollbar-width: thin;
-  scrollbar-color: #475569 rgba(15, 23, 42, 0.4);
+  scrollbar-color: #64748b rgba(15, 23, 42, 0.4);
 }
