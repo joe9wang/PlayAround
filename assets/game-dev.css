@@ -1431,3 +1431,195 @@ body {
 .deal-dest-chip.active .chip-check {
   opacity: 1;
 }
+
+/* ================= CPU & Automation Styles ================= */
+.cpu-seats-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+
+.cpu-seat-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cpu-seat-badge.is-cpu {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+/* CPU Seat Row in Modal */
+.cpu-seat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1e293b;
+  border: 1px solid #334155;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.cpu-seat-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cpu-seat-toggle-btns {
+  display: inline-flex;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cpu-toggle-btn {
+  background: #0f172a;
+  border: none;
+  color: #94a3b8;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cpu-toggle-btn.active {
+  background: #8b5cf6;
+  color: #fff;
+}
+
+.cpu-toggle-btn.active.is-cpu {
+  background: #10b981;
+}
+
+/* CPU Rules List in Sidebar */
+.cpu-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cpu-rule-item {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.cpu-rule-item:hover {
+  border-color: #8b5cf6;
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.cpu-rule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cpu-rule-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c4b5fd;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cpu-rule-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.cpu-rule-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.cpu-rule-btn-sm {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.cpu-rule-btn-sm:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.cpu-rule-btn-sm.del:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Visual Rule Builder Step Cards */
+.visual-rule-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rule-step-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.step-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-badge {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.step-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.step-card-body {
+  padding-left: 2px;
+}

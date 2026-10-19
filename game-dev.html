@@ -144,6 +144,43 @@
             </div>
           </div>
         </div>
+
+        <!-- Category 3: CPU・自動化 -->
+        <div class="panel-category">
+          <div class="category-header">
+            <span>🤖</span>
+            <span>「CPU・自動化」設定</span>
+          </div>
+          <div class="category-body">
+            <!-- CPU座席設定ボタン -->
+            <button class="action-btn" id="dev-cpu-seats-btn">
+              <span>🪑 CPU座席設定</span>
+            </button>
+
+            <!-- 現在の座席状況バッジ一覧 -->
+            <div class="cpu-seats-summary" id="cpu-seats-summary"></div>
+
+            <!-- CPU動作設定ボタン -->
+            <button class="action-btn" id="dev-cpu-rule-btn" style="margin-top:8px;">
+              <span>⚡ CPU動作設定</span>
+            </button>
+
+            <!-- CPUルール一覧 -->
+            <div style="font-size:11px; font-weight:700; color:#94a3b8; margin-top:8px; text-transform:uppercase;">
+              CPU思考ルール一覧:
+            </div>
+            <div class="cpu-rules-list" id="cpu-rules-container">
+              <div class="empty-notice" id="cpu-rules-empty">ルールが未設定です</div>
+            </div>
+
+            <!-- CPUテスト実行ボタン -->
+            <div style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
+              <button class="action-btn primary" id="dev-test-cpu-turn-btn" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border-color:#10b981;">
+                <span>▶ 次のCPUターンを実行</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </aside>
 
@@ -589,6 +626,182 @@
       <div class="modal-footer">
         <button class="action-btn secondary" data-close="modal-add-button" style="width:auto;">キャンセル</button>
         <button class="action-btn primary" id="btn-confirm-add-button" style="width:auto;">追加する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: CPU座席設定 -->
+  <div class="dev-modal-backdrop" id="modal-cpu-seats" style="display:none;">
+    <div class="dev-modal" style="width: 480px; max-width: 95vw;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🪑</span>
+          <span>CPU座席設定</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-cpu-seats">✕</button>
+      </div>
+      <div class="modal-body" style="max-height:75vh; overflow-y:auto; display:flex; flex-direction:column; gap:12px;">
+        <p style="font-size:12px; color:#94a3b8; margin:0;">
+          各プレイヤー座席に座るプレイヤー種別（人間 / CPU）を選択してください。
+        </p>
+        <div style="display:flex; gap:6px; margin-bottom:4px;">
+          <button type="button" class="mini-tool-btn" id="btn-cpu-seats-all-human">全員人間にする</button>
+          <button type="button" class="mini-tool-btn" id="btn-cpu-seats-solo">P1以外を全員CPUにする</button>
+        </div>
+        <div class="cpu-seats-list" id="cpu-seats-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn secondary" data-close="modal-cpu-seats" style="width:auto;">閉じる</button>
+        <button class="action-btn primary" id="btn-save-cpu-seats" style="width:auto;">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: CPU思考・動作ルール設定 -->
+  <div class="dev-modal-backdrop" id="modal-cpu-rule" style="display:none;">
+    <div class="dev-modal" style="width: 580px; max-width: 95vw;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>⚡</span>
+          <span>CPU思考・動作ルール設定</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-cpu-rule">✕</button>
+      </div>
+      <div class="modal-body" style="max-height:75vh; overflow-y:auto; display:flex; flex-direction:column; gap:14px;">
+        <input type="hidden" id="cpu-rule-edit-id" value="" />
+
+        <!-- ルール基本情報 -->
+        <div class="form-group">
+          <label class="form-label" for="cpu-rule-name">ルール名</label>
+          <input type="text" class="form-input" id="cpu-rule-name" placeholder="例: 手札から条件に合うカードを出す" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cpu-rule-target-seat">対象CPU座席</label>
+          <select class="form-select" id="cpu-rule-target-seat">
+            <option value="all">全CPU座席共通（どのCPUでも実行）</option>
+          </select>
+        </div>
+
+        <!-- ビジュアルプログラミング ステップ群 -->
+        <div class="visual-rule-builder">
+          <!-- Step 1: 探索元エリア -->
+          <div class="rule-step-card">
+            <div class="step-card-header">
+              <span class="step-badge">Step 1</span>
+              <span class="step-title">🔍 どこからカードを探すか</span>
+            </div>
+            <div class="step-card-body">
+              <select class="form-select" id="cpu-rule-src-area"></select>
+            </div>
+          </div>
+
+          <!-- Step 2: 絞り込み条件（タグ条件等） -->
+          <div class="rule-step-card">
+            <div class="step-card-header">
+              <span class="step-badge">Step 2</span>
+              <span class="step-title">📋 どんなカードを対象にするか（条件）</span>
+            </div>
+            <div class="step-card-body" style="display:flex; flex-direction:column; gap:8px;">
+              <select class="form-select" id="cpu-rule-filter-mode">
+                <option value="none">すべて（条件なし / 何でもよい）</option>
+                <option value="tag_condition">属性（タグ）の条件に一致するもの</option>
+              </select>
+
+              <!-- タグ条件リスト -->
+              <div id="cpu-rule-tag-conditions-wrap" style="display:none; flex-direction:column; gap:6px;">
+                <div id="cpu-rule-tag-conditions-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+                <button type="button" class="btn-add-condition" id="btn-add-cpu-tag-condition">
+                  <span>➕ 条件を追加</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: どれを選ぶ（優先度・枚数） -->
+          <div class="rule-step-card">
+            <div class="step-card-header">
+              <span class="step-badge">Step 3</span>
+              <span class="step-title">🎯 条件に合うカードから「どれを何枚」選ぶか</span>
+            </div>
+            <div class="step-card-body" style="display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; gap:12px; align-items:center;">
+                <label class="form-label" style="margin:0; min-width:60px;">枚数:</label>
+                <input type="number" class="form-input" id="cpu-rule-count" min="1" max="99" value="1" style="width:100px;" />
+                <span style="font-size:12px; color:#94a3b8;">枚</span>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label class="form-label" style="margin:0;">優先順位（選び方）:</label>
+                <select class="form-select" id="cpu-rule-pick-order">
+                  <option value="first">最初に見つかったカード</option>
+                  <option value="random">ランダム</option>
+                  <option value="max_tag">指定タグの値が最も大きいカード（最大優先）</option>
+                  <option value="min_tag">指定タグの値が最も小さいカード（最小優先）</option>
+                </select>
+                <div id="cpu-rule-sort-tag-group" style="display:none; margin-top:4px;">
+                  <label class="form-label" style="font-size:11px;">比較するタグ:</label>
+                  <select class="form-select" id="cpu-rule-sort-tag"></select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: どこへ移動させるか（移動先エリア） -->
+          <div class="rule-step-card">
+            <div class="step-card-header">
+              <span class="step-badge">Step 4</span>
+              <span class="step-title">🚀 選んだカードをどこへ移動させるか</span>
+            </div>
+            <div class="step-card-body">
+              <select class="form-select" id="cpu-rule-dest-area"></select>
+            </div>
+          </div>
+
+          <!-- Step 5: 置き方と表裏 -->
+          <div class="rule-step-card">
+            <div class="step-card-header">
+              <span class="step-badge">Step 5</span>
+              <span class="step-title">🎴 移動後の置き方・表裏の向き</span>
+            </div>
+            <div class="step-card-body" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div>
+                <label class="form-label" style="font-size:11px;">置き方</label>
+                <select class="form-select" id="cpu-rule-placement">
+                  <option value="spread_lr" selected>左から右へ（横並び）</option>
+                  <option value="stack_center">中央に重ねる</option>
+                  <option value="spread_tb">上から下へ（縦並び）</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:11px;">表裏（めくるかどうか）</label>
+                <select class="form-select" id="cpu-rule-face">
+                  <option value="face_up" selected>表にする（オープンして出す）</option>
+                  <option value="face_down">裏にする（裏向きでセット）</option>
+                  <option value="keep">そのまま（変更しない）</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 6: 出せない場合の行動（フォールバック） -->
+          <div class="rule-step-card">
+            <div class="step-card-header">
+              <span class="step-badge">Step 6</span>
+              <span class="step-title">⏭️ 条件に合うカードがない場合の行動</span>
+            </div>
+            <div class="step-card-body">
+              <select class="form-select" id="cpu-rule-fallback">
+                <option value="pass" selected>何もしない（パスしてターン終了）</option>
+                <option value="draw">自分のデッキから1枚ドローする</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn secondary" data-close="modal-cpu-rule" style="width:auto;">キャンセル</button>
+        <button class="action-btn primary" id="btn-save-cpu-rule" style="width:auto;">ルールを保存する</button>
       </div>
     </div>
   </div>

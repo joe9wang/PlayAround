@@ -44,6 +44,11 @@ let CARD_SCHEMAS = {
 
 let PLAY_BUTTONS = [];
 
+// CPU設定
+let CPU_SEATS = new Set(['player2', 'player3', 'player4']);
+let CPU_RULES = [];
+let LAST_ACTED_CPU_INDEX = -1;
+
 // 「自分の〇〇エリア」を解決する際の操作プレイヤー（ブラウザごとに記憶）
 const ACTING_PLAYER_STORAGE_KEY = 'pa:dev-acting-player';
 
@@ -165,6 +170,41 @@ let SELECTED_DEAL_DESTS = new Set();
 const devActingPlayerSelect = document.getElementById('dev-acting-player');
 const playButtonsContainer = document.getElementById('play-buttons-container');
 
+// CPU・自動化設定
+const cpuSeatsSummary = document.getElementById('cpu-seats-summary');
+const devCpuSeatsBtn = document.getElementById('dev-cpu-seats-btn');
+const cpuRulesContainer = document.getElementById('cpu-rules-container');
+const cpuRulesEmpty = document.getElementById('cpu-rules-empty');
+const devCpuRuleBtn = document.getElementById('dev-cpu-rule-btn');
+const devTestCpuTurnBtn = document.getElementById('dev-test-cpu-turn-btn');
+
+// Modal: CPU座席設定
+const modalCpuSeats = document.getElementById('modal-cpu-seats');
+const cpuSeatsList = document.getElementById('cpu-seats-list');
+const btnCpuSeatsAllHuman = document.getElementById('btn-cpu-seats-all-human');
+const btnCpuSeatsSolo = document.getElementById('btn-cpu-seats-solo');
+const btnSaveCpuSeats = document.getElementById('btn-save-cpu-seats');
+
+// Modal: CPU動作ルール設定
+const modalCpuRule = document.getElementById('modal-cpu-rule');
+const cpuRuleEditId = document.getElementById('cpu-rule-edit-id');
+const cpuRuleName = document.getElementById('cpu-rule-name');
+const cpuRuleTargetSeat = document.getElementById('cpu-rule-target-seat');
+const cpuRuleSrcArea = document.getElementById('cpu-rule-src-area');
+const cpuRuleFilterMode = document.getElementById('cpu-rule-filter-mode');
+const cpuRuleTagConditionsWrap = document.getElementById('cpu-rule-tag-conditions-wrap');
+const cpuRuleTagConditionsList = document.getElementById('cpu-rule-tag-conditions-list');
+const btnAddCpuTagCondition = document.getElementById('btn-add-cpu-tag-condition');
+const cpuRuleCount = document.getElementById('cpu-rule-count');
+const cpuRulePickOrder = document.getElementById('cpu-rule-pick-order');
+const cpuRuleSortTagGroup = document.getElementById('cpu-rule-sort-tag-group');
+const cpuRuleSortTag = document.getElementById('cpu-rule-sort-tag');
+const cpuRuleDestArea = document.getElementById('cpu-rule-dest-area');
+const cpuRulePlacement = document.getElementById('cpu-rule-placement');
+const cpuRuleFace = document.getElementById('cpu-rule-face');
+const cpuRuleFallback = document.getElementById('cpu-rule-fallback');
+const btnSaveCpuRule = document.getElementById('btn-save-cpu-rule');
+
 // Right Inspector
 const devInspector = document.getElementById('dev-inspector');
 const toggleInspector = document.getElementById('toggle-inspector');
@@ -235,6 +275,12 @@ async function loadRoomData() {
       }
       if (ROOM_DATA.cardSchemas) CARD_SCHEMAS = ROOM_DATA.cardSchemas;
       if (ROOM_DATA.playButtons) PLAY_BUTTONS = ROOM_DATA.playButtons;
+      if (ROOM_DATA.cpuSeats) {
+        CPU_SEATS = new Set(Array.isArray(ROOM_DATA.cpuSeats) ? ROOM_DATA.cpuSeats : []);
+      }
+      if (ROOM_DATA.cpuRules) {
+        CPU_RULES = Array.isArray(ROOM_DATA.cpuRules) ? ROOM_DATA.cpuRules : [];
+      }
       if (ROOM_DATA.devAreas && ROOM_DATA.devAreas.length > 0) AREAS = ROOM_DATA.devAreas;
       if (ROOM_DATA.devEntities) ENTITIES = ROOM_DATA.devEntities;
     }
@@ -243,6 +289,8 @@ async function loadRoomData() {
     renderAllAreas();
     renderAllEntities();
     renderPlayButtons();
+    renderCpuSeatsSummary();
+    renderCpuRulesList();
     renderSchemaList();
 
     // Listen to remote changes
@@ -258,6 +306,14 @@ async function loadRoomData() {
         PLAY_BUTTONS = data.playButtons;
         renderPlayButtons();
       }
+      if (data.cpuSeats) {
+        CPU_SEATS = new Set(Array.isArray(data.cpuSeats) ? data.cpuSeats : []);
+        renderCpuSeatsSummary();
+      }
+      if (data.cpuRules) {
+        CPU_RULES = Array.isArray(data.cpuRules) ? data.cpuRules : [];
+        renderCpuRulesList();
+      }
     });
   } catch (err) {
     console.warn('[DevMode] Load room data failed, using local state:', err);
@@ -265,6 +321,8 @@ async function loadRoomData() {
     renderAllAreas();
     renderAllEntities();
     renderPlayButtons();
+    renderCpuSeatsSummary();
+    renderCpuRulesList();
     renderSchemaList();
   }
 }
@@ -339,6 +397,8 @@ function scheduleSaveRoom() {
         playerCount: PLAYER_COUNT,
         cardSchemas: CARD_SCHEMAS,
         playButtons: PLAY_BUTTONS,
+        cpuSeats: Array.from(CPU_SEATS),
+        cpuRules: CPU_RULES,
         devAreas: AREAS,
         devEntities: ENTITIES,
         updatedAt: serverTimestamp()
@@ -1372,6 +1432,11 @@ function setupSidebarEvents() {
       localStorage.setItem(ACTING_PLAYER_STORAGE_KEY, devActingPlayerSelect.value);
     });
   }
+
+  // CPU設定関連
+  devCpuSeatsBtn?.addEventListener('click', openCpuSeatsModal);
+  devCpuRuleBtn?.addEventListener('click', () => openCpuRuleModal(null));
+  devTestCpuTurnBtn?.addEventListener('click', executeNextCpuTurn);
 }
 
 function updatePlayerCountUI() {
@@ -1438,6 +1503,9 @@ function updatePlayerCountUI() {
 
   // 4. エリア参照オプション再構築
   rebuildAreaOptions();
+
+  // 5. CPU座席サマリーの更新
+  renderCpuSeatsSummary();
 }
 
 function setupModalEvents() {
@@ -1545,6 +1613,58 @@ function setupModalEvents() {
 
   // Play Button: Confirm Add Button
   btnConfirmAddButton?.addEventListener('click', confirmAddPlayButton);
+
+  // CPU座席設定モーダルイベント
+  btnCpuSeatsAllHuman?.addEventListener('click', () => {
+    if (!cpuSeatsList) return;
+    cpuSeatsList.querySelectorAll('.cpu-toggle-btn').forEach(b => {
+      if (b.dataset.role === 'human') b.classList.add('active');
+      else b.classList.remove('active');
+    });
+  });
+
+  btnCpuSeatsSolo?.addEventListener('click', () => {
+    if (!cpuSeatsList) return;
+    cpuSeatsList.querySelectorAll('.cpu-seat-row').forEach(row => {
+      const seatKey = row.dataset.seat;
+      const humanBtn = row.querySelector('.cpu-toggle-btn[data-role="human"]');
+      const cpuBtn = row.querySelector('.cpu-toggle-btn[data-role="cpu"]');
+      if (seatKey === 'player1') {
+        humanBtn?.classList.add('active');
+        cpuBtn?.classList.remove('active');
+      } else {
+        humanBtn?.classList.remove('active');
+        cpuBtn?.classList.add('active');
+      }
+    });
+  });
+
+  btnSaveCpuSeats?.addEventListener('click', saveCpuSeats);
+
+  // CPU動作設定モーダルイベント
+  cpuRuleFilterMode?.addEventListener('change', () => {
+    if (!cpuRuleTagConditionsWrap) return;
+    if (cpuRuleFilterMode.value === 'tag_condition') {
+      cpuRuleTagConditionsWrap.style.display = 'flex';
+      if (cpuRuleTagConditionsList && cpuRuleTagConditionsList.children.length === 0) {
+        addCpuTagConditionRow();
+      }
+    } else {
+      cpuRuleTagConditionsWrap.style.display = 'none';
+    }
+  });
+
+  btnAddCpuTagCondition?.addEventListener('click', () => {
+    addCpuTagConditionRow();
+  });
+
+  cpuRulePickOrder?.addEventListener('change', () => {
+    if (!cpuRuleSortTagGroup) return;
+    const isSortTag = cpuRulePickOrder.value === 'max_tag' || cpuRulePickOrder.value === 'min_tag';
+    cpuRuleSortTagGroup.style.display = isSortTag ? 'block' : 'none';
+  });
+
+  btnSaveCpuRule?.addEventListener('click', saveCpuRule);
 }
 
 // ============================================================================
@@ -1682,11 +1802,11 @@ function refLabel(ref) {
   return '（不明）';
 }
 
-function resolveAreaRef(ref) {
+function resolveAreaRef(ref, actingPlayerOverride = null) {
   if (!ref) return null;
   if (ref.kind === 'area') return AREAS.find(a => a.id === ref.areaId) || null;
   if (ref.kind === 'own') {
-    const me = getActingPlayer();
+    const me = actingPlayerOverride || getActingPlayer();
     return AREAS.find(a => a.type === ref.areaType && a.owner === me) || null;
   }
   return null;
@@ -2929,6 +3049,518 @@ function isEntityOverlappingArea(ent, area) {
 
 function isPointInArea(px, py, area) {
   return px >= area.x && px <= area.x + area.w && py >= area.y && py <= area.y + area.h;
+}
+
+// ============================================================================
+// CPU & Automation Management (CPU座席設定・動作ルール・自動ターン実行)
+// ============================================================================
+
+// ---- CPU座席表示サマリー ----
+function renderCpuSeatsSummary() {
+  if (!cpuSeatsSummary) return;
+  cpuSeatsSummary.innerHTML = '';
+
+  for (let i = 1; i <= PLAYER_COUNT; i++) {
+    const seatKey = `player${i}`;
+    const isCpu = CPU_SEATS.has(seatKey);
+    const badge = document.createElement('span');
+    badge.className = `cpu-seat-badge${isCpu ? ' is-cpu' : ''}`;
+    badge.textContent = `P${i}: ${isCpu ? '🤖CPU' : '👤人間'}`;
+    badge.title = `P${i} (${isCpu ? 'CPUプレイヤー' : '人間プレイヤー'})`;
+    cpuSeatsSummary.appendChild(badge);
+  }
+}
+
+// ---- CPU座席設定モーダル ----
+function openCpuSeatsModal() {
+  if (!cpuSeatsList || !modalCpuSeats) return;
+  cpuSeatsList.innerHTML = '';
+
+  for (let i = 1; i <= PLAYER_COUNT; i++) {
+    const seatKey = `player${i}`;
+    const isCpu = CPU_SEATS.has(seatKey);
+
+    const row = document.createElement('div');
+    row.className = 'cpu-seat-row';
+    row.dataset.seat = seatKey;
+    row.innerHTML = `
+      <span class="cpu-seat-name">P${i} (プレイヤー${i})</span>
+      <div class="cpu-role-toggle">
+        <button type="button" class="cpu-toggle-btn${!isCpu ? ' active' : ''}" data-role="human">👤 人間</button>
+        <button type="button" class="cpu-toggle-btn${isCpu ? ' active' : ''}" data-role="cpu">🤖 CPU</button>
+      </div>
+    `;
+
+    const humanBtn = row.querySelector('.cpu-toggle-btn[data-role="human"]');
+    const cpuBtn = row.querySelector('.cpu-toggle-btn[data-role="cpu"]');
+
+    humanBtn?.addEventListener('click', () => {
+      humanBtn.classList.add('active');
+      cpuBtn?.classList.remove('active');
+    });
+
+    cpuBtn?.addEventListener('click', () => {
+      cpuBtn.classList.add('active');
+      humanBtn?.classList.remove('active');
+    });
+
+    cpuSeatsList.appendChild(row);
+  }
+
+  modalCpuSeats.style.display = 'flex';
+}
+
+function saveCpuSeats() {
+  if (!cpuSeatsList) return;
+  const newSet = new Set();
+  cpuSeatsList.querySelectorAll('.cpu-seat-row').forEach(row => {
+    const seatKey = row.dataset.seat;
+    const cpuBtn = row.querySelector('.cpu-toggle-btn[data-role="cpu"]');
+    if (cpuBtn && cpuBtn.classList.contains('active')) {
+      newSet.add(seatKey);
+    }
+  });
+
+  CPU_SEATS = newSet;
+  renderCpuSeatsSummary();
+  if (modalCpuSeats) modalCpuSeats.style.display = 'none';
+  scheduleSaveRoom();
+  showToast('CPU座席設定を保存しました');
+}
+
+// ---- CPUルール一覧表示 ----
+function renderCpuRulesList() {
+  if (!cpuRulesContainer) return;
+  cpuRulesContainer.innerHTML = '';
+
+  if (!CPU_RULES || CPU_RULES.length === 0) {
+    cpuRulesContainer.innerHTML = '<div class="empty-notice" id="cpu-rules-empty">ルールが未設定です</div>';
+    return;
+  }
+
+  CPU_RULES.forEach((rule, idx) => {
+    const item = document.createElement('div');
+    item.className = 'cpu-rule-item';
+
+    const targetLabel = rule.targetSeat === 'all'
+      ? '全CPU共通'
+      : (getOwnerLabel(rule.targetSeat) + '専用');
+
+    const srcText = refLabel(valueToRef(rule.srcArea));
+    const destText = refLabel(valueToRef(rule.destArea));
+    const countText = `${rule.count || 1}枚`;
+    const filterText = (rule.filterMode === 'tag_condition' && rule.tagConditions?.length > 0)
+      ? rule.tagConditions.map(c => `${c.tagName}${c.op}${c.value}`).join(' & ')
+      : '全カード';
+
+    item.innerHTML = `
+      <div class="cpu-rule-header">
+        <span class="cpu-rule-title">⚡ ${escapeHtml(rule.name || `ルール #${idx + 1}`)}</span>
+        <span class="cpu-rule-badge">${escapeHtml(targetLabel)}</span>
+      </div>
+      <div class="cpu-rule-desc">
+        ${escapeHtml(srcText)} (${escapeHtml(filterText)}) → ${escapeHtml(destText)} (${countText})
+      </div>
+      <div class="cpu-rule-actions">
+        <button type="button" class="mini-tool-btn btn-edit-cpu-rule" title="編集">✏️ 編集</button>
+        <button type="button" class="mini-tool-btn btn-del-cpu-rule" title="削除" style="color:#f87171;">✕ 削除</button>
+      </div>
+    `;
+
+    item.querySelector('.btn-edit-cpu-rule')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openCpuRuleModal(rule.id);
+    });
+
+    item.querySelector('.btn-del-cpu-rule')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (confirm(`CPUルール「${rule.name}」を削除しますか？`)) {
+        CPU_RULES = CPU_RULES.filter(r => r.id !== rule.id);
+        renderCpuRulesList();
+        scheduleSaveRoom();
+      }
+    });
+
+    cpuRulesContainer.appendChild(item);
+  });
+}
+
+// ---- CPUルール編集モーダル ----
+function openCpuRuleModal(editRuleId = null) {
+  if (!modalCpuRule) return;
+
+  const rule = editRuleId ? CPU_RULES.find(r => r.id === editRuleId) : null;
+  if (cpuRuleEditId) cpuRuleEditId.value = editRuleId || '';
+
+  // 1. ルール名
+  if (cpuRuleName) {
+    cpuRuleName.value = rule ? rule.name : '手札から条件に合うカードを出す';
+  }
+
+  // 2. 対象CPU座席
+  if (cpuRuleTargetSeat) {
+    const prevVal = rule ? rule.targetSeat : 'all';
+    cpuRuleTargetSeat.innerHTML = '<option value="all">全CPU座席共通（どのCPUでも実行）</option>';
+    for (let i = 1; i <= PLAYER_COUNT; i++) {
+      const seatKey = `player${i}`;
+      const opt = document.createElement('option');
+      opt.value = seatKey;
+      opt.textContent = `P${i} (プレイヤー${i}) 専用${CPU_SEATS.has(seatKey) ? ' [CPU]' : ''}`;
+      cpuRuleTargetSeat.appendChild(opt);
+    }
+    cpuRuleTargetSeat.value = prevVal;
+  }
+
+  // 3. Step 1: 探索元エリア (own:hand, area:xxx etc.)
+  if (cpuRuleSrcArea) {
+    fillSelect(cpuRuleSrcArea, [
+      ...buildAreaRefOptions('にある', null)
+    ], rule ? rule.srcArea : 'own:hand');
+  }
+
+  // 4. Step 2: 絞り込み条件
+  if (cpuRuleFilterMode) {
+    cpuRuleFilterMode.value = (rule && rule.filterMode) ? rule.filterMode : 'none';
+  }
+  if (cpuRuleTagConditionsWrap) {
+    cpuRuleTagConditionsWrap.style.display = (rule && rule.filterMode === 'tag_condition') ? 'flex' : 'none';
+  }
+  clearCpuTagConditions();
+  if (rule && rule.filterMode === 'tag_condition' && Array.isArray(rule.tagConditions)) {
+    rule.tagConditions.forEach(cond => addCpuTagConditionRow(cond));
+  } else {
+    addCpuTagConditionRow();
+  }
+
+  // 5. Step 3: 枚数 & 優先順位
+  if (cpuRuleCount) {
+    cpuRuleCount.value = (rule && rule.count) ? String(rule.count) : '1';
+  }
+  if (cpuRulePickOrder) {
+    cpuRulePickOrder.value = (rule && rule.pickOrder) ? rule.pickOrder : 'first';
+  }
+  if (cpuRuleSortTagGroup && cpuRuleSortTag) {
+    const isSortTag = rule && (rule.pickOrder === 'max_tag' || rule.pickOrder === 'min_tag');
+    cpuRuleSortTagGroup.style.display = isSortTag ? 'block' : 'none';
+
+    const tags = getAllDefinedTags();
+    cpuRuleSortTag.innerHTML = '';
+    if (tags.length === 0) {
+      cpuRuleSortTag.innerHTML = '<option value="">(タグが未定義です)</option>';
+    } else {
+      tags.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.name;
+        opt.textContent = `🏷️ ${t.name}`;
+        if (rule && rule.sortTag === t.name) opt.selected = true;
+        cpuRuleSortTag.appendChild(opt);
+      });
+    }
+  }
+
+  // 6. Step 4: 移動先エリア
+  if (cpuRuleDestArea) {
+    fillSelect(cpuRuleDestArea, [
+      ...buildAreaRefOptions('へ', null)
+    ], rule ? rule.destArea : (AREAS.length > 0 ? `area:${AREAS[0].id}` : 'own:discard'));
+  }
+
+  // 7. Step 5: 置き方 & 表裏
+  if (cpuRulePlacement) {
+    cpuRulePlacement.value = (rule && rule.placement) ? rule.placement : 'spread_lr';
+  }
+  if (cpuRuleFace) {
+    cpuRuleFace.value = (rule && rule.face) ? rule.face : 'face_up';
+  }
+
+  // 8. Step 6: フォールバック
+  if (cpuRuleFallback) {
+    cpuRuleFallback.value = (rule && rule.fallback) ? rule.fallback : 'pass';
+  }
+
+  modalCpuRule.style.display = 'flex';
+}
+
+function clearCpuTagConditions() {
+  if (!cpuRuleTagConditionsList) return;
+  cpuRuleTagConditionsList.innerHTML = '';
+}
+
+function addCpuTagConditionRow(data = null) {
+  if (!cpuRuleTagConditionsList) return;
+
+  const definedTags = getAllDefinedTags();
+  const rowCount = cpuRuleTagConditionsList.children.length;
+  const row = document.createElement('div');
+  row.className = 'tag-condition-row';
+
+  let logicHtml = '';
+  if (rowCount > 0) {
+    logicHtml = `
+      <select class="tag-condition-op-select">
+        <option value="and"${data?.logical === 'and' ? ' selected' : ''}>かつ</option>
+        <option value="or"${data?.logical === 'or' ? ' selected' : ''}>または</option>
+      </select>
+    `;
+  } else {
+    logicHtml = `<span style="font-size:11px; font-weight:700; color:#10b981; width:40px;">条件:</span>`;
+  }
+
+  let tagOptionsHtml = '';
+  if (definedTags.length === 0) {
+    tagOptionsHtml = '<option value="">(タグが未定義です)</option>';
+  } else {
+    tagOptionsHtml = definedTags.map(t =>
+      `<option value="${escapeHtml(t.name)}"${data?.tagName === t.name ? ' selected' : ''}>🏷️ ${escapeHtml(t.name)}</option>`
+    ).join('');
+  }
+
+  row.innerHTML = `
+    ${logicHtml}
+    <select class="tag-condition-key-select">${tagOptionsHtml}</select>
+    <select class="tag-condition-comp-select">
+      <option value="=="${data?.op === '==' ? ' selected' : ''}>と同じ (==)</option>
+      <option value=">"${data?.op === '>' ? ' selected' : ''}>より大きい (&gt;)</option>
+      <option value=">="${data?.op === '>=' ? ' selected' : ''}>以上 (&gt;=)</option>
+      <option value="<"${data?.op === '<' ? ' selected' : ''}>より小さい (&lt;)</option>
+      <option value="<="${data?.op === '<=' ? ' selected' : ''}>以下 (&lt;=)</option>
+    </select>
+    <input type="text" class="tag-condition-val-input" placeholder="値" value="${escapeHtml(data?.value || '')}" />
+    ${rowCount > 0 ? '<button type="button" class="tag-condition-del-btn" title="条件を削除">✕</button>' : ''}
+  `;
+
+  if (rowCount > 0) {
+    row.querySelector('.tag-condition-del-btn')?.addEventListener('click', () => {
+      row.remove();
+    });
+  }
+
+  cpuRuleTagConditionsList.appendChild(row);
+}
+
+function getCpuTagConditionsFromUI() {
+  if (!cpuRuleTagConditionsList) return [];
+  const rows = Array.from(cpuRuleTagConditionsList.querySelectorAll('.tag-condition-row'));
+  const conditions = [];
+
+  rows.forEach((row, index) => {
+    const logical = index === 0 ? 'and' : (row.querySelector('.tag-condition-op-select')?.value || 'and');
+    const tagName = row.querySelector('.tag-condition-key-select')?.value || '';
+    const op = row.querySelector('.tag-condition-comp-select')?.value || '==';
+    const valInput = row.querySelector('.tag-condition-val-input')?.value ?? '';
+
+    if (tagName) {
+      conditions.push({ logical, tagName, op, value: valInput.trim() });
+    }
+  });
+
+  return conditions;
+}
+
+function saveCpuRule() {
+  const editId = cpuRuleEditId?.value || null;
+  const name = cpuRuleName?.value?.trim() || '手札から条件に合うカードを出す';
+  const targetSeat = cpuRuleTargetSeat?.value || 'all';
+  const srcArea = cpuRuleSrcArea?.value || 'own:hand';
+  const filterMode = cpuRuleFilterMode?.value || 'none';
+  const count = Math.max(1, parseInt(cpuRuleCount?.value, 10) || 1);
+  const pickOrder = cpuRulePickOrder?.value || 'first';
+  const sortTag = cpuRuleSortTag?.value || '';
+  const destArea = cpuRuleDestArea?.value || 'area:area_play_center';
+  const placement = cpuRulePlacement?.value || 'spread_lr';
+  const face = cpuRuleFace?.value || 'face_up';
+  const fallback = cpuRuleFallback?.value || 'pass';
+
+  let tagConditions = [];
+  if (filterMode === 'tag_condition') {
+    tagConditions = getCpuTagConditionsFromUI();
+    if (tagConditions.length === 0 || !tagConditions[0].tagName) {
+      alert('タグ条件のタグ名を選択してください。');
+      return;
+    }
+  }
+
+  const newRule = {
+    id: editId || `cpu_rule_${Date.now()}`,
+    name,
+    targetSeat,
+    srcArea,
+    filterMode,
+    tagConditions,
+    count,
+    pickOrder,
+    sortTag,
+    destArea,
+    placement,
+    face,
+    fallback
+  };
+
+  if (editId) {
+    const index = CPU_RULES.findIndex(r => r.id === editId);
+    if (index >= 0) {
+      CPU_RULES[index] = newRule;
+    } else {
+      CPU_RULES.push(newRule);
+    }
+  } else {
+    CPU_RULES.push(newRule);
+  }
+
+  renderCpuRulesList();
+  if (modalCpuRule) modalCpuRule.style.display = 'none';
+  scheduleSaveRoom();
+  showToast(`CPU動作ルール「${name}」を保存しました`);
+}
+
+// ---- CPU自動ターン実行エンジン ----
+function executeNextCpuTurn() {
+  const cpuList = [];
+  for (let i = 1; i <= PLAYER_COUNT; i++) {
+    const seatKey = `player${i}`;
+    if (CPU_SEATS.has(seatKey)) {
+      cpuList.push(seatKey);
+    }
+  }
+
+  if (cpuList.length === 0) {
+    showToast('CPU座席が設定されていません。「CPU座席設定」でCPUを指定してください');
+    return;
+  }
+
+  LAST_ACTED_CPU_INDEX = (LAST_ACTED_CPU_INDEX + 1) % cpuList.length;
+  const actingCpu = cpuList[LAST_ACTED_CPU_INDEX];
+  executeCpuForPlayer(actingCpu);
+}
+
+function executeCpuForPlayer(cpuPlayerId) {
+  const cpuLabel = getOwnerLabel(cpuPlayerId);
+
+  // 該当CPUに適用されるルールを抽出
+  const matchedRules = CPU_RULES.filter(r => r.targetSeat === 'all' || r.targetSeat === cpuPlayerId);
+
+  if (matchedRules.length === 0) {
+    showToast(`🤖 ${cpuLabel} 用の動作ルールが設定されていません。「CPU動作設定」から追加してください`);
+    return;
+  }
+
+  // ルールを順番に評価し、実行可能な最初のアクションを行う
+  for (const rule of matchedRules) {
+    const didAct = executeSingleCpuRule(rule, cpuPlayerId);
+    if (didAct) {
+      return;
+    }
+  }
+
+  showToast(`🤖 ${cpuLabel} は実行できるルールがなかったため待機しました`);
+}
+
+function executeSingleCpuRule(rule, cpuPlayerId) {
+  const cpuLabel = getOwnerLabel(cpuPlayerId);
+
+  // 1. 探索元エリアの解決
+  const srcRef = valueToRef(rule.srcArea);
+  const srcArea = resolveAreaRef(srcRef, cpuPlayerId);
+  if (!srcArea) {
+    return false;
+  }
+
+  // 2. 探索元エリア内のカード抽出
+  const cardsInSrc = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, srcArea));
+
+  // 3. 絞り込み
+  let candidates = cardsInSrc;
+  if (rule.filterMode === 'tag_condition' && Array.isArray(rule.tagConditions) && rule.tagConditions.length > 0) {
+    candidates = cardsInSrc.filter(c => matchesTagConditions(c, rule.tagConditions));
+  }
+
+  // 4. カードが存在する場合の処理
+  if (candidates.length > 0) {
+    // 優先順位ソート
+    if (rule.pickOrder === 'random') {
+      candidates.sort(() => Math.random() - 0.5);
+    } else if (rule.pickOrder === 'max_tag' && rule.sortTag) {
+      candidates.sort((a, b) => {
+        const valA = parseFloat(a.tagValues?.[rule.sortTag] ?? 0);
+        const valB = parseFloat(b.tagValues?.[rule.sortTag] ?? 0);
+        return (isNaN(valB) ? 0 : valB) - (isNaN(valA) ? 0 : valA);
+      });
+    } else if (rule.pickOrder === 'min_tag' && rule.sortTag) {
+      candidates.sort((a, b) => {
+        const valA = parseFloat(a.tagValues?.[rule.sortTag] ?? 0);
+        const valB = parseFloat(b.tagValues?.[rule.sortTag] ?? 0);
+        return (isNaN(valA) ? 0 : valA) - (isNaN(valB) ? 0 : valB);
+      });
+    }
+
+    // 指定枚数をピック
+    const count = Math.min(rule.count || 1, candidates.length);
+    const selected = candidates.slice(0, count);
+
+    // 移動先エリアの解決
+    const destRef = valueToRef(rule.destArea);
+    const destArea = resolveAreaRef(destRef, cpuPlayerId);
+    if (!destArea) {
+      showToast(`🤖 ${cpuLabel}: 移動先エリアが見つかりません`);
+      return false;
+    }
+
+    // 表裏の更新
+    if (rule.face === 'face_up') {
+      selected.forEach(c => {
+        c.isFaceDown = false;
+        const dom = document.getElementById(c.id);
+        if (dom) updateEntityInnerDOM(dom, c);
+      });
+    } else if (rule.face === 'face_down') {
+      selected.forEach(c => {
+        c.isFaceDown = true;
+        const dom = document.getElementById(c.id);
+        if (dom) updateEntityInnerDOM(dom, c);
+      });
+    }
+
+    // 移動先へ配置
+    placeEntitiesInArea(selected, destArea, rule.placement || 'spread_lr');
+
+    // カード名サマリー
+    const cardNames = selected.map(c => {
+      if (c.tagValues && (c.tagValues.Mark || c.tagValues.tag_mark) && (c.tagValues.Number || c.tagValues.tag_number)) {
+        const m = c.tagValues.Mark || c.tagValues.tag_mark;
+        const n = c.tagValues.Number || c.tagValues.tag_number;
+        return `${m}${n}`;
+      }
+      return 'カード';
+    }).join(', ');
+
+    showToast(`🤖 ${cpuLabel}が${srcArea.name || '手札'}から「${cardNames}」を${destArea.name || 'プレイエリア'}に出しました！`);
+    scheduleSaveRoom();
+    return true;
+  }
+
+  // 5. カードが見つからなかった場合のフォールバック
+  if (rule.fallback === 'draw') {
+    const deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
+    const handArea = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+    if (deckArea && handArea) {
+      const deckCards = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, deckArea))
+        .sort((a, b) => (b.z || 0) - (a.z || 0));
+      if (deckCards.length > 0) {
+        const topCard = deckCards[0];
+        placeEntitiesInArea([topCard], handArea, 'spread_lr');
+        showToast(`🤖 ${cpuLabel}は出せるカードがなかったため、山札から1枚ドローしました`);
+        scheduleSaveRoom();
+        return true;
+      }
+    }
+  }
+
+  if (rule.fallback === 'pass') {
+    showToast(`🤖 ${cpuLabel}は条件に合うカードがないため、パスしました`);
+    return true;
+  }
+
+  return false;
 }
 
 // ============================================================================
