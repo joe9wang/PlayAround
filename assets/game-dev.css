@@ -148,12 +148,15 @@ body {
 /* ================= Sidebar (Developer Operations) ================= */
 #dev-sidebar {
   width: var(--sidebar-width);
+  height: 100%;
+  max-height: 100%;
   background: var(--bg-sidebar);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   z-index: 500;
   box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
 .sidebar-header {
@@ -177,6 +180,7 @@ body {
 
 .sidebar-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 14px;
   display: flex;
@@ -253,6 +257,9 @@ body {
   gap: 6px;
   margin-top: 6px;
   min-height: 40px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .play-btn-item {
@@ -954,7 +961,8 @@ body {
 }
 
 /* ================= Modals ================= */
-.dev-modal-overlay {
+.dev-modal-overlay,
+.dev-modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
@@ -965,7 +973,8 @@ body {
   z-index: 10000;
 }
 
-.dev-modal-sheet {
+.dev-modal-sheet,
+.dev-modal {
   background: var(--bg-modal);
   border: 1px solid #334155;
   border-radius: 16px;
@@ -1515,6 +1524,9 @@ body {
   flex-direction: column;
   gap: 6px;
   margin-top: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .cpu-rule-item {
@@ -1622,4 +1634,38 @@ body {
 
 .step-card-body {
   padding-left: 2px;
+}
+
+/* ================= Sidebar & Lists Custom Scrollbars ================= */
+.sidebar-content::-webkit-scrollbar,
+.play-buttons-list::-webkit-scrollbar,
+.cpu-rules-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track,
+.play-buttons-list::-webkit-scrollbar-track,
+.cpu-rules-list::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 4px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb,
+.play-buttons-list::-webkit-scrollbar-thumb,
+.cpu-rules-list::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover,
+.play-buttons-list::-webkit-scrollbar-thumb:hover,
+.cpu-rules-list::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+.sidebar-content,
+.play-buttons-list,
+.cpu-rules-list {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 rgba(15, 23, 42, 0.4);
 }
