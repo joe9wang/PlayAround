@@ -190,20 +190,11 @@ const modalCpuRule = document.getElementById('modal-cpu-rule');
 const cpuRuleEditId = document.getElementById('cpu-rule-edit-id');
 const cpuRuleName = document.getElementById('cpu-rule-name');
 const cpuRuleTargetSeat = document.getElementById('cpu-rule-target-seat');
-const cpuRuleSrcArea = document.getElementById('cpu-rule-src-area');
-const cpuRuleFilterMode = document.getElementById('cpu-rule-filter-mode');
-const cpuRuleTagConditionsWrap = document.getElementById('cpu-rule-tag-conditions-wrap');
-const cpuRuleTagConditionsList = document.getElementById('cpu-rule-tag-conditions-list');
-const btnAddCpuTagCondition = document.getElementById('btn-add-cpu-tag-condition');
-const cpuRuleCount = document.getElementById('cpu-rule-count');
-const cpuRulePickOrder = document.getElementById('cpu-rule-pick-order');
-const cpuRuleSortTagGroup = document.getElementById('cpu-rule-sort-tag-group');
-const cpuRuleSortTag = document.getElementById('cpu-rule-sort-tag');
-const cpuRuleDestArea = document.getElementById('cpu-rule-dest-area');
-const cpuRulePlacement = document.getElementById('cpu-rule-placement');
-const cpuRuleFace = document.getElementById('cpu-rule-face');
-const cpuRuleFallback = document.getElementById('cpu-rule-fallback');
+const cpuFlowContainer = document.getElementById('cpu-flow-container');
+const btnAddFlowAction = document.getElementById('btn-add-flow-action');
+const btnAddFlowIf = document.getElementById('btn-add-flow-if');
 const btnSaveCpuRule = document.getElementById('btn-save-cpu-rule');
+let EDITING_CPU_BLOCKS = [];
 
 // Right Inspector
 const devInspector = document.getElementById('dev-inspector');
@@ -1641,27 +1632,13 @@ function setupModalEvents() {
 
   btnSaveCpuSeats?.addEventListener('click', saveCpuSeats);
 
-  // CPU動作設定モーダルイベント
-  cpuRuleFilterMode?.addEventListener('change', () => {
-    if (!cpuRuleTagConditionsWrap) return;
-    if (cpuRuleFilterMode.value === 'tag_condition') {
-      cpuRuleTagConditionsWrap.style.display = 'flex';
-      if (cpuRuleTagConditionsList && cpuRuleTagConditionsList.children.length === 0) {
-        addCpuTagConditionRow();
-      }
-    } else {
-      cpuRuleTagConditionsWrap.style.display = 'none';
-    }
+  // CPU動作設定モーダルイベント（フローブロック追加）
+  btnAddFlowAction?.addEventListener('click', () => {
+    addCpuFlowActionBlock();
   });
 
-  btnAddCpuTagCondition?.addEventListener('click', () => {
-    addCpuTagConditionRow();
-  });
-
-  cpuRulePickOrder?.addEventListener('change', () => {
-    if (!cpuRuleSortTagGroup) return;
-    const isSortTag = cpuRulePickOrder.value === 'max_tag' || cpuRulePickOrder.value === 'min_tag';
-    cpuRuleSortTagGroup.style.display = isSortTag ? 'block' : 'none';
+  btnAddFlowIf?.addEventListener('click', () => {
+    addCpuFlowIfBlock();
   });
 
   btnSaveCpuRule?.addEventListener('click', saveCpuRule);
@@ -3146,12 +3123,30 @@ function renderCpuRulesList() {
       ? '全CPU共通'
       : (getOwnerLabel(rule.targetSeat) + '専用');
 
-    const srcText = refLabel(valueToRef(rule.srcArea));
-    const destText = refLabel(valueToRef(rule.destArea));
-    const countText = `${rule.count || 1}枚`;
-    const filterText = (rule.filterMode === 'tag_condition' && rule.tagConditions?.length > 0)
-      ? rule.tagConditions.map(c => `${c.tagName}${c.op}${c.value}`).join(' & ')
-      : '全カード';
+    let descText = '';
+    if (Array.isArray(rule.blocks) && rule.blocks.length > 0) {
+      descText = rule.blocks.map((b, i) => {
+        if (b.type === 'action') {
+          if (b.actionType === 'action_draw') return `ドロー(${b.count || 1}枚)`;
+          if (b.actionType === 'action_pass') return 'パス';
+          return `${refLabel(valueToRef(b.srcArea))} → ${refLabel(valueToRef(b.destArea))}`;
+        }
+        if (b.type === 'condition_if') {
+          const thenType = b.thenAction?.actionType === 'action_pass' ? 'パス' : (b.thenAction?.actionType === 'action_draw' ? 'ドロー' : '出す');
+          const elseType = b.elseAction?.actionType === 'action_pass' ? 'パス' : (b.elseAction?.actionType === 'action_draw' ? 'ドロー' : '出す');
+          return `条件分岐 (YES:${thenType} / NO:${elseType})`;
+        }
+        return `ステップ${i + 1}`;
+      }).join(' ➔ ');
+    } else {
+      const srcText = refLabel(valueToRef(rule.srcArea));
+      const destText = refLabel(valueToRef(rule.destArea));
+      const countText = `${rule.count || 1}枚`;
+      const filterText = (rule.filterMode === 'tag_condition' && rule.tagConditions?.length > 0)
+        ? rule.tagConditions.map(c => `${c.tagName}${c.op}${c.value}`).join(' & ')
+        : '全カード';
+      descText = `${srcText} (${filterText}) → ${destText} (${countText})`;
+    }
 
     item.innerHTML = `
       <div class="cpu-rule-header">
@@ -3159,7 +3154,7 @@ function renderCpuRulesList() {
         <span class="cpu-rule-badge">${escapeHtml(targetLabel)}</span>
       </div>
       <div class="cpu-rule-desc">
-        ${escapeHtml(srcText)} (${escapeHtml(filterText)}) → ${escapeHtml(destText)} (${countText})
+        ${escapeHtml(descText)}
       </div>
       <div class="cpu-rule-actions">
         <button type="button" class="mini-tool-btn btn-edit-cpu-rule" title="編集">✏️ 編集</button>
@@ -3185,7 +3180,41 @@ function renderCpuRulesList() {
   });
 }
 
-// ---- CPUルール編集モーダル ----
+// ---- CPUルール編集モーダル & フロービルダー ----
+function migrateLegacyRuleToBlocks(rule) {
+  if (Array.isArray(rule.blocks) && rule.blocks.length > 0) {
+    return JSON.parse(JSON.stringify(rule.blocks));
+  }
+  return [
+    {
+      id: `blk_${Date.now()}_1`,
+      type: 'condition_if',
+      condType: 'has_card',
+      checkArea: rule.srcArea || 'own:hand',
+      filterMode: rule.filterMode || 'none',
+      tagConditions: Array.isArray(rule.tagConditions) ? JSON.parse(JSON.stringify(rule.tagConditions)) : [],
+      countOp: '>=',
+      countVal: 1,
+      thenAction: {
+        actionType: 'action_move',
+        srcArea: rule.srcArea || 'own:hand',
+        filterMode: rule.filterMode || 'none',
+        tagConditions: Array.isArray(rule.tagConditions) ? JSON.parse(JSON.stringify(rule.tagConditions)) : [],
+        count: rule.count || 1,
+        pickOrder: rule.pickOrder || 'first',
+        sortTag: rule.sortTag || '',
+        destArea: rule.destArea || (AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center'),
+        placement: rule.placement || 'spread_lr',
+        face: rule.face || 'face_up'
+      },
+      elseAction: {
+        actionType: rule.fallback === 'draw' ? 'action_draw' : 'action_pass',
+        count: 1
+      }
+    }
+  ];
+}
+
 function openCpuRuleModal(editRuleId = null) {
   if (!modalCpuRule) return;
 
@@ -3194,7 +3223,7 @@ function openCpuRuleModal(editRuleId = null) {
 
   // 1. ルール名
   if (cpuRuleName) {
-    cpuRuleName.value = rule ? rule.name : '手札から条件に合うカードを出す';
+    cpuRuleName.value = rule ? rule.name : '基本ルーチン（ドロー→判定→プレイ）';
   }
 
   // 2. 対象CPU座席
@@ -3211,189 +3240,709 @@ function openCpuRuleModal(editRuleId = null) {
     cpuRuleTargetSeat.value = prevVal;
   }
 
-  // 3. Step 1: 探索元エリア (own:hand, area:xxx etc.)
-  if (cpuRuleSrcArea) {
-    fillSelect(cpuRuleSrcArea, [
-      ...buildAreaRefOptions('にある', null)
-    ], rule ? rule.srcArea : 'own:hand');
-  }
-
-  // 4. Step 2: 絞り込み条件
-  if (cpuRuleFilterMode) {
-    cpuRuleFilterMode.value = (rule && rule.filterMode) ? rule.filterMode : 'none';
-  }
-  if (cpuRuleTagConditionsWrap) {
-    cpuRuleTagConditionsWrap.style.display = (rule && rule.filterMode === 'tag_condition') ? 'flex' : 'none';
-  }
-  clearCpuTagConditions();
-  if (rule && rule.filterMode === 'tag_condition' && Array.isArray(rule.tagConditions)) {
-    rule.tagConditions.forEach(cond => addCpuTagConditionRow(cond));
+  // 3. フローブロックの初期化
+  if (rule) {
+    EDITING_CPU_BLOCKS = migrateLegacyRuleToBlocks(rule);
   } else {
-    addCpuTagConditionRow();
+    // デフォルト: 「ドローする」→「もし出せるカードがあれば出す、なければパス」
+    EDITING_CPU_BLOCKS = [
+      {
+        id: `blk_${Date.now()}_1`,
+        type: 'action',
+        actionType: 'action_draw',
+        count: 1
+      },
+      {
+        id: `blk_${Date.now()}_2`,
+        type: 'condition_if',
+        condType: 'has_card',
+        checkArea: 'own:hand',
+        filterMode: 'none',
+        tagConditions: [],
+        countOp: '>=',
+        countVal: 1,
+        thenAction: {
+          actionType: 'action_move',
+          srcArea: 'own:hand',
+          filterMode: 'none',
+          tagConditions: [],
+          count: 1,
+          pickOrder: 'first',
+          sortTag: '',
+          destArea: AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center',
+          placement: 'spread_lr',
+          face: 'face_up'
+        },
+        elseAction: {
+          actionType: 'action_pass',
+          count: 1
+        }
+      }
+    ];
   }
 
-  // 5. Step 3: 枚数 & 優先順位
-  if (cpuRuleCount) {
-    cpuRuleCount.value = (rule && rule.count) ? String(rule.count) : '1';
-  }
-  if (cpuRulePickOrder) {
-    cpuRulePickOrder.value = (rule && rule.pickOrder) ? rule.pickOrder : 'first';
-  }
-  if (cpuRuleSortTagGroup && cpuRuleSortTag) {
-    const isSortTag = rule && (rule.pickOrder === 'max_tag' || rule.pickOrder === 'min_tag');
-    cpuRuleSortTagGroup.style.display = isSortTag ? 'block' : 'none';
-
-    const tags = getAllDefinedTags();
-    cpuRuleSortTag.innerHTML = '';
-    if (tags.length === 0) {
-      cpuRuleSortTag.innerHTML = '<option value="">(タグが未定義です)</option>';
-    } else {
-      tags.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t.name;
-        opt.textContent = `🏷️ ${t.name}`;
-        if (rule && rule.sortTag === t.name) opt.selected = true;
-        cpuRuleSortTag.appendChild(opt);
-      });
-    }
-  }
-
-  // 6. Step 4: 移動先エリア
-  if (cpuRuleDestArea) {
-    fillSelect(cpuRuleDestArea, [
-      ...buildAreaRefOptions('へ', null)
-    ], rule ? rule.destArea : (AREAS.length > 0 ? `area:${AREAS[0].id}` : 'own:discard'));
-  }
-
-  // 7. Step 5: 置き方 & 表裏
-  if (cpuRulePlacement) {
-    cpuRulePlacement.value = (rule && rule.placement) ? rule.placement : 'spread_lr';
-  }
-  if (cpuRuleFace) {
-    cpuRuleFace.value = (rule && rule.face) ? rule.face : 'face_up';
-  }
-
-  // 8. Step 6: フォールバック
-  if (cpuRuleFallback) {
-    cpuRuleFallback.value = (rule && rule.fallback) ? rule.fallback : 'pass';
-  }
-
+  renderCpuFlowBlocks();
   modalCpuRule.style.display = 'flex';
 }
 
-function clearCpuTagConditions() {
-  if (!cpuRuleTagConditionsList) return;
-  cpuRuleTagConditionsList.innerHTML = '';
+function addCpuFlowActionBlock() {
+  EDITING_CPU_BLOCKS.push({
+    id: `blk_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+    type: 'action',
+    actionType: 'action_move',
+    srcArea: 'own:hand',
+    filterMode: 'none',
+    tagConditions: [],
+    count: 1,
+    pickOrder: 'first',
+    sortTag: '',
+    destArea: AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center',
+    placement: 'spread_lr',
+    face: 'face_up'
+  });
+  renderCpuFlowBlocks();
 }
 
-function addCpuTagConditionRow(data = null) {
-  if (!cpuRuleTagConditionsList) return;
+function addCpuFlowIfBlock() {
+  EDITING_CPU_BLOCKS.push({
+    id: `blk_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+    type: 'condition_if',
+    condType: 'has_card',
+    checkArea: 'own:hand',
+    filterMode: 'none',
+    tagConditions: [],
+    countOp: '>=',
+    countVal: 1,
+    thenAction: {
+      actionType: 'action_move',
+      srcArea: 'own:hand',
+      filterMode: 'none',
+      tagConditions: [],
+      count: 1,
+      pickOrder: 'first',
+      sortTag: '',
+      destArea: AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center',
+      placement: 'spread_lr',
+      face: 'face_up'
+    },
+    elseAction: {
+      actionType: 'action_pass',
+      count: 1
+    }
+  });
+  renderCpuFlowBlocks();
+}
+
+// タグ条件エディタコンポーネント
+function createTagConditionsEditor(tagConditions, onUpdate) {
+  const container = document.createElement('div');
+  container.className = 'cpu-tag-conditions-wrap';
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.gap = '6px';
+  container.style.marginTop = '4px';
+
+  const rowsList = document.createElement('div');
+  rowsList.style.display = 'flex';
+  rowsList.style.flexDirection = 'column';
+  rowsList.style.gap = '6px';
+  container.appendChild(rowsList);
 
   const definedTags = getAllDefinedTags();
-  const rowCount = cpuRuleTagConditionsList.children.length;
-  const row = document.createElement('div');
-  row.className = 'tag-condition-row';
 
-  let logicHtml = '';
-  if (rowCount > 0) {
-    logicHtml = `
-      <select class="tag-condition-op-select">
-        <option value="and"${data?.logical === 'and' ? ' selected' : ''}>かつ</option>
-        <option value="or"${data?.logical === 'or' ? ' selected' : ''}>または</option>
-      </select>
-    `;
-  } else {
-    logicHtml = `<span style="font-size:11px; font-weight:700; color:#10b981; width:40px;">条件:</span>`;
-  }
+  function renderRows() {
+    rowsList.innerHTML = '';
+    tagConditions.forEach((cond, idx) => {
+      const row = document.createElement('div');
+      row.className = 'tag-condition-row';
+      row.style.display = 'flex';
+      row.style.gap = '6px';
+      row.style.alignItems = 'center';
 
-  let tagOptionsHtml = '';
-  if (definedTags.length === 0) {
-    tagOptionsHtml = '<option value="">(タグが未定義です)</option>';
-  } else {
-    tagOptionsHtml = definedTags.map(t =>
-      `<option value="${escapeHtml(t.name)}"${data?.tagName === t.name ? ' selected' : ''}>🏷️ ${escapeHtml(t.name)}</option>`
-    ).join('');
-  }
+      let logicHtml = '';
+      if (idx > 0) {
+        logicHtml = `
+          <select class="tag-condition-op-select form-select" style="width:70px; padding:2px 6px; font-size:11px;">
+            <option value="and"${cond.logical === 'and' ? ' selected' : ''}>かつ</option>
+            <option value="or"${cond.logical === 'or' ? ' selected' : ''}>または</option>
+          </select>
+        `;
+      } else {
+        logicHtml = `<span style="font-size:11px; font-weight:700; color:#10b981; width:45px;">条件:</span>`;
+      }
 
-  row.innerHTML = `
-    ${logicHtml}
-    <select class="tag-condition-key-select">${tagOptionsHtml}</select>
-    <select class="tag-condition-comp-select">
-      <option value="=="${data?.op === '==' ? ' selected' : ''}>と同じ (==)</option>
-      <option value=">"${data?.op === '>' ? ' selected' : ''}>より大きい (&gt;)</option>
-      <option value=">="${data?.op === '>=' ? ' selected' : ''}>以上 (&gt;=)</option>
-      <option value="<"${data?.op === '<' ? ' selected' : ''}>より小さい (&lt;)</option>
-      <option value="<="${data?.op === '<=' ? ' selected' : ''}>以下 (&lt;=)</option>
-    </select>
-    <input type="text" class="tag-condition-val-input" placeholder="値" value="${escapeHtml(data?.value || '')}" />
-    ${rowCount > 0 ? '<button type="button" class="tag-condition-del-btn" title="条件を削除">✕</button>' : ''}
-  `;
+      let tagOptionsHtml = '';
+      if (definedTags.length === 0) {
+        tagOptionsHtml = '<option value="">(タグ未定義)</option>';
+      } else {
+        tagOptionsHtml = definedTags.map(t =>
+          `<option value="${escapeHtml(t.name)}"${cond.tagName === t.name ? ' selected' : ''}>🏷️ ${escapeHtml(t.name)}</option>`
+        ).join('');
+      }
 
-  if (rowCount > 0) {
-    row.querySelector('.tag-condition-del-btn')?.addEventListener('click', () => {
-      row.remove();
+      row.innerHTML = `
+        ${logicHtml}
+        <select class="tag-condition-key-select form-select" style="flex:1; padding:2px 6px; font-size:11px;">${tagOptionsHtml}</select>
+        <select class="tag-condition-comp-select form-select" style="width:90px; padding:2px 6px; font-size:11px;">
+          <option value="=="${cond.op === '==' ? ' selected' : ''}>一致 (==)</option>
+          <option value=">"${cond.op === '>' ? ' selected' : ''}>より大きい (&gt;)</option>
+          <option value=">="${cond.op === '>=' ? ' selected' : ''}>以上 (&gt;=)</option>
+          <option value="<"${cond.op === '<' ? ' selected' : ''}>より小さい (&lt;)</option>
+          <option value="<="${cond.op === '<=' ? ' selected' : ''}>以下 (&lt;=)</option>
+        </select>
+        <input type="text" class="tag-condition-val-input form-input" placeholder="値" value="${escapeHtml(cond.value || '')}" style="width:75px; padding:2px 6px; font-size:11px;" />
+        <button type="button" class="cpu-flow-tool-btn del" style="padding:2px 6px;" title="削除">✕</button>
+      `;
+
+      row.querySelector('.tag-condition-op-select')?.addEventListener('change', (e) => {
+        cond.logical = e.target.value;
+        onUpdate();
+      });
+      row.querySelector('.tag-condition-key-select')?.addEventListener('change', (e) => {
+        cond.tagName = e.target.value;
+        onUpdate();
+      });
+      row.querySelector('.tag-condition-comp-select')?.addEventListener('change', (e) => {
+        cond.op = e.target.value;
+        onUpdate();
+      });
+      row.querySelector('.tag-condition-val-input')?.addEventListener('input', (e) => {
+        cond.value = e.target.value;
+        onUpdate();
+      });
+      row.querySelector('.cpu-flow-tool-btn.del')?.addEventListener('click', () => {
+        tagConditions.splice(idx, 1);
+        renderRows();
+        onUpdate();
+      });
+
+      rowsList.appendChild(row);
     });
   }
 
-  cpuRuleTagConditionsList.appendChild(row);
+  renderRows();
+
+  const btnAdd = document.createElement('button');
+  btnAdd.type = 'button';
+  btnAdd.className = 'btn-add-condition';
+  btnAdd.style.alignSelf = 'flex-start';
+  btnAdd.style.fontSize = '11px';
+  btnAdd.style.padding = '3px 8px';
+  btnAdd.innerHTML = '<span>➕ タグ条件を追加</span>';
+  btnAdd.addEventListener('click', () => {
+    const firstTag = definedTags.length > 0 ? definedTags[0].name : '';
+    tagConditions.push({ logical: 'and', tagName: firstTag, op: '==', value: '' });
+    renderRows();
+    onUpdate();
+  });
+  container.appendChild(btnAdd);
+
+  return container;
 }
 
-function getCpuTagConditionsFromUI() {
-  if (!cpuRuleTagConditionsList) return [];
-  const rows = Array.from(cpuRuleTagConditionsList.querySelectorAll('.tag-condition-row'));
-  const conditions = [];
+// 行動フィールド（カード移動/ドロー/パス）コンポーネント
+function createActionFieldsDOM(actionObj, onUpdate) {
+  const wrap = document.createElement('div');
+  wrap.style.display = 'flex';
+  wrap.style.flexDirection = 'column';
+  wrap.style.gap = '8px';
 
-  rows.forEach((row, index) => {
-    const logical = index === 0 ? 'and' : (row.querySelector('.tag-condition-op-select')?.value || 'and');
-    const tagName = row.querySelector('.tag-condition-key-select')?.value || '';
-    const op = row.querySelector('.tag-condition-comp-select')?.value || '==';
-    const valInput = row.querySelector('.tag-condition-val-input')?.value ?? '';
+  // 1. 行動タイプ選択
+  const typeRow = document.createElement('div');
+  typeRow.style.display = 'flex';
+  typeRow.style.alignItems = 'center';
+  typeRow.style.gap = '8px';
+  typeRow.innerHTML = `
+    <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">行動内容:</label>
+    <select class="form-select action-type-select" style="flex:1; font-size:12px;">
+      <option value="action_move"${actionObj.actionType === 'action_move' ? ' selected' : ''}>🎴 カードを出す / 移動</option>
+      <option value="action_draw"${actionObj.actionType === 'action_draw' ? ' selected' : ''}>📥 山札からドロー</option>
+      <option value="action_pass"${actionObj.actionType === 'action_pass' ? ' selected' : ''}>⏭️ パスしてターン終了</option>
+    </select>
+  `;
+  wrap.appendChild(typeRow);
 
-    if (tagName) {
-      conditions.push({ logical, tagName, op, value: valInput.trim() });
+  const detailsContainer = document.createElement('div');
+  detailsContainer.style.display = 'flex';
+  detailsContainer.style.flexDirection = 'column';
+  detailsContainer.style.gap = '8px';
+  wrap.appendChild(detailsContainer);
+
+  function renderDetails() {
+    detailsContainer.innerHTML = '';
+    const actType = actionObj.actionType || 'action_move';
+
+    if (actType === 'action_draw') {
+      const drawRow = document.createElement('div');
+      drawRow.style.display = 'flex';
+      drawRow.style.alignItems = 'center';
+      drawRow.style.gap = '8px';
+      drawRow.innerHTML = `
+        <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">ドロー枚数:</label>
+        <input type="number" class="form-input act-draw-count" min="1" max="99" value="${actionObj.count || 1}" style="width:80px; font-size:12px;" />
+        <span style="font-size:11px; color:#94a3b8;">枚（自分の山札から手札へ引く）</span>
+      `;
+      drawRow.querySelector('.act-draw-count')?.addEventListener('input', (e) => {
+        actionObj.count = Math.max(1, parseInt(e.target.value, 10) || 1);
+        onUpdate();
+      });
+      detailsContainer.appendChild(drawRow);
+      return;
     }
+
+    if (actType === 'action_pass') {
+      const passInfo = document.createElement('div');
+      passInfo.style.fontSize = '11px';
+      passInfo.style.color = '#94a3b8';
+      passInfo.style.padding = '6px 8px';
+      passInfo.style.background = 'rgba(0,0,0,0.2)';
+      passInfo.style.borderRadius = '4px';
+      passInfo.textContent = 'ℹ️ この行動が実行されると、CPUは手番をパスして終了します。';
+      detailsContainer.appendChild(passInfo);
+      return;
+    }
+
+    // actType === 'action_move'
+    // 1. 移動元
+    const srcRow = document.createElement('div');
+    srcRow.style.display = 'flex';
+    srcRow.style.alignItems = 'center';
+    srcRow.style.gap = '8px';
+    srcRow.innerHTML = `
+      <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">探索元:</label>
+      <select class="form-select act-src-select" style="flex:1; font-size:12px;"></select>
+    `;
+    const srcSelect = srcRow.querySelector('.act-src-select');
+    fillSelect(srcSelect, buildAreaRefOptions('にある', null), actionObj.srcArea || 'own:hand');
+    srcSelect.addEventListener('change', (e) => {
+      actionObj.srcArea = e.target.value;
+      onUpdate();
+    });
+    detailsContainer.appendChild(srcRow);
+
+    // 2. 絞り込み条件
+    const filterRow = document.createElement('div');
+    filterRow.style.display = 'flex';
+    filterRow.style.flexDirection = 'column';
+    filterRow.style.gap = '6px';
+    filterRow.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">対象条件:</label>
+        <select class="form-select act-filter-select" style="flex:1; font-size:12px;">
+          <option value="none"${actionObj.filterMode === 'none' ? ' selected' : ''}>すべて（条件なし / 何でもよい）</option>
+          <option value="tag_condition"${actionObj.filterMode === 'tag_condition' ? ' selected' : ''}>属性（タグ）の条件に一致するもの</option>
+        </select>
+      </div>
+    `;
+    const filterSelect = filterRow.querySelector('.act-filter-select');
+    const tagWrap = document.createElement('div');
+    tagWrap.style.display = actionObj.filterMode === 'tag_condition' ? 'block' : 'none';
+    if (!Array.isArray(actionObj.tagConditions)) actionObj.tagConditions = [];
+    tagWrap.appendChild(createTagConditionsEditor(actionObj.tagConditions, onUpdate));
+
+    filterSelect.addEventListener('change', (e) => {
+      actionObj.filterMode = e.target.value;
+      tagWrap.style.display = actionObj.filterMode === 'tag_condition' ? 'block' : 'none';
+      if (actionObj.filterMode === 'tag_condition' && actionObj.tagConditions.length === 0) {
+        const definedTags = getAllDefinedTags();
+        const firstTag = definedTags.length > 0 ? definedTags[0].name : '';
+        actionObj.tagConditions.push({ logical: 'and', tagName: firstTag, op: '==', value: '' });
+        tagWrap.innerHTML = '';
+        tagWrap.appendChild(createTagConditionsEditor(actionObj.tagConditions, onUpdate));
+      }
+      onUpdate();
+    });
+    filterRow.appendChild(tagWrap);
+    detailsContainer.appendChild(filterRow);
+
+    // 3. 枚数 & 優先順位
+    const countRow = document.createElement('div');
+    countRow.style.display = 'flex';
+    countRow.style.alignItems = 'center';
+    countRow.style.gap = '8px';
+    countRow.style.flexWrap = 'wrap';
+    countRow.innerHTML = `
+      <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">枚数 & 選択:</label>
+      <input type="number" class="form-input act-count" min="1" max="99" value="${actionObj.count || 1}" style="width:65px; font-size:12px;" />
+      <span style="font-size:11px; color:#94a3b8;">枚</span>
+      <select class="form-select act-pick-order" style="flex:1; min-width:130px; font-size:12px;">
+        <option value="first"${actionObj.pickOrder === 'first' ? ' selected' : ''}>最初に見つかったカード</option>
+        <option value="random"${actionObj.pickOrder === 'random' ? ' selected' : ''}>ランダム</option>
+        <option value="max_tag"${actionObj.pickOrder === 'max_tag' ? ' selected' : ''}>指定タグ最大値優先</option>
+        <option value="min_tag"${actionObj.pickOrder === 'min_tag' ? ' selected' : ''}>指定タグ最小値優先</option>
+      </select>
+    `;
+    const countInput = countRow.querySelector('.act-count');
+    const pickOrderSelect = countRow.querySelector('.act-pick-order');
+
+    const sortTagSelect = document.createElement('select');
+    sortTagSelect.className = 'form-select act-sort-tag';
+    sortTagSelect.style.width = '100%';
+    sortTagSelect.style.marginTop = '4px';
+    sortTagSelect.style.fontSize = '12px';
+    const isSort = actionObj.pickOrder === 'max_tag' || actionObj.pickOrder === 'min_tag';
+    sortTagSelect.style.display = isSort ? 'block' : 'none';
+
+    const tags = getAllDefinedTags();
+    if (tags.length === 0) {
+      sortTagSelect.innerHTML = '<option value="">(比較タグ未定義)</option>';
+    } else {
+      sortTagSelect.innerHTML = tags.map(t =>
+        `<option value="${escapeHtml(t.name)}"${actionObj.sortTag === t.name ? ' selected' : ''}>🏷️ ${escapeHtml(t.name)}</option>`
+      ).join('');
+    }
+
+    countInput.addEventListener('input', (e) => {
+      actionObj.count = Math.max(1, parseInt(e.target.value, 10) || 1);
+      onUpdate();
+    });
+    pickOrderSelect.addEventListener('change', (e) => {
+      actionObj.pickOrder = e.target.value;
+      const needTag = actionObj.pickOrder === 'max_tag' || actionObj.pickOrder === 'min_tag';
+      sortTagSelect.style.display = needTag ? 'block' : 'none';
+      if (needTag && !actionObj.sortTag && tags.length > 0) {
+        actionObj.sortTag = tags[0].name;
+      }
+      onUpdate();
+    });
+    sortTagSelect.addEventListener('change', (e) => {
+      actionObj.sortTag = e.target.value;
+      onUpdate();
+    });
+
+    detailsContainer.appendChild(countRow);
+    detailsContainer.appendChild(sortTagSelect);
+
+    // 4. 移動先
+    const destRow = document.createElement('div');
+    destRow.style.display = 'flex';
+    destRow.style.alignItems = 'center';
+    destRow.style.gap = '8px';
+    destRow.innerHTML = `
+      <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">移動先:</label>
+      <select class="form-select act-dest-select" style="flex:1; font-size:12px;"></select>
+    `;
+    const destSelect = destRow.querySelector('.act-dest-select');
+    fillSelect(destSelect, buildAreaRefOptions('へ', null), actionObj.destArea || (AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center'));
+    destSelect.addEventListener('change', (e) => {
+      actionObj.destArea = e.target.value;
+      onUpdate();
+    });
+    detailsContainer.appendChild(destRow);
+
+    // 5. 置き方 & 表裏
+    const styleRow = document.createElement('div');
+    styleRow.style.display = 'grid';
+    styleRow.style.gridTemplateColumns = '1fr 1fr';
+    styleRow.style.gap = '8px';
+    styleRow.innerHTML = `
+      <div>
+        <label class="form-label" style="font-size:11px; margin-bottom:2px;">置き方</label>
+        <select class="form-select act-placement" style="font-size:11px;">
+          <option value="spread_lr"${actionObj.placement === 'spread_lr' ? ' selected' : ''}>左から右へ（横並び）</option>
+          <option value="stack_center"${actionObj.placement === 'stack_center' ? ' selected' : ''}>中央に重ねる</option>
+          <option value="spread_tb"${actionObj.placement === 'spread_tb' ? ' selected' : ''}>上から下へ（縦並び）</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label" style="font-size:11px; margin-bottom:2px;">表裏</label>
+        <select class="form-select act-face" style="font-size:11px;">
+          <option value="face_up"${actionObj.face === 'face_up' ? ' selected' : ''}>表向きで出す</option>
+          <option value="face_down"${actionObj.face === 'face_down' ? ' selected' : ''}>裏向きでセット</option>
+          <option value="keep"${actionObj.face === 'keep' ? ' selected' : ''}>変更しない（そのまま）</option>
+        </select>
+      </div>
+    `;
+    styleRow.querySelector('.act-placement')?.addEventListener('change', (e) => {
+      actionObj.placement = e.target.value;
+      onUpdate();
+    });
+    styleRow.querySelector('.act-face')?.addEventListener('change', (e) => {
+      actionObj.face = e.target.value;
+      onUpdate();
+    });
+    detailsContainer.appendChild(styleRow);
+  }
+
+  typeRow.querySelector('.action-type-select')?.addEventListener('change', (e) => {
+    actionObj.actionType = e.target.value;
+    renderDetails();
+    onUpdate();
   });
 
-  return conditions;
+  renderDetails();
+  return wrap;
+}
+
+function renderCpuFlowBlocks() {
+  if (!cpuFlowContainer) return;
+  cpuFlowContainer.innerHTML = '';
+
+  if (EDITING_CPU_BLOCKS.length === 0) {
+    const emptyNotice = document.createElement('div');
+    emptyNotice.style.padding = '24px 16px';
+    emptyNotice.style.textAlign = 'center';
+    emptyNotice.style.color = '#94a3b8';
+    emptyNotice.style.fontSize = '12px';
+    emptyNotice.style.border = '1px dashed #334155';
+    emptyNotice.style.borderRadius = '8px';
+    emptyNotice.textContent = '実行フローブロックがありません。下のボタンから行動または条件分岐を追加してください。';
+    cpuFlowContainer.appendChild(emptyNotice);
+    return;
+  }
+
+  EDITING_CPU_BLOCKS.forEach((block, index) => {
+    if (index > 0) {
+      const arrow = document.createElement('div');
+      arrow.className = 'cpu-flow-arrow';
+      arrow.textContent = '⬇ 続けて実行';
+      cpuFlowContainer.appendChild(arrow);
+    }
+
+    const blockCard = document.createElement('div');
+    blockCard.className = `cpu-flow-block ${block.type === 'condition_if' ? 'type-if' : 'type-action'}`;
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'cpu-flow-block-header';
+
+    const titleWrap = document.createElement('div');
+    titleWrap.className = 'cpu-flow-block-title';
+    if (block.type === 'condition_if') {
+      titleWrap.innerHTML = `
+        <span class="cpu-flow-badge if">IF 分岐</span>
+        <span>ステップ #${index + 1}: 条件判定と分岐</span>
+      `;
+    } else {
+      titleWrap.innerHTML = `
+        <span class="cpu-flow-badge action">ACTION 行動</span>
+        <span>ステップ #${index + 1}: 行動の実行</span>
+      `;
+    }
+    header.appendChild(titleWrap);
+
+    const tools = document.createElement('div');
+    tools.className = 'cpu-flow-block-tools';
+
+    if (index > 0) {
+      const btnUp = document.createElement('button');
+      btnUp.type = 'button';
+      btnUp.className = 'cpu-flow-tool-btn';
+      btnUp.textContent = '⬆';
+      btnUp.title = '上へ移動';
+      btnUp.addEventListener('click', () => {
+        const tmp = EDITING_CPU_BLOCKS[index - 1];
+        EDITING_CPU_BLOCKS[index - 1] = EDITING_CPU_BLOCKS[index];
+        EDITING_CPU_BLOCKS[index] = tmp;
+        renderCpuFlowBlocks();
+      });
+      tools.appendChild(btnUp);
+    }
+
+    if (index < EDITING_CPU_BLOCKS.length - 1) {
+      const btnDown = document.createElement('button');
+      btnDown.type = 'button';
+      btnDown.className = 'cpu-flow-tool-btn';
+      btnDown.textContent = '⬇';
+      btnDown.title = '下へ移動';
+      btnDown.addEventListener('click', () => {
+        const tmp = EDITING_CPU_BLOCKS[index + 1];
+        EDITING_CPU_BLOCKS[index + 1] = EDITING_CPU_BLOCKS[index];
+        EDITING_CPU_BLOCKS[index] = tmp;
+        renderCpuFlowBlocks();
+      });
+      tools.appendChild(btnDown);
+    }
+
+    const btnDel = document.createElement('button');
+    btnDel.type = 'button';
+    btnDel.className = 'cpu-flow-tool-btn del';
+    btnDel.textContent = '✕';
+    btnDel.title = 'このブロックを削除';
+    btnDel.addEventListener('click', () => {
+      EDITING_CPU_BLOCKS.splice(index, 1);
+      renderCpuFlowBlocks();
+    });
+    tools.appendChild(btnDel);
+
+    header.appendChild(tools);
+    blockCard.appendChild(header);
+
+    // Body
+    if (block.type === 'action') {
+      const actionBody = createActionFieldsDOM(block, () => {});
+      blockCard.appendChild(actionBody);
+    } else if (block.type === 'condition_if') {
+      // IF Condition Config
+      const condSection = document.createElement('div');
+      condSection.style.display = 'flex';
+      condSection.style.flexDirection = 'column';
+      condSection.style.gap = '8px';
+      condSection.style.padding = '8px 10px';
+      condSection.style.background = 'rgba(0,0,0,0.25)';
+      condSection.style.borderRadius = '6px';
+
+      // 判定タイプ & エリア
+      const condRow1 = document.createElement('div');
+      condRow1.style.display = 'flex';
+      condRow1.style.gap = '8px';
+      condRow1.style.alignItems = 'center';
+      condRow1.style.flexWrap = 'wrap';
+      condRow1.innerHTML = `
+        <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">判定条件:</label>
+        <select class="form-select if-cond-type" style="flex:1; min-width:140px; font-size:12px;">
+          <option value="has_card"${block.condType === 'has_card' ? ' selected' : ''}>指定カードの有無を判定</option>
+          <option value="card_count"${block.condType === 'card_count' ? ' selected' : ''}>エリアのカード総枚数を判定</option>
+        </select>
+        <select class="form-select if-check-area" style="flex:1; min-width:140px; font-size:12px;"></select>
+      `;
+      const areaSelect = condRow1.querySelector('.if-check-area');
+      fillSelect(areaSelect, buildAreaRefOptions('にある', null), block.checkArea || 'own:hand');
+      areaSelect.addEventListener('change', (e) => {
+        block.checkArea = e.target.value;
+      });
+
+      condSection.appendChild(condRow1);
+
+      // タグ条件 (has_card の時のみ)
+      const tagSection = document.createElement('div');
+      tagSection.style.display = block.condType === 'has_card' ? 'flex' : 'none';
+      tagSection.style.flexDirection = 'column';
+      tagSection.style.gap = '6px';
+      tagSection.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">カード属性:</label>
+          <select class="form-select if-filter-mode" style="flex:1; font-size:12px;">
+            <option value="none"${block.filterMode === 'none' ? ' selected' : ''}>何でもよい（カードが1枚でも存在すればOK）</option>
+            <option value="tag_condition"${block.filterMode === 'tag_condition' ? ' selected' : ''}>特定タグ条件に一致するカード</option>
+          </select>
+        </div>
+      `;
+      const filterSelect = tagSection.querySelector('.if-filter-mode');
+      const tagEditorWrap = document.createElement('div');
+      tagEditorWrap.style.display = block.filterMode === 'tag_condition' ? 'block' : 'none';
+      if (!Array.isArray(block.tagConditions)) block.tagConditions = [];
+      tagEditorWrap.appendChild(createTagConditionsEditor(block.tagConditions, () => {}));
+
+      filterSelect.addEventListener('change', (e) => {
+        block.filterMode = e.target.value;
+        tagEditorWrap.style.display = block.filterMode === 'tag_condition' ? 'block' : 'none';
+        if (block.filterMode === 'tag_condition' && block.tagConditions.length === 0) {
+          const definedTags = getAllDefinedTags();
+          const firstTag = definedTags.length > 0 ? definedTags[0].name : '';
+          block.tagConditions.push({ logical: 'and', tagName: firstTag, op: '==', value: '' });
+          tagEditorWrap.innerHTML = '';
+          tagEditorWrap.appendChild(createTagConditionsEditor(block.tagConditions, () => {}));
+        }
+      });
+      tagSection.appendChild(tagEditorWrap);
+      condSection.appendChild(tagSection);
+
+      // 枚数比較
+      const countCompRow = document.createElement('div');
+      countCompRow.style.display = 'flex';
+      countCompRow.style.alignItems = 'center';
+      countCompRow.style.gap = '8px';
+      countCompRow.innerHTML = `
+        <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">成立枚数:</label>
+        <span style="font-size:11px; color:#94a3b8;">対象カードが</span>
+        <select class="form-select if-count-op" style="width:90px; font-size:12px;">
+          <option value=">="${block.countOp === '>=' ? ' selected' : ''}>以上 (&gt;=)</option>
+          <option value="=="${block.countOp === '==' ? ' selected' : ''}>同数 (==)</option>
+          <option value="<="${block.countOp === '<=' ? ' selected' : ''}>以下 (&lt;=)</option>
+          <option value=">"${block.countOp === '>' ? ' selected' : ''}>より多い (&gt;)</option>
+          <option value="<"${block.countOp === '<' ? ' selected' : ''}>より少ない (&lt;)</option>
+        </select>
+        <input type="number" class="form-input if-count-val" min="0" max="99" value="${block.countVal ?? 1}" style="width:65px; font-size:12px;" />
+        <span style="font-size:11px; color:#94a3b8;">枚なら YES</span>
+      `;
+      countCompRow.querySelector('.if-count-op')?.addEventListener('change', (e) => {
+        block.countOp = e.target.value;
+      });
+      countCompRow.querySelector('.if-count-val')?.addEventListener('input', (e) => {
+        block.countVal = Math.max(0, parseInt(e.target.value, 10) || 0);
+      });
+      condSection.appendChild(countCompRow);
+
+      condRow1.querySelector('.if-cond-type')?.addEventListener('change', (e) => {
+        block.condType = e.target.value;
+        tagSection.style.display = block.condType === 'has_card' ? 'flex' : 'none';
+      });
+
+      blockCard.appendChild(condSection);
+
+      // Branch Grid (YES / NO)
+      const branchGrid = document.createElement('div');
+      branchGrid.className = 'cpu-branch-grid';
+
+      // YES Branch Box
+      const yesBox = document.createElement('div');
+      yesBox.className = 'cpu-branch-box branch-yes';
+      yesBox.innerHTML = `
+        <div class="cpu-branch-header yes">
+          <span>🟢</span>
+          <span>YESの場合（条件成立）:</span>
+        </div>
+      `;
+      if (!block.thenAction) {
+        block.thenAction = {
+          actionType: 'action_move',
+          srcArea: block.checkArea || 'own:hand',
+          filterMode: 'none',
+          tagConditions: [],
+          count: 1,
+          pickOrder: 'first',
+          sortTag: '',
+          destArea: AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center',
+          placement: 'spread_lr',
+          face: 'face_up'
+        };
+      }
+      const yesFields = createActionFieldsDOM(block.thenAction, () => {});
+      yesBox.appendChild(yesFields);
+      branchGrid.appendChild(yesBox);
+
+      // NO Branch Box
+      const noBox = document.createElement('div');
+      noBox.className = 'cpu-branch-box branch-no';
+      noBox.innerHTML = `
+        <div class="cpu-branch-header no">
+          <span>🔴</span>
+          <span>NOの場合（条件不成立）:</span>
+        </div>
+      `;
+      if (!block.elseAction) {
+        block.elseAction = { actionType: 'action_pass', count: 1 };
+      }
+      const noFields = createActionFieldsDOM(block.elseAction, () => {});
+      noBox.appendChild(noFields);
+      branchGrid.appendChild(noBox);
+
+      blockCard.appendChild(branchGrid);
+    }
+
+    cpuFlowContainer.appendChild(blockCard);
+  });
 }
 
 function saveCpuRule() {
   const editId = cpuRuleEditId?.value || null;
-  const name = cpuRuleName?.value?.trim() || '手札から条件に合うカードを出す';
+  const name = cpuRuleName?.value?.trim() || 'CPU思考ルーチン';
   const targetSeat = cpuRuleTargetSeat?.value || 'all';
-  const srcArea = cpuRuleSrcArea?.value || 'own:hand';
-  const filterMode = cpuRuleFilterMode?.value || 'none';
-  const count = Math.max(1, parseInt(cpuRuleCount?.value, 10) || 1);
-  const pickOrder = cpuRulePickOrder?.value || 'first';
-  const sortTag = cpuRuleSortTag?.value || '';
-  const destArea = cpuRuleDestArea?.value || 'area:area_play_center';
-  const placement = cpuRulePlacement?.value || 'spread_lr';
-  const face = cpuRuleFace?.value || 'face_up';
-  const fallback = cpuRuleFallback?.value || 'pass';
 
-  let tagConditions = [];
-  if (filterMode === 'tag_condition') {
-    tagConditions = getCpuTagConditionsFromUI();
-    if (tagConditions.length === 0 || !tagConditions[0].tagName) {
-      alert('タグ条件のタグ名を選択してください。');
-      return;
-    }
+  if (EDITING_CPU_BLOCKS.length === 0) {
+    alert('少なくとも1つの行動または条件分岐ブロックを追加してください。');
+    return;
   }
 
   const newRule = {
     id: editId || `cpu_rule_${Date.now()}`,
     name,
     targetSeat,
-    srcArea,
-    filterMode,
-    tagConditions,
-    count,
-    pickOrder,
-    sortTag,
-    destArea,
-    placement,
-    face,
-    fallback
+    blocks: JSON.parse(JSON.stringify(EDITING_CPU_BLOCKS)),
+    // 後方互換性用プロパティ
+    srcArea: EDITING_CPU_BLOCKS[0]?.srcArea || 'own:hand',
+    destArea: EDITING_CPU_BLOCKS[0]?.destArea || 'area:area_play_center'
   };
 
   if (editId) {
@@ -3455,64 +4004,93 @@ function executeCpuForPlayer(cpuPlayerId) {
   showToast(`🤖 ${cpuLabel} は実行できるルールがなかったため待機しました`);
 }
 
-function executeSingleCpuRule(rule, cpuPlayerId) {
+// 単一アクション実行ヘルパー
+function executeCpuAction(act, cpuPlayerId) {
   const cpuLabel = getOwnerLabel(cpuPlayerId);
+  const actType = act?.actionType || 'action_move';
 
-  // 1. 探索元エリアの解決
-  const srcRef = valueToRef(rule.srcArea);
-  const srcArea = resolveAreaRef(srcRef, cpuPlayerId);
-  if (!srcArea) {
-    return false;
+  if (actType === 'action_pass') {
+    return { success: true, didPass: true, summary: 'パス' };
   }
 
-  // 2. 探索元エリア内のカード抽出
-  const cardsInSrc = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, srcArea));
+  if (actType === 'action_draw') {
+    const deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
+    const handArea = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+    if (!deckArea || !handArea) {
+      return { success: false, didPass: false, summary: '山札または手札エリアが見つかりません' };
+    }
 
-  // 3. 絞り込み
-  let candidates = cardsInSrc;
-  if (rule.filterMode === 'tag_condition' && Array.isArray(rule.tagConditions) && rule.tagConditions.length > 0) {
-    candidates = cardsInSrc.filter(c => matchesTagConditions(c, rule.tagConditions));
+    const deckCards = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, deckArea))
+      .sort((a, b) => (b.z || 0) - (a.z || 0));
+
+    if (deckCards.length === 0) {
+      return { success: false, didPass: false, summary: '山札が空のためドロー不可' };
+    }
+
+    const drawCount = Math.min(act.count || 1, deckCards.length);
+    const drawn = deckCards.slice(0, drawCount);
+    placeEntitiesInArea(drawn, handArea, 'spread_lr');
+
+    drawn.forEach(c => {
+      c.isFaceDown = false;
+      const dom = document.getElementById(c.id);
+      if (dom) updateEntityInnerDOM(dom, c);
+    });
+
+    return { success: true, didPass: false, summary: `山札から${drawCount}枚ドロー` };
   }
 
-  // 4. カードが存在する場合の処理
-  if (candidates.length > 0) {
+  if (actType === 'action_move') {
+    const srcRef = valueToRef(act.srcArea || 'own:hand');
+    const srcArea = resolveAreaRef(srcRef, cpuPlayerId);
+    if (!srcArea) {
+      return { success: false, didPass: false, summary: '移動元エリアが見つかりません' };
+    }
+
+    const cardsInSrc = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, srcArea));
+    let candidates = cardsInSrc;
+    if (act.filterMode === 'tag_condition' && Array.isArray(act.tagConditions) && act.tagConditions.length > 0) {
+      candidates = cardsInSrc.filter(c => matchesTagConditions(c, act.tagConditions));
+    }
+
+    if (candidates.length === 0) {
+      return { success: false, didPass: false, summary: '条件に合うカードなし' };
+    }
+
     // 優先順位ソート
-    if (rule.pickOrder === 'random') {
+    if (act.pickOrder === 'random') {
       candidates.sort(() => Math.random() - 0.5);
-    } else if (rule.pickOrder === 'max_tag' && rule.sortTag) {
+    } else if (act.pickOrder === 'max_tag' && act.sortTag) {
       candidates.sort((a, b) => {
-        const valA = parseFloat(a.tagValues?.[rule.sortTag] ?? 0);
-        const valB = parseFloat(b.tagValues?.[rule.sortTag] ?? 0);
+        const valA = parseFloat(a.tagValues?.[act.sortTag] ?? 0);
+        const valB = parseFloat(b.tagValues?.[act.sortTag] ?? 0);
         return (isNaN(valB) ? 0 : valB) - (isNaN(valA) ? 0 : valA);
       });
-    } else if (rule.pickOrder === 'min_tag' && rule.sortTag) {
+    } else if (act.pickOrder === 'min_tag' && act.sortTag) {
       candidates.sort((a, b) => {
-        const valA = parseFloat(a.tagValues?.[rule.sortTag] ?? 0);
-        const valB = parseFloat(b.tagValues?.[rule.sortTag] ?? 0);
+        const valA = parseFloat(a.tagValues?.[act.sortTag] ?? 0);
+        const valB = parseFloat(b.tagValues?.[act.sortTag] ?? 0);
         return (isNaN(valA) ? 0 : valA) - (isNaN(valB) ? 0 : valB);
       });
     }
 
-    // 指定枚数をピック
-    const count = Math.min(rule.count || 1, candidates.length);
+    const count = Math.min(act.count || 1, candidates.length);
     const selected = candidates.slice(0, count);
 
-    // 移動先エリアの解決
-    const destRef = valueToRef(rule.destArea);
+    const destRef = valueToRef(act.destArea || (AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center'));
     const destArea = resolveAreaRef(destRef, cpuPlayerId);
     if (!destArea) {
-      showToast(`🤖 ${cpuLabel}: 移動先エリアが見つかりません`);
-      return false;
+      return { success: false, didPass: false, summary: '移動先エリアが見つかりません' };
     }
 
     // 表裏の更新
-    if (rule.face === 'face_up') {
+    if (act.face === 'face_up') {
       selected.forEach(c => {
         c.isFaceDown = false;
         const dom = document.getElementById(c.id);
         if (dom) updateEntityInnerDOM(dom, c);
       });
-    } else if (rule.face === 'face_down') {
+    } else if (act.face === 'face_down') {
       selected.forEach(c => {
         c.isFaceDown = true;
         const dom = document.getElementById(c.id);
@@ -3520,10 +4098,9 @@ function executeSingleCpuRule(rule, cpuPlayerId) {
       });
     }
 
-    // 移動先へ配置
-    placeEntitiesInArea(selected, destArea, rule.placement || 'spread_lr');
+    // 配置
+    placeEntitiesInArea(selected, destArea, act.placement || 'spread_lr');
 
-    // カード名サマリー
     const cardNames = selected.map(c => {
       if (c.tagValues && (c.tagValues.Mark || c.tagValues.tag_mark) && (c.tagValues.Number || c.tagValues.tag_number)) {
         const m = c.tagValues.Mark || c.tagValues.tag_mark;
@@ -3533,30 +4110,78 @@ function executeSingleCpuRule(rule, cpuPlayerId) {
       return 'カード';
     }).join(', ');
 
-    showToast(`🤖 ${cpuLabel}が${srcArea.name || '手札'}から「${cardNames}」を${destArea.name || 'プレイエリア'}に出しました！`);
-    scheduleSaveRoom();
-    return true;
+    return {
+      success: true,
+      didPass: false,
+      summary: `${srcArea.name || '手札'}から「${cardNames}」を${destArea.name || '場'}へ移動`
+    };
   }
 
-  // 5. カードが見つからなかった場合のフォールバック
-  if (rule.fallback === 'draw') {
-    const deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
-    const handArea = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
-    if (deckArea && handArea) {
-      const deckCards = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, deckArea))
-        .sort((a, b) => (b.z || 0) - (a.z || 0));
-      if (deckCards.length > 0) {
-        const topCard = deckCards[0];
-        placeEntitiesInArea([topCard], handArea, 'spread_lr');
-        showToast(`🤖 ${cpuLabel}は出せるカードがなかったため、山札から1枚ドローしました`);
-        scheduleSaveRoom();
-        return true;
-      }
+  return { success: false, didPass: false, summary: '不明な行動' };
+}
+
+// 単一IF条件判定ヘルパー
+function evaluateCpuCondition(block, cpuPlayerId) {
+  const checkRef = valueToRef(block.checkArea || 'own:hand');
+  const checkArea = resolveAreaRef(checkRef, cpuPlayerId);
+  if (!checkArea) return false;
+
+  const cardsInArea = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, checkArea));
+  let matchedCount = cardsInArea.length;
+
+  if (block.condType === 'has_card') {
+    if (block.filterMode === 'tag_condition' && Array.isArray(block.tagConditions) && block.tagConditions.length > 0) {
+      const filtered = cardsInArea.filter(c => matchesTagConditions(c, block.tagConditions));
+      matchedCount = filtered.length;
     }
   }
 
-  if (rule.fallback === 'pass') {
-    showToast(`🤖 ${cpuLabel}は条件に合うカードがないため、パスしました`);
+  const op = block.countOp || '>=';
+  const target = block.countVal ?? 1;
+
+  switch (op) {
+    case '>=': return matchedCount >= target;
+    case '<=': return matchedCount <= target;
+    case '==': return matchedCount === target;
+    case '>': return matchedCount > target;
+    case '<': return matchedCount < target;
+    default: return matchedCount >= target;
+  }
+}
+
+function executeSingleCpuRule(rule, cpuPlayerId) {
+  const cpuLabel = getOwnerLabel(cpuPlayerId);
+
+  // ブロックが存在しない場合はレガシーマイグレーション
+  const blocks = (Array.isArray(rule.blocks) && rule.blocks.length > 0)
+    ? rule.blocks
+    : migrateLegacyRuleToBlocks(rule);
+
+  const stepsSummary = [];
+  let actedAny = false;
+
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
+
+    if (block.type === 'action') {
+      const res = executeCpuAction(block, cpuPlayerId);
+      stepsSummary.push(res.summary);
+      if (res.success) actedAny = true;
+      if (res.didPass) break;
+    } else if (block.type === 'condition_if') {
+      const isYes = evaluateCpuCondition(block, cpuPlayerId);
+      const chosenAct = isYes ? block.thenAction : block.elseAction;
+      const res = executeCpuAction(chosenAct, cpuPlayerId);
+      const branchText = isYes ? 'YES' : 'NO';
+      stepsSummary.push(`条件判定: ${branchText} → ${res.summary}`);
+      if (res.success) actedAny = true;
+      if (res.didPass) break;
+    }
+  }
+
+  if (actedAny) {
+    showToast(`🤖 ${cpuLabel}: ${stepsSummary.join(' → ')}`);
+    scheduleSaveRoom();
     return true;
   }
 
