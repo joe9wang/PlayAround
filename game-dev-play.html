@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ゲームプレイ｜BatriTable</title>
+  <meta name="description" content="BatriTableで作成されたオリジナルカードゲームを遊ぶプレイ専用ルームです。" />
+  <meta name="robots" content="noindex, follow" />
+
+  <!-- Favicon -->
+  <link href="/favicon.ico" rel="icon" sizes="any" />
+  <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
+  <link href="/favicon-16.png?v=3" rel="icon" sizes="16x16" type="image/png" />
+  <link href="/apple-touch-icon.png?v=3" rel="apple-touch-icon" sizes="180x180" />
+  <link href="/site.webmanifest" rel="manifest" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/game-dev-play.css?v=20261019-1" />
+</head>
+
+<body>
+  <!-- Loading Overlay -->
+  <div id="play-loading-overlay">
+    <div class="loading-box">
+      <div class="loading-spinner"></div>
+      <div id="play-loading-text">ゲーム卓を準備しています...</div>
+    </div>
+  </div>
+
+  <!-- Top Bar -->
+  <header id="play-topbar">
+    <div class="topbar-left">
+      <span class="game-badge">🎮 BatriTable Game</span>
+      <div class="room-info-pill">
+        <span class="pill-label">ROOM:</span>
+        <span id="room-id-display">------</span>
+        <span class="pill-sep">/</span>
+        <span class="pill-label">卓:</span>
+        <span id="instance-num-display">#--</span>
+      </div>
+    </div>
+
+    <div class="topbar-center">
+      <div class="acting-player-box">
+        <label for="play-acting-player" class="acting-label">あなたの座席:</label>
+        <select id="play-acting-player" class="acting-select">
+          <option value="player1">P1 (プレイヤー1)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <button type="button" class="top-btn highlight" id="btn-invite-friend" title="この卓のURLをコピーして友達を招待">
+        <span>🔗 友達をこの卓に招待</span>
+      </button>
+      <button type="button" class="top-btn" id="btn-toggle-action-panel" title="アクションパネルの開閉">
+        <span>⚡ 操作パネル</span>
+      </button>
+      <button type="button" class="top-btn secondary" id="btn-exit-lobby" title="ロビーに戻る">
+        <span>🚪 ロビーへ</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace: Actions Panel + Table -->
+  <div id="play-workspace">
+    <!-- Action Panel (Play Buttons & CPU) -->
+    <aside id="play-actions-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>⚡</span>
+          <span>ゲームアクション</span>
+        </div>
+        <button type="button" id="btn-close-action-panel" class="panel-close-btn" title="パネルを閉じる">✕</button>
+      </div>
+
+      <div class="panel-body">
+        <!-- 実行ボタン一覧 -->
+        <div class="panel-section">
+          <div class="section-title">
+            <span>🔘</span>
+            <span>実行ボタン一覧</span>
+          </div>
+          <div id="play-buttons-container" class="play-buttons-list">
+            <div class="empty-notice">実行ボタンがありません</div>
+          </div>
+        </div>
+
+        <!-- CPU・自動化 -->
+        <div class="panel-section" id="cpu-section" style="display:none;">
+          <div class="section-title">
+            <span>🤖</span>
+            <span>CPU・自動化</span>
+          </div>
+          <button type="button" class="action-trigger-btn cpu-turn-btn" id="btn-trigger-cpu-turn">
+            <span class="btn-icon">▶</span>
+            <span class="btn-label">次のCPUターンを実行</span>
+          </button>
+          <div id="cpu-summary-box" class="cpu-summary-text"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Table Canvas -->
+    <main id="table-container">
+      <div id="world">
+        <div id="areas-layer"></div>
+        <div id="entities-layer"></div>
+      </div>
+
+      <!-- Zoom HUD -->
+      <div id="hud-zoom">
+        <span id="hud-zoom-text">100%</span>
+        <button id="btn-zoom-in" title="ズームイン">＋</button>
+        <button id="btn-zoom-out" title="ズームアウト">－</button>
+        <button id="btn-zoom-reset" title="全体を表示">全体</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Context Menu -->
+  <div id="play-context-menu" class="context-menu" style="display:none;">
+    <ul>
+      <li id="ctx-flip">🔄 表裏をめくる</li>
+      <li id="ctx-rotate">🔁 90°回転</li>
+    </ul>
+  </div>
+
+  <!-- Scripts -->
+  <script src="scripts/polyfills.js"></script>
+  <script type="module" src="scripts/game-dev-play.module.js?v=20261019-1"></script>
+</body>
+
+</html>

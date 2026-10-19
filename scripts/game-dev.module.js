@@ -77,6 +77,7 @@ const areasLayerEl = document.getElementById('areas-layer');
 const entitiesLayerEl = document.getElementById('entities-layer');
 const roomIdDisplay = document.getElementById('room-id-display');
 const btnCopyRoomId = document.getElementById('btn-copy-room-id');
+const btnSharePlayUrl = document.getElementById('btn-share-play-url');
 const btnExitLobby = document.getElementById('btn-exit-lobby');
 
 // HUD
@@ -261,6 +262,16 @@ async function loadRoomData() {
 
     if (snap.exists()) {
       ROOM_DATA = snap.data();
+      // 作成者権限チェック（本人以外のアクセスはプレイ用ページへ自動誘導）
+      if (ROOM_DATA.creatorUid && CURRENT_UID && ROOM_DATA.creatorUid !== CURRENT_UID) {
+        alert('このルームは他のユーザーが作成したゲームです。開発者モードの編集権限がないため、プレイ用ページへ移動します。');
+        window.location.href = `./game-dev-play.html?id=${encodeURIComponent(CURRENT_ROOM)}`;
+        return;
+      }
+      if (!ROOM_DATA.creatorUid && CURRENT_UID) {
+        ROOM_DATA.creatorUid = CURRENT_UID;
+      }
+
       if (ROOM_DATA.playerCount) {
         PLAYER_COUNT = Math.max(1, Math.min(10, Number(ROOM_DATA.playerCount) || 4));
       }
@@ -385,6 +396,7 @@ function scheduleSaveRoom() {
       // 2. Firestore への保存実行 (Base64 が除外されサイズが数百KB以下になるため 1MB 上限エラーが解消)
       const roomRef = doc(db, `rooms/${CURRENT_ROOM}`);
       await setDoc(roomRef, {
+        creatorUid: ROOM_DATA?.creatorUid || CURRENT_UID,
         playerCount: PLAYER_COUNT,
         cardSchemas: CARD_SCHEMAS,
         playButtons: PLAY_BUTTONS,
@@ -569,6 +581,17 @@ function setupTopbarEvents() {
     if (CURRENT_ROOM) {
       navigator.clipboard.writeText(CURRENT_ROOM);
       alert(`ルームID「${CURRENT_ROOM}」をコピーしました！`);
+    }
+  });
+
+  btnSharePlayUrl?.addEventListener('click', () => {
+    if (CURRENT_ROOM) {
+      const playUrl = `${window.location.origin}/game-dev-play.html?id=${encodeURIComponent(CURRENT_ROOM)}`;
+      navigator.clipboard.writeText(playUrl).then(() => {
+        showToast('🚀 プレイ公開URLをコピーしました！このリンクを共有すれば誰でも遊べます');
+      }).catch(() => {
+        prompt('このゲームのプレイ用公開URLです（コピーしてください）:', playUrl);
+      });
     }
   });
 
