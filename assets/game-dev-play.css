@@ -366,21 +366,30 @@ body {
   height: 100%;
   position: relative;
   overflow: hidden;
-  background-color: #0b0f19;
-  background-image: 
-    radial-gradient(#1e293b 1px, transparent 1px),
-    radial-gradient(#1e293b 1px, #0b0f19 1px);
-  background-size: 40px 40px;
-  background-position: 0 0, 20px 20px;
+  background: radial-gradient(ellipse at 50% 50%, #15382e 0%, #0d251e 50%, #061410 100%);
+  background-attachment: fixed;
+  box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.85);
+  cursor: grab;
+}
+
+#table-container:active {
+  cursor: grabbing;
 }
 
 #world {
-  width: 4000px;
-  height: 4000px;
+  width: 3600px;
+  height: 2600px;
   position: absolute;
   top: 0;
   left: 0;
   transform-origin: 0 0;
+  background: radial-gradient(circle at 50% 50%, rgba(25, 70, 56, 0.4) 0%, rgba(10, 30, 24, 0.7) 100%);
+  border: 20px solid #1c1511;
+  border-radius: 48px;
+  box-shadow: 
+    0 24px 80px rgba(0, 0, 0, 0.9),
+    inset 0 0 30px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 3px rgba(255, 215, 0, 0.12);
 }
 
 #areas-layer,
@@ -389,59 +398,84 @@ body {
   inset: 0;
 }
 
-/* Areas */
+/* Areas (上品な半透明ゲームマット) */
 .play-area {
   position: absolute;
-  border: 2px dashed rgba(148, 163, 184, 0.3);
-  border-radius: 12px;
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
   pointer-events: none;
   transition: all 0.2s ease;
   box-sizing: border-box;
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
 }
 
 .play-area-label {
   position: absolute;
-  top: 8px;
-  left: 10px;
+  top: 10px;
+  left: 12px;
   font-size: 11px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
   color: #f1f5f9;
-  background: rgba(15, 23, 42, 0.85);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   pointer-events: none;
+  letter-spacing: 0.5px;
 }
 
 .play-area.type-hand {
-  border-color: rgba(59, 130, 246, 0.45);
-  background: rgba(59, 130, 246, 0.04);
+  border-color: rgba(96, 165, 250, 0.55);
+  border-style: solid;
+  background: rgba(30, 58, 138, 0.16);
+}
+.play-area.type-hand .play-area-label {
+  border-left: 3px solid #3b82f6;
 }
 
 .play-area.type-deck {
-  border-color: rgba(16, 185, 129, 0.45);
-  background: rgba(16, 185, 129, 0.04);
+  border-color: rgba(52, 211, 153, 0.55);
+  border-style: solid;
+  background: rgba(6, 78, 59, 0.18);
+}
+.play-area.type-deck .play-area-label {
+  border-left: 3px solid #10b981;
 }
 
 .play-area.type-discard {
-  border-color: rgba(239, 68, 68, 0.45);
-  background: rgba(239, 68, 68, 0.04);
+  border-color: rgba(248, 113, 113, 0.55);
+  border-style: solid;
+  background: rgba(127, 29, 29, 0.16);
+}
+.play-area.type-discard .play-area-label {
+  border-left: 3px solid #ef4444;
 }
 
 .play-area.type-play {
-  border-color: rgba(245, 158, 11, 0.45);
-  background: rgba(245, 158, 11, 0.04);
+  border-color: rgba(251, 191, 36, 0.55);
+  border-style: dashed;
+  background: rgba(120, 53, 15, 0.12);
+}
+.play-area.type-play .play-area-label {
+  border-left: 3px solid #f59e0b;
 }
 
-/* Entities */
+/* Entities (Card & Tokens) */
 .play-entity {
   position: absolute;
   cursor: grab;
   user-select: none;
-  transition: transform 0.08s ease, box-shadow 0.15s ease;
+  transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.play-entity:hover:not(.is-dragging) {
+  transform: translateY(-4px) scale(1.02);
+  filter: brightness(1.04);
 }
 
 .play-entity:active {
@@ -449,16 +483,20 @@ body {
 }
 
 .play-entity.is-dragging {
-  opacity: 0.85;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+  cursor: grabbing !important;
+  opacity: 0.95;
+  transform: scale(1.08) !important;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.75), 0 4px 12px rgba(0, 0, 0, 0.4) !important;
   z-index: 9999 !important;
+  filter: brightness(1.08);
 }
 
 .play-entity.card-entity {
-  border-radius: 8px;
+  border-radius: 9px;
   overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 1px 4px rgba(0, 0, 0, 0.3);
   background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .card-img {
@@ -474,16 +512,16 @@ body {
   position: absolute;
   right: 18px;
   bottom: 18px;
-  background: rgba(30, 41, 59, 0.85);
-  border: 1px solid #475569;
-  border-radius: 20px;
-  padding: 4px 12px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  padding: 6px 14px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  backdrop-filter: blur(8px);
+  gap: 10px;
+  backdrop-filter: blur(12px);
   z-index: 80;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 #hud-zoom-text {

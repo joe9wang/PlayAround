@@ -349,14 +349,25 @@ function setupUIEvents() {
   });
   btnZoomReset?.addEventListener('click', centerWorldInViewport);
 
-  // パン操作 (Table drag)
+  // パン操作 (Table drag: 背景やエリア上どこでもドラッグ可能)
   tableContainer?.addEventListener('mousedown', (e) => {
-    if (e.target !== tableContainer && e.target !== worldEl && e.target !== areasLayerEl) return;
-    if (e.button === 0) {
-      isPanning = true;
-      panStartX = e.clientX - VIEW_OFFSET_X;
-      panStartY = e.clientY - VIEW_OFFSET_Y;
+    if (e.button !== 0 && e.button !== 1) return;
+
+    // カード、HUD、サイドバー、コンテキストメニュー内をクリックしたときはパンしない
+    if (e.target.closest('.play-entity') ||
+        e.target.closest('#hud-zoom') ||
+        e.target.closest('#play-actions-panel') ||
+        e.target.closest('#play-context-menu')) {
+      return;
     }
+
+    isPanning = true;
+    panStartX = e.clientX - VIEW_OFFSET_X;
+    panStartY = e.clientY - VIEW_OFFSET_Y;
+    if (tableContainer) tableContainer.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+    closeContextMenu();
+    e.preventDefault();
   });
 
   window.addEventListener('mousemove', (e) => {
@@ -371,11 +382,32 @@ function setupUIEvents() {
   });
 
   window.addEventListener('mouseup', () => {
-    if (isPanning) isPanning = false;
+    if (isPanning) {
+      isPanning = false;
+      if (tableContainer) tableContainer.style.cursor = 'grab';
+      document.body.style.userSelect = '';
+    }
     if (draggingEntity) {
       handleEntityDrop();
     }
   });
+
+  // マウスホイールズーム (カーソル位置中心で滑らかにズーム)
+  tableContainer?.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = tableContainer.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = e.deltaY < 0 ? 1.15 : (1 / 1.15);
+    const newScale = Math.max(0.2, Math.min(3.0, VIEW_SCALE * zoomFactor));
+
+    VIEW_OFFSET_X = mouseX - (mouseX - VIEW_OFFSET_X) * (newScale / VIEW_SCALE);
+    VIEW_OFFSET_Y = mouseY - (mouseY - VIEW_OFFSET_Y) * (newScale / VIEW_SCALE);
+    VIEW_SCALE = newScale;
+
+    updateWorldTransform();
+  }, { passive: false });
 
   // コンテキストメニュー（めくり・回転）
   ctxFlip?.addEventListener('click', () => {
@@ -435,9 +467,9 @@ function updateWorldTransform() {
 function centerWorldInViewport() {
   if (!tableContainer || !worldEl) return;
   const rect = tableContainer.getBoundingClientRect();
-  VIEW_SCALE = 1.0;
-  VIEW_OFFSET_X = rect.width / 2 - 2000;
-  VIEW_OFFSET_Y = rect.height / 2 - 2000;
+  VIEW_SCALE = 0.55;
+  VIEW_OFFSET_X = (rect.width - 3200 * VIEW_SCALE) / 2;
+  VIEW_OFFSET_Y = (rect.height - 2400 * VIEW_SCALE) / 2;
   updateWorldTransform();
 }
 
