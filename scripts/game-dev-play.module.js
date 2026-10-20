@@ -4,20 +4,16 @@
 
 import {
   auth,
-  db
-} from './firebase.init.js';
-import {
-  onAuthStateChanged,
-  signInAnonymously
-} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-import {
+  db,
   doc,
   getDoc,
   setDoc,
   updateDoc,
   onSnapshot,
-  serverTimestamp
-} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+  serverTimestamp,
+  signInAnonymously,
+  onAuthStateChanged
+} from './firebase.init.js';
 
 // ---- URL Params ----
 const urlParams = new URLSearchParams(window.location.search);
