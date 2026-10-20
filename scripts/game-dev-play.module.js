@@ -91,7 +91,34 @@ const ctxRotate = document.getElementById('ctx-rotate');
 // ============================================================================
 // Initialization & Instance Room Routing
 // ============================================================================
-document.addEventListener('DOMContentLoaded', async () => {
+
+// 認証保証ヘルパー（ログイン済みでなければ匿名認証）
+async function ensureAuthenticated() {
+  if (auth.currentUser) {
+    CURRENT_UID = auth.currentUser.uid;
+    return auth.currentUser;
+  }
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      unsub();
+      if (user) {
+        CURRENT_UID = user.uid;
+        resolve(user);
+      } else {
+        try {
+          const cred = await signInAnonymously(auth);
+          CURRENT_UID = cred.user.uid;
+          resolve(cred.user);
+        } catch (e) {
+          console.warn('Anonymous signin error:', e);
+          resolve(null);
+        }
+      }
+    });
+  });
+}
+
+async function initPlayRoom() {
   if (!TEMPLATE_ID) {
     alert('ゲームIDが指定されていません。ロビーへ戻ります。');
     window.location.href = './lobby.html';
@@ -111,13 +138,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   setupUIEvents();
   initAuthAndGame();
-});
+}
 
 // インスタンス卓の自動生成
 async function createAndRedirectToInstance() {
   if (loadingText) loadingText.textContent = '新規ゲーム卓（インスタンス）を作成中...';
 
   try {
+    const user = await ensureAuthenticated();
+    const myUid = user?.uid || CURRENT_UID;
+
     const templateRef = doc(db, `rooms/${TEMPLATE_ID}`);
     const snap = await getDoc(templateRef);
 
@@ -128,21 +158,23 @@ async function createAndRedirectToInstance() {
     }
 
     const templateData = snap.data();
-    const nextInstanceNum = (Number(templateData.instanceCount) || 0) + 1;
+    let nextInstanceNum = (Number(templateData.instanceCount) || 0) + 1;
 
-    // テンプレート側の instanceCount を更新
-    await updateDoc(templateRef, {
-      instanceCount: nextInstanceNum
-    }).catch(async () => {
-      await setDoc(templateRef, { instanceCount: nextInstanceNum }, { merge: true });
-    });
+    // テンプレート側の instanceCount を更新（権限があれば更新、なければフォールバック採番）
+    try {
+      await updateDoc(templateRef, { instanceCount: nextInstanceNum });
+    } catch {
+      nextInstanceNum = Math.floor(Date.now() % 10000) || 1;
+    }
 
-    // 新規インスタンス卓の作成
+    // 新規インスタンス卓の作成 (hostUid を付与してセキュリティルールを満たす)
     const newInstanceRef = doc(db, `rooms/${TEMPLATE_ID}_inst_${nextInstanceNum}`);
     await setDoc(newInstanceRef, {
       templateId: TEMPLATE_ID,
       instanceNum: nextInstanceNum,
       isDevInstance: true,
+      hostUid: myUid,
+      creatorUid: templateData.creatorUid || templateData.hostUid || null,
       playerCount: templateData.playerCount || 4,
       cardSchemas: templateData.cardSchemas || [],
       playButtons: templateData.playButtons || [],
@@ -170,7 +202,6 @@ function initAuthAndGame() {
       CURRENT_UID = user.uid;
       await loadInstanceRoom();
     } else {
-      // ゲストでも即座に遊べるよう匿名認証
       try {
         const cred = await signInAnonymously(auth);
         CURRENT_UID = cred.user.uid;
@@ -181,6 +212,13 @@ function initAuthAndGame() {
       }
     }
   });
+}
+
+// DOM状態に応じて即時またはDOMContentLoadedで起動
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPlayRoom);
+} else {
+  initPlayRoom();
 }
 
 async function loadInstanceRoom() {
