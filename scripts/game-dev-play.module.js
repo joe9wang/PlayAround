@@ -9,6 +9,8 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  collection,
+  writeBatch,
   onSnapshot,
   serverTimestamp,
   signInAnonymously,
@@ -180,12 +182,13 @@ async function createAndRedirectToInstance() {
       nextInstanceNum = Math.floor(1000 + Math.random() * 9000);
     }
 
-    // 新規インスタンス卓の作成 (undefined を絶対に含めないようサニタイズ)
-    const newInstanceRef = doc(db, `rooms/${TEMPLATE_ID}_inst_${nextInstanceNum}`);
+    const instanceRoomId = `${TEMPLATE_ID}_inst_${nextInstanceNum}`;
+    const newInstanceRef = doc(db, `rooms/${instanceRoomId}`);
     const instancePayload = {
       templateId: TEMPLATE_ID,
       instanceNum: nextInstanceNum,
       isDevInstance: true,
+      roomName: templateData.title || templateData.roomName || '自作ゲーム卓',
       hostUid: myUid || 'guest',
       creatorUid: templateData.creatorUid || templateData.hostUid || myUid || 'unknown',
       playerCount: Number(templateData.playerCount) || 4,
@@ -201,8 +204,37 @@ async function createAndRedirectToInstance() {
 
     await setDoc(newInstanceRef, instancePayload);
 
-    // 自分用のインスタンス卓 URL に自動遷移
-    window.location.replace(`./game-dev-play.html?id=${encodeURIComponent(TEMPLATE_ID)}&room_id=${nextInstanceNum}`);
+    // devEntities を game.html 用の cards サブコレクションへ投入
+    const entities = Array.isArray(templateData.devEntities) ? templateData.devEntities : [];
+    if (entities.length > 0) {
+      const batch = writeBatch(db);
+      entities.forEach((ent, idx) => {
+        const cardDocRef = doc(db, `rooms/${instanceRoomId}/cards/${ent.id || `card_${idx + 1}`}`);
+        const cardData = {
+          type: ent.type || 'card',
+          imageUrl: ent.frontUrl || ent.url || 'PlayExample.webp',
+          frontUrl: ent.frontUrl || ent.url || 'PlayExample.webp',
+          backImageUrl: ent.backUrl || 'PlayExample.webp',
+          x: Number(ent.x) || 100,
+          y: Number(ent.y) || 100,
+          zIndex: Number(ent.z) || (10 + idx),
+          faceUp: !ent.isFaceDown,
+          rotate: Number(ent.angle) || 0,
+          width: Number(ent.w) || 100,
+          height: Number(ent.h) || 140,
+          name: ent.name || 'カード',
+          tags: Array.isArray(ent.tags) ? ent.tags : [],
+          cardDefId: ent.cardDefId || ent.id || '',
+          areaId: ent.areaId || '',
+          ownerSeat: ent.owner ? (ent.owner.match(/\d+/) ? Number(ent.owner.match(/\d+/)[0]) : 1) : 1
+        };
+        batch.set(cardDocRef, cardData);
+      });
+      await batch.commit();
+    }
+
+    // game.html (プランB: 完成された本番卓) へ即座にリダイレクト
+    window.location.replace(`./game.html?id=${encodeURIComponent(instanceRoomId)}&isDev=1`);
   } catch (err) {
     console.error('Failed to create instance room:', err);
     alert('ゲーム卓の作成に失敗しました: ' + (err.message || err) + '\nロビーへ戻ります。');
@@ -238,16 +270,10 @@ if (document.readyState === 'loading') {
 
 async function loadInstanceRoom() {
   try {
-    const roomRef = doc(db, ROOM_DOC_PATH);
-    const snap = await getDoc(roomRef);
-
-    if (!snap.exists()) {
-      alert(`卓 #${ROOM_INSTANCE_ID} が見つかりません。新しい卓を作成します。`);
-      window.location.href = `./game-dev-play.html?id=${encodeURIComponent(TEMPLATE_ID)}`;
-      return;
-    }
-
-    ROOM_DATA = snap.data();
+    const instanceRoomId = ROOM_DOC_PATH.replace('rooms/', '');
+    // 既にインスタンス卓が存在している場合は game.html へリダイレクト
+    window.location.replace(`./game.html?id=${encodeURIComponent(instanceRoomId)}&isDev=1`);
+    return;
     applyRoomData(ROOM_DATA);
 
     // リアルタイム同期

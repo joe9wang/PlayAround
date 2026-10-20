@@ -19,6 +19,7 @@ const JS_MODULES = [
   "./scripts/game.module.js",
   "./scripts/game-dev.module.js",
   "./scripts/game-dev-play.module.js",
+  "./scripts/game-dev-runner.module.js",
   "./scripts/firebase.init.js",
   "./scripts/header-auth.js",
   "./scripts/state.js",

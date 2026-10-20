@@ -1,0 +1,298 @@
+/* ============================================================================
+   game-dev-runner.css
+   BatriTable 開発モード (game.html 統合用スタイル)
+   ============================================================================ */
+
+/* 盤面エリアオーバーレイ */
+#dev-areas-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1; /* カード(z-index 10+)の背面に配置 */
+}
+
+.dev-play-area {
+  position: absolute;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.dev-play-area-label {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: #f1f5f9;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  letter-spacing: 0.5px;
+}
+
+.dev-play-area.type-hand {
+  border-color: rgba(96, 165, 250, 0.55);
+  border-style: solid;
+  background: rgba(30, 58, 138, 0.18);
+}
+.dev-play-area.type-hand .dev-play-area-label {
+  border-left: 3px solid #3b82f6;
+}
+
+.dev-play-area.type-deck {
+  border-color: rgba(52, 211, 153, 0.55);
+  border-style: solid;
+  background: rgba(6, 78, 59, 0.2);
+}
+.dev-play-area.type-deck .dev-play-area-label {
+  border-left: 3px solid #10b981;
+}
+
+.dev-play-area.type-discard {
+  border-color: rgba(248, 113, 113, 0.55);
+  border-style: solid;
+  background: rgba(127, 29, 29, 0.18);
+}
+.dev-play-area.type-discard .dev-play-area-label {
+  border-left: 3px solid #ef4444;
+}
+
+.dev-play-area.type-play {
+  border-color: rgba(251, 191, 36, 0.55);
+  border-style: dashed;
+  background: rgba(120, 53, 15, 0.14);
+}
+.dev-play-area.type-play .dev-play-area-label {
+  border-left: 3px solid #f59e0b;
+}
+
+/* ⚡ ゲームアクション パネル (フロート) */
+.dev-runner-panel {
+  position: fixed;
+  top: 70px;
+  left: 18px;
+  width: 280px;
+  max-height: calc(100vh - 100px);
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  z-index: 10002;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  overflow: hidden;
+  font-family: inherit;
+  color: #f8fafc;
+}
+
+.dev-runner-panel.is-collapsed {
+  transform: translateX(-240px);
+}
+.dev-runner-panel.is-collapsed .dev-runner-body {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dev-runner-header {
+  padding: 12px 16px;
+  background: rgba(30, 41, 59, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dev-runner-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+.dev-runner-title .icon {
+  font-size: 16px;
+}
+
+.dev-runner-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.15s ease;
+}
+.dev-runner-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.dev-runner-body {
+  padding: 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: opacity 0.2s ease;
+}
+
+.dev-runner-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dev-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dev-section-subtitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dev-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.dev-select:focus {
+  border-color: #3b82f6;
+}
+
+.dev-buttons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dev-action-btn {
+  width: 100%;
+  padding: 9px 14px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #f1f5f9;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.dev-action-btn:hover {
+  background: #2563eb;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+.dev-action-btn:active {
+  transform: translateY(0);
+}
+.dev-action-btn .btn-dot {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.cpu-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+}
+
+.dev-btn-cpu {
+  width: 100%;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  transition: all 0.15s ease;
+}
+.dev-btn-cpu:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.5);
+}
+.dev-btn-cpu:active {
+  transform: translateY(0);
+}
+
+.dev-cpu-info {
+  font-size: 11px;
+  color: #94a3b8;
+  padding: 2px 4px;
+}
+
+.empty-hint {
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+  padding: 12px 0;
+}
+
+/* トースト通知 */
+.dev-runner-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 99999;
+}
+.dev-runner-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

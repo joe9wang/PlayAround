@@ -5651,6 +5651,19 @@ function startSession(roomId, playerId) {
 
   renderHPPanel();
 
+  // 開発モード卓（isDev）の判定と動的インポート（遅延ロード）
+  try {
+    const devUrlParams = new URLSearchParams(window.location.search);
+    const isDevMode = devUrlParams.get('isDev') === '1' || CURRENT_ROOM_META?.isDevInstance;
+    if (isDevMode) {
+      import('./game-dev-runner.module.js').then(({ initGameDevRunner }) => {
+        initGameDevRunner({ roomId, meta: CURRENT_ROOM_META });
+      }).catch(err => console.error('[DevRunner] Failed to load:', err));
+    }
+  } catch (err) {
+    console.warn('[DevRunner] Hook check failed:', err);
+  }
+
 
 
 
