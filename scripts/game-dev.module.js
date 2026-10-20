@@ -3156,8 +3156,11 @@ function renderCpuRulesList() {
         }
         if (b.type === 'condition_if') {
           const thenType = b.thenAction?.actionType === 'action_pass' ? 'パス' : (b.thenAction?.actionType === 'action_draw' ? 'ドロー' : '出す');
+          const elseIfCount = Array.isArray(b.elseIfBranches) ? b.elseIfBranches.length : 0;
           const elseType = b.elseAction?.actionType === 'action_pass' ? 'パス' : (b.elseAction?.actionType === 'action_draw' ? 'ドロー' : '出す');
-          return `条件分岐 (YES:${thenType} / NO:${elseType})`;
+          return elseIfCount > 0
+            ? `条件分岐(${1 + elseIfCount}分岐 / ELSE:${elseType})`
+            : `条件分岐 (YES:${thenType} / NO:${elseType})`;
         }
         return `ステップ${i + 1}`;
       }).join(' ➔ ');
@@ -3351,7 +3354,8 @@ function addCpuFlowIfBlock() {
     elseAction: {
       actionType: 'action_pass',
       count: 1
-    }
+    },
+    elseIfBranches: []
   });
   renderCpuFlowBlocks();
 }
@@ -3461,6 +3465,111 @@ function createTagConditionsEditor(tagConditions, onUpdate) {
   container.appendChild(btnAdd);
 
   return container;
+}
+
+// 条件設定ボックスDOM生成コンポーネント（IF / ELSE IF 共通）
+function createConditionConfigDOM(condObj, onUpdate) {
+  const condSection = document.createElement('div');
+  condSection.className = 'cpu-cond-config-box';
+  condSection.style.display = 'flex';
+  condSection.style.flexDirection = 'column';
+  condSection.style.gap = '8px';
+  condSection.style.padding = '8px 10px';
+  condSection.style.background = 'rgba(0,0,0,0.25)';
+  condSection.style.borderRadius = '6px';
+
+  // 1. 判定タイプ & エリア
+  const condRow1 = document.createElement('div');
+  condRow1.style.display = 'flex';
+  condRow1.style.gap = '8px';
+  condRow1.style.alignItems = 'center';
+  condRow1.style.flexWrap = 'wrap';
+  condRow1.innerHTML = `
+    <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">判定条件:</label>
+    <select class="form-select if-cond-type" style="flex:1; min-width:140px; font-size:12px;">
+      <option value="has_card"${condObj.condType === 'has_card' ? ' selected' : ''}>指定カードの有無を判定</option>
+      <option value="card_count"${condObj.condType === 'card_count' ? ' selected' : ''}>エリアのカード総枚数を判定</option>
+    </select>
+    <select class="form-select if-check-area" style="flex:1; min-width:140px; font-size:12px;"></select>
+  `;
+  const areaSelect = condRow1.querySelector('.if-check-area');
+  fillSelect(areaSelect, buildAreaRefOptions('にある', null), condObj.checkArea || 'own:hand');
+  areaSelect.addEventListener('change', (e) => {
+    condObj.checkArea = e.target.value;
+    onUpdate?.();
+  });
+  condSection.appendChild(condRow1);
+
+  // 2. タグ条件 (has_card の時のみ)
+  const tagSection = document.createElement('div');
+  tagSection.style.display = condObj.condType === 'has_card' ? 'flex' : 'none';
+  tagSection.style.flexDirection = 'column';
+  tagSection.style.gap = '6px';
+  tagSection.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px;">
+      <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">カード属性:</label>
+      <select class="form-select if-filter-mode" style="flex:1; font-size:12px;">
+        <option value="none"${condObj.filterMode === 'none' ? ' selected' : ''}>何でもよい（カードが1枚でも存在すればOK）</option>
+        <option value="tag_condition"${condObj.filterMode === 'tag_condition' ? ' selected' : ''}>特定タグ条件に一致するカード</option>
+      </select>
+    </div>
+  `;
+  const filterSelect = tagSection.querySelector('.if-filter-mode');
+  const tagEditorWrap = document.createElement('div');
+  tagEditorWrap.style.display = condObj.filterMode === 'tag_condition' ? 'block' : 'none';
+  if (!Array.isArray(condObj.tagConditions)) condObj.tagConditions = [];
+  tagEditorWrap.appendChild(createTagConditionsEditor(condObj.tagConditions, () => onUpdate?.()));
+
+  filterSelect.addEventListener('change', (e) => {
+    condObj.filterMode = e.target.value;
+    tagEditorWrap.style.display = condObj.filterMode === 'tag_condition' ? 'block' : 'none';
+    if (condObj.filterMode === 'tag_condition' && condObj.tagConditions.length === 0) {
+      const definedTags = getAllDefinedTags();
+      const firstTag = definedTags.length > 0 ? definedTags[0].name : '';
+      condObj.tagConditions.push({ logical: 'and', tagName: firstTag, op: '==', value: '' });
+      tagEditorWrap.innerHTML = '';
+      tagEditorWrap.appendChild(createTagConditionsEditor(condObj.tagConditions, () => onUpdate?.()));
+    }
+    onUpdate?.();
+  });
+  tagSection.appendChild(tagEditorWrap);
+  condSection.appendChild(tagSection);
+
+  // 3. 枚数比較
+  const countCompRow = document.createElement('div');
+  countCompRow.style.display = 'flex';
+  countCompRow.style.alignItems = 'center';
+  countCompRow.style.gap = '8px';
+  countCompRow.innerHTML = `
+    <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">成立枚数:</label>
+    <span style="font-size:11px; color:#94a3b8;">対象カードが</span>
+    <select class="form-select if-count-op" style="width:90px; font-size:12px;">
+      <option value=">="${condObj.countOp === '>=' ? ' selected' : ''}>以上 (&gt;=)</option>
+      <option value="=="${condObj.countOp === '==' ? ' selected' : ''}>同数 (==)</option>
+      <option value="<="${condObj.countOp === '<=' ? ' selected' : ''}>以下 (&lt;=)</option>
+      <option value=">"${condObj.countOp === '>' ? ' selected' : ''}>より多い (&gt;)</option>
+      <option value="<"${condObj.countOp === '<' ? ' selected' : ''}>より少ない (&lt;)</option>
+    </select>
+    <input type="number" class="form-input if-count-val" min="0" max="99" value="${condObj.countVal ?? 1}" style="width:65px; font-size:12px;" />
+    <span style="font-size:11px; color:#94a3b8;">枚なら YES</span>
+  `;
+  countCompRow.querySelector('.if-count-op')?.addEventListener('change', (e) => {
+    condObj.countOp = e.target.value;
+    onUpdate?.();
+  });
+  countCompRow.querySelector('.if-count-val')?.addEventListener('input', (e) => {
+    condObj.countVal = Math.max(0, parseInt(e.target.value, 10) || 0);
+    onUpdate?.();
+  });
+  condSection.appendChild(countCompRow);
+
+  condRow1.querySelector('.if-cond-type')?.addEventListener('change', (e) => {
+    condObj.condType = e.target.value;
+    tagSection.style.display = condObj.condType === 'has_card' ? 'flex' : 'none';
+    onUpdate?.();
+  });
+
+  return condSection;
 }
 
 // 行動フィールド（カード移動/ドロー/パス）コンポーネント
@@ -3796,117 +3905,7 @@ function renderCpuFlowBlocks() {
       const actionBody = createActionFieldsDOM(block, () => {});
       blockCard.appendChild(actionBody);
     } else if (block.type === 'condition_if') {
-      // IF Condition Config
-      const condSection = document.createElement('div');
-      condSection.style.display = 'flex';
-      condSection.style.flexDirection = 'column';
-      condSection.style.gap = '8px';
-      condSection.style.padding = '8px 10px';
-      condSection.style.background = 'rgba(0,0,0,0.25)';
-      condSection.style.borderRadius = '6px';
-
-      // 判定タイプ & エリア
-      const condRow1 = document.createElement('div');
-      condRow1.style.display = 'flex';
-      condRow1.style.gap = '8px';
-      condRow1.style.alignItems = 'center';
-      condRow1.style.flexWrap = 'wrap';
-      condRow1.innerHTML = `
-        <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">判定条件:</label>
-        <select class="form-select if-cond-type" style="flex:1; min-width:140px; font-size:12px;">
-          <option value="has_card"${block.condType === 'has_card' ? ' selected' : ''}>指定カードの有無を判定</option>
-          <option value="card_count"${block.condType === 'card_count' ? ' selected' : ''}>エリアのカード総枚数を判定</option>
-        </select>
-        <select class="form-select if-check-area" style="flex:1; min-width:140px; font-size:12px;"></select>
-      `;
-      const areaSelect = condRow1.querySelector('.if-check-area');
-      fillSelect(areaSelect, buildAreaRefOptions('にある', null), block.checkArea || 'own:hand');
-      areaSelect.addEventListener('change', (e) => {
-        block.checkArea = e.target.value;
-      });
-
-      condSection.appendChild(condRow1);
-
-      // タグ条件 (has_card の時のみ)
-      const tagSection = document.createElement('div');
-      tagSection.style.display = block.condType === 'has_card' ? 'flex' : 'none';
-      tagSection.style.flexDirection = 'column';
-      tagSection.style.gap = '6px';
-      tagSection.innerHTML = `
-        <div style="display:flex; align-items:center; gap:8px;">
-          <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">カード属性:</label>
-          <select class="form-select if-filter-mode" style="flex:1; font-size:12px;">
-            <option value="none"${block.filterMode === 'none' ? ' selected' : ''}>何でもよい（カードが1枚でも存在すればOK）</option>
-            <option value="tag_condition"${block.filterMode === 'tag_condition' ? ' selected' : ''}>特定タグ条件に一致するカード</option>
-          </select>
-        </div>
-      `;
-      const filterSelect = tagSection.querySelector('.if-filter-mode');
-      const tagEditorWrap = document.createElement('div');
-      tagEditorWrap.style.display = block.filterMode === 'tag_condition' ? 'block' : 'none';
-      if (!Array.isArray(block.tagConditions)) block.tagConditions = [];
-      tagEditorWrap.appendChild(createTagConditionsEditor(block.tagConditions, () => {}));
-
-      filterSelect.addEventListener('change', (e) => {
-        block.filterMode = e.target.value;
-        tagEditorWrap.style.display = block.filterMode === 'tag_condition' ? 'block' : 'none';
-        if (block.filterMode === 'tag_condition' && block.tagConditions.length === 0) {
-          const definedTags = getAllDefinedTags();
-          const firstTag = definedTags.length > 0 ? definedTags[0].name : '';
-          block.tagConditions.push({ logical: 'and', tagName: firstTag, op: '==', value: '' });
-          tagEditorWrap.innerHTML = '';
-          tagEditorWrap.appendChild(createTagConditionsEditor(block.tagConditions, () => {}));
-        }
-      });
-      tagSection.appendChild(tagEditorWrap);
-      condSection.appendChild(tagSection);
-
-      // 枚数比較
-      const countCompRow = document.createElement('div');
-      countCompRow.style.display = 'flex';
-      countCompRow.style.alignItems = 'center';
-      countCompRow.style.gap = '8px';
-      countCompRow.innerHTML = `
-        <label class="form-label" style="margin:0; font-size:11px; min-width:65px;">成立枚数:</label>
-        <span style="font-size:11px; color:#94a3b8;">対象カードが</span>
-        <select class="form-select if-count-op" style="width:90px; font-size:12px;">
-          <option value=">="${block.countOp === '>=' ? ' selected' : ''}>以上 (&gt;=)</option>
-          <option value="=="${block.countOp === '==' ? ' selected' : ''}>同数 (==)</option>
-          <option value="<="${block.countOp === '<=' ? ' selected' : ''}>以下 (&lt;=)</option>
-          <option value=">"${block.countOp === '>' ? ' selected' : ''}>より多い (&gt;)</option>
-          <option value="<"${block.countOp === '<' ? ' selected' : ''}>より少ない (&lt;)</option>
-        </select>
-        <input type="number" class="form-input if-count-val" min="0" max="99" value="${block.countVal ?? 1}" style="width:65px; font-size:12px;" />
-        <span style="font-size:11px; color:#94a3b8;">枚なら YES</span>
-      `;
-      countCompRow.querySelector('.if-count-op')?.addEventListener('change', (e) => {
-        block.countOp = e.target.value;
-      });
-      countCompRow.querySelector('.if-count-val')?.addEventListener('input', (e) => {
-        block.countVal = Math.max(0, parseInt(e.target.value, 10) || 0);
-      });
-      condSection.appendChild(countCompRow);
-
-      condRow1.querySelector('.if-cond-type')?.addEventListener('change', (e) => {
-        block.condType = e.target.value;
-        tagSection.style.display = block.condType === 'has_card' ? 'flex' : 'none';
-      });
-
-      blockCard.appendChild(condSection);
-
-      // Branch Grid (YES / NO)
-      const branchGrid = document.createElement('div');
-      branchGrid.className = 'cpu-branch-grid';
-
-      // YES Branch Box
-      const yesBox = document.createElement('div');
-      yesBox.className = 'cpu-branch-box branch-yes';
-      yesBox.innerHTML = `
-        <div class="cpu-branch-header yes">
-          <span>🟢</span>
-          <span>YESの場合（条件成立）:</span>
-        </div>
-      `;
+      if (!Array.isArray(block.elseIfBranches)) block.elseIfBranches = [];
       if (!block.thenAction) {
         block.thenAction = {
           actionType: 'action_move',
@@ -3921,27 +3920,150 @@ function renderCpuFlowBlocks() {
           face: 'face_up'
         };
       }
-      const yesFields = createActionFieldsDOM(block.thenAction, () => {});
-      yesBox.appendChild(yesFields);
-      branchGrid.appendChild(yesBox);
-
-      // NO Branch Box
-      const noBox = document.createElement('div');
-      noBox.className = 'cpu-branch-box branch-no';
-      noBox.innerHTML = `
-        <div class="cpu-branch-header no">
-          <span>🔴</span>
-          <span>NOの場合（条件不成立）:</span>
-        </div>
-      `;
       if (!block.elseAction) {
         block.elseAction = { actionType: 'action_pass', count: 1 };
       }
-      const noFields = createActionFieldsDOM(block.elseAction, () => {});
-      noBox.appendChild(noFields);
-      branchGrid.appendChild(noBox);
 
-      blockCard.appendChild(branchGrid);
+      // 1. メイン IF ブランチ（条件＋成立時行動）
+      const mainIfBox = document.createElement('div');
+      mainIfBox.className = 'cpu-branch-box branch-if-main';
+      mainIfBox.style.display = 'flex';
+      mainIfBox.style.flexDirection = 'column';
+      mainIfBox.style.gap = '8px';
+
+      const mainIfHeader = document.createElement('div');
+      mainIfHeader.className = 'cpu-branch-header yes';
+      mainIfHeader.innerHTML = `<span>❓</span><span>【IF】もし条件を満たすなら:</span>`;
+      mainIfBox.appendChild(mainIfHeader);
+
+      const mainCondDOM = createConditionConfigDOM(block, () => {});
+      mainIfBox.appendChild(mainCondDOM);
+
+      const mainYesBox = document.createElement('div');
+      mainYesBox.className = 'cpu-branch-box branch-yes';
+      mainYesBox.style.marginTop = '4px';
+      mainYesBox.innerHTML = `
+        <div class="cpu-branch-header yes">
+          <span>🟢</span>
+          <span>YESの場合（条件成立時の行動）:</span>
+        </div>
+      `;
+      mainYesBox.appendChild(createActionFieldsDOM(block.thenAction, () => {}));
+      mainIfBox.appendChild(mainYesBox);
+
+      blockCard.appendChild(mainIfBox);
+
+      // 2. ELSE IF ブランチ群
+      if (block.elseIfBranches.length > 0) {
+        const elseIfContainer = document.createElement('div');
+        elseIfContainer.className = 'cpu-elseif-container';
+        elseIfContainer.style.display = 'flex';
+        elseIfContainer.style.flexDirection = 'column';
+        elseIfContainer.style.gap = '10px';
+        elseIfContainer.style.marginTop = '6px';
+
+        block.elseIfBranches.forEach((branch, branchIdx) => {
+          const elseIfBox = document.createElement('div');
+          elseIfBox.className = 'cpu-branch-box branch-elseif';
+          elseIfBox.style.display = 'flex';
+          elseIfBox.style.flexDirection = 'column';
+          elseIfBox.style.gap = '8px';
+
+          const branchHeader = document.createElement('div');
+          branchHeader.className = 'cpu-branch-header elseif';
+          branchHeader.style.display = 'flex';
+          branchHeader.style.alignItems = 'center';
+          branchHeader.style.justifyContent = 'space-between';
+          branchHeader.innerHTML = `
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span>🔀</span>
+              <span>【ELSE IF #${branchIdx + 1}】そうでなく、もし条件を満たすなら:</span>
+            </div>
+            <button type="button" class="cpu-flow-tool-btn del" title="このELSE IFを削除">✕ 削除</button>
+          `;
+          branchHeader.querySelector('.cpu-flow-tool-btn.del')?.addEventListener('click', () => {
+            block.elseIfBranches.splice(branchIdx, 1);
+            renderCpuFlowBlocks();
+          });
+          elseIfBox.appendChild(branchHeader);
+
+          const branchCondDOM = createConditionConfigDOM(branch, () => {});
+          elseIfBox.appendChild(branchCondDOM);
+
+          if (!branch.thenAction) {
+            branch.thenAction = {
+              actionType: 'action_move',
+              srcArea: branch.checkArea || 'own:hand',
+              filterMode: 'none',
+              tagConditions: [],
+              count: 1,
+              pickOrder: 'first',
+              sortTag: '',
+              destArea: AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center',
+              placement: 'spread_lr',
+              face: 'face_up'
+            };
+          }
+          const branchYesBox = document.createElement('div');
+          branchYesBox.className = 'cpu-branch-box branch-yes';
+          branchYesBox.style.marginTop = '4px';
+          branchYesBox.innerHTML = `
+            <div class="cpu-branch-header yes">
+              <span>🟢</span>
+              <span>YESの場合（条件成立時の行動）:</span>
+            </div>
+          `;
+          branchYesBox.appendChild(createActionFieldsDOM(branch.thenAction, () => {}));
+          elseIfBox.appendChild(branchYesBox);
+
+          elseIfContainer.appendChild(elseIfBox);
+        });
+
+        blockCard.appendChild(elseIfContainer);
+      }
+
+      // 3. 「➕ ELSE IF を追加」ボタン
+      const btnAddElseIf = document.createElement('button');
+      btnAddElseIf.type = 'button';
+      btnAddElseIf.className = 'btn-add-elseif';
+      btnAddElseIf.innerHTML = `<span>➕ 「ELSE IF（そうでなく、もし〜なら）」を追加</span>`;
+      btnAddElseIf.addEventListener('click', () => {
+        block.elseIfBranches.push({
+          condType: 'has_card',
+          checkArea: 'own:hand',
+          filterMode: 'none',
+          tagConditions: [],
+          countOp: '>=',
+          countVal: 1,
+          thenAction: {
+            actionType: 'action_move',
+            srcArea: 'own:hand',
+            filterMode: 'none',
+            tagConditions: [],
+            count: 1,
+            pickOrder: 'first',
+            sortTag: '',
+            destArea: AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center',
+            placement: 'spread_lr',
+            face: 'face_up'
+          }
+        });
+        renderCpuFlowBlocks();
+      });
+      blockCard.appendChild(btnAddElseIf);
+
+      // 4. 最後の ELSE セクション（上記すべて不成立の場合）
+      const elseBox = document.createElement('div');
+      elseBox.className = 'cpu-branch-box branch-no';
+      elseBox.style.marginTop = '4px';
+      elseBox.innerHTML = `
+        <div class="cpu-branch-header no">
+          <span>🔴</span>
+          <span>【ELSE】上記すべての条件を満たさなかった場合（不成立時の行動）:</span>
+        </div>
+      `;
+      elseBox.appendChild(createActionFieldsDOM(block.elseAction, () => {}));
+      blockCard.appendChild(elseBox);
     }
 
     cpuFlowContainer.appendChild(blockCard);
@@ -4192,10 +4314,29 @@ function executeSingleCpuRule(rule, cpuPlayerId) {
       if (res.success) actedAny = true;
       if (res.didPass) break;
     } else if (block.type === 'condition_if') {
-      const isYes = evaluateCpuCondition(block, cpuPlayerId);
-      const chosenAct = isYes ? block.thenAction : block.elseAction;
+      let chosenAct = null;
+      let branchText = '';
+
+      if (evaluateCpuCondition(block, cpuPlayerId)) {
+        chosenAct = block.thenAction;
+        branchText = 'IF: YES';
+      } else {
+        const elseIfs = Array.isArray(block.elseIfBranches) ? block.elseIfBranches : [];
+        for (let eIdx = 0; eIdx < elseIfs.length; eIdx++) {
+          const branch = elseIfs[eIdx];
+          if (evaluateCpuCondition(branch, cpuPlayerId)) {
+            chosenAct = branch.thenAction;
+            branchText = `ELSE IF #${eIdx + 1}: YES`;
+            break;
+          }
+        }
+        if (!chosenAct) {
+          chosenAct = block.elseAction;
+          branchText = elseIfs.length > 0 ? 'ELSE (全不成立)' : 'NO';
+        }
+      }
+
       const res = executeCpuAction(chosenAct, cpuPlayerId);
-      const branchText = isYes ? 'YES' : 'NO';
       stepsSummary.push(`条件判定: ${branchText} → ${res.summary}`);
       if (res.success) actedAny = true;
       if (res.didPass) break;

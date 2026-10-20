@@ -756,10 +756,29 @@ function executeSingleCpuRule(rule, cpuPlayerId) {
       if (res.success) actedAny = true;
       if (res.didPass) break;
     } else if (block.type === 'condition_if') {
-      const isYes = evaluateCpuCondition(block, cpuPlayerId);
-      const chosenAct = isYes ? block.thenAction : block.elseAction;
+      let chosenAct = null;
+      let branchText = '';
+
+      if (evaluateCpuCondition(block, cpuPlayerId)) {
+        chosenAct = block.thenAction;
+        branchText = 'IF: YES';
+      } else {
+        const elseIfs = Array.isArray(block.elseIfBranches) ? block.elseIfBranches : [];
+        for (let eIdx = 0; eIdx < elseIfs.length; eIdx++) {
+          const branch = elseIfs[eIdx];
+          if (evaluateCpuCondition(branch, cpuPlayerId)) {
+            chosenAct = branch.thenAction;
+            branchText = `ELSE IF #${eIdx + 1}: YES`;
+            break;
+          }
+        }
+        if (!chosenAct) {
+          chosenAct = block.elseAction;
+          branchText = elseIfs.length > 0 ? 'ELSE (全不成立)' : 'NO';
+        }
+      }
+
       const res = executeCpuAction(chosenAct, cpuPlayerId);
-      const branchText = isYes ? 'YES' : 'NO';
       stepsSummary.push(`条件判定: ${branchText} → ${res.summary}`);
       if (res.success) actedAny = true;
       if (res.didPass) break;
