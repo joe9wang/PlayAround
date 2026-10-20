@@ -92,29 +92,46 @@ const ctxRotate = document.getElementById('ctx-rotate');
 // Initialization & Instance Room Routing
 // ============================================================================
 
-// 認証保証ヘルパー（ログイン済みでなければ匿名認証）
+// 認証保証ヘルパー（Firebaseのセッション復元を待機し、未ログインなら匿名認証）
 async function ensureAuthenticated() {
+  if (typeof auth.authStateReady === 'function') {
+    await auth.authStateReady();
+  }
   if (auth.currentUser) {
     CURRENT_UID = auth.currentUser.uid;
     return auth.currentUser;
   }
   return new Promise((resolve) => {
+    let resolved = false;
     const unsub = onAuthStateChanged(auth, async (user) => {
-      unsub();
-      if (user) {
+      if (user && !resolved) {
+        resolved = true;
+        unsub();
         CURRENT_UID = user.uid;
         resolve(user);
-      } else {
+      }
+    });
+
+    // 600ms待機してもログインユーザーがいなければ匿名サインイン
+    setTimeout(async () => {
+      if (!resolved) {
+        resolved = true;
+        unsub();
+        if (auth.currentUser) {
+          CURRENT_UID = auth.currentUser.uid;
+          resolve(auth.currentUser);
+          return;
+        }
         try {
           const cred = await signInAnonymously(auth);
           CURRENT_UID = cred.user.uid;
           resolve(cred.user);
         } catch (e) {
-          console.warn('Anonymous signin error:', e);
+          console.warn('[PlayMode] Anonymous signin fallback:', e);
           resolve(null);
         }
       }
-    });
+    }, 600);
   });
 }
 
@@ -146,7 +163,7 @@ async function createAndRedirectToInstance() {
 
   try {
     const user = await ensureAuthenticated();
-    const myUid = user?.uid || CURRENT_UID;
+    const myUid = user?.uid || auth.currentUser?.uid || CURRENT_UID;
 
     const templateRef = doc(db, `rooms/${TEMPLATE_ID}`);
     const snap = await getDoc(templateRef);
@@ -157,40 +174,42 @@ async function createAndRedirectToInstance() {
       return;
     }
 
-    const templateData = snap.data();
+    const templateData = snap.data() || {};
     let nextInstanceNum = (Number(templateData.instanceCount) || 0) + 1;
 
     // テンプレート側の instanceCount を更新（権限があれば更新、なければフォールバック採番）
     try {
       await updateDoc(templateRef, { instanceCount: nextInstanceNum });
     } catch {
-      nextInstanceNum = Math.floor(Date.now() % 10000) || 1;
+      nextInstanceNum = Math.floor(1000 + Math.random() * 9000);
     }
 
-    // 新規インスタンス卓の作成 (hostUid を付与してセキュリティルールを満たす)
+    // 新規インスタンス卓の作成 (undefined を絶対に含めないようサニタイズ)
     const newInstanceRef = doc(db, `rooms/${TEMPLATE_ID}_inst_${nextInstanceNum}`);
-    await setDoc(newInstanceRef, {
+    const instancePayload = {
       templateId: TEMPLATE_ID,
       instanceNum: nextInstanceNum,
       isDevInstance: true,
-      hostUid: myUid,
-      creatorUid: templateData.creatorUid || templateData.hostUid || null,
-      playerCount: templateData.playerCount || 4,
-      cardSchemas: templateData.cardSchemas || [],
-      playButtons: templateData.playButtons || [],
-      cpuSeats: templateData.cpuSeats || [],
-      cpuRules: templateData.cpuRules || [],
-      devAreas: templateData.devAreas || [],
-      devEntities: templateData.devEntities || [],
+      hostUid: myUid || 'guest',
+      creatorUid: templateData.creatorUid || templateData.hostUid || myUid || 'unknown',
+      playerCount: Number(templateData.playerCount) || 4,
+      cardSchemas: templateData.cardSchemas || {},
+      playButtons: Array.isArray(templateData.playButtons) ? templateData.playButtons : [],
+      cpuSeats: Array.isArray(templateData.cpuSeats) ? templateData.cpuSeats : [],
+      cpuRules: Array.isArray(templateData.cpuRules) ? templateData.cpuRules : [],
+      devAreas: Array.isArray(templateData.devAreas) ? templateData.devAreas : [],
+      devEntities: Array.isArray(templateData.devEntities) ? templateData.devEntities : [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    });
+    };
+
+    await setDoc(newInstanceRef, instancePayload);
 
     // 自分用のインスタンス卓 URL に自動遷移
     window.location.replace(`./game-dev-play.html?id=${encodeURIComponent(TEMPLATE_ID)}&room_id=${nextInstanceNum}`);
   } catch (err) {
     console.error('Failed to create instance room:', err);
-    alert('ゲーム卓の作成に失敗しました。ロビーへ戻ります。');
+    alert('ゲーム卓の作成に失敗しました: ' + (err.message || err) + '\nロビーへ戻ります。');
     window.location.href = './lobby.html';
   }
 }
