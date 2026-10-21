@@ -1801,3 +1801,15 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #64748b rgba(15, 23, 42, 0.4);
 }
+
+/* ================= Marquee Selection ================= */
+#dev-marquee {
+  position: absolute;
+  border: 1.5px solid #8b5cf6;
+  background: rgba(139, 92, 246, 0.2);
+  pointer-events: none;
+  z-index: 99999;
+  display: none;
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
+}

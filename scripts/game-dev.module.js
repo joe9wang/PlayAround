@@ -28,7 +28,27 @@ let PAN_START_Y = 0;
 
 // Selection & Context Menu
 let SELECTED_ENTITY_ID = null;
+let SELECTED_ENTITY_IDS = new Set();
 let CTX_TARGET_ENTITY_ID = null;
+
+// Marquee Selection State (Shift + Left Drag / Middle Click Drag)
+let IS_MARQUEE_SELECTING = false;
+let MARQUEE_START_X = 0;
+let MARQUEE_START_Y = 0;
+let MARQUEE_IS_ADD = false;
+let marqueeEl = null;
+
+function getOrCreateMarqueeEl() {
+  if (!marqueeEl) {
+    marqueeEl = document.getElementById('dev-marquee');
+    if (!marqueeEl) {
+      marqueeEl = document.createElement('div');
+      marqueeEl.id = 'dev-marquee';
+      viewportEl?.appendChild(marqueeEl);
+    }
+  }
+  return marqueeEl;
+}
 
 // Schemas & Definitions
 let CARD_SCHEMAS = {
@@ -515,11 +535,11 @@ function drawRuler() {
 function setupViewportEvents() {
   if (!viewportEl) return;
 
-  // Panning with Middle Click or Left Drag on background/empty area
+  // Panning with Left Drag on background/empty area, or Marquee Selection with Middle Click / Shift+Left
   viewportEl.addEventListener('mousedown', (e) => {
     if (e.button !== 0 && e.button !== 1) return;
 
-    // カード/コマ/ボード、エリアヘッダー、リサイズハンドル、削除ボタン、HUD操作時はパン開始しない
+    // カード/コマ/ボード、エリアヘッダー、リサイズハンドル、削除ボタン、HUD操作時はパン・マーキー開始しない
     if (e.target.closest('.dev-entity') ||
         e.target.closest('.dev-area-header') ||
         e.target.closest('.dev-resize-handle') ||
@@ -529,14 +549,41 @@ function setupViewportEvents() {
       return;
     }
 
-    IS_PANNING = true;
-    PAN_START_X = e.clientX - VIEW_X;
-    PAN_START_Y = e.clientY - VIEW_Y;
-    viewportEl.style.cursor = 'grabbing';
-    document.body.style.userSelect = 'none';
-    deselectEntity();
-    hideContextMenu();
-    e.preventDefault();
+    // 1. スクロールホイール(中ボタン) または Shift + 左クリック ➔ 範囲選択 (Marquee)
+    if (e.button === 1 || (e.shiftKey && e.button === 0)) {
+      e.preventDefault();
+      e.stopPropagation();
+      hideContextMenu();
+
+      IS_MARQUEE_SELECTING = true;
+      MARQUEE_IS_ADD = e.shiftKey;
+
+      const vpRect = viewportEl.getBoundingClientRect();
+      MARQUEE_START_X = e.clientX - vpRect.left;
+      MARQUEE_START_Y = e.clientY - vpRect.top;
+
+      const m = getOrCreateMarqueeEl();
+      m.style.display = 'block';
+      m.style.left = `${MARQUEE_START_X}px`;
+      m.style.top = `${MARQUEE_START_Y}px`;
+      m.style.width = '0px';
+      m.style.height = '0px';
+      viewportEl.style.cursor = 'crosshair';
+      document.body.style.userSelect = 'none';
+      return;
+    }
+
+    // 2. 通常の左クリック（Shiftなし） ➔ 画面のパン移動
+    if (e.button === 0) {
+      IS_PANNING = true;
+      PAN_START_X = e.clientX - VIEW_X;
+      PAN_START_Y = e.clientY - VIEW_Y;
+      viewportEl.style.cursor = 'grabbing';
+      document.body.style.userSelect = 'none';
+      deselectEntity();
+      hideContextMenu();
+      e.preventDefault();
+    }
   });
 
   window.addEventListener('mousemove', (e) => {
@@ -544,6 +591,21 @@ function setupViewportEvents() {
       VIEW_X = e.clientX - PAN_START_X;
       VIEW_Y = e.clientY - PAN_START_Y;
       updateWorldTransform();
+    } else if (IS_MARQUEE_SELECTING) {
+      const vpRect = viewportEl.getBoundingClientRect();
+      const curX = e.clientX - vpRect.left;
+      const curY = e.clientY - vpRect.top;
+
+      const left = Math.min(MARQUEE_START_X, curX);
+      const top = Math.min(MARQUEE_START_Y, curY);
+      const width = Math.abs(curX - MARQUEE_START_X);
+      const height = Math.abs(curY - MARQUEE_START_Y);
+
+      const m = getOrCreateMarqueeEl();
+      m.style.left = `${left}px`;
+      m.style.top = `${top}px`;
+      m.style.width = `${width}px`;
+      m.style.height = `${height}px`;
     }
   });
 
@@ -552,6 +614,51 @@ function setupViewportEvents() {
       IS_PANNING = false;
       viewportEl.style.cursor = 'default';
       document.body.style.userSelect = '';
+    }
+
+    if (IS_MARQUEE_SELECTING) {
+      IS_MARQUEE_SELECTING = false;
+      viewportEl.style.cursor = 'default';
+      document.body.style.userSelect = '';
+
+      const m = getOrCreateMarqueeEl();
+      const mRect = m.getBoundingClientRect();
+      m.style.display = 'none';
+
+      // 5px未満の微小ドラッグ（単なるクリック）
+      if (mRect.width < 5 && mRect.height < 5) {
+        if (!MARQUEE_IS_ADD) {
+          deselectEntity();
+        }
+        return;
+      }
+
+      // ワールド座標系への変換
+      const vpRect = viewportEl.getBoundingClientRect();
+      const minScreenX = mRect.left - vpRect.left;
+      const maxScreenX = mRect.right - vpRect.left;
+      const minScreenY = mRect.top - vpRect.top;
+      const maxScreenY = mRect.bottom - vpRect.top;
+
+      const minWorldX = (minScreenX - VIEW_X) / VIEW_SCALE;
+      const maxWorldX = (maxScreenX - VIEW_X) / VIEW_SCALE;
+      const minWorldY = (minScreenY - VIEW_Y) / VIEW_SCALE;
+      const maxWorldY = (maxScreenY - VIEW_Y) / VIEW_SCALE;
+
+      // 枠と重なるカード・オブジェクトをすべて検出
+      const hitEntities = ENTITIES.filter(ent => {
+        const ex1 = ent.x;
+        const ey1 = ent.y;
+        const ex2 = ex1 + (ent.w || 120);
+        const ey2 = ey1 + (ent.h || 160);
+        return !(ex2 < minWorldX || ex1 > maxWorldX || ey2 < minWorldY || ey1 > maxWorldY);
+      });
+
+      if (hitEntities.length > 0) {
+        selectEntities(hitEntities.map(ent => ent.id), MARQUEE_IS_ADD);
+      } else if (!MARQUEE_IS_ADD) {
+        deselectEntity();
+      }
     }
   });
 
@@ -1247,28 +1354,62 @@ function createEntityDOM(entity) {
 
   updateEntityInnerDOM(el, entity);
 
-  // Left click selection & drag
+  // Left click selection & drag (supports multi-selection drag)
   el.addEventListener('mousedown', (e) => {
     if (e.button === 0) { // Left click
       e.stopPropagation();
-      selectEntity(entity.id);
-      entity.z = getNextHighestZ();
-      el.style.zIndex = entity.z;
+
+      const isShift = e.shiftKey;
+
+      if (isShift) {
+        // Shiftキー押下時はトグル選択
+        selectEntity(entity.id, true);
+        entity.z = getNextHighestZ();
+        el.style.zIndex = entity.z;
+        return;
+      }
+
+      // すでに複数選択されていて、その中の一つをクリックした場合は選択維持
+      if (SELECTED_ENTITY_IDS.has(entity.id) && SELECTED_ENTITY_IDS.size > 1) {
+        // 複数選択を維持
+      } else {
+        // 単一選択
+        selectEntity(entity.id, false);
+      }
+
+      // 選択されているすべてのカードの zIndex を手前に浮き上がらせる
+      const dragTargets = ENTITIES.filter(ent => SELECTED_ENTITY_IDS.has(ent.id));
+      dragTargets.forEach(ent => {
+        ent.z = getNextHighestZ();
+        const dom = document.getElementById(ent.id);
+        if (dom) dom.style.zIndex = ent.z;
+      });
 
       let isDragging = true;
       const startClientX = e.clientX;
       const startClientY = e.clientY;
-      const initX = entity.x;
-      const initY = entity.y;
+
+      // 選択中の各エンティティの初期座標を保持
+      const initialPositions = dragTargets.map(ent => ({
+        ent,
+        initX: ent.x,
+        initY: ent.y,
+        dom: document.getElementById(ent.id)
+      }));
 
       const onMove = (ev) => {
         if (!isDragging) return;
         const dx = (ev.clientX - startClientX) / VIEW_SCALE;
         const dy = (ev.clientY - startClientY) / VIEW_SCALE;
-        entity.x = Math.round(initX + dx);
-        entity.y = Math.round(initY + dy);
-        el.style.left = `${entity.x}px`;
-        el.style.top = `${entity.y}px`;
+
+        initialPositions.forEach(({ ent, initX, initY, dom }) => {
+          ent.x = Math.round(initX + dx);
+          ent.y = Math.round(initY + dy);
+          if (dom) {
+            dom.style.left = `${ent.x}px`;
+            dom.style.top = `${ent.y}px`;
+          }
+        });
       };
 
       const onUp = () => {
@@ -1287,7 +1428,9 @@ function createEntityDOM(entity) {
   el.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    selectEntity(entity.id);
+    if (!SELECTED_ENTITY_IDS.has(entity.id)) {
+      selectEntity(entity.id, false);
+    }
     entity.z = getNextHighestZ();
     el.style.zIndex = entity.z;
     scheduleSaveRoom();
@@ -1324,18 +1467,39 @@ function updateEntityInnerDOM(el, entity) {
   `;
 }
 
-function selectEntity(id) {
-  SELECTED_ENTITY_ID = id;
-  document.querySelectorAll('.dev-entity').forEach(el => {
-    el.classList.toggle('selected', el.id === id);
-  });
-  updateInspector(id);
+function selectEntity(id, isToggle = false) {
+  if (isToggle) {
+    if (SELECTED_ENTITY_IDS.has(id)) {
+      SELECTED_ENTITY_IDS.delete(id);
+    } else {
+      SELECTED_ENTITY_IDS.add(id);
+    }
+  } else {
+    SELECTED_ENTITY_IDS.clear();
+    if (id) SELECTED_ENTITY_IDS.add(id);
+  }
+  SELECTED_ENTITY_ID = SELECTED_ENTITY_IDS.has(id) ? id : (Array.from(SELECTED_ENTITY_IDS)[0] || null);
+  updateSelectionDOM();
+}
+
+function selectEntities(ids, isAdd = false) {
+  if (!isAdd) SELECTED_ENTITY_IDS.clear();
+  ids.forEach(id => SELECTED_ENTITY_IDS.add(id));
+  SELECTED_ENTITY_ID = ids[ids.length - 1] || null;
+  updateSelectionDOM();
 }
 
 function deselectEntity() {
+  SELECTED_ENTITY_IDS.clear();
   SELECTED_ENTITY_ID = null;
-  document.querySelectorAll('.dev-entity').forEach(el => el.classList.remove('selected'));
-  updateInspector(null);
+  updateSelectionDOM();
+}
+
+function updateSelectionDOM() {
+  document.querySelectorAll('.dev-entity').forEach(el => {
+    el.classList.toggle('selected', SELECTED_ENTITY_IDS.has(el.id));
+  });
+  updateInspector(SELECTED_ENTITY_ID);
 }
 
 // ============================================================================
@@ -4419,9 +4583,10 @@ function updateInspector(entityId) {
   }
 
   if (inspectorBadge) {
-    inspectorBadge.textContent = entity.type === 'card' ? '🃏 カード'
+    const multiCount = SELECTED_ENTITY_IDS.size > 1 ? ` (${SELECTED_ENTITY_IDS.size}個選択中)` : '';
+    inspectorBadge.textContent = (entity.type === 'card' ? '🃏 カード'
       : entity.type === 'board' ? '🗺️ ボード'
-      : '♟ コマ';
+      : '♟ コマ') + multiCount;
   }
 
   if (inspectorStatus) {
