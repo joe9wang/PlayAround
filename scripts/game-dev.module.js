@@ -68,6 +68,12 @@ let AREAS = [
 let ENTITIES = []; // Cards, boards, pieces
 let HIGHEST_Z = 10;
 
+function getNextHighestZ() {
+  const maxZ = ENTITIES.reduce((max, item) => Math.max(max, Number(item.z) || 0), 10);
+  HIGHEST_Z = Math.max(HIGHEST_Z, maxZ) + 1;
+  return HIGHEST_Z;
+}
+
 // === DOM Elements ===
 const viewportEl = document.getElementById('canvas-viewport');
 const rulerCanvas = document.getElementById('ruler-canvas');
@@ -284,7 +290,11 @@ async function loadRoomData() {
         CPU_RULES = Array.isArray(ROOM_DATA.cpuRules) ? ROOM_DATA.cpuRules : [];
       }
       if (ROOM_DATA.devAreas && ROOM_DATA.devAreas.length > 0) AREAS = ROOM_DATA.devAreas;
-      if (ROOM_DATA.devEntities) ENTITIES = ROOM_DATA.devEntities;
+      if (ROOM_DATA.devEntities) {
+        ENTITIES = ROOM_DATA.devEntities;
+        const maxZ = ENTITIES.reduce((max, item) => Math.max(max, Number(item.z) || 0), 10);
+        HIGHEST_Z = maxZ;
+      }
     }
 
     updatePlayerCountUI();
@@ -636,14 +646,13 @@ async function handleFileUpload(e, type) {
     const dataUrl = await readFileAsDataURL(file);
     const storageUrl = await uploadDataUrlToStorage(dataUrl, `upload_${type}_${file.name}`);
     const entityId = `entity_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    HIGHEST_Z += 1;
 
     let entity = {
       id: entityId,
       type: type,
       x: vpCenterX + index * 25,
       y: vpCenterY + index * 25,
-      z: HIGHEST_Z,
+      z: getNextHighestZ(),
       angle: 0,
       frontUrl: storageUrl,
       backUrl: 'PlayExample.webp',
@@ -1243,8 +1252,7 @@ function createEntityDOM(entity) {
     if (e.button === 0) { // Left click
       e.stopPropagation();
       selectEntity(entity.id);
-      HIGHEST_Z += 1;
-      entity.z = HIGHEST_Z;
+      entity.z = getNextHighestZ();
       el.style.zIndex = entity.z;
 
       let isDragging = true;
@@ -1280,6 +1288,9 @@ function createEntityDOM(entity) {
     e.preventDefault();
     e.stopPropagation();
     selectEntity(entity.id);
+    entity.z = getNextHighestZ();
+    el.style.zIndex = entity.z;
+    scheduleSaveRoom();
     showContextMenu(e.clientX, e.clientY, entity.id);
   });
 
@@ -2694,8 +2705,7 @@ function placeEntitiesInArea(movingEnts, area, placement) {
       const h = ent.h || 160;
       ent.x = Math.round(startX + step * i);
       ent.y = Math.round(area.y + area.h / 2 - h / 2);
-      HIGHEST_Z += 1;
-      ent.z = HIGHEST_Z;
+      ent.z = getNextHighestZ();
       applyEntityPosition(ent);
     });
     return;
@@ -2727,8 +2737,7 @@ function placeEntitiesInArea(movingEnts, area, placement) {
       const w = ent.w || 120;
       ent.x = Math.round(area.x + area.w / 2 - w / 2);
       ent.y = Math.round(startY + step * i);
-      HIGHEST_Z += 1;
-      ent.z = HIGHEST_Z;
+      ent.z = getNextHighestZ();
       applyEntityPosition(ent);
     });
     return;
@@ -2759,8 +2768,7 @@ function placeEntitiesInArea(movingEnts, area, placement) {
 
     ent.x = Math.round(targetX);
     ent.y = Math.round(targetY);
-    HIGHEST_Z += 1;
-    ent.z = HIGHEST_Z;
+    ent.z = getNextHighestZ();
     applyEntityPosition(ent);
   });
 }
