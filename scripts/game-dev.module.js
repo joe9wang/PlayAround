@@ -1443,27 +1443,8 @@ function createEntityDOM(entity) {
 function updateEntityInnerDOM(el, entity) {
   const displayUrl = entity.isFaceDown ? (entity.backUrl || 'PlayExample.webp') : entity.frontUrl;
 
-  let badgeHTML = '';
-  if (entity.type === 'card' && entity.cardTypeId && CARD_SCHEMAS[entity.cardTypeId]) {
-    const schema = CARD_SCHEMAS[entity.cardTypeId];
-    const tagsText = Object.entries(entity.tagValues || {})
-      .map(([tId, val]) => {
-        const tagDef = schema.tags.find(t => t.id === tId);
-        return `${tagDef?.name || tId}:${val}`;
-      })
-      .join(' | ');
-
-    badgeHTML = `
-      <div class="dev-card-badge">
-        <div class="badge-type">${schema.name}</div>
-        <div class="badge-tags">${tagsText || '(値未設定)'}</div>
-      </div>
-    `;
-  }
-
   el.innerHTML = `
     <img src="${displayUrl}" class="dev-card-img" alt="${entity.type}" draggable="false" />
-    ${badgeHTML}
   `;
 }
 
