@@ -135,17 +135,17 @@ export class CpuFlowchartEditor {
       const condContainer = document.createElement('div');
       condContainer.className = 'flow-condition-group';
 
-      // 菱形ノード
+      // 菱形ノード（余計な長方形枠線を排除しSVGのみで描画）
       const diamondWrapper = document.createElement('div');
       diamondWrapper.className = 'flow-node-diamond-wrapper';
 
       const diamond = document.createElement('div');
-      diamond.className = 'flow-node flow-node-diamond';
+      diamond.className = 'flow-node-diamond'; // flow-nodeを付与しないことで外枠を除去
       
       const labelText = this.getConditionLabel(node.condition);
       diamond.innerHTML = `
-        <svg class="flow-diamond-svg" viewBox="0 0 200 100" preserveAspectRatio="none">
-          <polygon points="100,2 198,50 100,98 2,50" class="flow-diamond-polygon" />
+        <svg class="flow-diamond-svg" viewBox="0 0 240 84">
+          <polygon points="120,2 238,42 120,82 2,42" class="flow-diamond-polygon" />
         </svg>
         <span class="flow-diamond-text">${labelText}</span>
         <div class="flow-node-actions diamond-tools">
@@ -179,23 +179,31 @@ export class CpuFlowchartEditor {
       
       const yesHeader = document.createElement('div');
       yesHeader.className = 'flow-branch-header yes-header';
-      yesHeader.innerHTML = `<span class="branch-tag yes">YES</span><div class="branch-line-v"></div>`;
+      yesHeader.innerHTML = `
+        <span class="branch-tag yes">YES</span>
+        <svg class="branch-header-svg" width="16" height="24" viewBox="0 0 16 24">
+          <line x1="8" y1="0" x2="8" y2="20" stroke="#0f172a" stroke-width="2" />
+          <polygon points="4,16 12,16 8,22" fill="#0f172a" />
+        </svg>
+      `;
       yesCol.appendChild(yesHeader);
 
       if (!Array.isArray(node.yesBranch)) node.yesBranch = [];
       const yesListEl = this.renderBranchList(node.yesBranch);
       yesCol.appendChild(yesListEl);
 
-      // NOルート（右へ分岐して直角に下へ）
+      // NOルート（右へ分岐して直角に下へ折れる）
       const noCol = document.createElement('div');
       noCol.className = 'flow-branch-col branch-no';
 
       const noHeader = document.createElement('div');
       noHeader.className = 'flow-branch-header no-header';
       noHeader.innerHTML = `
-        <div class="no-branch-elbow-line"></div>
+        <svg class="no-branch-elbow-svg" width="140" height="44" viewBox="0 0 140 44">
+          <path d="M 0,2 H 100 V 40" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+          <polygon points="96,36 104,36 100,42" fill="#0f172a" />
+        </svg>
         <span class="branch-tag no">NO</span>
-        <div class="branch-line-v"></div>
       `;
       noCol.appendChild(noHeader);
 
@@ -207,9 +215,17 @@ export class CpuFlowchartEditor {
       branchesWrapper.appendChild(noCol);
       condContainer.appendChild(branchesWrapper);
 
-      // 合流部（水平線）
+      // 合流部（YESとNOを隙間なく結合する一体型SVG）
       const mergeEl = document.createElement('div');
-      mergeEl.className = 'flow-branch-merge-bar';
+      mergeEl.className = 'flow-branch-merge-container';
+      mergeEl.innerHTML = `
+        <svg class="merge-svg" width="480" height="36" viewBox="0 0 480 36">
+          <line x1="130" y1="0" x2="130" y2="18" stroke="#0f172a" stroke-width="2" />
+          <path d="M 370,0 V 18 H 130" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+          <line x1="130" y1="18" x2="130" y2="32" stroke="#0f172a" stroke-width="2" />
+          <polygon points="126,28 134,28 130,34" fill="#0f172a" />
+        </svg>
+      `;
       condContainer.appendChild(mergeEl);
 
       nodeWrapper.appendChild(condContainer);
@@ -242,14 +258,11 @@ export class CpuFlowchartEditor {
   }
 
   /**
-   * コネクタ（矢印線 ＋ 青い丸型＋ボタン）を描画
+   * コネクタ（矢印線 ＋ 青い丸型＋ボタン）をSVGで綺麗に描画
    */
   renderConnector(parentList, insertIndex) {
     const connector = document.createElement('div');
     connector.className = 'flow-connector';
-
-    const lineTop = document.createElement('div');
-    lineTop.className = 'connector-line';
 
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -261,12 +274,13 @@ export class CpuFlowchartEditor {
       this.openAddMenu(e, parentList, insertIndex);
     });
 
-    const lineBottom = document.createElement('div');
-    lineBottom.className = 'connector-line arrow';
-
-    connector.appendChild(lineTop);
+    connector.innerHTML = `
+      <svg class="connector-svg" width="16" height="44" viewBox="0 0 16 44">
+        <line x1="8" y1="0" x2="8" y2="40" stroke="#0f172a" stroke-width="2" />
+        <polygon points="4,36 12,36 8,42" fill="#0f172a" />
+      </svg>
+    `;
     connector.appendChild(btn);
-    connector.appendChild(lineBottom);
 
     return connector;
   }
