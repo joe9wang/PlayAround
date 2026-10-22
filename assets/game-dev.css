@@ -1813,3 +1813,482 @@ body {
   border-radius: 4px;
   box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
 }
+
+/* ================= Visual Flowchart Programming Editor ================= */
+.flowchart-canvas {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 36px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 480px;
+  position: relative;
+  overflow-x: auto;
+  user-select: none;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.flow-sequence-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* ノード共通 */
+.flow-node-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.flow-node {
+  background: #ffffff;
+  border: 2px solid #0f172a;
+  color: #0f172a;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.flow-node:hover {
+  border-color: #2563eb;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.18);
+  transform: translateY(-1px);
+}
+
+/* 開始 / 終了 ノード（角丸長方形） */
+.flow-node-terminal {
+  width: 220px;
+  height: 48px;
+  border-radius: 9999px;
+  font-size: 15px;
+  letter-spacing: 2px;
+  cursor: default;
+}
+.flow-node-terminal:hover {
+  border-color: #0f172a;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
+  transform: none;
+}
+
+/* 実行ノード（長方形） */
+.flow-node-action {
+  min-width: 210px;
+  max-width: 320px;
+  padding: 10px 18px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.flow-node-label {
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flow-node-actions {
+  position: absolute;
+  right: -32px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.flow-node:hover .flow-node-actions,
+.flow-node-diamond-wrapper:hover .flow-node-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.flow-node-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.15s ease;
+}
+.flow-node-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  transform: scale(1.1);
+}
+.flow-node-btn.del:hover {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+/* 菱形 条件分岐ノード */
+.flow-condition-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.flow-node-diamond-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flow-node-diamond {
+  width: 250px;
+  height: 90px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.flow-diamond-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 3px 6px rgba(15, 23, 42, 0.08));
+}
+
+.flow-diamond-polygon {
+  fill: #ffffff;
+  stroke: #0f172a;
+  stroke-width: 2px;
+  transition: all 0.15s ease;
+}
+
+.flow-node-diamond:hover .flow-diamond-polygon {
+  stroke: #2563eb;
+  fill: #eff6ff;
+}
+
+.flow-diamond-text {
+  position: relative;
+  z-index: 2;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+  padding: 0 24px;
+}
+
+/* 分岐コンテナ (YES / NO) */
+.flow-branches-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;
+  width: 100%;
+  margin-top: -2px;
+}
+
+.flow-branch-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* YESカラム: 菱形直下 */
+.flow-branch-col.branch-yes {
+  width: 260px;
+}
+
+/* NOカラム: 菱形右側 */
+.flow-branch-col.branch-no {
+  width: 200px;
+  margin-left: 20px;
+}
+
+.flow-branch-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  height: 38px;
+}
+
+.branch-tag {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.5px;
+}
+
+.branch-tag.yes {
+  margin-top: 4px;
+}
+
+.branch-tag.no {
+  position: absolute;
+  top: -16px;
+  left: 10px;
+}
+
+.branch-line-v {
+  width: 2px;
+  height: 16px;
+  background: #0f172a;
+}
+
+.no-branch-elbow-line {
+  position: absolute;
+  top: -50px;
+  right: calc(50% + 2px);
+  width: 120px;
+  height: 60px;
+  border-top: 2px solid #0f172a;
+  border-right: 2px solid #0f172a;
+  pointer-events: none;
+}
+
+.flow-branch-node-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* 合流ライン (水平バー) */
+.flow-branch-merge-bar {
+  width: 320px;
+  height: 2px;
+  background: #0f172a;
+  position: relative;
+  margin-top: 6px;
+}
+
+/* コネクタ（矢印線 + 丸型青＋ボタン） */
+.flow-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  margin: 2px 0;
+}
+
+.connector-line {
+  width: 2px;
+  height: 18px;
+  background: #0f172a;
+}
+
+.connector-line.arrow {
+  height: 20px;
+  position: relative;
+}
+
+.connector-line.arrow::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #0f172a;
+}
+
+/* 青い丸型 ＋ ボタン */
+.flow-plus-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #2563eb;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.4);
+  transition: all 0.15s ease;
+  z-index: 10;
+  line-height: 1;
+  padding: 0;
+}
+
+.flow-plus-btn:hover {
+  background: #1d4ed8;
+  transform: scale(1.2);
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.6);
+}
+
+/* ＋クリック時のメニュー */
+.flow-add-popup-menu {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  animation: fadeIn 0.15s ease;
+}
+
+.flow-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.flow-menu-item:hover {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.flow-menu-item .icon {
+  font-size: 14px;
+}
+
+/* 編集・設定ダイアログ */
+.flow-edit-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+
+.flow-edit-dialog {
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 12px;
+  width: 440px;
+  max-width: 92vw;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.flow-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.flow-dialog-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.flow-dialog-close {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: #64748b;
+  cursor: pointer;
+}
+.flow-dialog-close:hover {
+  color: #0f172a;
+}
+
+.flow-dialog-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.flow-dialog-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.btn-dialog-ok {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-dialog-ok:hover {
+  background: #1d4ed8;
+}
+
+.btn-dialog-cancel {
+  background: #e2e8f0;
+  color: #334155;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-dialog-cancel:hover {
+  background: #cbd5e1;
+}
+
+.btn-dialog-del {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-dialog-del:hover {
+  background: #fecaca;
+}
+

@@ -444,25 +444,43 @@ async function evaluateAndRunCpuRules(cpuPlayerId) {
   const snap = await getDocs(cardsCol);
   const allCards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  const sortedRules = [...CPU_RULES].sort((a, b) => (Number(a.priority) || 100) - (Number(b.priority) || 100));
+  const matchedRules = CPU_RULES.filter(r => r.targetSeat === 'all' || r.targetSeat === cpuPlayerId);
+  if (matchedRules.length === 0) return false;
 
-  for (const block of sortedRules) {
-    if (block.ruleType === 'action') {
-      const act = block.action;
-      if (act && act.actionType !== 'action_pass') {
-        await executeCpuActionOnCards(act, cpuPlayerId, allCards);
-        showToast(`🤖 ${getOwnerLabel(cpuPlayerId)}: ${block.label || '優先行動'} を実行しました`);
+  for (const rule of matchedRules) {
+    // 1. 新フローチャート形式 (nodes)
+    if (Array.isArray(rule.nodes) && rule.nodes.length > 0) {
+      const context = {
+        cpuPlayerId,
+        allCards,
+        selectedCards: [],
+        executedAnyAction: false
+      };
+      await executeFlowchartNodeList(rule.nodes, context);
+      if (context.executedAnyAction) {
+        showToast(`🤖 ${getOwnerLabel(cpuPlayerId)}: ルール「${rule.name || 'CPUルーチン'}」を実行しました`);
         return true;
       }
-    } else if (block.ruleType === 'condition') {
+      continue;
+    }
+
+    // 2. 旧ブロック形式 (blocks / ruleType)
+    if (rule.ruleType === 'action') {
+      const act = rule.action;
+      if (act && act.actionType !== 'action_pass') {
+        await executeCpuActionOnCards(act, cpuPlayerId, allCards);
+        showToast(`🤖 ${getOwnerLabel(cpuPlayerId)}: ${rule.label || '優先行動'} を実行しました`);
+        return true;
+      }
+    } else if (rule.ruleType === 'condition') {
       let chosenAct = null;
       let branchLabel = '';
 
-      if (evaluateCpuConditionOnCards(block, cpuPlayerId, allCards)) {
-        chosenAct = block.thenAction;
+      if (evaluateCpuConditionOnCards(rule, cpuPlayerId, allCards)) {
+        chosenAct = rule.thenAction;
         branchLabel = 'IF条件成立';
       } else {
-        const elseIfs = Array.isArray(block.elseIfBranches) ? block.elseIfBranches : [];
+        const elseIfs = Array.isArray(rule.elseIfBranches) ? rule.elseIfBranches : [];
         for (let i = 0; i < elseIfs.length; i++) {
           if (evaluateCpuConditionOnCards(elseIfs[i], cpuPlayerId, allCards)) {
             chosenAct = elseIfs[i].thenAction;
@@ -471,7 +489,7 @@ async function evaluateAndRunCpuRules(cpuPlayerId) {
           }
         }
         if (!chosenAct) {
-          chosenAct = block.elseAction;
+          chosenAct = rule.elseAction;
           branchLabel = 'ELSE成立';
         }
       }
@@ -485,6 +503,140 @@ async function evaluateAndRunCpuRules(cpuPlayerId) {
   }
 
   return false;
+}
+
+/**
+ * フローチャートノード列を順次再帰実行
+ */
+async function executeFlowchartNodeList(nodeList, context) {
+  if (!Array.isArray(nodeList)) return;
+
+  for (const node of nodeList) {
+    if (!node) continue;
+    if (node.type === 'start') continue;
+    if (node.type === 'end') break;
+
+    if (node.type === 'action') {
+      await executeFlowchartAction(node.action, context);
+    } else if (node.type === 'condition') {
+      const isTrue = evaluateFlowchartCondition(node.condition, context);
+      if (isTrue && Array.isArray(node.yesBranch) && node.yesBranch.length > 0) {
+        await executeFlowchartNodeList(node.yesBranch, context);
+      } else if (!isTrue && Array.isArray(node.noBranch) && node.noBranch.length > 0) {
+        await executeFlowchartNodeList(node.noBranch, context);
+      }
+    }
+  }
+}
+
+/**
+ * フローチャートのアクション実行
+ */
+async function executeFlowchartAction(act, context) {
+  if (!act) return;
+  const { cpuPlayerId, allCards } = context;
+  const actType = act.actionType || 'action_draw';
+
+  if (actType === 'action_draw') {
+    const deck = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
+    const hand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+    if (!deck || !hand) return;
+
+    const deckCards = allCards.filter(c => isCardInArea(c, deck))
+      .sort((a, b) => (Number(b.zIndex) || 0) - (Number(a.zIndex) || 0));
+    if (deckCards.length === 0) return;
+
+    const count = Math.min(act.count || 1, deckCards.length);
+    const drawn = deckCards.slice(0, count);
+    await batchPlaceCardsInArea(drawn, hand, 'spread_lr', true);
+
+    // allCardsの状態も更新
+    drawn.forEach(c => {
+      c.x = hand.x;
+      c.y = hand.y;
+    });
+    context.executedAnyAction = true;
+    return;
+  }
+
+  if (actType === 'action_select') {
+    const srcArea = resolveAreaRef(valueToRef(act.srcArea || 'own:hand'), cpuPlayerId);
+    if (!srcArea) {
+      context.selectedCards = [];
+      return;
+    }
+    const inAreaCards = allCards.filter(c => isCardInArea(c, srcArea));
+    let candidates = inAreaCards;
+
+    if (act.filterMode === 'tag' && act.tag) {
+      const targetTag = act.tag.toLowerCase();
+      candidates = inAreaCards.filter(c => {
+        const cTags = Array.isArray(c.tags) ? c.tags.map(t => String(t).toLowerCase()) : [];
+        return cTags.includes(targetTag);
+      });
+    }
+
+    const count = Math.min(act.count || 1, candidates.length);
+    context.selectedCards = candidates.slice(0, count);
+    return;
+  }
+
+  if (actType === 'action_move') {
+    let toMove = [];
+    if (act.srcType === 'own:hand') {
+      const hand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+      if (hand) {
+        toMove = allCards.filter(c => isCardInArea(c, hand)).slice(0, act.count || 1);
+      }
+    } else {
+      toMove = context.selectedCards || [];
+    }
+
+    if (toMove.length === 0) return;
+
+    const dest = resolveAreaRef(valueToRef(act.destArea || 'area:area_play_center'), cpuPlayerId);
+    if (!dest) return;
+
+    let faceUp = null;
+    if (act.face === 'face_up') faceUp = true;
+    if (act.face === 'face_down') faceUp = false;
+
+    await batchPlaceCardsInArea(toMove, dest, act.placement || 'spread_lr', faceUp);
+    context.executedAnyAction = true;
+    context.selectedCards = []; // 移動完了後に選択解除
+    return;
+  }
+}
+
+/**
+ * フローチャートの条件分岐判定
+ */
+function evaluateFlowchartCondition(cond, context) {
+  if (!cond) return true;
+  const { cpuPlayerId, allCards, selectedCards } = context;
+
+  let currentVal = 0;
+  if (cond.target === 'selected_count') {
+    currentVal = (selectedCards || []).length;
+  } else if (cond.target === 'hand_count') {
+    const hand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+    currentVal = hand ? allCards.filter(c => isCardInArea(c, hand)).length : 0;
+  } else if (cond.target === 'deck_count') {
+    const deck = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
+    currentVal = deck ? allCards.filter(c => isCardInArea(c, deck)).length : 0;
+  }
+
+  const op = cond.op || '>=';
+  const target = Number(cond.value ?? 0);
+
+  switch (op) {
+    case '>=': return currentVal >= target;
+    case '<=': return currentVal <= target;
+    case '==': return currentVal === target;
+    case '>': return currentVal > target;
+    case '<': return currentVal < target;
+    default: return currentVal >= target;
+  }
 }
 
 function evaluateCpuConditionOnCards(block, cpuPlayerId, allCards) {

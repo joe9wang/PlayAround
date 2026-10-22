@@ -15,7 +15,7 @@
   <link href="/site.webmanifest" rel="manifest" />
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="assets/game-dev.css?v=20261021-2">
+  <link rel="stylesheet" href="assets/game-dev.css?v=20261022-1">
 </head>
 
 <body>
@@ -689,22 +689,12 @@
         </div>
 
         <div style="font-size:12px; font-weight:700; color:#cbd5e1; display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
-          <span>📋 実行フロー（上から順に実行されます）:</span>
-          <span style="font-size:11px; color:#94a3b8; font-weight:normal;">ブロックを追加して行動や分岐を組み立てます</span>
+          <span>📋 実行フローチャート（開始から順に実行され、終了で完了します）:</span>
+          <span style="font-size:11px; color:#94a3b8; font-weight:normal;">矢印の「＋」をクリックして実行アクションや条件分岐を追加できます</span>
         </div>
 
-        <!-- フローブロックコンテナ -->
-        <div class="cpu-flow-container" id="cpu-flow-container"></div>
-
-        <!-- ブロック追加ボタン群 -->
-        <div class="cpu-flow-add-bar" style="display:flex; gap:10px; margin-top:4px;">
-          <button type="button" class="btn-flow-add action-btn secondary" id="btn-add-flow-action" style="flex:1;">
-            <span>➕ 行動（カードを出す / ドロー / パス）を追加</span>
-          </button>
-          <button type="button" class="btn-flow-add action-btn secondary" id="btn-add-flow-if" style="flex:1; border-color:#8b5cf6; color:#c4b5fd;">
-            <span>❓ 条件分岐（もし〜なら）を追加</span>
-          </button>
-        </div>
+        <!-- フローチャートキャンバスコンテナ -->
+        <div id="cpu-flowchart-editor" style="width: 100%; min-height: 480px; max-height: 60vh; overflow-y: auto;"></div>
       </div>
       <div class="modal-footer">
         <button class="action-btn secondary" data-close="modal-cpu-rule" style="width:auto;">キャンセル</button>
@@ -716,7 +706,7 @@
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="scripts/polyfills.js"></script>
-  <script type="module" src="scripts/game-dev.module.js?v=20261021-3"></script>
+  <script type="module" src="scripts/game-dev.module.js?v=20261022-1"></script>
 </body>
 
 </html>

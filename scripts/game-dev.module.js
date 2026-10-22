@@ -12,6 +12,7 @@ import {
   serverTimestamp, onSnapshot,
   ref, uploadString, getDownloadURL
 } from './firebase.init.js';
+import { CpuFlowchartEditor } from './game-dev-flowchart.js';
 
 // === State ===
 let CURRENT_ROOM = null;
@@ -217,11 +218,23 @@ const modalCpuRule = document.getElementById('modal-cpu-rule');
 const cpuRuleEditId = document.getElementById('cpu-rule-edit-id');
 const cpuRuleName = document.getElementById('cpu-rule-name');
 const cpuRuleTargetSeat = document.getElementById('cpu-rule-target-seat');
-const cpuFlowContainer = document.getElementById('cpu-flow-container');
-const btnAddFlowAction = document.getElementById('btn-add-flow-action');
-const btnAddFlowIf = document.getElementById('btn-add-flow-if');
 const btnSaveCpuRule = document.getElementById('btn-save-cpu-rule');
-let EDITING_CPU_BLOCKS = [];
+let cpuFlowchartEditorInstance = null;
+
+function getCpuFlowchartEditor() {
+  if (!cpuFlowchartEditorInstance) {
+    const container = document.getElementById('cpu-flowchart-editor');
+    if (container) {
+      cpuFlowchartEditorInstance = new CpuFlowchartEditor({
+        container,
+        getAvailableAreas: () => AREAS.map(a => ({ id: `area:${a.id}`, name: a.name || a.id })),
+        getAvailableTags: () => Object.values(CARD_SCHEMAS).flatMap(s => (s.tags || []).map(t => t.name)),
+        onChange: () => {}
+      });
+    }
+  }
+  return cpuFlowchartEditorInstance;
+}
 
 // Right Inspector
 const devInspector = document.getElementById('dev-inspector');
@@ -3300,7 +3313,24 @@ function renderCpuRulesList() {
       : (getOwnerLabel(rule.targetSeat) + '専用');
 
     let descText = '';
-    if (Array.isArray(rule.blocks) && rule.blocks.length > 0) {
+    if (Array.isArray(rule.nodes) && rule.nodes.length > 0) {
+      const meaningfulNodes = rule.nodes.filter(n => n.type !== 'start' && n.type !== 'end');
+      descText = meaningfulNodes.map(n => {
+        if (n.type === 'action') {
+          const act = n.action || {};
+          if (act.actionType === 'action_draw') return `ドロー(${act.count || 1}枚)`;
+          if (act.actionType === 'action_select') return `選択(${act.tag ? `タグ[${act.tag}]` : 'カード'})`;
+          if (act.actionType === 'action_move') return `カード移動(${act.destArea || '指定先'})`;
+          if (act.actionType === 'action_pass') return 'パス';
+          return 'アクション';
+        }
+        if (n.type === 'condition') {
+          const cond = n.condition || {};
+          return `◇分岐(${cond.target || '条件'}${cond.op || '>='}${cond.value ?? 0})`;
+        }
+        return 'ステップ';
+      }).join(' ➔ ') || '（ノード未設定）';
+    } else if (Array.isArray(rule.blocks) && rule.blocks.length > 0) {
       descText = rule.blocks.map((b, i) => {
         if (b.type === 'action') {
           if (b.actionType === 'action_draw') return `ドロー(${b.count || 1}枚)`;
@@ -3394,6 +3424,63 @@ function migrateLegacyRuleToBlocks(rule) {
   ];
 }
 
+// ---- フローチャートデータ マイグレーション ----
+function migrateRuleToFlowchartNodes(rule) {
+  if (rule && Array.isArray(rule.nodes) && rule.nodes.length > 0) {
+    return JSON.parse(JSON.stringify(rule.nodes));
+  }
+
+  const nodes = [{ id: 'start', type: 'start', label: '開始' }];
+
+  if (rule && Array.isArray(rule.blocks) && rule.blocks.length > 0) {
+    for (const b of rule.blocks) {
+      if (b.type === 'action') {
+        nodes.push({
+          id: b.id || `act_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          type: 'action',
+          action: {
+            actionType: b.actionType || 'action_draw',
+            count: b.count || 1,
+            srcArea: b.srcArea || 'own:hand',
+            destArea: b.destArea || (AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center'),
+            face: b.face || 'face_up'
+          }
+        });
+      } else if (b.type === 'condition_if') {
+        nodes.push({
+          id: b.id || `cond_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          type: 'condition',
+          condition: {
+            target: b.condType === 'has_card' ? 'hand_count' : 'selected_count',
+            op: b.countOp || '>=',
+            value: b.countVal ?? 1
+          },
+          yesBranch: b.thenAction ? [{
+            id: `act_${Date.now()}_yes`,
+            type: 'action',
+            action: b.thenAction
+          }] : [],
+          noBranch: b.elseAction ? [{
+            id: `act_${Date.now()}_no`,
+            type: 'action',
+            action: b.elseAction
+          }] : []
+        });
+      }
+    }
+  } else {
+    // デフォルト: [開始] -> [山札からドロー (1枚)] -> [終了]
+    nodes.push({
+      id: `act_draw_default`,
+      type: 'action',
+      action: { actionType: 'action_draw', count: 1 }
+    });
+  }
+
+  nodes.push({ id: 'end', type: 'end', label: '終了' });
+  return nodes;
+}
+
 function openCpuRuleModal(editRuleId = null) {
   if (!modalCpuRule) return;
 
@@ -3419,48 +3506,13 @@ function openCpuRuleModal(editRuleId = null) {
     cpuRuleTargetSeat.value = prevVal;
   }
 
-  // 3. フローブロックの初期化
-  if (rule) {
-    EDITING_CPU_BLOCKS = migrateLegacyRuleToBlocks(rule);
-  } else {
-    // デフォルト: 「ドローする」→「もし出せるカードがあれば出す、なければパス」
-    EDITING_CPU_BLOCKS = [
-      {
-        id: `blk_${Date.now()}_1`,
-        type: 'action',
-        actionType: 'action_draw',
-        count: 1
-      },
-      {
-        id: `blk_${Date.now()}_2`,
-        type: 'condition_if',
-        condType: 'has_card',
-        checkArea: 'own:hand',
-        filterMode: 'none',
-        tagConditions: [],
-        countOp: '>=',
-        countVal: 1,
-        thenAction: {
-          actionType: 'action_move',
-          srcArea: 'own:hand',
-          filterMode: 'none',
-          tagConditions: [],
-          count: 1,
-          pickOrder: 'first',
-          sortTag: '',
-          destArea: AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center',
-          placement: 'spread_lr',
-          face: 'face_up'
-        },
-        elseAction: {
-          actionType: 'action_pass',
-          count: 1
-        }
-      }
-    ];
+  // 3. フローチャートエディタにデータを渡して描画
+  const editor = getCpuFlowchartEditor();
+  if (editor) {
+    const flowNodes = migrateRuleToFlowchartNodes(rule);
+    editor.setData(flowNodes);
   }
 
-  renderCpuFlowBlocks();
   modalCpuRule.style.display = 'flex';
 }
 
@@ -4228,8 +4280,12 @@ function saveCpuRule() {
   const name = cpuRuleName?.value?.trim() || 'CPU思考ルーチン';
   const targetSeat = cpuRuleTargetSeat?.value || 'all';
 
-  if (EDITING_CPU_BLOCKS.length === 0) {
-    alert('少なくとも1つの行動または条件分岐ブロックを追加してください。');
+  const editor = getCpuFlowchartEditor();
+  const flowNodes = editor ? editor.getData() : [];
+  const middleNodes = flowNodes.filter(n => n.type !== 'start' && n.type !== 'end');
+
+  if (middleNodes.length === 0) {
+    alert('フローチャートに少なくとも1つの実行アクションまたは条件分岐を追加してください。');
     return;
   }
 
@@ -4237,10 +4293,11 @@ function saveCpuRule() {
     id: editId || `cpu_rule_${Date.now()}`,
     name,
     targetSeat,
-    blocks: JSON.parse(JSON.stringify(EDITING_CPU_BLOCKS)),
+    nodes: flowNodes,
     // 後方互換性用プロパティ
-    srcArea: EDITING_CPU_BLOCKS[0]?.srcArea || 'own:hand',
-    destArea: EDITING_CPU_BLOCKS[0]?.destArea || 'area:area_play_center'
+    blocks: flowNodes,
+    srcArea: 'own:hand',
+    destArea: AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center'
   };
 
   if (editId) {
@@ -4450,7 +4507,26 @@ function evaluateCpuCondition(block, cpuPlayerId) {
 function executeSingleCpuRule(rule, cpuPlayerId) {
   const cpuLabel = getOwnerLabel(cpuPlayerId);
 
-  // ブロックが存在しない場合はレガシーマイグレーション
+  // 1. フローチャート形式 (nodes) の実行
+  if (Array.isArray(rule.nodes) && rule.nodes.length > 0) {
+    const stepsSummary = [];
+    const context = {
+      cpuPlayerId,
+      selectedCards: [],
+      actedAny: false,
+      stepsSummary
+    };
+    executeDevFlowchartNodeList(rule.nodes, context);
+
+    if (context.actedAny) {
+      showToast(`🤖 ${cpuLabel}: ${stepsSummary.join(' → ')}`);
+      scheduleSaveRoom();
+      return true;
+    }
+    return false;
+  }
+
+  // 2. 旧ブロック形式
   const blocks = (Array.isArray(rule.blocks) && rule.blocks.length > 0)
     ? rule.blocks
     : migrateLegacyRuleToBlocks(rule);
@@ -4503,6 +4579,120 @@ function executeSingleCpuRule(rule, cpuPlayerId) {
   }
 
   return false;
+}
+
+function executeDevFlowchartNodeList(nodeList, context) {
+  if (!Array.isArray(nodeList)) return;
+
+  for (const node of nodeList) {
+    if (!node) continue;
+    if (node.type === 'start') continue;
+    if (node.type === 'end') break;
+
+    if (node.type === 'action') {
+      const act = node.action || {};
+      const actType = act.actionType || 'action_draw';
+
+      if (actType === 'action_draw') {
+        const deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, context.cpuPlayerId);
+        const handArea = resolveAreaRef({ kind: 'own', areaType: 'hand' }, context.cpuPlayerId);
+        if (deckArea && handArea) {
+          const deckCards = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, deckArea))
+            .sort((a, b) => (b.z || 0) - (a.z || 0));
+          const count = Math.min(act.count || 1, deckCards.length);
+          if (count > 0) {
+            const drawn = deckCards.slice(0, count);
+            placeEntitiesInArea(drawn, handArea, 'spread_lr');
+            drawn.forEach(c => {
+              c.isFaceDown = false;
+              const dom = document.getElementById(c.id);
+              if (dom) updateEntityInnerDOM(dom, c);
+            });
+            context.actedAny = true;
+            context.stepsSummary.push(`山札から${count}枚ドロー`);
+          }
+        }
+      } else if (actType === 'action_select') {
+        const srcRef = valueToRef(act.srcArea || 'own:hand');
+        const srcArea = resolveAreaRef(srcRef, context.cpuPlayerId);
+        if (srcArea) {
+          const inArea = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, srcArea));
+          let candidates = inArea;
+          if (act.filterMode === 'tag' && act.tag) {
+            const targetTag = act.tag.toLowerCase();
+            candidates = inArea.filter(c => {
+              const tags = Object.values(c.tagValues || {}).map(v => String(v).toLowerCase());
+              return tags.includes(targetTag);
+            });
+          }
+          const count = Math.min(act.count || 1, candidates.length);
+          context.selectedCards = candidates.slice(0, count);
+          context.stepsSummary.push(`カード${context.selectedCards.length}枚を選択`);
+        }
+      } else if (actType === 'action_move') {
+        let toMove = [];
+        if (act.srcType === 'own:hand') {
+          const hand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, context.cpuPlayerId);
+          if (hand) {
+            toMove = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, hand)).slice(0, act.count || 1);
+          }
+        } else {
+          toMove = context.selectedCards || [];
+        }
+
+        if (toMove.length > 0) {
+          const destRef = valueToRef(act.destArea || (AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center'));
+          const destArea = resolveAreaRef(destRef, context.cpuPlayerId);
+          if (destArea) {
+            if (act.face === 'face_up') {
+              toMove.forEach(c => { c.isFaceDown = false; const d = document.getElementById(c.id); if (d) updateEntityInnerDOM(d, c); });
+            } else if (act.face === 'face_down') {
+              toMove.forEach(c => { c.isFaceDown = true; const d = document.getElementById(c.id); if (d) updateEntityInnerDOM(d, c); });
+            }
+            placeEntitiesInArea(toMove, destArea, 'spread_lr');
+            context.actedAny = true;
+            context.stepsSummary.push(`カード${toMove.length}枚を移動`);
+            context.selectedCards = [];
+          }
+        }
+      } else if (actType === 'action_pass') {
+        context.stepsSummary.push('パス');
+        break;
+      }
+    } else if (node.type === 'condition') {
+      const cond = node.condition || {};
+      let currentVal = 0;
+      if (cond.target === 'selected_count') {
+        currentVal = (context.selectedCards || []).length;
+      } else if (cond.target === 'hand_count') {
+        const hand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, context.cpuPlayerId);
+        currentVal = hand ? ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, hand)).length : 0;
+      } else if (cond.target === 'deck_count') {
+        const deck = resolveAreaRef({ kind: 'own', areaType: 'deck' }, context.cpuPlayerId);
+        currentVal = deck ? ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, deck)).length : 0;
+      }
+
+      const op = cond.op || '>=';
+      const target = Number(cond.value ?? 0);
+      let isTrue = false;
+      switch (op) {
+        case '>=': isTrue = currentVal >= target; break;
+        case '<=': isTrue = currentVal <= target; break;
+        case '==': isTrue = currentVal === target; break;
+        case '>': isTrue = currentVal > target; break;
+        case '<': isTrue = currentVal < target; break;
+        default: isTrue = currentVal >= target; break;
+      }
+
+      context.stepsSummary.push(`◇条件[${cond.target || '選択数'}${op}${target} (現在:${currentVal})]: ${isTrue ? 'YES' : 'NO'}`);
+
+      if (isTrue && Array.isArray(node.yesBranch) && node.yesBranch.length > 0) {
+        executeDevFlowchartNodeList(node.yesBranch, context);
+      } else if (!isTrue && Array.isArray(node.noBranch) && node.noBranch.length > 0) {
+        executeDevFlowchartNodeList(node.noBranch, context);
+      }
+    }
+  }
 }
 
 // ============================================================================
