@@ -1823,16 +1823,6 @@ function setupModalEvents() {
   });
 
   btnSaveCpuSeats?.addEventListener('click', saveCpuSeats);
-
-  // CPU動作設定モーダルイベント（フローブロック追加）
-  btnAddFlowAction?.addEventListener('click', () => {
-    addCpuFlowActionBlock();
-  });
-
-  btnAddFlowIf?.addEventListener('click', () => {
-    addCpuFlowIfBlock();
-  });
-
   btnSaveCpuRule?.addEventListener('click', saveCpuRule);
 }
 

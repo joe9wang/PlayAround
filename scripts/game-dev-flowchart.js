@@ -306,7 +306,7 @@ export class CpuFlowchartEditor {
     menu.style.top = `${rect.bottom + 6}px`;
     menu.style.left = `${rect.left + rect.width / 2}px`;
     menu.style.transform = 'translateX(-50%)';
-    menu.style.zIndex = '9999';
+    menu.style.zIndex = '10001';
 
     document.body.appendChild(menu);
 
