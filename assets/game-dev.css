@@ -1814,340 +1814,51 @@ body {
   box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
 }
 
-/* ================= Visual Flowchart Programming Editor ================= */
-.flowchart-canvas {
+/* ================= Visual Flowchart Programming Editor (SVG Canvas) ================= */
+.flowchart-svg-viewport {
   background: #f8fafc;
   border: 1.5px solid #cbd5e1;
   border-radius: 12px;
-  padding: 36px 20px 48px;
+  padding: 30px 20px 40px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
+  align-items: flex-start;
   min-height: 480px;
   position: relative;
-  overflow-x: auto;
+  overflow: auto;
   user-select: none;
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
-  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
   background-size: 20px 20px;
 }
 
-.flow-sequence-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-
-/* ノード共通 */
-.flow-node-wrapper {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.flow-node {
-  background: #ffffff;
-  border: 2px solid #0f172a;
-  color: #0f172a;
-  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: inherit;
-  font-weight: 700;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.15s ease;
-}
-
-.flow-node:hover {
-  border-color: #2563eb;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.18);
-  transform: translateY(-1px);
-}
-
-/* 開始 / 終了 ノード（角丸長方形） */
-.flow-node-terminal {
-  width: 220px;
-  height: 48px;
-  border-radius: 9999px;
-  font-size: 15px;
-  letter-spacing: 2px;
-  cursor: default;
-}
-.flow-node-terminal:hover {
-  border-color: #0f172a;
-  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
-  transform: none;
-}
-
-/* 実行ノード（長方形） */
-.flow-node-action {
-  min-width: 210px;
-  max-width: 320px;
-  padding: 10px 18px;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.flow-node-label {
-  flex: 1;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.flow-node-actions {
-  position: absolute;
-  right: -32px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  pointer-events: none;
-}
-
-.flow-node:hover .flow-node-actions,
-.flow-node-diamond-wrapper:hover .flow-node-actions {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.flow-node-btn {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  width: 26px;
-  height: 26px;
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: all 0.15s ease;
-}
-.flow-node-btn:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-  transform: scale(1.1);
-}
-.flow-node-btn.del:hover {
-  background: #fee2e2;
-  border-color: #ef4444;
-}
-
-/* 菱形 条件分岐ノード */
-.flow-condition-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-
-.flow-node-diamond-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.flow-node-diamond {
-  width: 240px;
-  height: 84px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.flow-diamond-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+.flowchart-main-svg {
+  display: block;
   overflow: visible;
-  filter: drop-shadow(0 3px 6px rgba(15, 23, 42, 0.08));
 }
 
-.flow-diamond-polygon {
-  fill: #ffffff;
-  stroke: #0f172a;
-  stroke-width: 2px;
+.svg-node-action rect,
+.svg-node-diamond polygon {
   transition: all 0.15s ease;
 }
 
-.flow-node-diamond:hover .flow-diamond-polygon {
+.svg-node-action:hover rect {
   stroke: #2563eb;
   fill: #eff6ff;
 }
 
-.flow-diamond-text {
-  position: relative;
-  z-index: 2;
-  font-size: 13px;
-  font-weight: 700;
-  color: #0f172a;
-  text-align: center;
-  padding: 0 24px;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.svg-node-diamond:hover polygon {
+  stroke: #2563eb;
+  fill: #eff6ff;
 }
 
-/* 分岐コンテナ (YES / NO) */
-.flow-branches-container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  position: relative;
-  width: 480px;
-}
-
-.flow-branch-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-}
-
-/* YESカラム: 菱形直下 */
-.flow-branch-col.branch-yes {
-  width: 260px;
-}
-
-/* NOカラム: 菱形右側 */
-.flow-branch-col.branch-no {
-  width: 200px;
-  margin-left: 20px;
-}
-
-.flow-branch-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  width: 100%;
-}
-
-.flow-branch-header.yes-header {
-  height: 42px;
-  justify-content: flex-start;
-  gap: 2px;
-}
-
-.flow-branch-header.no-header {
-  height: 44px;
-  position: relative;
-}
-
-.branch-tag {
-  font-size: 12px;
-  font-weight: 800;
-  color: #0f172a;
-  letter-spacing: 0.5px;
-}
-
-.branch-tag.yes {
-  margin-top: 2px;
-}
-
-.branch-tag.no {
-  position: absolute;
-  top: -14px;
-  left: 24px;
-}
-
-.no-branch-elbow-svg {
-  position: absolute;
-  top: -42px;
-  left: -20px;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.flow-branch-node-list {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-
-/* 合流ライン (一体型SVGコンテナ) */
-.flow-branch-merge-container {
-  width: 480px;
-  height: 36px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  margin-top: 4px;
-}
-
-.merge-svg {
-  overflow: visible;
-  pointer-events: none;
-}
-
-/* コネクタ（SVGベクター矢印 + 丸型青＋ボタン） */
-.flow-connector {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 44px;
-  margin: 2px 0;
-}
-
-.connector-svg {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
-  overflow: visible;
-}
-
-/* 青い丸型 ＋ ボタン */
-.flow-plus-btn {
-  width: 22px;
-  height: 22px;
-  border-radius: 9999px;
-  background: #2563eb;
-  border: 2px solid #ffffff;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.4);
+.svg-flow-plus circle {
   transition: all 0.15s ease;
-  z-index: 5;
-  line-height: 1;
-  padding: 0;
-  position: relative;
 }
 
-.flow-plus-btn:hover {
-  background: #1d4ed8;
-  transform: scale(1.2);
-  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.6);
-}
+.svg-flow-plus:hover circle {
+  fill: #1d4ed8;
+  r: 13;
 }
 
 /* ＋クリック時のメニュー */

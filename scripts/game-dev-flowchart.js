@@ -1,7 +1,7 @@
 /**
  * game-dev-flowchart.js
  * 開発者モード用ビジュアルフローチャートプログラミングエンジン
- * JIS/ISO規格準拠のフローチャート ([開始] -> [長方形:実行] -> [◇:条件分岐(YES/NO)] -> [合流] -> [終了])
+ * 完全幾何学SVGキャンバス方式 (隙間ゼロ・ズレゼロ・テキスト貫通ゼロ)
  */
 
 export class CpuFlowchartEditor {
@@ -13,18 +13,13 @@ export class CpuFlowchartEditor {
     
     // フローツリーデータ
     this.nodes = [];
-    this.selectedNodeId = null;
-    this.activePlusContext = null; // { parentList, index }
+    this.svgNS = 'http://www.w3.org/2000/svg';
   }
 
-  /**
-   * データをセットして再描画
-   */
   setData(nodes) {
     if (Array.isArray(nodes) && nodes.length > 0) {
       this.nodes = JSON.parse(JSON.stringify(nodes));
     } else {
-      // デフォルトの基本フロー: [開始] -> [終了]
       this.nodes = [
         { id: 'start', type: 'start', label: '開始' },
         { id: 'end', type: 'end', label: '終了' }
@@ -33,256 +28,376 @@ export class CpuFlowchartEditor {
     this.render();
   }
 
-  /**
-   * 現在のフローデータを取得
-   */
   getData() {
     return JSON.parse(JSON.stringify(this.nodes));
   }
 
   /**
-   * フローチャート全体の描画
+   * フローチャートのレンダリング
    */
   render() {
     if (!this.container) return;
     this.container.innerHTML = '';
 
-    const rootEl = document.createElement('div');
-    rootEl.className = 'flowchart-canvas';
+    const canvasWrapper = document.createElement('div');
+    canvasWrapper.className = 'flowchart-svg-viewport';
 
-    // ルートノード列を描画
-    const flowListEl = this.renderNodeList(this.nodes, null);
-    rootEl.appendChild(flowListEl);
+    const svg = document.createElementNS(this.svgNS, 'svg');
+    svg.setAttribute('class', 'flowchart-main-svg');
+    svg.setAttribute('xmlns', this.svgNS);
 
-    this.container.appendChild(rootEl);
+    // 矢印マーカー定義
+    const defs = document.createElementNS(this.svgNS, 'defs');
+    defs.innerHTML = `
+      <marker id="flow-arrow-head" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0f172a" />
+      </marker>
+    `;
+    svg.appendChild(defs);
+
+    // 描画ツリーを走査して絶対座標でSVG要素を生成
+    const startX = 260; // フローの中心X軸
+    const startY = 36;
+    const renderContext = {
+      svg,
+      maxX: 520,
+      maxY: 100
+    };
+
+    const finalY = this.renderSequence(this.nodes, startX, startY, renderContext);
+    
+    const svgWidth = Math.max(renderContext.maxX + 60, 560);
+    const svgHeight = Math.max(finalY + 60, 520);
+    svg.setAttribute('width', `${svgWidth}`);
+    svg.setAttribute('height', `${svgHeight}`);
+    svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+
+    canvasWrapper.appendChild(svg);
+    this.container.appendChild(canvasWrapper);
   }
 
   /**
-   * ノード配列を縦にレンダリングする（各ノード間に矢印と＋ボタン）
+   * ノードシーケンス（配列）を縦にレンダリングする
    */
-  renderNodeList(nodeList, parentContext) {
-    const listWrapper = document.createElement('div');
-    listWrapper.className = 'flow-sequence-col';
+  renderSequence(nodeList, centerX, startY, ctx) {
+    let currentY = startY;
 
     for (let i = 0; i < nodeList.length; i++) {
       const node = nodeList[i];
 
-      // ノード自体の描画
-      const nodeEl = this.renderSingleNode(node, nodeList, i);
-      listWrapper.appendChild(nodeEl);
+      // 前のノードとの接続コネクタ線 ＋ ＋ボタン
+      if (i > 0) {
+        const connLen = 46;
+        const lineStartY = currentY;
+        const lineEndY = currentY + connLen;
 
-      // 最後のノードが 'end' でなければ、またはノード間に「下向き矢印 ＋ コネクタボタン」を描画
-      if (i < nodeList.length - 1) {
-        const connectorEl = this.renderConnector(nodeList, i + 1);
-        listWrapper.appendChild(connectorEl);
+        this.drawConnectorLine(ctx.svg, centerX, lineStartY, centerX, lineEndY, true);
+        this.drawPlusButton(ctx.svg, centerX, lineStartY + connLen / 2, nodeList, i);
+
+        currentY = lineEndY;
+      }
+
+      // ノード自体の描画
+      if (node.type === 'start' || node.type === 'end') {
+        const text = node.type === 'start' ? '開始' : '終了';
+        this.drawTerminalNode(ctx.svg, centerX, currentY, text);
+        currentY += 44;
+      } else if (node.type === 'action') {
+        const label = this.getActionLabel(node.action);
+        this.drawActionNode(ctx.svg, centerX, currentY, label, node, nodeList, i);
+        currentY += 44;
+      } else if (node.type === 'condition') {
+        // 菱形条件分岐ノードのレンダリング
+        currentY = this.drawConditionGroup(ctx.svg, centerX, currentY, node, nodeList, i, ctx);
       }
     }
 
-    return listWrapper;
+    return currentY;
   }
 
   /**
-   * 単一ノードの描画
+   * 終端ノード（開始・終了: 角丸長方形）
    */
-  renderSingleNode(node, parentList, index) {
-    const nodeWrapper = document.createElement('div');
-    nodeWrapper.className = `flow-node-wrapper type-${node.type}`;
-    nodeWrapper.dataset.nodeId = node.id;
+  drawTerminalNode(svg, cx, y, text) {
+    const w = 180;
+    const h = 42;
+    const x = cx - w / 2;
 
-    if (node.type === 'start') {
-      const el = document.createElement('div');
-      el.className = 'flow-node flow-node-terminal start';
-      el.textContent = '開始';
-      nodeWrapper.appendChild(el);
-      return nodeWrapper;
-    }
+    const g = document.createElementNS(this.svgNS, 'g');
+    g.setAttribute('class', 'svg-node-terminal');
 
-    if (node.type === 'end') {
-      const el = document.createElement('div');
-      el.className = 'flow-node flow-node-terminal end';
-      el.textContent = '終了';
-      nodeWrapper.appendChild(el);
-      return nodeWrapper;
-    }
+    const rect = document.createElementNS(this.svgNS, 'rect');
+    rect.setAttribute('x', x);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', w);
+    rect.setAttribute('height', h);
+    rect.setAttribute('rx', 21);
+    rect.setAttribute('ry', 21);
+    rect.setAttribute('fill', '#ffffff');
+    rect.setAttribute('stroke', '#0f172a');
+    rect.setAttribute('stroke-width', '2');
+    rect.setAttribute('filter', 'drop-shadow(0 2px 4px rgba(15,23,42,0.06))');
 
-    if (node.type === 'action') {
-      const el = document.createElement('div');
-      el.className = 'flow-node flow-node-action';
-      el.innerHTML = `
-        <div class="flow-node-label">${this.getActionLabel(node.action)}</div>
-        <div class="flow-node-actions">
-          <button type="button" class="flow-node-btn edit" title="編集">✏️</button>
-          <button type="button" class="flow-node-btn del" title="削除">🗑️</button>
-        </div>
-      `;
-      el.querySelector('.edit').addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.openActionModal(node, parentList, index);
-      });
-      el.querySelector('.del').addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.deleteNode(parentList, index);
-      });
-      el.addEventListener('click', () => {
-        this.openActionModal(node, parentList, index);
-      });
-      nodeWrapper.appendChild(el);
-      return nodeWrapper;
-    }
+    const t = document.createElementNS(this.svgNS, 'text');
+    t.setAttribute('x', cx);
+    t.setAttribute('y', y + 26);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('fill', '#0f172a');
+    t.setAttribute('font-size', '14');
+    t.setAttribute('font-weight', '700');
+    t.setAttribute('letter-spacing', '2px');
+    t.textContent = text;
 
-    if (node.type === 'condition') {
-      // 菱形条件分岐ノード
-      const condContainer = document.createElement('div');
-      condContainer.className = 'flow-condition-group';
-
-      // 菱形ノード（余計な長方形枠線を排除しSVGのみで描画）
-      const diamondWrapper = document.createElement('div');
-      diamondWrapper.className = 'flow-node-diamond-wrapper';
-
-      const diamond = document.createElement('div');
-      diamond.className = 'flow-node-diamond'; // flow-nodeを付与しないことで外枠を除去
-      
-      const labelText = this.getConditionLabel(node.condition);
-      diamond.innerHTML = `
-        <svg class="flow-diamond-svg" viewBox="0 0 240 84">
-          <polygon points="120,2 238,42 120,82 2,42" class="flow-diamond-polygon" />
-        </svg>
-        <span class="flow-diamond-text">${labelText}</span>
-        <div class="flow-node-actions diamond-tools">
-          <button type="button" class="flow-node-btn edit" title="編集">✏️</button>
-          <button type="button" class="flow-node-btn del" title="削除">🗑️</button>
-        </div>
-      `;
-
-      diamond.querySelector('.edit').addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.openConditionModal(node, parentList, index);
-      });
-      diamond.querySelector('.del').addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.deleteNode(parentList, index);
-      });
-      diamond.addEventListener('click', () => {
-        this.openConditionModal(node, parentList, index);
-      });
-
-      diamondWrapper.appendChild(diamond);
-      condContainer.appendChild(diamondWrapper);
-
-      // YES / NO の分岐エリア
-      const branchesWrapper = document.createElement('div');
-      branchesWrapper.className = 'flow-branches-container';
-
-      // YESルート（直進・下）
-      const yesCol = document.createElement('div');
-      yesCol.className = 'flow-branch-col branch-yes';
-      
-      const yesHeader = document.createElement('div');
-      yesHeader.className = 'flow-branch-header yes-header';
-      yesHeader.innerHTML = `
-        <span class="branch-tag yes">YES</span>
-        <svg class="branch-header-svg" width="16" height="24" viewBox="0 0 16 24">
-          <line x1="8" y1="0" x2="8" y2="20" stroke="#0f172a" stroke-width="2" />
-          <polygon points="4,16 12,16 8,22" fill="#0f172a" />
-        </svg>
-      `;
-      yesCol.appendChild(yesHeader);
-
-      if (!Array.isArray(node.yesBranch)) node.yesBranch = [];
-      const yesListEl = this.renderBranchList(node.yesBranch);
-      yesCol.appendChild(yesListEl);
-
-      // NOルート（右へ分岐して直角に下へ折れる）
-      const noCol = document.createElement('div');
-      noCol.className = 'flow-branch-col branch-no';
-
-      const noHeader = document.createElement('div');
-      noHeader.className = 'flow-branch-header no-header';
-      noHeader.innerHTML = `
-        <svg class="no-branch-elbow-svg" width="140" height="44" viewBox="0 0 140 44">
-          <path d="M 0,2 H 100 V 40" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-          <polygon points="96,36 104,36 100,42" fill="#0f172a" />
-        </svg>
-        <span class="branch-tag no">NO</span>
-      `;
-      noCol.appendChild(noHeader);
-
-      if (!Array.isArray(node.noBranch)) node.noBranch = [];
-      const noListEl = this.renderBranchList(node.noBranch);
-      noCol.appendChild(noListEl);
-
-      branchesWrapper.appendChild(yesCol);
-      branchesWrapper.appendChild(noCol);
-      condContainer.appendChild(branchesWrapper);
-
-      // 合流部（YESとNOを隙間なく結合する一体型SVG）
-      const mergeEl = document.createElement('div');
-      mergeEl.className = 'flow-branch-merge-container';
-      mergeEl.innerHTML = `
-        <svg class="merge-svg" width="480" height="36" viewBox="0 0 480 36">
-          <line x1="130" y1="0" x2="130" y2="18" stroke="#0f172a" stroke-width="2" />
-          <path d="M 370,0 V 18 H 130" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
-          <line x1="130" y1="18" x2="130" y2="32" stroke="#0f172a" stroke-width="2" />
-          <polygon points="126,28 134,28 130,34" fill="#0f172a" />
-        </svg>
-      `;
-      condContainer.appendChild(mergeEl);
-
-      nodeWrapper.appendChild(condContainer);
-      return nodeWrapper;
-    }
-
-    return nodeWrapper;
+    g.appendChild(rect);
+    g.appendChild(t);
+    svg.appendChild(g);
   }
 
   /**
-   * ブランチ（YES/NO）内のノードリストを描画
+   * 実行ノード（長方形）
    */
-  renderBranchList(branchList) {
-    const listWrapper = document.createElement('div');
-    listWrapper.className = 'flow-branch-node-list';
+  drawActionNode(svg, cx, y, label, node, parentList, index) {
+    const w = 220;
+    const h = 44;
+    const x = cx - w / 2;
 
-    // 最初の＋ボタン（ブランチの先頭）
-    listWrapper.appendChild(this.renderConnector(branchList, 0));
+    const g = document.createElementNS(this.svgNS, 'g');
+    g.setAttribute('class', 'svg-node-action');
+    g.style.cursor = 'pointer';
+
+    const rect = document.createElementNS(this.svgNS, 'rect');
+    rect.setAttribute('x', x);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', w);
+    rect.setAttribute('height', h);
+    rect.setAttribute('rx', 4);
+    rect.setAttribute('ry', 4);
+    rect.setAttribute('fill', '#ffffff');
+    rect.setAttribute('stroke', '#0f172a');
+    rect.setAttribute('stroke-width', '2');
+    rect.setAttribute('filter', 'drop-shadow(0 2px 5px rgba(15,23,42,0.08))');
+
+    const t = document.createElementNS(this.svgNS, 'text');
+    t.setAttribute('x', cx);
+    t.setAttribute('y', y + 27);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('fill', '#0f172a');
+    t.setAttribute('font-size', '13');
+    t.setAttribute('font-weight', '700');
+    t.textContent = label;
+
+    // クリックで編集
+    g.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openActionModal(node, parentList, index);
+    });
+
+    g.appendChild(rect);
+    g.appendChild(t);
+    svg.appendChild(g);
+  }
+
+  /**
+   * 条件分岐（◇ 菱形 ＋ YES下ルート ＋ NO右折ルート ＋ T字合流バー）
+   */
+  drawConditionGroup(svg, cx, y, node, parentList, index, ctx) {
+    const diaW = 240;
+    const diaH = 80;
+    const halfW = diaW / 2;
+    const halfH = diaH / 2;
+
+    const topX = cx;
+    const topY = y;
+    const rightX = cx + halfW;
+    const rightY = y + halfH;
+    const bottomX = cx;
+    const bottomY = y + diaH;
+    const leftX = cx - halfW;
+    const leftY = y + halfH;
+
+    // 1. 菱形を描画
+    const gDia = document.createElementNS(this.svgNS, 'g');
+    gDia.setAttribute('class', 'svg-node-diamond');
+    gDia.style.cursor = 'pointer';
+
+    const poly = document.createElementNS(this.svgNS, 'polygon');
+    poly.setAttribute('points', `${topX},${topY} ${rightX},${rightY} ${bottomX},${bottomY} ${leftX},${leftY}`);
+    poly.setAttribute('fill', '#ffffff');
+    poly.setAttribute('stroke', '#0f172a');
+    poly.setAttribute('stroke-width', '2');
+    poly.setAttribute('filter', 'drop-shadow(0 3px 6px rgba(15,23,42,0.08))');
+
+    const t = document.createElementNS(this.svgNS, 'text');
+    t.setAttribute('x', cx);
+    t.setAttribute('y', y + 45);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('fill', '#0f172a');
+    t.setAttribute('font-size', '13');
+    t.setAttribute('font-weight', '700');
+    t.textContent = this.getConditionLabel(node.condition);
+
+    gDia.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openConditionModal(node, parentList, index);
+    });
+
+    gDia.appendChild(poly);
+    gDia.appendChild(t);
+    svg.appendChild(gDia);
+
+    // 2. ブランチの幾何学レイアウト
+    const yesCenterX = cx;
+    const noCenterX = cx + 180; // NOルートの縦ラインX
+    ctx.maxX = Math.max(ctx.maxX, noCenterX + 140);
+
+    if (!Array.isArray(node.yesBranch)) node.yesBranch = [];
+    if (!Array.isArray(node.noBranch)) node.noBranch = [];
+
+    // --- YESルート（下方向） ---
+    // 下頂点から直下へ伸びる線
+    const yesStartLineY = bottomY;
+    const yesBranchStartY = bottomY + 54;
+    this.drawConnectorLine(svg, yesCenterX, yesStartLineY, yesCenterX, yesBranchStartY, true);
+    this.drawText(svg, yesCenterX - 18, bottomY + 22, 'YES', '#0f172a', '12px', 'bold');
+    this.drawPlusButton(svg, yesCenterX, bottomY + 32, node.yesBranch, 0);
+
+    let yesEndY = yesBranchStartY;
+    if (node.yesBranch.length > 0) {
+      yesEndY = this.renderBranchSequence(node.yesBranch, yesCenterX, yesBranchStartY, svg, ctx);
+    }
+
+    // --- NOルート（右へ出て下へ折れる） ---
+    const noBranchStartY = bottomY + 54;
+    // 右頂点 (rightX, rightY) から水平に (noCenterX, rightY) へ、そして下へ (noCenterX, noBranchStartY)
+    const elbowPath = document.createElementNS(this.svgNS, 'path');
+    elbowPath.setAttribute('d', `M ${rightX},${rightY} H ${noCenterX} V ${noBranchStartY}`);
+    elbowPath.setAttribute('fill', 'none');
+    elbowPath.setAttribute('stroke', '#0f172a');
+    elbowPath.setAttribute('stroke-width', '2');
+    elbowPath.setAttribute('stroke-linejoin', 'round');
+    elbowPath.setAttribute('marker-end', 'url(#flow-arrow-head)');
+    svg.appendChild(elbowPath);
+
+    this.drawText(svg, rightX + 16, rightY - 8, 'NO', '#0f172a', '12px', 'bold');
+    this.drawPlusButton(svg, noCenterX, bottomY + 32, node.noBranch, 0);
+
+    let noEndY = noBranchStartY;
+    if (node.noBranch.length > 0) {
+      noEndY = this.renderBranchSequence(node.noBranch, noCenterX, noBranchStartY, svg, ctx);
+    }
+
+    // --- 合流部 (T字マージ) ---
+    const mergeY = Math.max(yesEndY, noEndY) + 30;
+
+    // YES側を下へ伸ばす
+    this.drawConnectorLine(svg, yesCenterX, yesEndY, yesCenterX, mergeY, false);
+    // NO側を下へ伸ばし、左へ水平に合流
+    const mergePath = document.createElementNS(this.svgNS, 'path');
+    mergePath.setAttribute('d', `M ${noCenterX},${noEndY} V ${mergeY} H ${yesCenterX}`);
+    mergePath.setAttribute('fill', 'none');
+    mergePath.setAttribute('stroke', '#0f172a');
+    mergePath.setAttribute('stroke-width', '2');
+    mergePath.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(mergePath);
+
+    return mergeY;
+  }
+
+  /**
+   * ブランチ内ノード列のレンダリング
+   */
+  renderBranchSequence(branchList, centerX, startY, svg, ctx) {
+    let currentY = startY;
 
     for (let i = 0; i < branchList.length; i++) {
       const node = branchList[i];
-      const nodeEl = this.renderSingleNode(node, branchList, i);
-      listWrapper.appendChild(nodeEl);
 
-      // 次の＋ボタン
-      listWrapper.appendChild(this.renderConnector(branchList, i + 1));
+      if (i > 0) {
+        const connLen = 46;
+        const lineStartY = currentY;
+        const lineEndY = currentY + connLen;
+
+        this.drawConnectorLine(svg, centerX, lineStartY, centerX, lineEndY, true);
+        this.drawPlusButton(svg, centerX, lineStartY + connLen / 2, branchList, i);
+
+        currentY = lineEndY;
+      }
+
+      if (node.type === 'action') {
+        const label = this.getActionLabel(node.action);
+        this.drawActionNode(svg, centerX, currentY, label, node, branchList, i);
+        currentY += 44;
+      }
     }
 
-    return listWrapper;
+    return currentY;
   }
 
   /**
-   * コネクタ（矢印線 ＋ 青い丸型＋ボタン）をSVGで綺麗に描画
+   * 直線コネクタ（矢印付き）
    */
-  renderConnector(parentList, insertIndex) {
-    const connector = document.createElement('div');
-    connector.className = 'flow-connector';
+  drawConnectorLine(svg, x1, y1, x2, y2, withArrow = false) {
+    const line = document.createElementNS(this.svgNS, 'line');
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2);
+    line.setAttribute('y2', y2);
+    line.setAttribute('stroke', '#0f172a');
+    line.setAttribute('stroke-width', '2');
+    if (withArrow) {
+      line.setAttribute('marker-end', 'url(#flow-arrow-head)');
+    }
+    svg.appendChild(line);
+  }
 
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'flow-plus-btn';
-    btn.innerHTML = '＋';
-    btn.title = 'ノードを追加';
-    btn.addEventListener('click', (e) => {
+  /**
+   * テキスト描画
+   */
+  drawText(svg, x, y, str, color = '#0f172a', size = '12px', weight = 'bold') {
+    const t = document.createElementNS(this.svgNS, 'text');
+    t.setAttribute('x', x);
+    t.setAttribute('y', y);
+    t.setAttribute('fill', color);
+    t.setAttribute('font-size', size);
+    t.setAttribute('font-weight', weight);
+    t.textContent = str;
+    svg.appendChild(t);
+  }
+
+  /**
+   * ( ＋ ) ボタン
+   */
+  drawPlusButton(svg, cx, cy, parentList, insertIndex) {
+    const g = document.createElementNS(this.svgNS, 'g');
+    g.setAttribute('class', 'svg-flow-plus');
+    g.style.cursor = 'pointer';
+
+    const circle = document.createElementNS(this.svgNS, 'circle');
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', 11);
+    circle.setAttribute('fill', '#2563eb');
+    circle.setAttribute('stroke', '#ffffff');
+    circle.setAttribute('stroke-width', '2');
+    circle.setAttribute('filter', 'drop-shadow(0 2px 4px rgba(37,99,235,0.4))');
+
+    const t = document.createElementNS(this.svgNS, 'text');
+    t.setAttribute('x', cx);
+    t.setAttribute('y', cy + 4);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('fill', '#ffffff');
+    t.setAttribute('font-size', '14');
+    t.setAttribute('font-weight', '900');
+    t.textContent = '＋';
+
+    g.addEventListener('click', (e) => {
       e.stopPropagation();
       this.openAddMenu(e, parentList, insertIndex);
     });
 
-    connector.innerHTML = `
-      <svg class="connector-svg" width="16" height="44" viewBox="0 0 16 44">
-        <line x1="8" y1="0" x2="8" y2="40" stroke="#0f172a" stroke-width="2" />
-        <polygon points="4,36 12,36 8,42" fill="#0f172a" />
-      </svg>
-    `;
-    connector.appendChild(btn);
-
-    return connector;
+    g.appendChild(circle);
+    g.appendChild(t);
+    svg.appendChild(g);
   }
 
   /**
@@ -314,7 +429,6 @@ export class CpuFlowchartEditor {
       this.openConditionModal(null, parentList, insertIndex);
     });
 
-    // ポップアップ位置の計算
     const rect = event.target.getBoundingClientRect();
     menu.style.position = 'fixed';
     menu.style.top = `${rect.bottom + 6}px`;
