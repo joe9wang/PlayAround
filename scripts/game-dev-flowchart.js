@@ -4,7 +4,6 @@
  * 完全幾何学SVGキャンバス方式 (隙間ゼロ・ズレゼロ・テキスト貫通ゼロ)
  */
 
-import { getOpenAiApiKey, setOpenAiApiKey } from './game-dev-ai.js';
 
 export class CpuFlowchartEditor {
   constructor(options = {}) {
@@ -543,16 +542,6 @@ export class CpuFlowchartEditor {
               <textarea class="form-input" id="dialog-ai-rule" rows="4" style="resize:vertical; font-size:12px; line-height:1.4;" placeholder="例: 場に出ているカードより大きい数字を手札から1枚出す。出せるカードがない場合は何も選択しない。">${act.ruleText || ''}</textarea>
               <div style="font-size:11px; color:#64748b; margin-top:4px;">※AIには「ルール」「現在の盤面（見えているカード）」「自分の手札」のみが渡され、最適なカードを自動選択します。</div>
             </div>
-            <div class="form-group" style="background:#f8fafc; padding:10px 12px; border-radius:8px; border:1px solid #e2e8f0; margin-top:8px;">
-              <label class="form-label" style="font-size:11px; font-weight:700; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between;">
-                <span>🔑 OpenAI API Key</span>
-                <span style="font-weight:normal; font-size:10px; color:${getOpenAiApiKey() ? '#10b981' : '#f59e0b'};">
-                  ${getOpenAiApiKey() ? '✓ ブラウザに保存済' : '⚠️ 未設定（ここに入力して保存）'}
-                </span>
-              </label>
-              <input type="password" class="form-input" id="dialog-ai-key" value="${getOpenAiApiKey()}" placeholder="sk-..." style="font-size:11px; font-family:monospace;" />
-              <div style="font-size:10px; color:#64748b; margin-top:4px;">※APIキーはお使いのブラウザ（LocalStorage）にのみ安全に保存され、サーバーへ送信されることはありません。</div>
-            </div>
           </div>
 
           <!-- パラメータ: カードを出す / 移動させる -->
@@ -643,8 +632,6 @@ export class CpuFlowchartEditor {
       } else if (actType === 'action_select_ai') {
         newAction.srcArea = overlay.querySelector('#dialog-ai-src').value;
         newAction.ruleText = overlay.querySelector('#dialog-ai-rule').value.trim();
-        const keyInput = overlay.querySelector('#dialog-ai-key').value.trim();
-        if (keyInput) setOpenAiApiKey(keyInput);
       } else if (actType === 'action_move') {
         newAction.srcType = overlay.querySelector('#dialog-move-src').value;
         newAction.destArea = overlay.querySelector('#dialog-move-dest').value;
