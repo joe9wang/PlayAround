@@ -4,6 +4,8 @@
  * 完全幾何学SVGキャンバス方式 (隙間ゼロ・ズレゼロ・テキスト貫通ゼロ)
  */
 
+import { getOpenAiApiKey, setOpenAiApiKey } from './game-dev-ai.js';
+
 export class CpuFlowchartEditor {
   constructor(options = {}) {
     this.container = options.container; // 描画先DOM
@@ -478,7 +480,8 @@ export class CpuFlowchartEditor {
             <label class="form-label">実行内容</label>
             <select class="form-select" id="dialog-action-type">
               <option value="action_draw" ${act.actionType === 'action_draw' ? 'selected' : ''}>山札からドロー</option>
-              <option value="action_select" ${act.actionType === 'action_select' ? 'selected' : ''}>カードを選択する</option>
+              <option value="action_select" ${act.actionType === 'action_select' ? 'selected' : ''}>カードを選択する (条件一致)</option>
+              <option value="action_select_ai" ${act.actionType === 'action_select_ai' ? 'selected' : ''}>🤖 カードを選択する (AI)</option>
               <option value="action_move" ${act.actionType === 'action_move' ? 'selected' : ''}>カードを出す / 移動させる</option>
               <option value="action_pass" ${act.actionType === 'action_pass' ? 'selected' : ''}>パスする / ターン終了</option>
             </select>
@@ -495,7 +498,7 @@ export class CpuFlowchartEditor {
             </div>
           </div>
 
-          <!-- パラメータ: カードを選択する -->
+          <!-- パラメータ: カードを選択する (通常) -->
           <div class="action-params-box" id="params-select" style="display:none;">
             <div class="form-group">
               <label class="form-label">選択対象の場所</label>
@@ -522,6 +525,33 @@ export class CpuFlowchartEditor {
                 <input type="number" class="form-input" id="dialog-select-count" value="${act.count || 1}" min="1" max="20" style="width:100px;" />
                 <span>枚</span>
               </div>
+            </div>
+          </div>
+
+          <!-- パラメータ: カードを選択する (AI) -->
+          <div class="action-params-box" id="params-select-ai" style="display:none;">
+            <div class="form-group">
+              <label class="form-label">選択対象の場所</label>
+              <select class="form-select" id="dialog-ai-src">
+                <option value="own:hand" ${act.srcArea === 'own:hand' || !act.srcArea ? 'selected' : ''}>自分の手札</option>
+                <option value="any:hand" ${act.srcArea === 'any:hand' ? 'selected' : ''}>全員の手札</option>
+                ${areaOptionsHtml}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">ゲームルール (AIへの思考指示)</label>
+              <textarea class="form-input" id="dialog-ai-rule" rows="4" style="resize:vertical; font-size:12px; line-height:1.4;" placeholder="例: 場に出ているカードより大きい数字を手札から1枚出す。出せるカードがない場合は何も選択しない。">${act.ruleText || ''}</textarea>
+              <div style="font-size:11px; color:#64748b; margin-top:4px;">※AIには「ルール」「現在の盤面（見えているカード）」「自分の手札」のみが渡され、最適なカードを自動選択します。</div>
+            </div>
+            <div class="form-group" style="background:#f8fafc; padding:10px 12px; border-radius:8px; border:1px solid #e2e8f0; margin-top:8px;">
+              <label class="form-label" style="font-size:11px; font-weight:700; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between;">
+                <span>🔑 OpenAI API Key</span>
+                <span style="font-weight:normal; font-size:10px; color:${getOpenAiApiKey() ? '#10b981' : '#f59e0b'};">
+                  ${getOpenAiApiKey() ? '✓ ブラウザに保存済' : '⚠️ 未設定（ここに入力して保存）'}
+                </span>
+              </label>
+              <input type="password" class="form-input" id="dialog-ai-key" value="${getOpenAiApiKey()}" placeholder="sk-..." style="font-size:11px; font-family:monospace;" />
+              <div style="font-size:10px; color:#64748b; margin-top:4px;">※APIキーはお使いのブラウザ（LocalStorage）にのみ安全に保存され、サーバーへ送信されることはありません。</div>
             </div>
           </div>
 
@@ -571,6 +601,7 @@ export class CpuFlowchartEditor {
     const typeSelect = overlay.querySelector('#dialog-action-type');
     const pDraw = overlay.querySelector('#params-draw');
     const pSelect = overlay.querySelector('#params-select');
+    const pSelectAi = overlay.querySelector('#params-select-ai');
     const pMove = overlay.querySelector('#params-move');
     const pPass = overlay.querySelector('#params-pass');
     const selectFilter = overlay.querySelector('#dialog-select-filter');
@@ -579,6 +610,7 @@ export class CpuFlowchartEditor {
     const updateVisibility = () => {
       pDraw.style.display = typeSelect.value === 'action_draw' ? 'block' : 'none';
       pSelect.style.display = typeSelect.value === 'action_select' ? 'block' : 'none';
+      pSelectAi.style.display = typeSelect.value === 'action_select_ai' ? 'block' : 'none';
       pMove.style.display = typeSelect.value === 'action_move' ? 'block' : 'none';
       pPass.style.display = typeSelect.value === 'action_pass' ? 'block' : 'none';
       selectTagBox.style.display = selectFilter.value === 'tag' ? 'block' : 'none';
@@ -608,6 +640,11 @@ export class CpuFlowchartEditor {
         newAction.filterMode = selectFilter.value;
         newAction.tag = overlay.querySelector('#dialog-select-tag').value.trim();
         newAction.count = parseInt(overlay.querySelector('#dialog-select-count').value, 10) || 1;
+      } else if (actType === 'action_select_ai') {
+        newAction.srcArea = overlay.querySelector('#dialog-ai-src').value;
+        newAction.ruleText = overlay.querySelector('#dialog-ai-rule').value.trim();
+        const keyInput = overlay.querySelector('#dialog-ai-key').value.trim();
+        if (keyInput) setOpenAiApiKey(keyInput);
       } else if (actType === 'action_move') {
         newAction.srcType = overlay.querySelector('#dialog-move-src').value;
         newAction.destArea = overlay.querySelector('#dialog-move-dest').value;
@@ -742,6 +779,8 @@ export class CpuFlowchartEditor {
         const filterStr = act.filterMode === 'tag' && act.tag ? `タグ[${act.tag}]` : 'すべて';
         return `カードを選択 (${filterStr}, ${act.count || 1}枚)`;
       }
+      case 'action_select_ai':
+        return `🤖 カードを選択 (AI思考)`;
       case 'action_move': {
         const srcStr = act.srcType === 'own:hand' ? '手札から' : '選択中カードを';
         return `${srcStr} 移動 (${act.destArea || '指定エリア'})`;

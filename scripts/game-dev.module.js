@@ -13,6 +13,7 @@ import {
   ref, uploadString, getDownloadURL
 } from './firebase.init.js';
 import { CpuFlowchartEditor } from './game-dev-flowchart.js';
+import { queryAiCardSelection } from './game-dev-ai.js';
 
 // === State ===
 let CURRENT_ROOM = null;
@@ -4308,7 +4309,7 @@ function saveCpuRule() {
 }
 
 // ---- CPU自動ターン実行エンジン ----
-function executeNextCpuTurn() {
+async function executeNextCpuTurn() {
   const cpuList = [];
   for (let i = 1; i <= PLAYER_COUNT; i++) {
     const seatKey = `player${i}`;
@@ -4324,10 +4325,10 @@ function executeNextCpuTurn() {
 
   LAST_ACTED_CPU_INDEX = (LAST_ACTED_CPU_INDEX + 1) % cpuList.length;
   const actingCpu = cpuList[LAST_ACTED_CPU_INDEX];
-  executeCpuForPlayer(actingCpu);
+  await executeCpuForPlayer(actingCpu);
 }
 
-function executeCpuForPlayer(cpuPlayerId) {
+async function executeCpuForPlayer(cpuPlayerId) {
   const cpuLabel = getOwnerLabel(cpuPlayerId);
 
   // 該当CPUに適用されるルールを抽出
@@ -4340,7 +4341,7 @@ function executeCpuForPlayer(cpuPlayerId) {
 
   // ルールを順番に評価し、実行可能な最初のアクションを行う
   for (const rule of matchedRules) {
-    const didAct = executeSingleCpuRule(rule, cpuPlayerId);
+    const didAct = await executeSingleCpuRule(rule, cpuPlayerId);
     if (didAct) {
       return;
     }
@@ -4494,7 +4495,7 @@ function evaluateCpuCondition(block, cpuPlayerId) {
   }
 }
 
-function executeSingleCpuRule(rule, cpuPlayerId) {
+async function executeSingleCpuRule(rule, cpuPlayerId) {
   const cpuLabel = getOwnerLabel(cpuPlayerId);
 
   // 1. フローチャート形式 (nodes) の実行
@@ -4506,7 +4507,7 @@ function executeSingleCpuRule(rule, cpuPlayerId) {
       actedAny: false,
       stepsSummary
     };
-    executeDevFlowchartNodeList(rule.nodes, context);
+    await executeDevFlowchartNodeList(rule.nodes, context);
 
     if (context.actedAny) {
       showToast(`🤖 ${cpuLabel}: ${stepsSummary.join(' → ')}`);
@@ -4571,7 +4572,7 @@ function executeSingleCpuRule(rule, cpuPlayerId) {
   return false;
 }
 
-function executeDevFlowchartNodeList(nodeList, context) {
+async function executeDevFlowchartNodeList(nodeList, context) {
   if (!Array.isArray(nodeList)) return;
 
   for (const node of nodeList) {
@@ -4618,6 +4619,59 @@ function executeDevFlowchartNodeList(nodeList, context) {
           const count = Math.min(act.count || 1, candidates.length);
           context.selectedCards = candidates.slice(0, count);
           context.stepsSummary.push(`カード${context.selectedCards.length}枚を選択`);
+        }
+      } else if (actType === 'action_select_ai') {
+        const srcRef = valueToRef(act.srcArea || 'own:hand');
+        const srcArea = resolveAreaRef(srcRef, context.cpuPlayerId);
+        const candidateCards = srcArea ? ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, srcArea)) : [];
+
+        if (candidateCards.length === 0) {
+          context.selectedCards = [];
+        } else {
+          // AIに開示してよい可視盤面情報の整理
+          const visibleContext = {
+            areas: {}
+          };
+
+          AREAS.forEach(area => {
+            const areaCards = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, area));
+            const isOpponentHand = area.owner && area.owner !== context.cpuPlayerId && area.areaType === 'hand';
+            if (!isOpponentHand) {
+              const ownHand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, context.cpuPlayerId);
+              visibleContext.areas[area.name || area.id] = areaCards.map(c => {
+                const isOwnCard = ownHand && isEntityOverlappingArea(c, ownHand);
+                if (!c.isFaceDown || isOwnCard) {
+                  return {
+                    id: c.id,
+                    name: c.name || c.id,
+                    tags: c.tags || c.tagValues || {}
+                  };
+                }
+                return { id: c.id, status: '裏向きカード' };
+              });
+            }
+          });
+
+          try {
+            showToast(`🤖 ${getOwnerLabel(context.cpuPlayerId)}: AIがカードを思考中...`);
+            const { selectedCardIds, reason } = await queryAiCardSelection({
+              ruleText: act.ruleText,
+              candidateCards,
+              visibleContext,
+              cpuPlayerLabel: getOwnerLabel(context.cpuPlayerId)
+            });
+
+            const selected = candidateCards.filter(c => selectedCardIds.includes(c.id));
+            context.selectedCards = selected;
+            context.stepsSummary.push(`AI選択(${selected.length}枚: ${reason || '判断完了'})`);
+            if (reason) {
+              showToast(`🤖 ${getOwnerLabel(context.cpuPlayerId)}: 「${reason}」`);
+            }
+          } catch (err) {
+            console.error('[AI Selection Failed]', err);
+            showToast(`⚠️ AI思考エラー: ${err.message}`);
+            context.selectedCards = [];
+          }
         }
       } else if (actType === 'action_move') {
         let toMove = [];
@@ -4677,9 +4731,9 @@ function executeDevFlowchartNodeList(nodeList, context) {
       context.stepsSummary.push(`◇条件[${cond.target || '選択数'}${op}${target} (現在:${currentVal})]: ${isTrue ? 'YES' : 'NO'}`);
 
       if (isTrue && Array.isArray(node.yesBranch) && node.yesBranch.length > 0) {
-        executeDevFlowchartNodeList(node.yesBranch, context);
+        await executeDevFlowchartNodeList(node.yesBranch, context);
       } else if (!isTrue && Array.isArray(node.noBranch) && node.noBranch.length > 0) {
-        executeDevFlowchartNodeList(node.noBranch, context);
+        await executeDevFlowchartNodeList(node.noBranch, context);
       }
     }
   }

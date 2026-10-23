@@ -12,6 +12,7 @@ import {
   getDocs,
   writeBatch
 } from './firebase.init.js';
+import { queryAiCardSelection } from './game-dev-ai.js';
 
 let CURRENT_ROOM_ID = null;
 let ROOM_DATA = null;
@@ -578,6 +579,61 @@ async function executeFlowchartAction(act, context) {
 
     const count = Math.min(act.count || 1, candidates.length);
     context.selectedCards = candidates.slice(0, count);
+    return;
+  }
+
+  if (actType === 'action_select_ai') {
+    const srcArea = resolveAreaRef(valueToRef(act.srcArea || 'own:hand'), cpuPlayerId);
+    const candidateCards = srcArea ? allCards.filter(c => isCardInArea(c, srcArea)) : [];
+
+    if (candidateCards.length === 0) {
+      context.selectedCards = [];
+      return;
+    }
+
+    // AIが見てよい可視盤面情報の整理
+    const visibleContext = {
+      areas: {}
+    };
+
+    DEV_AREAS.forEach(area => {
+      const areaCards = allCards.filter(c => isCardInArea(c, area));
+      const isOpponentHand = area.owner && area.owner !== cpuPlayerId && area.areaType === 'hand';
+      if (!isOpponentHand) {
+        const ownHand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+        visibleContext.areas[area.name || area.id] = areaCards.map(c => {
+          const isOwnCard = ownHand && isCardInArea(c, ownHand);
+          if (c.faceUp || isOwnCard) {
+            return {
+              id: c.id,
+              name: c.name || c.id,
+              tags: c.tags || c.tagValues || {}
+            };
+          }
+          return { id: c.id, status: '裏向きカード' };
+        });
+      }
+    });
+
+    try {
+      showToast(`🤖 ${getOwnerLabel(cpuPlayerId)}: AIがカードを思考中...`);
+      const { selectedCardIds, reason } = await queryAiCardSelection({
+        ruleText: act.ruleText,
+        candidateCards,
+        visibleContext,
+        cpuPlayerLabel: getOwnerLabel(cpuPlayerId)
+      });
+
+      const selected = candidateCards.filter(c => selectedCardIds.includes(c.id));
+      context.selectedCards = selected;
+      if (reason) {
+        showToast(`🤖 ${getOwnerLabel(cpuPlayerId)}: 「${reason}」`);
+      }
+    } catch (err) {
+      console.error('[AI Selection Failed]', err);
+      showToast(`⚠️ AI思考エラー: ${err.message}`);
+      context.selectedCards = [];
+    }
     return;
   }
 

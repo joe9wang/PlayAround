@@ -5656,7 +5656,7 @@ function startSession(roomId, playerId) {
     const devUrlParams = new URLSearchParams(window.location.search);
     const isDevMode = devUrlParams.get('isDev') === '1' || CURRENT_ROOM_META?.isDevInstance;
     if (isDevMode) {
-      import('./game-dev-runner.module.js?v=20261022-1').then(({ initGameDevRunner }) => {
+      import('./game-dev-runner.module.js?v=20261023-1').then(({ initGameDevRunner }) => {
         initGameDevRunner({ roomId, meta: CURRENT_ROOM_META });
       }).catch(err => console.error('[DevRunner] Failed to load:', err));
     }
