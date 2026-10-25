@@ -47,28 +47,28 @@ export class CpuFlowchartEditor {
     svg.setAttribute('class', 'flowchart-main-svg');
     svg.setAttribute('xmlns', this.svgNS);
 
-    // 矢印マーカー定義
+    // 矢印マーカー定義（ノードの上端に美しく先端が接する形状）
     const defs = document.createElementNS(this.svgNS, 'defs');
     defs.innerHTML = `
-      <marker id="flow-arrow-head" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0f172a" />
+      <marker id="flow-arrow-head" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 1 1.5 L 8 5 L 1 8.5 z" fill="#0f172a" />
       </marker>
     `;
     svg.appendChild(defs);
 
     // 描画ツリーを走査して絶対座標でSVG要素を生成
-    const startX = 260; // フローの中心X軸
-    const startY = 36;
+    const startX = 220; // メイン垂直ラインのX座標
+    const startY = 32;
     const renderContext = {
       svg,
-      maxX: 520,
+      maxX: 460,
       maxY: 100
     };
 
     const finalY = this.renderSequence(this.nodes, startX, startY, renderContext);
     
-    const svgWidth = Math.max(renderContext.maxX + 60, 560);
-    const svgHeight = Math.max(finalY + 60, 520);
+    const svgWidth = Math.max(renderContext.maxX + 80, 520);
+    const svgHeight = Math.max(finalY + 60, 480);
     svg.setAttribute('width', `${svgWidth}`);
     svg.setAttribute('height', `${svgHeight}`);
     svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
@@ -82,17 +82,19 @@ export class CpuFlowchartEditor {
    */
   renderSequence(nodeList, centerX, startY, ctx) {
     let currentY = startY;
+    const connLen = 76; // ノード間のゆったりした線長（添付画像2・3準拠）
 
     for (let i = 0; i < nodeList.length; i++) {
       const node = nodeList[i];
 
       // 前のノードとの接続コネクタ線 ＋ ＋ボタン
       if (i > 0) {
-        const connLen = 46;
         const lineStartY = currentY;
         const lineEndY = currentY + connLen;
 
+        // ノードの入口（lineEndY）にのみ矢じりを付ける
         this.drawConnectorLine(ctx.svg, centerX, lineStartY, centerX, lineEndY, true);
+        // コネクタ線のちょうど中央に ＋ ボタンを配置
         this.drawPlusButton(ctx.svg, centerX, lineStartY + connLen / 2, nodeList, i);
 
         currentY = lineEndY;
@@ -102,11 +104,11 @@ export class CpuFlowchartEditor {
       if (node.type === 'start' || node.type === 'end') {
         const text = node.type === 'start' ? '開始' : '終了';
         this.drawTerminalNode(ctx.svg, centerX, currentY, text);
-        currentY += 44;
+        currentY += 42;
       } else if (node.type === 'action') {
         const label = this.getActionLabel(node.action);
         this.drawActionNode(ctx.svg, centerX, currentY, label, node, nodeList, i);
-        currentY += 44;
+        currentY += 42;
       } else if (node.type === 'condition') {
         // 菱形条件分岐ノードのレンダリング
         currentY = this.drawConditionGroup(ctx.svg, centerX, currentY, node, nodeList, i, ctx);
@@ -117,7 +119,7 @@ export class CpuFlowchartEditor {
   }
 
   /**
-   * 終端ノード（開始・終了: 角丸長方形）
+   * 終端ノード（開始・終了: 角丸カプセル）
    */
   drawTerminalNode(svg, cx, y, text) {
     const w = 180;
@@ -136,8 +138,7 @@ export class CpuFlowchartEditor {
     rect.setAttribute('ry', 21);
     rect.setAttribute('fill', '#ffffff');
     rect.setAttribute('stroke', '#0f172a');
-    rect.setAttribute('stroke-width', '2');
-    rect.setAttribute('filter', 'drop-shadow(0 2px 4px rgba(15,23,42,0.06))');
+    rect.setAttribute('stroke-width', '1.8');
 
     const t = document.createElementNS(this.svgNS, 'text');
     t.setAttribute('x', cx);
@@ -158,8 +159,8 @@ export class CpuFlowchartEditor {
    * 実行ノード（長方形）
    */
   drawActionNode(svg, cx, y, label, node, parentList, index) {
-    const w = 220;
-    const h = 44;
+    const w = 200;
+    const h = 42;
     const x = cx - w / 2;
 
     const g = document.createElementNS(this.svgNS, 'g');
@@ -171,20 +172,17 @@ export class CpuFlowchartEditor {
     rect.setAttribute('y', y);
     rect.setAttribute('width', w);
     rect.setAttribute('height', h);
-    rect.setAttribute('rx', 4);
-    rect.setAttribute('ry', 4);
     rect.setAttribute('fill', '#ffffff');
     rect.setAttribute('stroke', '#0f172a');
-    rect.setAttribute('stroke-width', '2');
-    rect.setAttribute('filter', 'drop-shadow(0 2px 5px rgba(15,23,42,0.08))');
+    rect.setAttribute('stroke-width', '1.8');
 
     const t = document.createElementNS(this.svgNS, 'text');
     t.setAttribute('x', cx);
-    t.setAttribute('y', y + 27);
+    t.setAttribute('y', y + 26);
     t.setAttribute('text-anchor', 'middle');
     t.setAttribute('fill', '#0f172a');
     t.setAttribute('font-size', '13');
-    t.setAttribute('font-weight', '700');
+    t.setAttribute('font-weight', '600');
     t.textContent = label;
 
     // クリックで編集
@@ -199,11 +197,11 @@ export class CpuFlowchartEditor {
   }
 
   /**
-   * 条件分岐（◇ 菱形 ＋ YES下ルート ＋ NO右折ルート ＋ T字合流バー）
+   * 条件分岐（◇ 菱形 ＋ YES直進ルート ＋ NO直角折れルート ＋ 水平合流）
    */
   drawConditionGroup(svg, cx, y, node, parentList, index, ctx) {
-    const diaW = 240;
-    const diaH = 80;
+    const diaW = 230;
+    const diaH = 76;
     const halfW = diaW / 2;
     const halfH = diaH / 2;
 
@@ -225,17 +223,30 @@ export class CpuFlowchartEditor {
     poly.setAttribute('points', `${topX},${topY} ${rightX},${rightY} ${bottomX},${bottomY} ${leftX},${leftY}`);
     poly.setAttribute('fill', '#ffffff');
     poly.setAttribute('stroke', '#0f172a');
-    poly.setAttribute('stroke-width', '2');
-    poly.setAttribute('filter', 'drop-shadow(0 3px 6px rgba(15,23,42,0.08))');
+    poly.setAttribute('stroke-width', '1.8');
 
+    // 2行テキスト表示（添付画像3準拠）
+    const { line1, line2 } = this.getConditionLabelLines(node.condition);
     const t = document.createElementNS(this.svgNS, 'text');
     t.setAttribute('x', cx);
-    t.setAttribute('y', y + 45);
+    t.setAttribute('y', y + halfH - 2);
     t.setAttribute('text-anchor', 'middle');
     t.setAttribute('fill', '#0f172a');
     t.setAttribute('font-size', '13');
-    t.setAttribute('font-weight', '700');
-    t.textContent = this.getConditionLabel(node.condition);
+    t.setAttribute('font-weight', '600');
+
+    const tspan1 = document.createElementNS(this.svgNS, 'tspan');
+    tspan1.setAttribute('x', cx);
+    tspan1.setAttribute('dy', '-7');
+    tspan1.textContent = line1;
+
+    const tspan2 = document.createElementNS(this.svgNS, 'tspan');
+    tspan2.setAttribute('x', cx);
+    tspan2.setAttribute('dy', '18');
+    tspan2.textContent = line2;
+
+    t.appendChild(tspan1);
+    t.appendChild(tspan2);
 
     gDia.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -248,56 +259,78 @@ export class CpuFlowchartEditor {
 
     // 2. ブランチの幾何学レイアウト
     const yesCenterX = cx;
-    const noCenterX = cx + 180; // NOルートの縦ラインX
-    ctx.maxX = Math.max(ctx.maxX, noCenterX + 140);
+    const noCenterX = cx + 170; // NOルートの縦ラインX
+    ctx.maxX = Math.max(ctx.maxX, noCenterX + 120);
 
     if (!Array.isArray(node.yesBranch)) node.yesBranch = [];
     if (!Array.isArray(node.noBranch)) node.noBranch = [];
 
-    // --- YESルート（下方向） ---
-    // 下頂点から直下へ伸びる線
-    const yesStartLineY = bottomY;
-    const yesBranchStartY = bottomY + 54;
-    this.drawConnectorLine(svg, yesCenterX, yesStartLineY, yesCenterX, yesBranchStartY, true);
-    this.drawText(svg, yesCenterX - 18, bottomY + 22, 'YES', '#0f172a', '12px', 'bold');
-    this.drawPlusButton(svg, yesCenterX, bottomY + 32, node.yesBranch, 0);
+    const branchConnLen = 76;
 
-    let yesEndY = yesBranchStartY;
-    if (node.yesBranch.length > 0) {
-      yesEndY = this.renderBranchSequence(node.yesBranch, yesCenterX, yesBranchStartY, svg, ctx);
+    // --- YESルート（真下へ直進） ---
+    // ラベル「YES」は下頂点の左側に配置
+    this.drawText(svg, yesCenterX - 36, bottomY + 16, 'YES', '#0f172a', '13px', '600');
+
+    let yesEndY = bottomY;
+    if (node.yesBranch.length === 0) {
+      // 空ブランチ: 1本の線＋中央にプラスボタン
+      yesEndY = bottomY + branchConnLen;
+      this.drawConnectorLine(svg, yesCenterX, bottomY, yesCenterX, yesEndY, false);
+      this.drawPlusButton(svg, yesCenterX, bottomY + branchConnLen / 2, node.yesBranch, 0);
+    } else {
+      // ノード列を描画
+      const firstNodeStartY = bottomY + branchConnLen;
+      this.drawConnectorLine(svg, yesCenterX, bottomY, yesCenterX, firstNodeStartY, true);
+      this.drawPlusButton(svg, yesCenterX, bottomY + branchConnLen / 2, node.yesBranch, 0);
+      yesEndY = this.renderBranchSequence(node.yesBranch, yesCenterX, firstNodeStartY, svg, ctx);
     }
 
-    // --- NOルート（右へ出て下へ折れる） ---
-    const noBranchStartY = bottomY + 54;
-    // 右頂点 (rightX, rightY) から水平に (noCenterX, rightY) へ、そして下へ (noCenterX, noBranchStartY)
-    const elbowPath = document.createElementNS(this.svgNS, 'path');
-    elbowPath.setAttribute('d', `M ${rightX},${rightY} H ${noCenterX} V ${noBranchStartY}`);
-    elbowPath.setAttribute('fill', 'none');
-    elbowPath.setAttribute('stroke', '#0f172a');
-    elbowPath.setAttribute('stroke-width', '2');
-    elbowPath.setAttribute('stroke-linejoin', 'round');
-    elbowPath.setAttribute('marker-end', 'url(#flow-arrow-head)');
-    svg.appendChild(elbowPath);
+    // --- NOルート（右へ出て下へ直角折れ） ---
+    // ラベル「NO」は垂直線の右側に配置（添付画像3準拠）
+    this.drawText(svg, noCenterX + 14, rightY + 16, 'NO', '#0f172a', '13px', '600');
 
-    this.drawText(svg, rightX + 16, rightY - 8, 'NO', '#0f172a', '12px', 'bold');
-    this.drawPlusButton(svg, noCenterX, bottomY + 32, node.noBranch, 0);
+    let noEndY = bottomY;
+    const noPlusY = bottomY + branchConnLen / 2; // YESのプラスボタンと同じ高さに揃える
 
-    let noEndY = noBranchStartY;
-    if (node.noBranch.length > 0) {
-      noEndY = this.renderBranchSequence(node.noBranch, noCenterX, noBranchStartY, svg, ctx);
+    if (node.noBranch.length === 0) {
+      // 空ブランチ: 右頂点から (noCenterX, rightY) へ水平に引き、(noCenterX, bottomY + branchConnLen) へ下ろす
+      noEndY = bottomY + branchConnLen;
+      const path = document.createElementNS(this.svgNS, 'path');
+      path.setAttribute('d', `M ${rightX},${rightY} H ${noCenterX} V ${noEndY}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', '#0f172a');
+      path.setAttribute('stroke-width', '1.8');
+      path.setAttribute('stroke-linejoin', 'round');
+      svg.appendChild(path);
+
+      this.drawPlusButton(svg, noCenterX, noPlusY, node.noBranch, 0);
+    } else {
+      // ノード列を描画
+      const firstNodeStartY = bottomY + branchConnLen;
+      const path = document.createElementNS(this.svgNS, 'path');
+      path.setAttribute('d', `M ${rightX},${rightY} H ${noCenterX} V ${firstNodeStartY}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', '#0f172a');
+      path.setAttribute('stroke-width', '1.8');
+      path.setAttribute('stroke-linejoin', 'round');
+      path.setAttribute('marker-end', 'url(#flow-arrow-head)');
+      svg.appendChild(path);
+
+      this.drawPlusButton(svg, noCenterX, noPlusY, node.noBranch, 0);
+      noEndY = this.renderBranchSequence(node.noBranch, noCenterX, firstNodeStartY, svg, ctx);
     }
 
     // --- 合流部 (T字マージ) ---
-    const mergeY = Math.max(yesEndY, noEndY) + 30;
+    const mergeY = Math.max(yesEndY, noEndY) + 24;
 
-    // YES側を下へ伸ばす
+    // YES側を下へ垂直に伸ばす
     this.drawConnectorLine(svg, yesCenterX, yesEndY, yesCenterX, mergeY, false);
-    // NO側を下へ伸ばし、左へ水平に合流
+    // NO側を下へ下ろし、左へ水平に合流
     const mergePath = document.createElementNS(this.svgNS, 'path');
     mergePath.setAttribute('d', `M ${noCenterX},${noEndY} V ${mergeY} H ${yesCenterX}`);
     mergePath.setAttribute('fill', 'none');
     mergePath.setAttribute('stroke', '#0f172a');
-    mergePath.setAttribute('stroke-width', '2');
+    mergePath.setAttribute('stroke-width', '1.8');
     mergePath.setAttribute('stroke-linejoin', 'round');
     svg.appendChild(mergePath);
 
@@ -309,12 +342,12 @@ export class CpuFlowchartEditor {
    */
   renderBranchSequence(branchList, centerX, startY, svg, ctx) {
     let currentY = startY;
+    const connLen = 76;
 
     for (let i = 0; i < branchList.length; i++) {
       const node = branchList[i];
 
       if (i > 0) {
-        const connLen = 46;
         const lineStartY = currentY;
         const lineEndY = currentY + connLen;
 
@@ -327,7 +360,7 @@ export class CpuFlowchartEditor {
       if (node.type === 'action') {
         const label = this.getActionLabel(node.action);
         this.drawActionNode(svg, centerX, currentY, label, node, branchList, i);
-        currentY += 44;
+        currentY += 42;
       }
     }
 
@@ -344,7 +377,7 @@ export class CpuFlowchartEditor {
     line.setAttribute('x2', x2);
     line.setAttribute('y2', y2);
     line.setAttribute('stroke', '#0f172a');
-    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke-width', '1.8');
     if (withArrow) {
       line.setAttribute('marker-end', 'url(#flow-arrow-head)');
     }
@@ -354,7 +387,7 @@ export class CpuFlowchartEditor {
   /**
    * テキスト描画
    */
-  drawText(svg, x, y, str, color = '#0f172a', size = '12px', weight = 'bold') {
+  drawText(svg, x, y, str, color = '#0f172a', size = '13px', weight = '600') {
     const t = document.createElementNS(this.svgNS, 'text');
     t.setAttribute('x', x);
     t.setAttribute('y', y);
@@ -377,10 +410,9 @@ export class CpuFlowchartEditor {
     circle.setAttribute('cx', cx);
     circle.setAttribute('cy', cy);
     circle.setAttribute('r', 11);
-    circle.setAttribute('fill', '#2563eb');
+    circle.setAttribute('fill', '#3b82f6');
     circle.setAttribute('stroke', '#ffffff');
-    circle.setAttribute('stroke-width', '2');
-    circle.setAttribute('filter', 'drop-shadow(0 2px 4px rgba(37,99,235,0.4))');
+    circle.setAttribute('stroke-width', '1.8');
 
     const t = document.createElementNS(this.svgNS, 'text');
     t.setAttribute('x', cx);
@@ -388,7 +420,7 @@ export class CpuFlowchartEditor {
     t.setAttribute('text-anchor', 'middle');
     t.setAttribute('fill', '#ffffff');
     t.setAttribute('font-size', '14');
-    t.setAttribute('font-weight', '900');
+    t.setAttribute('font-weight', '700');
     t.textContent = '＋';
 
     g.addEventListener('click', (e) => {
@@ -402,7 +434,7 @@ export class CpuFlowchartEditor {
   }
 
   /**
-   * 「＋」クリック時のポップアップメニューを開く
+   * 「＋」クリック時のポップアップメニューを開く（添付画像2準拠）
    */
   openAddMenu(event, parentList, insertIndex) {
     this.closePopups();
@@ -410,13 +442,17 @@ export class CpuFlowchartEditor {
     const menu = document.createElement('div');
     menu.className = 'flow-add-popup-menu';
     menu.innerHTML = `
+      <div class="flow-menu-header">追加</div>
       <button type="button" class="flow-menu-item item-action">
         <span class="icon">⚡</span>
-        <span class="label">実行</span>
+        <span class="label">アクションを追加</span>
       </button>
       <button type="button" class="flow-menu-item item-condition">
         <span class="icon">◇</span>
-        <span class="label">条件分岐</span>
+        <span class="label">条件分岐を追加</span>
+      </button>
+      <button type="button" class="flow-menu-item item-cancel">
+        <span class="label">キャンセル</span>
       </button>
     `;
 
@@ -430,11 +466,15 @@ export class CpuFlowchartEditor {
       this.openConditionModal(null, parentList, insertIndex);
     });
 
+    menu.querySelector('.item-cancel').addEventListener('click', () => {
+      this.closePopups();
+    });
+
+    // 添付画像2のようにプラスボタンの右横に配置
     const rect = event.target.getBoundingClientRect();
     menu.style.position = 'fixed';
-    menu.style.top = `${rect.bottom + 6}px`;
-    menu.style.left = `${rect.left + rect.width / 2}px`;
-    menu.style.transform = 'translateX(-50%)';
+    menu.style.top = `${rect.top - 12}px`;
+    menu.style.left = `${rect.right + 12}px`;
     menu.style.zIndex = '10001';
 
     document.body.appendChild(menu);
@@ -785,5 +825,18 @@ export class CpuFlowchartEditor {
     if (cond.target === 'hand_count') targetStr = '手札の枚数';
     if (cond.target === 'deck_count') targetStr = '山札の枚数';
     return `${targetStr}${cond.op || '>='}${cond.value ?? 0}`;
+  }
+
+  getConditionLabelLines(cond) {
+    if (!cond) return { line1: '条件判定', line2: '' };
+    let targetStr = '選択中カードの';
+    if (cond.target === 'hand_count') targetStr = '自分の手札の';
+    if (cond.target === 'deck_count') targetStr = '自分の山札の';
+    const op = cond.op || '>=';
+    const val = cond.value ?? 0;
+    return {
+      line1: targetStr,
+      line2: `枚数 ${op} ${val}`
+    };
   }
 }
