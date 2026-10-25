@@ -70,6 +70,42 @@ export class CpuFlowchartEditor {
   }
 
   /**
+   * ノードシーケンス（配列）が到達する最下部Y座標を再帰的に事前計算する
+   */
+  measureSequenceEndY(nodeList, startY) {
+    if (!Array.isArray(nodeList) || nodeList.length === 0) {
+      return startY;
+    }
+    let currentY = startY;
+    const connLen = 76;
+
+    for (let i = 0; i < nodeList.length; i++) {
+      if (i > 0) currentY += connLen;
+      const node = nodeList[i];
+
+      if (node.type === 'start' || node.type === 'end' || node.type === 'action') {
+        currentY += 42;
+      } else if (node.type === 'condition') {
+        const diaH = 76;
+        const bottomY = currentY + diaH;
+        const branchConnLen = 76;
+        const firstNodeY = bottomY + branchConnLen;
+
+        const yesEnd = node.yesBranch && node.yesBranch.length > 0
+          ? this.measureSequenceEndY(node.yesBranch, firstNodeY)
+          : bottomY + branchConnLen;
+
+        const noEnd = node.noBranch && node.noBranch.length > 0
+          ? this.measureSequenceEndY(node.noBranch, firstNodeY)
+          : bottomY + branchConnLen;
+
+        currentY = Math.max(yesEnd, noEnd) + 24;
+      }
+    }
+    return currentY;
+  }
+
+  /**
    * フローチャートのレンダリング
    */
   render() {
@@ -117,12 +153,13 @@ export class CpuFlowchartEditor {
   /**
    * ノードシーケンス（配列）を縦に再帰レンダリングする（メインおよび全ブランチ共通）
    */
-  renderSequence(nodeList, centerX, startY, ctx, isBranch = false) {
+  renderSequence(nodeList, centerX, startY, ctx, isBranch = false, parentMergeY = null) {
     let currentY = startY;
     const connLen = 76; // ノード間のゆったりした線長（添付画像2・3準拠）
 
     for (let i = 0; i < nodeList.length; i++) {
       const node = nodeList[i];
+      const isLastInSequence = (i === nodeList.length - 1);
 
       // 前のノードとの接続コネクタ線 ＋ ＋ボタン
       if (i > 0) {
@@ -147,8 +184,9 @@ export class CpuFlowchartEditor {
         this.drawActionNode(ctx.svg, centerX, currentY, label, node, nodeList, i);
         currentY += 42;
       } else if (node.type === 'condition') {
-        // 菱形条件分岐ノードのレンダリング（多段ネスト対応）
-        currentY = this.drawConditionGroup(ctx.svg, centerX, currentY, node, nodeList, i, ctx);
+        // 最後のノードで、かつ親から合流線高さの指定があれば揃える
+        const forced = isLastInSequence ? parentMergeY : null;
+        currentY = this.drawConditionGroup(ctx.svg, centerX, currentY, node, nodeList, i, ctx, forced);
       }
     }
 
@@ -234,9 +272,9 @@ export class CpuFlowchartEditor {
   }
 
   /**
-   * 条件分岐（◇ 菱形 ＋ YES直進ルート ＋ NO直角折れルート ＋ 水平合流、多段ネスト完全対応）
+   * 条件分岐（◇ 菱形 ＋ YES直進ルート ＋ NO直角折れルート ＋ 共通ベースライン一直線合流）
    */
-  drawConditionGroup(svg, cx, y, node, parentList, index, ctx) {
+  drawConditionGroup(svg, cx, y, node, parentList, index, ctx, forcedMergeY = null) {
     const diaW = 230;
     const diaH = 76;
     const halfW = diaW / 2;
@@ -307,6 +345,17 @@ export class CpuFlowchartEditor {
     if (!Array.isArray(node.noBranch)) node.noBranch = [];
 
     const branchConnLen = 76;
+    const firstNodeStartY = bottomY + branchConnLen;
+
+    // 事前計算による合流目標Y（自然な合流高さと、親から指定された合流高さの深い方を採用）
+    const yesMeasured = node.yesBranch.length > 0
+      ? this.measureSequenceEndY(node.yesBranch, firstNodeStartY)
+      : bottomY + branchConnLen;
+    const noMeasured = node.noBranch.length > 0
+      ? this.measureSequenceEndY(node.noBranch, firstNodeStartY)
+      : bottomY + branchConnLen;
+    const naturalMergeY = Math.max(yesMeasured, noMeasured) + 24;
+    const mergeY = forcedMergeY !== null ? Math.max(forcedMergeY, naturalMergeY) : naturalMergeY;
 
     // --- YESルート（真下へ直進） ---
     // ラベル「YES」は下頂点の左側に配置
@@ -314,16 +363,15 @@ export class CpuFlowchartEditor {
 
     let yesEndY = bottomY;
     if (node.yesBranch.length === 0) {
-      // 空ブランチ: 1本の線＋中央にプラスボタン
-      yesEndY = bottomY + branchConnLen;
-      this.drawConnectorLine(svg, yesCenterX, bottomY, yesCenterX, yesEndY, false);
+      // 空ブランチ: 一番下の合流線まで一気に垂直に引く
+      yesEndY = mergeY;
+      this.drawConnectorLine(svg, yesCenterX, bottomY, yesCenterX, mergeY, false);
       this.drawPlusButton(svg, yesCenterX, bottomY + branchConnLen / 2, node.yesBranch, 0);
     } else {
       // ノード列を描画（actionでもconditionでも renderSequence で再帰描画）
-      const firstNodeStartY = bottomY + branchConnLen;
       this.drawConnectorLine(svg, yesCenterX, bottomY, yesCenterX, firstNodeStartY, true);
       this.drawPlusButton(svg, yesCenterX, bottomY + branchConnLen / 2, node.yesBranch, 0);
-      yesEndY = this.renderSequence(node.yesBranch, yesCenterX, firstNodeStartY, ctx, true);
+      yesEndY = this.renderSequence(node.yesBranch, yesCenterX, firstNodeStartY, ctx, true, mergeY);
     }
 
     // --- NOルート（右へ出て下へ直角折れ） ---
@@ -334,10 +382,10 @@ export class CpuFlowchartEditor {
     const noPlusY = bottomY + branchConnLen / 2; // YESのプラスボタンと同じ高さに揃える
 
     if (node.noBranch.length === 0) {
-      // 空ブランチ: 右頂点から (noCenterX, rightY) へ水平に引き、(noCenterX, bottomY + branchConnLen) へ下ろす
-      noEndY = bottomY + branchConnLen;
+      // 空ブランチ: 右頂点から (noCenterX, rightY) へ水平に引き、一気に mergeY まで垂直に下ろす
+      noEndY = mergeY;
       const path = document.createElementNS(this.svgNS, 'path');
-      path.setAttribute('d', `M ${rightX},${rightY} H ${noCenterX} V ${noEndY}`);
+      path.setAttribute('d', `M ${rightX},${rightY} H ${noCenterX} V ${mergeY}`);
       path.setAttribute('fill', 'none');
       path.setAttribute('stroke', '#0f172a');
       path.setAttribute('stroke-width', '1.8');
@@ -346,8 +394,7 @@ export class CpuFlowchartEditor {
 
       this.drawPlusButton(svg, noCenterX, noPlusY, node.noBranch, 0);
     } else {
-      // ノード列を描画（actionでもconditionでも renderSequence で再帰描画）
-      const firstNodeStartY = bottomY + branchConnLen;
+      // ノード列を描画
       const path = document.createElementNS(this.svgNS, 'path');
       path.setAttribute('d', `M ${rightX},${rightY} H ${noCenterX} V ${firstNodeStartY}`);
       path.setAttribute('fill', 'none');
@@ -358,17 +405,21 @@ export class CpuFlowchartEditor {
       svg.appendChild(path);
 
       this.drawPlusButton(svg, noCenterX, noPlusY, node.noBranch, 0);
-      noEndY = this.renderSequence(node.noBranch, noCenterX, firstNodeStartY, ctx, true);
+      noEndY = this.renderSequence(node.noBranch, noCenterX, firstNodeStartY, ctx, true, mergeY);
     }
 
     // --- 合流部 (T字マージ) ---
-    const mergeY = Math.max(yesEndY, noEndY) + 24;
+    // もし端点が mergeY に達していなければ、mergeY まで垂直線を下ろす
+    if (yesEndY < mergeY) {
+      this.drawConnectorLine(svg, yesCenterX, yesEndY, yesCenterX, mergeY, false);
+    }
+    if (noEndY < mergeY) {
+      this.drawConnectorLine(svg, noCenterX, noEndY, noCenterX, mergeY, false);
+    }
 
-    // YES側を下へ垂直に伸ばす
-    this.drawConnectorLine(svg, yesCenterX, yesEndY, yesCenterX, mergeY, false);
-    // NO側を下へ下ろし、左へ水平に合流
+    // NO側からYES側へ、共通の高さ mergeY で水平合流線を引く（添付画像2の一直線マージ準拠）
     const mergePath = document.createElementNS(this.svgNS, 'path');
-    mergePath.setAttribute('d', `M ${noCenterX},${noEndY} V ${mergeY} H ${yesCenterX}`);
+    mergePath.setAttribute('d', `M ${noCenterX},${mergeY} H ${yesCenterX}`);
     mergePath.setAttribute('fill', 'none');
     mergePath.setAttribute('stroke', '#0f172a');
     mergePath.setAttribute('stroke-width', '1.8');
