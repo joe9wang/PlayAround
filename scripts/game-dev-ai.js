@@ -27,21 +27,29 @@ export async function queryAiCardSelection({ ruleText, candidateCards, visibleCo
   }
   const idToken = await user.getIdToken();
 
+  const formattedCandidates = (candidateCards || []).map(c => ({
+    id: c.id,
+    name: c.name || c.id,
+    tags: c.tags || c.tagValues || {}
+  }));
+
+  const payload = {
+    idToken,
+    ruleText,
+    cpuPlayerLabel,
+    visibleContext,
+    candidateCards: formattedCandidates
+  };
+
+  const startTime = performance.now();
+
   const response = await fetch(AI_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      idToken,
-      ruleText,
-      cpuPlayerLabel,
-      visibleContext,
-      candidateCards: (candidateCards || []).map(c => ({
-        id: c.id,
-        name: c.name || c.id,
-        tags: c.tags || c.tagValues || {}
-      }))
-    })
+    body: JSON.stringify(payload)
   });
+
+  const elapsedMs = Math.round(performance.now() - startTime);
 
   let data = {};
   try {
@@ -51,12 +59,20 @@ export async function queryAiCardSelection({ ruleText, candidateCards, visibleCo
   }
 
   if (!response.ok) {
-    console.error('[AI Select API Error]', response.status, data);
+    console.error(`[AI Select API Error] (${elapsedMs}ms, status: ${response.status})`, data);
     throw new Error(data.error || `AIサーバーエラー (${response.status})`);
   }
 
   return {
     selectedCardIds: Array.isArray(data.selectedCardIds) ? data.selectedCardIds : [],
-    reason: data.reason || 'AIが判断を行いました'
+    reason: data.reason || 'AIが判断を行いました',
+    elapsedMs,
+    sentPayload: {
+      ruleText,
+      cpuPlayerLabel,
+      candidateCards: formattedCandidates,
+      visibleContext
+    },
+    rawResponse: data
   };
 }

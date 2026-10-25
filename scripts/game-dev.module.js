@@ -12,8 +12,8 @@ import {
   serverTimestamp, onSnapshot,
   ref, uploadString, getDownloadURL
 } from './firebase.init.js';
-import { CpuFlowchartEditor } from './game-dev-flowchart.js?v=20261025-5';
-import { queryAiCardSelection } from './game-dev-ai.js?v=20261023-2';
+import { CpuFlowchartEditor } from './game-dev-flowchart.js?v=20261025-6';
+import { queryAiCardSelection } from './game-dev-ai.js?v=20261025-6';
 
 // === State ===
 let CURRENT_ROOM = null;
@@ -4754,7 +4754,14 @@ async function executeDevFlowchartNodeList(nodeList, context) {
 
           try {
             showToast(`🤖 ${getOwnerLabel(context.cpuPlayerId)}: AIがカードを思考中...`);
-            const { selectedCardIds, reason } = await queryAiCardSelection({
+
+            console.groupCollapsed(`[CPU Debug]   │    📤 [AI Request: 送信データ]`);
+            console.log('思考指示ルール (ruleText):', act.ruleText || '（指定なし・デフォルト）');
+            console.log(`選択候補カード (${candidateCards.length}枚):`, candidateCards.map(c => ({ id: c.id, name: c.name || c.id, tags: c.tags || c.tagValues || {} })));
+            console.log('盤面可視状況 (visibleContext):', visibleContext);
+            console.groupEnd();
+
+            const { selectedCardIds, reason, elapsedMs, rawResponse } = await queryAiCardSelection({
               ruleText: act.ruleText,
               candidateCards,
               visibleContext,
@@ -4764,7 +4771,14 @@ async function executeDevFlowchartNodeList(nodeList, context) {
             const selected = candidateCards.filter(c => selectedCardIds.includes(c.id));
             context.selectedCards = selected;
             context.stepsSummary.push(`AI選択(${selected.length}枚: ${reason || '判断完了'})`);
-            console.log(`[CPU Debug]   │    └─ ✔ AI選定完了 (${selected.length}枚: ${reason})`);
+
+            console.groupCollapsed(`[CPU Debug]   │    📥 [AI Response: 受信データ] (${elapsedMs}ms)`);
+            console.log('選択されたカード:', selected.map(c => ({ id: c.id, name: c.name || c.id, tags: c.tags || c.tagValues || {} })));
+            console.log('AI思考理由 (reason):', reason);
+            console.log('生レスポンス (JSON):', rawResponse);
+            console.groupEnd();
+
+            console.log(`[CPU Debug]   │    └─ ✔ AI選定完了 (${selected.length}枚: ${reason}) [${elapsedMs}ms]`);
             if (reason) {
               showToast(`🤖 ${getOwnerLabel(context.cpuPlayerId)}: 「${reason}」`);
             }

@@ -12,7 +12,7 @@ import {
   getDocs,
   writeBatch
 } from './firebase.init.js';
-import { queryAiCardSelection } from './game-dev-ai.js?v=20261023-2';
+import { queryAiCardSelection } from './game-dev-ai.js?v=20261025-6';
 
 let CURRENT_ROOM_ID = null;
 let ROOM_DATA = null;
