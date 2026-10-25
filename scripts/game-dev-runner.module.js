@@ -539,8 +539,7 @@ async function executeFlowchartAction(act, context) {
   const actType = act.actionType || 'action_draw';
 
   if (actType === 'action_draw') {
-    const deck = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
-    const hand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+    const { deckArea: deck, handArea: hand } = resolveDrawAreas(act, cpuPlayerId);
     if (!deck || !hand) return;
 
     const deckCards = allCards.filter(c => isCardInArea(c, deck))
@@ -723,8 +722,7 @@ async function executeCpuActionOnCards(act, cpuPlayerId, allCards) {
   const actType = act.actionType || 'action_move';
 
   if (actType === 'action_draw') {
-    const deck = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
-    const hand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+    const { deckArea: deck, handArea: hand } = resolveDrawAreas(act, cpuPlayerId);
     if (!deck || !hand) return;
 
     const deckCards = allCards.filter(c => isCardInArea(c, deck))
@@ -845,6 +843,31 @@ function matchesTagConditions(card, tagConditions) {
     const hasTag = cardTags.includes(cond.tag);
     return cond.op === 'not_has' ? !hasTag : hasTag;
   });
+}
+
+function resolveDrawAreas(act, cpuPlayerId) {
+  let deckArea = null;
+  const srcVal = act?.srcArea || 'auto';
+
+  if (srcVal === 'auto') {
+    deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
+    if (!deckArea) {
+      deckArea = DEV_AREAS.find(a => a.type === 'deck' && (!a.owner || a.owner === 'shared' || a.owner === 'none')) || null;
+      if (!deckArea) {
+        deckArea = DEV_AREAS.find(a => (!a.owner || a.owner === 'shared') && /(山札|デッキ|deck)/i.test(a.name || '')) || null;
+      }
+    }
+  } else if (srcVal === 'own:deck') {
+    deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
+  } else {
+    deckArea = resolveAreaRef(valueToRef(srcVal), cpuPlayerId);
+  }
+
+  let handArea = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+  if (!handArea) {
+    handArea = DEV_AREAS.find(a => a.owner === cpuPlayerId) || null;
+  }
+  return { deckArea, handArea };
 }
 
 function resolveAreaRef(ref, actor) {

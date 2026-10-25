@@ -912,8 +912,7 @@ function executeCpuAction(act, cpuPlayerId) {
   }
 
   if (actType === 'action_draw') {
-    const deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
-    const handArea = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+    const { deckArea, handArea } = resolveDrawAreas(act, cpuPlayerId);
     if (!deckArea || !handArea) {
       return { success: false, didPass: false, summary: '山札/手札が見つかりません' };
     }
@@ -1080,6 +1079,31 @@ function valueToRef(value) {
   if (value.startsWith('own:')) return { kind: 'own', areaType: value.slice(4) };
   if (value.startsWith('area:')) return { kind: 'area', areaId: value.slice(5) };
   return null;
+}
+
+function resolveDrawAreas(act, cpuPlayerId) {
+  let deckArea = null;
+  const srcVal = act?.srcArea || 'auto';
+
+  if (srcVal === 'auto') {
+    deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
+    if (!deckArea) {
+      deckArea = AREAS.find(a => a.type === 'deck' && (!a.owner || a.owner === 'shared' || a.owner === 'none')) || null;
+      if (!deckArea) {
+        deckArea = AREAS.find(a => (!a.owner || a.owner === 'shared') && /(山札|デッキ|deck)/i.test(a.name || '')) || null;
+      }
+    }
+  } else if (srcVal === 'own:deck') {
+    deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
+  } else {
+    deckArea = resolveAreaRef(valueToRef(srcVal), cpuPlayerId);
+  }
+
+  let handArea = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+  if (!handArea) {
+    handArea = AREAS.find(a => a.owner === cpuPlayerId) || null;
+  }
+  return { deckArea, handArea };
 }
 
 function resolveAreaRef(ref, actingPlayerOverride = null) {

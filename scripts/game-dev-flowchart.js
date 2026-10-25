@@ -591,6 +591,14 @@ export class CpuFlowchartEditor {
           <!-- パラメータ: 山札からドロー -->
           <div class="action-params-box" id="params-draw" style="display:none;">
             <div class="form-group">
+              <label class="form-label">ドロー元のエリア</label>
+              <select class="form-select" id="dialog-draw-src">
+                <option value="auto" ${act.srcArea === 'auto' || !act.srcArea ? 'selected' : ''}>自動（自分の山札、なければ共有山札）</option>
+                <option value="own:deck" ${act.srcArea === 'own:deck' ? 'selected' : ''}>自分の山札 (own:deck)</option>
+                ${areas.map(a => `<option value="${a.id}" ${act.srcArea === a.id ? 'selected' : ''}>${a.name} (${a.id})</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group">
               <label class="form-label">ドローする枚数</label>
               <div style="display:flex; align-items:center; gap:8px;">
                 <input type="number" class="form-input" id="dialog-draw-count" value="${act.count || 1}" min="1" max="20" style="width:100px;" />
@@ -725,6 +733,7 @@ export class CpuFlowchartEditor {
       let newAction = { actionType: actType };
 
       if (actType === 'action_draw') {
+        newAction.srcArea = overlay.querySelector('#dialog-draw-src')?.value || 'auto';
         newAction.count = parseInt(overlay.querySelector('#dialog-draw-count').value, 10) || 1;
       } else if (actType === 'action_select') {
         newAction.srcArea = overlay.querySelector('#dialog-select-src').value;
@@ -862,8 +871,16 @@ export class CpuFlowchartEditor {
   getActionLabel(act) {
     if (!act) return '未設定のアクション';
     switch (act.actionType) {
-      case 'action_draw':
-        return `山札からドロー (${act.count || 1}枚)`;
+      case 'action_draw': {
+        const cnt = act.count || 1;
+        if (act.srcArea && act.srcArea !== 'auto' && act.srcArea !== 'own:deck') {
+          const areas = this.getAvailableAreas();
+          const targetArea = areas.find(a => a.id === act.srcArea);
+          const areaName = targetArea ? targetArea.name : act.srcArea;
+          return `${areaName}からドロー (${cnt}枚)`;
+        }
+        return `山札からドロー (${cnt}枚)`;
+      }
       case 'action_select': {
         const filterStr = act.filterMode === 'tag' && act.tag ? `タグ[${act.tag}]` : 'すべて';
         return `カードを選択 (${filterStr}, ${act.count || 1}枚)`;

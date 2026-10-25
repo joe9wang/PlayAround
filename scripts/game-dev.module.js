@@ -12,7 +12,7 @@ import {
   serverTimestamp, onSnapshot,
   ref, uploadString, getDownloadURL
 } from './firebase.init.js';
-import { CpuFlowchartEditor } from './game-dev-flowchart.js?v=20261025-3';
+import { CpuFlowchartEditor } from './game-dev-flowchart.js?v=20261025-4';
 import { queryAiCardSelection } from './game-dev-ai.js?v=20261023-2';
 
 // === State ===
@@ -4328,26 +4328,90 @@ async function executeNextCpuTurn() {
   await executeCpuForPlayer(actingCpu);
 }
 
+// 山札・手札エリア解決ヘルパー（自動フォールバック・特定エリア指定対応）
+function resolveDrawAreas(act, cpuPlayerId) {
+  let deckArea = null;
+  let deckDesc = '';
+  const srcVal = act?.srcArea || 'auto';
+
+  if (srcVal === 'auto') {
+    // 1. 自分の山札 (own:deck)
+    deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
+    if (deckArea) {
+      deckDesc = `${getOwnerLabel(cpuPlayerId)}の山札 (${deckArea.name || deckArea.id})`;
+    } else {
+      // 2. 共有の山札 (type === 'deck' かつ owner が shared / none / null)
+      deckArea = AREAS.find(a => a.type === 'deck' && (!a.owner || a.owner === 'shared' || a.owner === 'none')) || null;
+      if (deckArea) {
+        deckDesc = `共有デッキエリア (${deckArea.name || deckArea.id}) [自動フォールバック]`;
+      } else {
+        // 3. 名前に「山札」「デッキ」「deck」を含む共有エリア
+        deckArea = AREAS.find(a => (!a.owner || a.owner === 'shared') && /(山札|デッキ|deck)/i.test(a.name || '')) || null;
+        if (deckArea) {
+          deckDesc = `共有エリア (${deckArea.name || deckArea.id}) [名称フォールバック]`;
+        }
+      }
+    }
+  } else if (srcVal === 'own:deck') {
+    deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
+    deckDesc = deckArea ? `${getOwnerLabel(cpuPlayerId)}の山札 (${deckArea.name || deckArea.id})` : '自分の山札 (未配置)';
+  } else {
+    const ref = valueToRef(srcVal);
+    deckArea = resolveAreaRef(ref, cpuPlayerId);
+    deckDesc = deckArea ? `指定エリア (${deckArea.name || deckArea.id})` : `指定エリア (${srcVal}: 未配置)`;
+  }
+
+  // 手札エリアの解決
+  let handArea = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+  let handDesc = handArea ? `${getOwnerLabel(cpuPlayerId)}の手札 (${handArea.name || handArea.id})` : '';
+  if (!handArea) {
+    // フォールバック: owner === cpuPlayerId のエリア
+    handArea = AREAS.find(a => a.owner === cpuPlayerId) || null;
+    if (handArea) {
+      handDesc = `${getOwnerLabel(cpuPlayerId)}のエリア (${handArea.name || handArea.id}) [所有者フォールバック]`;
+    }
+  }
+
+  return { deckArea, handArea, deckDesc, handDesc };
+}
+
 async function executeCpuForPlayer(cpuPlayerId) {
   const cpuLabel = getOwnerLabel(cpuPlayerId);
+  console.group(`[CPU Debug] ▶ ターン実行開始: ${cpuLabel} (${cpuPlayerId})`);
 
   // 該当CPUに適用されるルールを抽出
   const matchedRules = CPU_RULES.filter(r => r.targetSeat === 'all' || r.targetSeat === cpuPlayerId);
 
   if (matchedRules.length === 0) {
+    console.warn(`[CPU Debug] ⚠️ ${cpuLabel} 用の動作ルールが設定されていません`);
+    console.groupEnd();
     showToast(`🤖 ${cpuLabel} 用の動作ルールが設定されていません。「CPU動作設定」から追加してください`);
     return;
   }
 
+  console.log(`[CPU Debug] 評価対象ルール: ${matchedRules.length}件`);
+  const allFailures = [];
+
   // ルールを順番に評価し、実行可能な最初のアクションを行う
-  for (const rule of matchedRules) {
-    const didAct = await executeSingleCpuRule(rule, cpuPlayerId);
+  for (let rIdx = 0; rIdx < matchedRules.length; rIdx++) {
+    const rule = matchedRules[rIdx];
+    console.log(`[CPU Debug] 📋 ルール[${rIdx + 1}/${matchedRules.length}]: 「${rule.name || '名称未設定'}」を評価中...`);
+    const { didAct, failureReasons } = await executeSingleCpuRule(rule, cpuPlayerId);
     if (didAct) {
+      console.log(`[CPU Debug] ✔ ルール「${rule.name}」の実行に成功しました`);
+      console.groupEnd();
       return;
+    }
+    if (failureReasons && failureReasons.length > 0) {
+      allFailures.push(...failureReasons);
     }
   }
 
-  showToast(`🤖 ${cpuLabel} は実行できるルールがなかったため待機しました`);
+  const failureDetail = allFailures.length > 0 ? ` (理由: ${allFailures[0]})` : '';
+  console.warn(`[CPU Debug] ❌ 実行可能なルールがなかったため待機しました。原因: ${allFailures.join(' / ') || '条件不成立または対象カードなし'}`);
+  console.groupEnd();
+
+  showToast(`🤖 ${cpuLabel} は実行できるルールがなかったため待機しました${failureDetail}`);
 }
 
 // 単一アクション実行ヘルパー
@@ -4360,17 +4424,19 @@ function executeCpuAction(act, cpuPlayerId) {
   }
 
   if (actType === 'action_draw') {
-    const deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, cpuPlayerId);
-    const handArea = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
-    if (!deckArea || !handArea) {
-      return { success: false, didPass: false, summary: '山札または手札エリアが見つかりません' };
+    const { deckArea, handArea, deckDesc, handDesc } = resolveDrawAreas(act, cpuPlayerId);
+    if (!deckArea) {
+      return { success: false, didPass: false, summary: '山札エリアが見つかりません', failureReason: '山札エリア未検出' };
+    }
+    if (!handArea) {
+      return { success: false, didPass: false, summary: '手札エリアが見つかりません', failureReason: `${cpuLabel}の手札エリア未検出` };
     }
 
     const deckCards = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, deckArea))
       .sort((a, b) => (b.z || 0) - (a.z || 0));
 
     if (deckCards.length === 0) {
-      return { success: false, didPass: false, summary: '山札が空のためドロー不可' };
+      return { success: false, didPass: false, summary: '山札が空のためドロー不可', failureReason: `山札(${deckArea.name || '山札'})にカードなし` };
     }
 
     const drawCount = Math.min(act.count || 1, deckCards.length);
@@ -4383,7 +4449,8 @@ function executeCpuAction(act, cpuPlayerId) {
       if (dom) updateEntityInnerDOM(dom, c);
     });
 
-    return { success: true, didPass: false, summary: `山札から${drawCount}枚ドロー` };
+    const srcName = (act.srcArea && act.srcArea !== 'auto' && act.srcArea !== 'own:deck') ? (deckArea.name || '山札') : '山札';
+    return { success: true, didPass: false, summary: `${srcName}から${drawCount}枚ドロー` };
   }
 
   if (actType === 'action_move') {
@@ -4497,6 +4564,7 @@ function evaluateCpuCondition(block, cpuPlayerId) {
 
 async function executeSingleCpuRule(rule, cpuPlayerId) {
   const cpuLabel = getOwnerLabel(cpuPlayerId);
+  const failureReasons = [];
 
   // 1. フローチャート形式 (nodes) の実行
   if (Array.isArray(rule.nodes) && rule.nodes.length > 0) {
@@ -4505,16 +4573,17 @@ async function executeSingleCpuRule(rule, cpuPlayerId) {
       cpuPlayerId,
       selectedCards: [],
       actedAny: false,
-      stepsSummary
+      stepsSummary,
+      failureReasons
     };
     await executeDevFlowchartNodeList(rule.nodes, context);
 
     if (context.actedAny) {
       showToast(`🤖 ${cpuLabel}: ${stepsSummary.join(' → ')}`);
       scheduleSaveRoom();
-      return true;
+      return { didAct: true, failureReasons };
     }
-    return false;
+    return { didAct: false, failureReasons };
   }
 
   // 2. 旧ブロック形式
@@ -4532,6 +4601,7 @@ async function executeSingleCpuRule(rule, cpuPlayerId) {
       const res = executeCpuAction(block, cpuPlayerId);
       stepsSummary.push(res.summary);
       if (res.success) actedAny = true;
+      if (res.failureReason) failureReasons.push(res.failureReason);
       if (res.didPass) break;
     } else if (block.type === 'condition_if') {
       let chosenAct = null;
@@ -4559,6 +4629,7 @@ async function executeSingleCpuRule(rule, cpuPlayerId) {
       const res = executeCpuAction(chosenAct, cpuPlayerId);
       stepsSummary.push(`条件判定: ${branchText} → ${res.summary}`);
       if (res.success) actedAny = true;
+      if (res.failureReason) failureReasons.push(res.failureReason);
       if (res.didPass) break;
     }
   }
@@ -4566,10 +4637,10 @@ async function executeSingleCpuRule(rule, cpuPlayerId) {
   if (actedAny) {
     showToast(`🤖 ${cpuLabel}: ${stepsSummary.join(' → ')}`);
     scheduleSaveRoom();
-    return true;
+    return { didAct: true, failureReasons };
   }
 
-  return false;
+  return { didAct: false, failureReasons };
 }
 
 async function executeDevFlowchartNodeList(nodeList, context) {
@@ -4585,27 +4656,51 @@ async function executeDevFlowchartNodeList(nodeList, context) {
       const actType = act.actionType || 'action_draw';
 
       if (actType === 'action_draw') {
-        const deckArea = resolveAreaRef({ kind: 'own', areaType: 'deck' }, context.cpuPlayerId);
-        const handArea = resolveAreaRef({ kind: 'own', areaType: 'hand' }, context.cpuPlayerId);
-        if (deckArea && handArea) {
-          const deckCards = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, deckArea))
-            .sort((a, b) => (b.z || 0) - (a.z || 0));
-          const count = Math.min(act.count || 1, deckCards.length);
-          if (count > 0) {
-            const drawn = deckCards.slice(0, count);
-            placeEntitiesInArea(drawn, handArea, 'spread_lr');
-            drawn.forEach(c => {
-              c.isFaceDown = false;
-              const dom = document.getElementById(c.id);
-              if (dom) updateEntityInnerDOM(dom, c);
-            });
-            context.actedAny = true;
-            context.stepsSummary.push(`山札から${count}枚ドロー`);
-          }
+        const { deckArea, handArea, deckDesc, handDesc } = resolveDrawAreas(act, context.cpuPlayerId);
+        console.log(`[CPU Debug]   ├─ [アクション] 山札からドロー (${act.count || 1}枚)`);
+        console.log(`[CPU Debug]   │    ├─ ドロー元: ${deckDesc || '未検出 ❌'}`);
+        console.log(`[CPU Debug]   │    ├─ ドロー先: ${handDesc || '未検出 ❌'}`);
+
+        if (!deckArea) {
+          const reason = '山札エリア（自分の山札 または 共有山札）が見つかりません';
+          console.warn(`[CPU Debug]   │    └─ 失敗: ${reason}`);
+          context.failureReasons.push(reason);
+          continue;
         }
+        if (!handArea) {
+          const reason = `${getOwnerLabel(context.cpuPlayerId)}の手札エリアが見つかりません`;
+          console.warn(`[CPU Debug]   │    └─ 失敗: ${reason}`);
+          context.failureReasons.push(reason);
+          continue;
+        }
+
+        const deckCards = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, deckArea))
+          .sort((a, b) => (b.z || 0) - (a.z || 0));
+        console.log(`[CPU Debug]   │    ├─ 山札カード枚数: ${deckCards.length}枚`);
+
+        if (deckCards.length === 0) {
+          const reason = `山札（${deckArea.name || '山札'}）にカードがありません`;
+          console.warn(`[CPU Debug]   │    └─ 失敗: ${reason}`);
+          context.failureReasons.push(reason);
+          continue;
+        }
+
+        const count = Math.min(act.count || 1, deckCards.length);
+        const drawn = deckCards.slice(0, count);
+        placeEntitiesInArea(drawn, handArea, 'spread_lr');
+        drawn.forEach(c => {
+          c.isFaceDown = false;
+          const dom = document.getElementById(c.id);
+          if (dom) updateEntityInnerDOM(dom, c);
+        });
+        context.actedAny = true;
+        const srcName = (act.srcArea && act.srcArea !== 'auto' && act.srcArea !== 'own:deck') ? (deckArea.name || '山札') : '山札';
+        context.stepsSummary.push(`${srcName}から${count}枚ドロー`);
+        console.log(`[CPU Debug]   │    └─ ✔ 成功: ${srcName}から${count}枚ドローして${handArea.name || '手札'}へ配置`);
       } else if (actType === 'action_select') {
         const srcRef = valueToRef(act.srcArea || 'own:hand');
         const srcArea = resolveAreaRef(srcRef, context.cpuPlayerId);
+        console.log(`[CPU Debug]   ├─ [アクション] カード選択 (エリア: ${srcArea ? (srcArea.name || srcArea.id) : '未検出'})`);
         if (srcArea) {
           const inArea = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, srcArea));
           let candidates = inArea;
@@ -4619,14 +4714,19 @@ async function executeDevFlowchartNodeList(nodeList, context) {
           const count = Math.min(act.count || 1, candidates.length);
           context.selectedCards = candidates.slice(0, count);
           context.stepsSummary.push(`カード${context.selectedCards.length}枚を選択`);
+          console.log(`[CPU Debug]   │    └─ ✔ 候補${candidates.length}枚から${context.selectedCards.length}枚を選択`);
+        } else {
+          context.failureReasons.push('選択対象のエリアが見つかりません');
         }
       } else if (actType === 'action_select_ai') {
         const srcRef = valueToRef(act.srcArea || 'own:hand');
         const srcArea = resolveAreaRef(srcRef, context.cpuPlayerId);
         const candidateCards = srcArea ? ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, srcArea)) : [];
+        console.log(`[CPU Debug]   ├─ [アクション] AIカード選定 (候補: ${candidateCards.length}枚)`);
 
         if (candidateCards.length === 0) {
           context.selectedCards = [];
+          console.warn(`[CPU Debug]   │    └─ 候補カードが0枚のため選択スキップ`);
         } else {
           // AIに開示してよい可視盤面情報の整理
           const visibleContext = {
@@ -4664,6 +4764,7 @@ async function executeDevFlowchartNodeList(nodeList, context) {
             const selected = candidateCards.filter(c => selectedCardIds.includes(c.id));
             context.selectedCards = selected;
             context.stepsSummary.push(`AI選択(${selected.length}枚: ${reason || '判断完了'})`);
+            console.log(`[CPU Debug]   │    └─ ✔ AI選定完了 (${selected.length}枚: ${reason})`);
             if (reason) {
               showToast(`🤖 ${getOwnerLabel(context.cpuPlayerId)}: 「${reason}」`);
             }
@@ -4684,6 +4785,8 @@ async function executeDevFlowchartNodeList(nodeList, context) {
           toMove = context.selectedCards || [];
         }
 
+        console.log(`[CPU Debug]   ├─ [アクション] カード移動 (対象: ${toMove.length}枚)`);
+
         if (toMove.length > 0) {
           const destRef = valueToRef(act.destArea || (AREAS.length > 0 ? `area:${AREAS[0].id}` : 'area:area_play_center'));
           const destArea = resolveAreaRef(destRef, context.cpuPlayerId);
@@ -4696,11 +4799,20 @@ async function executeDevFlowchartNodeList(nodeList, context) {
             placeEntitiesInArea(toMove, destArea, 'spread_lr');
             context.actedAny = true;
             context.stepsSummary.push(`カード${toMove.length}枚を移動`);
+            console.log(`[CPU Debug]   │    └─ ✔ カード${toMove.length}枚を ${destArea.name || destArea.id} へ移動`);
             context.selectedCards = [];
+          } else {
+            console.warn(`[CPU Debug]   │    └─ 失敗: 移動先エリアが見つかりません`);
+            context.failureReasons.push('移動先エリアが見つかりません');
           }
+        } else {
+          console.warn(`[CPU Debug]   │    └─ 失敗: 移動対象のカードがありません`);
+          context.failureReasons.push('移動対象のカードがありません');
         }
       } else if (actType === 'action_pass') {
+        console.log(`[CPU Debug]   ├─ [アクション] パス`);
         context.stepsSummary.push('パス');
+        context.actedAny = true;
         break;
       }
     } else if (node.type === 'condition') {
@@ -4712,8 +4824,8 @@ async function executeDevFlowchartNodeList(nodeList, context) {
         const hand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, context.cpuPlayerId);
         currentVal = hand ? ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, hand)).length : 0;
       } else if (cond.target === 'deck_count') {
-        const deck = resolveAreaRef({ kind: 'own', areaType: 'deck' }, context.cpuPlayerId);
-        currentVal = deck ? ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, deck)).length : 0;
+        const { deckArea } = resolveDrawAreas({ srcArea: 'auto' }, context.cpuPlayerId);
+        currentVal = deckArea ? ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, deckArea)).length : 0;
       }
 
       const op = cond.op || '>=';
@@ -4728,6 +4840,7 @@ async function executeDevFlowchartNodeList(nodeList, context) {
         default: isTrue = currentVal >= target; break;
       }
 
+      console.log(`[CPU Debug]   ├─ [条件判定] ${cond.target || '選択数'} ${op} ${target} (現在値: ${currentVal}) ➔ ${isTrue ? 'YES' : 'NO'}`);
       context.stepsSummary.push(`◇条件[${cond.target || '選択数'}${op}${target} (現在:${currentVal})]: ${isTrue ? 'YES' : 'NO'}`);
 
       if (isTrue && Array.isArray(node.yesBranch) && node.yesBranch.length > 0) {
