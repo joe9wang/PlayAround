@@ -518,18 +518,29 @@ export class CpuFlowchartEditor {
       </button>
     `;
 
-    menu.querySelector('.item-action').addEventListener('click', () => {
-      this.closePopups();
+    const cleanupMenu = () => {
+      if (this._menuOutsideListener) {
+        document.removeEventListener('click', this._menuOutsideListener);
+        this._menuOutsideListener = null;
+      }
+      menu.remove();
+    };
+
+    menu.querySelector('.item-action').addEventListener('click', (e) => {
+      e.stopPropagation();
+      cleanupMenu();
       this.openActionModal(null, parentList, insertIndex);
     });
 
-    menu.querySelector('.item-condition').addEventListener('click', () => {
-      this.closePopups();
+    menu.querySelector('.item-condition').addEventListener('click', (e) => {
+      e.stopPropagation();
+      cleanupMenu();
       this.openConditionModal(null, parentList, insertIndex);
     });
 
-    menu.querySelector('.item-cancel').addEventListener('click', () => {
-      this.closePopups();
+    menu.querySelector('.item-cancel').addEventListener('click', (e) => {
+      e.stopPropagation();
+      cleanupMenu();
     });
 
     // 添付画像2のようにプラスボタンの右横に配置
@@ -541,16 +552,23 @@ export class CpuFlowchartEditor {
 
     document.body.appendChild(menu);
 
-    const onOutsideClick = (e) => {
+    this._menuOutsideListener = (e) => {
       if (!menu.contains(e.target) && e.target !== event.target) {
-        this.closePopups();
-        document.removeEventListener('click', onOutsideClick);
+        cleanupMenu();
       }
     };
-    setTimeout(() => document.addEventListener('click', onOutsideClick), 10);
+    setTimeout(() => {
+      if (this._menuOutsideListener) {
+        document.addEventListener('click', this._menuOutsideListener);
+      }
+    }, 10);
   }
 
   closePopups() {
+    if (this._menuOutsideListener) {
+      document.removeEventListener('click', this._menuOutsideListener);
+      this._menuOutsideListener = null;
+    }
     const existing = document.querySelectorAll('.flow-add-popup-menu, .flow-edit-dialog-overlay');
     existing.forEach(el => el.remove());
   }
@@ -718,6 +736,13 @@ export class CpuFlowchartEditor {
     selectFilter.addEventListener('change', updateVisibility);
     updateVisibility();
 
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+    overlay.querySelector('.flow-edit-dialog')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
     overlay.querySelector('.flow-dialog-close').addEventListener('click', () => overlay.remove());
     overlay.querySelector('.btn-dialog-cancel').addEventListener('click', () => overlay.remove());
 
@@ -823,6 +848,13 @@ export class CpuFlowchartEditor {
     `;
 
     document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+    overlay.querySelector('.flow-edit-dialog')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
 
     overlay.querySelector('.flow-dialog-close').addEventListener('click', () => overlay.remove());
     overlay.querySelector('.btn-dialog-cancel').addEventListener('click', () => overlay.remove());
