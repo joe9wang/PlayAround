@@ -12,7 +12,7 @@ import {
   serverTimestamp, onSnapshot,
   ref, uploadString, getDownloadURL
 } from './firebase.init.js';
-import { CpuFlowchartEditor } from './game-dev-flowchart.js?v=20261025-1';
+import { CpuFlowchartEditor } from './game-dev-flowchart.js?v=20261025-2';
 import { queryAiCardSelection } from './game-dev-ai.js?v=20261023-2';
 
 // === State ===

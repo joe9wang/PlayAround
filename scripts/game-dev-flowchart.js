@@ -34,6 +34,42 @@ export class CpuFlowchartEditor {
   }
 
   /**
+   * サブツリーの左右オフセット（幅）を再帰的に計測する
+   */
+  measureNodeSpan(node) {
+    if (!node) return { left: 100, right: 100 };
+    if (node.type === 'start' || node.type === 'end' || node.type === 'action') {
+      return { left: 100, right: 100 };
+    }
+    if (node.type === 'condition') {
+      const yesSpan = this.measureSequenceSpan(node.yesBranch);
+      const noSpan = this.measureSequenceSpan(node.noBranch);
+      const diaHalfW = 115;
+      // NOブランチの中心オフセット（YES側の右端・菱形の右端と重ならないように安全なマージンを確保）
+      const offsetToNo = Math.max(170, yesSpan.right + 40 + noSpan.left, diaHalfW + 40 + noSpan.left);
+      return {
+        left: Math.max(diaHalfW, yesSpan.left),
+        right: offsetToNo + Math.max(diaHalfW, noSpan.right)
+      };
+    }
+    return { left: 100, right: 100 };
+  }
+
+  measureSequenceSpan(sequence) {
+    if (!Array.isArray(sequence) || sequence.length === 0) {
+      return { left: 100, right: 100 };
+    }
+    let maxLeft = 100;
+    let maxRight = 100;
+    for (const node of sequence) {
+      const span = this.measureNodeSpan(node);
+      if (span.left > maxLeft) maxLeft = span.left;
+      if (span.right > maxRight) maxRight = span.right;
+    }
+    return { left: maxLeft, right: maxRight };
+  }
+
+  /**
    * フローチャートのレンダリング
    */
   render() {
@@ -56,18 +92,19 @@ export class CpuFlowchartEditor {
     `;
     svg.appendChild(defs);
 
-    // 描画ツリーを走査して絶対座標でSVG要素を生成
-    const startX = 220; // メイン垂直ラインのX座標
+    // 描画ツリー全体の必要幅を計測
+    const rootSpan = this.measureSequenceSpan(this.nodes);
+    const startX = Math.max(rootSpan.left + 40, 220); // メイン垂直ラインのX座標
     const startY = 32;
     const renderContext = {
       svg,
-      maxX: 460,
+      maxX: startX + rootSpan.right,
       maxY: 100
     };
 
     const finalY = this.renderSequence(this.nodes, startX, startY, renderContext);
     
-    const svgWidth = Math.max(renderContext.maxX + 80, 520);
+    const svgWidth = Math.max(renderContext.maxX + 80, 560);
     const svgHeight = Math.max(finalY + 60, 480);
     svg.setAttribute('width', `${svgWidth}`);
     svg.setAttribute('height', `${svgHeight}`);
@@ -78,9 +115,9 @@ export class CpuFlowchartEditor {
   }
 
   /**
-   * ノードシーケンス（配列）を縦にレンダリングする
+   * ノードシーケンス（配列）を縦に再帰レンダリングする（メインおよび全ブランチ共通）
    */
-  renderSequence(nodeList, centerX, startY, ctx) {
+  renderSequence(nodeList, centerX, startY, ctx, isBranch = false) {
     let currentY = startY;
     const connLen = 76; // ノード間のゆったりした線長（添付画像2・3準拠）
 
@@ -110,7 +147,7 @@ export class CpuFlowchartEditor {
         this.drawActionNode(ctx.svg, centerX, currentY, label, node, nodeList, i);
         currentY += 42;
       } else if (node.type === 'condition') {
-        // 菱形条件分岐ノードのレンダリング
+        // 菱形条件分岐ノードのレンダリング（多段ネスト対応）
         currentY = this.drawConditionGroup(ctx.svg, centerX, currentY, node, nodeList, i, ctx);
       }
     }
@@ -197,7 +234,7 @@ export class CpuFlowchartEditor {
   }
 
   /**
-   * 条件分岐（◇ 菱形 ＋ YES直進ルート ＋ NO直角折れルート ＋ 水平合流）
+   * 条件分岐（◇ 菱形 ＋ YES直進ルート ＋ NO直角折れルート ＋ 水平合流、多段ネスト完全対応）
    */
   drawConditionGroup(svg, cx, y, node, parentList, index, ctx) {
     const diaW = 230;
@@ -257,10 +294,14 @@ export class CpuFlowchartEditor {
     gDia.appendChild(t);
     svg.appendChild(gDia);
 
-    // 2. ブランチの幾何学レイアウト
+    // 2. ブランチの幾何学レイアウト（中のツリー幅に基づいてNOルートのX座標を動的決定）
     const yesCenterX = cx;
-    const noCenterX = cx + 170; // NOルートの縦ラインX
-    ctx.maxX = Math.max(ctx.maxX, noCenterX + 120);
+    const yesSpan = this.measureSequenceSpan(node.yesBranch);
+    const noSpan = this.measureSequenceSpan(node.noBranch);
+    const offsetToNo = Math.max(170, yesSpan.right + 40 + noSpan.left, halfW + 40 + noSpan.left);
+    const noCenterX = cx + offsetToNo;
+
+    ctx.maxX = Math.max(ctx.maxX, noCenterX + noSpan.right + 60);
 
     if (!Array.isArray(node.yesBranch)) node.yesBranch = [];
     if (!Array.isArray(node.noBranch)) node.noBranch = [];
@@ -278,11 +319,11 @@ export class CpuFlowchartEditor {
       this.drawConnectorLine(svg, yesCenterX, bottomY, yesCenterX, yesEndY, false);
       this.drawPlusButton(svg, yesCenterX, bottomY + branchConnLen / 2, node.yesBranch, 0);
     } else {
-      // ノード列を描画
+      // ノード列を描画（actionでもconditionでも renderSequence で再帰描画）
       const firstNodeStartY = bottomY + branchConnLen;
       this.drawConnectorLine(svg, yesCenterX, bottomY, yesCenterX, firstNodeStartY, true);
       this.drawPlusButton(svg, yesCenterX, bottomY + branchConnLen / 2, node.yesBranch, 0);
-      yesEndY = this.renderBranchSequence(node.yesBranch, yesCenterX, firstNodeStartY, svg, ctx);
+      yesEndY = this.renderSequence(node.yesBranch, yesCenterX, firstNodeStartY, ctx, true);
     }
 
     // --- NOルート（右へ出て下へ直角折れ） ---
@@ -305,7 +346,7 @@ export class CpuFlowchartEditor {
 
       this.drawPlusButton(svg, noCenterX, noPlusY, node.noBranch, 0);
     } else {
-      // ノード列を描画
+      // ノード列を描画（actionでもconditionでも renderSequence で再帰描画）
       const firstNodeStartY = bottomY + branchConnLen;
       const path = document.createElementNS(this.svgNS, 'path');
       path.setAttribute('d', `M ${rightX},${rightY} H ${noCenterX} V ${firstNodeStartY}`);
@@ -317,7 +358,7 @@ export class CpuFlowchartEditor {
       svg.appendChild(path);
 
       this.drawPlusButton(svg, noCenterX, noPlusY, node.noBranch, 0);
-      noEndY = this.renderBranchSequence(node.noBranch, noCenterX, firstNodeStartY, svg, ctx);
+      noEndY = this.renderSequence(node.noBranch, noCenterX, firstNodeStartY, ctx, true);
     }
 
     // --- 合流部 (T字マージ) ---
@@ -335,36 +376,6 @@ export class CpuFlowchartEditor {
     svg.appendChild(mergePath);
 
     return mergeY;
-  }
-
-  /**
-   * ブランチ内ノード列のレンダリング
-   */
-  renderBranchSequence(branchList, centerX, startY, svg, ctx) {
-    let currentY = startY;
-    const connLen = 76;
-
-    for (let i = 0; i < branchList.length; i++) {
-      const node = branchList[i];
-
-      if (i > 0) {
-        const lineStartY = currentY;
-        const lineEndY = currentY + connLen;
-
-        this.drawConnectorLine(svg, centerX, lineStartY, centerX, lineEndY, true);
-        this.drawPlusButton(svg, centerX, lineStartY + connLen / 2, branchList, i);
-
-        currentY = lineEndY;
-      }
-
-      if (node.type === 'action') {
-        const label = this.getActionLabel(node.action);
-        this.drawActionNode(svg, centerX, currentY, label, node, branchList, i);
-        currentY += 42;
-      }
-    }
-
-    return currentY;
   }
 
   /**
