@@ -658,17 +658,40 @@ export class CpuFlowchartEditor {
           <!-- パラメータ: カードを選択する (AI) -->
           <div class="action-params-box" id="params-select-ai" style="display:none;">
             <div class="form-group">
-              <label class="form-label">選択対象の場所</label>
+              <label class="form-label">選択対象の場所（手札・候補カード）</label>
               <select class="form-select" id="dialog-ai-src">
                 <option value="own:hand" ${act.srcArea === 'own:hand' || !act.srcArea ? 'selected' : ''}>自分の手札</option>
                 <option value="any:hand" ${act.srcArea === 'any:hand' ? 'selected' : ''}>全員の手札</option>
                 ${areaOptionsHtml}
               </select>
             </div>
+
+            <!-- AIに開示する盤面エリア（インプット指定） -->
+            <div class="form-group">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label class="form-label" style="margin:0;">AIに渡す盤面エリア（インプット情報）</label>
+                <span style="font-size:11px; color:#94a3b8;">複数追加可</span>
+              </div>
+              <div style="display:flex; gap:6px; margin-bottom:6px;">
+                <select class="form-select" id="dialog-ai-context-area-select" style="flex:1;">
+                  <option value="own:hand">自分の手札 (own:hand)</option>
+                  <option value="any:hand">全員の手札 (any:hand)</option>
+                  ${areaOptionsHtml}
+                </select>
+                <button type="button" class="action-btn secondary" id="btn-add-ai-context-area" style="width:auto; padding:4px 12px; font-size:12px; white-space:nowrap;">＋ 追加</button>
+              </div>
+              <div id="dialog-ai-context-chips" style="display:flex; flex-wrap:wrap; gap:6px; min-height:36px; padding:6px 8px; background:rgba(0,0,0,0.25); border:1px solid #334155; border-radius:6px; align-items:center;">
+                <!-- チップ一覧 -->
+              </div>
+              <div style="font-size:11px; color:#64748b; margin-top:4px;">
+                ※ここで追加したエリアのカードのみが盤面状況としてAIに渡されます（未追加の場合はすべての可視エリア）。
+              </div>
+            </div>
+
             <div class="form-group">
               <label class="form-label">ゲームルール (AIへの思考指示)</label>
               <textarea class="form-input" id="dialog-ai-rule" rows="4" style="resize:vertical; font-size:12px; line-height:1.4;" placeholder="例: 場に出ているカードより大きい数字を手札から1枚出す。出せるカードがない場合は何も選択しない。">${act.ruleText || ''}</textarea>
-              <div style="font-size:11px; color:#64748b; margin-top:4px;">※AIには「ルール」「現在の盤面（見えているカード）」「自分の手札」のみが渡され、最適なカードを自動選択します。</div>
+              <div style="font-size:11px; color:#64748b; margin-top:4px;">※AIには「ルール」「指定された盤面エリアのカード」「自分の手札」のみが渡され、最適なカードを自動選択します。</div>
             </div>
           </div>
 
@@ -734,7 +757,59 @@ export class CpuFlowchartEditor {
     };
     typeSelect.addEventListener('change', updateVisibility);
     selectFilter.addEventListener('change', updateVisibility);
-    updateVisibility();
+    // AIインプットエリアのチップ管理
+    const contextAreaSelect = overlay.querySelector('#dialog-ai-context-area-select');
+    const btnAddContextArea = overlay.querySelector('#btn-add-ai-context-area');
+    const chipsContainer = overlay.querySelector('#dialog-ai-context-chips');
+    let selectedContextAreas = Array.isArray(act.contextAreas) ? [...act.contextAreas] : [];
+
+    const getAreaLabelByRef = (refVal) => {
+      if (refVal === 'own:hand') return '自分の手札';
+      if (refVal === 'any:hand') return '全員の手札';
+      const found = areas.find(a => a.id === refVal);
+      if (found) return `${found.name} (${found.id})`;
+      return refVal;
+    };
+
+    const renderContextChips = () => {
+      if (!chipsContainer) return;
+      chipsContainer.innerHTML = '';
+      if (selectedContextAreas.length === 0) {
+        chipsContainer.innerHTML = '<span style="font-size:11px; color:#64748b; padding:2px 4px;">（エリア未指定：すべての可視エリアを渡します）</span>';
+        return;
+      }
+      selectedContextAreas.forEach((areaRef, idx) => {
+        const chip = document.createElement('div');
+        chip.style.cssText = 'display:inline-flex; align-items:center; gap:6px; background:#1e293b; border:1px solid #475569; color:#f1f5f9; padding:3px 8px; border-radius:14px; font-size:11px;';
+        
+        const labelSpan = document.createElement('span');
+        labelSpan.textContent = `🏷️ ${getAreaLabelByRef(areaRef)}`;
+        chip.appendChild(labelSpan);
+
+        const btnRemove = document.createElement('button');
+        btnRemove.type = 'button';
+        btnRemove.style.cssText = 'background:transparent; border:none; color:#94a3b8; cursor:pointer; font-size:12px; line-height:1; padding:0 2px;';
+        btnRemove.textContent = '✕';
+        btnRemove.title = '削除';
+        btnRemove.addEventListener('click', () => {
+          selectedContextAreas.splice(idx, 1);
+          renderContextChips();
+        });
+        chip.appendChild(btnRemove);
+
+        chipsContainer.appendChild(chip);
+      });
+    };
+
+    btnAddContextArea?.addEventListener('click', () => {
+      const val = contextAreaSelect?.value;
+      if (val && !selectedContextAreas.includes(val)) {
+        selectedContextAreas.push(val);
+        renderContextChips();
+      }
+    });
+
+    renderContextChips();
 
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) overlay.remove();
@@ -768,6 +843,7 @@ export class CpuFlowchartEditor {
       } else if (actType === 'action_select_ai') {
         newAction.srcArea = overlay.querySelector('#dialog-ai-src').value;
         newAction.ruleText = overlay.querySelector('#dialog-ai-rule').value.trim();
+        newAction.contextAreas = selectedContextAreas;
       } else if (actType === 'action_move') {
         newAction.srcType = overlay.querySelector('#dialog-move-src').value;
         newAction.destArea = overlay.querySelector('#dialog-move-dest').value;
@@ -917,8 +993,12 @@ export class CpuFlowchartEditor {
         const filterStr = act.filterMode === 'tag' && act.tag ? `タグ[${act.tag}]` : 'すべて';
         return `カードを選択 (${filterStr}, ${act.count || 1}枚)`;
       }
-      case 'action_select_ai':
-        return `🤖 カードを選択 (AI思考)`;
+      case 'action_select_ai': {
+        const areasCount = Array.isArray(act.contextAreas) && act.contextAreas.length > 0
+          ? `${act.contextAreas.length}エリア`
+          : '全可視エリア';
+        return `🤖 カードを選択 (AI: ${areasCount})`;
+      }
       case 'action_move': {
         const srcStr = act.srcType === 'own:hand' ? '手札から' : '選択中カードを';
         return `${srcStr} 移動 (${act.destArea || '指定エリア'})`;

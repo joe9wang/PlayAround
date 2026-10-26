@@ -4784,24 +4784,42 @@ async function executeDevFlowchartNodeList(nodeList, context) {
           context.selectedCards = [];
           console.warn(`[CPU Debug]   │    └─ 候補カードが0枚のため選択スキップ`);
         } else {
-          // AIに開示してよい可視盤面情報の整理（最も内側のエリアにのみ所属させ、親エリアとの重複を防止）
-          const visibleContext = {
-            areas: {}
-          };
+          // AIに開示する盤面エリアの絞り込み（指定があればそのエリアのみ、未指定なら全可視エリア）
+          const targetContextAreaRefs = (Array.isArray(act.contextAreas) && act.contextAreas.length > 0)
+            ? act.contextAreas
+            : null;
 
           AREAS.forEach(area => {
             const isOpponentHand = area.owner && area.owner !== context.cpuPlayerId && area.areaType === 'hand';
-            if (!isOpponentHand) {
-              const areaCards = ENTITIES.filter(e => e.type === 'card' && getEntityPrimaryArea(e)?.id === area.id);
-              const ownHand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, context.cpuPlayerId);
-              visibleContext.areas[area.name || area.id] = areaCards.map(c => {
-                const isOwnCard = ownHand && isEntityOverlappingArea(c, ownHand);
-                if (!c.isFaceDown || isOwnCard) {
-                  return formatCardForAi(c);
+            if (isOpponentHand) return;
+
+            // 開示対象エリアが指定されている場合、一致するかチェック
+            if (targetContextAreaRefs) {
+              const isTargetArea = targetContextAreaRefs.some(refStr => {
+                if (refStr.startsWith('own:')) {
+                  const resolved = resolveAreaRef(valueToRef(refStr), context.cpuPlayerId);
+                  return resolved && resolved.id === area.id;
                 }
-                return { id: c.id, name: '裏向きカード', status: '裏向きカード' };
+                if (refStr.startsWith('area:')) {
+                  return refStr === `area:${area.id}`;
+                }
+                if (refStr === 'any:hand') {
+                  return area.areaType === 'hand';
+                }
+                return refStr === area.id;
               });
+              if (!isTargetArea) return;
             }
+
+            const areaCards = ENTITIES.filter(e => e.type === 'card' && getEntityPrimaryArea(e)?.id === area.id);
+            const ownHand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, context.cpuPlayerId);
+            visibleContext.areas[area.name || area.id] = areaCards.map(c => {
+              const isOwnCard = ownHand && isEntityOverlappingArea(c, ownHand);
+              if (!c.isFaceDown || isOwnCard) {
+                return formatCardForAi(c);
+              }
+              return { id: c.id, name: '裏向きカード', status: '裏向きカード' };
+            });
           });
 
           const formattedCandidates = candidateCards.map(formatCardForAi);
@@ -4811,6 +4829,7 @@ async function executeDevFlowchartNodeList(nodeList, context) {
 
             console.groupCollapsed(`[CPU Debug]   │    📤 [AI Request: 送信データ]`);
             console.log('思考指示ルール (ruleText):', act.ruleText || '（指定なし・デフォルト）');
+            console.log('開示エリア指定 (contextAreas):', targetContextAreaRefs || '（全可視エリア）');
             console.log(`選択候補カード (${formattedCandidates.length}枚):`, formattedCandidates);
             console.log('盤面可視状況 (visibleContext):', visibleContext);
             console.groupEnd();
