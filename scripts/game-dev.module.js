@@ -69,6 +69,7 @@ let PLAY_BUTTONS = [];
 // CPU設定
 let CPU_SEATS = new Set(['player2', 'player3', 'player4']);
 let CPU_RULES = [];
+let COMMON_AI_RULE = '';
 let LAST_ACTED_CPU_INDEX = -1;
 
 // 「自分の〇〇エリア」を解決する際の操作プレイヤー（ブラウザごとに記憶）
@@ -219,6 +220,7 @@ const modalCpuRule = document.getElementById('modal-cpu-rule');
 const cpuRuleEditId = document.getElementById('cpu-rule-edit-id');
 const cpuRuleName = document.getElementById('cpu-rule-name');
 const cpuRuleTargetSeat = document.getElementById('cpu-rule-target-seat');
+const cpuCommonAiRule = document.getElementById('cpu-common-ai-rule');
 const btnSaveCpuRule = document.getElementById('btn-save-cpu-rule');
 let cpuFlowchartEditorInstance = null;
 
@@ -323,6 +325,9 @@ async function loadRoomData() {
       if (ROOM_DATA.cpuRules) {
         CPU_RULES = Array.isArray(ROOM_DATA.cpuRules) ? ROOM_DATA.cpuRules : [];
       }
+      if (typeof ROOM_DATA.commonAiRule === 'string') {
+        COMMON_AI_RULE = ROOM_DATA.commonAiRule;
+      }
       if (ROOM_DATA.devAreas && ROOM_DATA.devAreas.length > 0) AREAS = ROOM_DATA.devAreas;
       if (ROOM_DATA.devEntities) {
         ENTITIES = ROOM_DATA.devEntities;
@@ -359,6 +364,9 @@ async function loadRoomData() {
       if (data.cpuRules) {
         CPU_RULES = Array.isArray(data.cpuRules) ? data.cpuRules : [];
         renderCpuRulesList();
+      }
+      if (typeof data.commonAiRule === 'string') {
+        COMMON_AI_RULE = data.commonAiRule;
       }
     });
   } catch (err) {
@@ -446,6 +454,7 @@ function scheduleSaveRoom() {
         playButtons: PLAY_BUTTONS,
         cpuSeats: Array.from(CPU_SEATS),
         cpuRules: CPU_RULES,
+        commonAiRule: COMMON_AI_RULE || '',
         devAreas: AREAS,
         devEntities: ENTITIES,
         updatedAt: serverTimestamp()
@@ -3553,7 +3562,12 @@ function openCpuRuleModal(editRuleId = null) {
     cpuRuleTargetSeat.value = prevVal;
   }
 
-  // 3. フローチャートエディタにデータを渡して描画
+  // 3. ゲーム基本ルール（AI用）
+  if (cpuCommonAiRule) {
+    cpuCommonAiRule.value = COMMON_AI_RULE || '';
+  }
+
+  // 4. フローチャートエディタにデータを渡して描画
   const editor = getCpuFlowchartEditor();
   if (editor) {
     const flowNodes = migrateRuleToFlowchartNodes(rule);
@@ -4327,6 +4341,10 @@ function saveCpuRule() {
   const name = cpuRuleName?.value?.trim() || 'CPU思考ルーチン';
   const targetSeat = cpuRuleTargetSeat?.value || 'all';
 
+  if (cpuCommonAiRule) {
+    COMMON_AI_RULE = (cpuCommonAiRule.value || '').trim();
+  }
+
   const editor = getCpuFlowchartEditor();
   const flowNodes = editor ? editor.getData() : [];
   const middleNodes = flowNodes.filter(n => n.type !== 'start' && n.type !== 'end');
@@ -4824,18 +4842,29 @@ async function executeDevFlowchartNodeList(nodeList, context) {
 
           const formattedCandidates = candidateCards.map(formatCardForAi);
 
+          // ルールテキストの決定（ノード個別指示 ＋ 卓共通ルールの自動継承・合体）
+          let effectiveRuleText = '';
+          const nodeRule = (act.ruleText || '').trim();
+          const commonRule = (COMMON_AI_RULE || '').trim();
+
+          if (nodeRule && commonRule) {
+            effectiveRuleText = `【基本ゲームルール】\n${commonRule}\n\n【このターンの個別指示】\n${nodeRule}`;
+          } else {
+            effectiveRuleText = nodeRule || commonRule || '場に出ているカードの数字より大きいカードを手札から1枚出してください。出せるカードがなければパス（選択なし）してください。';
+          }
+
           try {
             showToast(`🤖 ${getOwnerLabel(context.cpuPlayerId)}: AIがカードを思考中...`);
 
             console.groupCollapsed(`[CPU Debug]   │    📤 [AI Request: 送信データ]`);
-            console.log('思考指示ルール (ruleText):', act.ruleText || '（指定なし・デフォルト）');
+            console.log('思考指示ルール (effectiveRuleText):', effectiveRuleText);
             console.log('開示エリア指定 (contextAreas):', targetContextAreaRefs || '（全可視エリア）');
             console.log(`選択候補カード (${formattedCandidates.length}枚):`, formattedCandidates);
             console.log('盤面可視状況 (visibleContext):', visibleContext);
             console.groupEnd();
 
             const { selectedCardIds, reason, elapsedMs, rawResponse } = await queryAiCardSelection({
-              ruleText: act.ruleText,
+              ruleText: effectiveRuleText,
               candidateCards: formattedCandidates,
               visibleContext,
               cpuPlayerLabel: getOwnerLabel(context.cpuPlayerId)

@@ -688,6 +688,15 @@
           </div>
         </div>
 
+        <!-- 卓共通ゲーム基本ルール (AI用) -->
+        <div class="form-group" style="margin-top:-4px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label class="form-label" for="cpu-common-ai-rule" style="margin:0;">🧠 ゲーム基本ルール（AI用・卓共通）</label>
+            <span style="font-size:11px; color:#94a3b8;">ここに一度書けば、フローチャートの各AIノードが自動継承します</span>
+          </div>
+          <textarea class="form-input" id="cpu-common-ai-rule" rows="3" style="resize:vertical; font-size:12px; line-height:1.4;" placeholder="例: 大富豪のゲームルール。場に出ているカードの数字より大きいカードを手札から1枚出す。出せるカードがない場合はパスする。"></textarea>
+        </div>
+
         <div style="font-size:12px; font-weight:700; color:#cbd5e1; display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
           <span>📋 実行フローチャート（開始から順に実行され、終了で完了します）:</span>
           <span style="font-size:11px; color:#94a3b8; font-weight:normal;">矢印の「＋」をクリックして実行アクションや条件分岐を追加できます</span>
@@ -706,7 +715,7 @@
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="scripts/polyfills.js"></script>
-  <script type="module" src="scripts/game-dev.module.js?v=20261026-3"></script>
+  <script type="module" src="scripts/game-dev.module.js?v=20261026-4"></script>
 </body>
 
 </html>

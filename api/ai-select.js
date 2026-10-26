@@ -45,6 +45,8 @@ async function consumeDailyQuota(db, uid) {
 }
 
 function buildPrompts({ ruleText, candidateCards, visibleContext, cpuPlayerLabel }) {
+  // 固定指示およびゲームルールを systemPrompt に集約することで、
+  // OpenAI Prompt Caching が自動ヒットし、2回目以降のターンはルール再読み込み処理がキャッシュから高速実行される。
   const systemPrompt = `あなたはカードゲームの優秀なAIプレイヤー（${cpuPlayerLabel}）です。
 プレイヤーから提供された「ゲームルール」と「現在の盤面情報（あなたが見えているカード）」を理解し、
 指定された「選択候補カード」の中から、ルールに従って出すべきカード（1枚または複数枚、あるいは何も出さない）を論理的に判断してください。
@@ -60,6 +62,9 @@ function buildPrompts({ ruleText, candidateCards, visibleContext, cpuPlayerLabel
 - トランプ等の一般的なゲームでは、数字（Number）や絵札（J=11, Q=12, K=13, A=1または14）の大小関係を正確に比較してください。大富豪などのルールが指定されている場合はその強さ順に従ってください。
 - 思考理由（reason）には、どのエリアのどのカード（数字・マーク）を場の台札と認識し、自分の手札のどのカードを選んだかを具体的に明記してください。
 
+【ゲームルール（遵守すべきルール定義）】
+${ruleText || '場に出ているカードの数字より大きいカードを手札から1枚出してください。出せるカードがなければパス（選択なし）してください。'}
+
 回答は必ず以下のJSON形式のみを出力してください（Markdownコードブロックは不要です）：
 {
   "selectedCardIds": ["card_id1", ...],
@@ -69,16 +74,13 @@ selectedCardIds には選択候補カードの id のみを入れてください
 
   const contextJson = JSON.stringify(visibleContext || {}, null, 2).slice(0, MAX_CONTEXT_CHARS);
 
-  const userPrompt = `【ゲームルール】
-${ruleText || '場に出ているカードの数字より大きいカードを手札から1枚出してください。出せるカードがなければパス（選択なし）してください。'}
-
-【盤面の状況（あなたに見えている情報）】
+  const userPrompt = `【現在の盤面状況（開示エリアのカード）】
 ${contextJson}
 
 【あなたの手札・選択候補（ここから選んでください）】
 ${JSON.stringify(candidateCards, null, 2)}
 
-ルールに従い、どのカードを選択するかJSON形式で回答してください。`;
+上記盤面とルールに従い、どのカードを選択するかJSON形式で回答してください。`;
 
   return { systemPrompt, userPrompt };
 }

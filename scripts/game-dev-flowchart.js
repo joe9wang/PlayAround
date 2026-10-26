@@ -690,8 +690,8 @@ export class CpuFlowchartEditor {
 
             <div class="form-group">
               <label class="form-label">ゲームルール (AIへの思考指示)</label>
-              <textarea class="form-input" id="dialog-ai-rule" rows="4" style="resize:vertical; font-size:12px; line-height:1.4;" placeholder="例: 場に出ているカードより大きい数字を手札から1枚出す。出せるカードがない場合は何も選択しない。">${act.ruleText || ''}</textarea>
-              <div style="font-size:11px; color:#64748b; margin-top:4px;">※AIには「ルール」「指定された盤面エリアのカード」「自分の手札」のみが渡され、最適なカードを自動選択します。</div>
+              <textarea class="form-input" id="dialog-ai-rule" rows="4" style="resize:vertical; font-size:12px; line-height:1.4;" placeholder="（空欄の場合は「ゲーム基本ルール」が自動適用されます。差分や追加の局面指示がある場合のみ入力）">${act.ruleText || ''}</textarea>
+              <div style="font-size:11px; color:#64748b; margin-top:4px;">※空欄にすると「ゲーム基本ルール」が自動適用されます。入力すると基本ルールへの追加指示として合体されます。</div>
             </div>
           </div>
 
