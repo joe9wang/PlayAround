@@ -19,6 +19,7 @@ let ROOM_DATA = null;
 let DEV_AREAS = [];
 let PLAY_BUTTONS = [];
 let CPU_RULES = [];
+let COMMON_AI_RULE = '';
 let CPU_SEATS = new Set();
 let CURRENT_ACTING_PLAYER = 'player1';
 let isRunningAction = false;
@@ -56,6 +57,7 @@ export async function initGameDevRunner({ roomId, meta }) {
   DEV_AREAS = Array.isArray(ROOM_DATA.devAreas) ? ROOM_DATA.devAreas : [];
   PLAY_BUTTONS = Array.isArray(ROOM_DATA.playButtons) ? ROOM_DATA.playButtons : [];
   CPU_RULES = Array.isArray(ROOM_DATA.cpuRules) ? ROOM_DATA.cpuRules : [];
+  COMMON_AI_RULE = (ROOM_DATA.commonAiRule || '').trim();
   CPU_SEATS = new Set(Array.isArray(ROOM_DATA.cpuSeats) ? ROOM_DATA.cpuSeats : []);
 
   // 3. 盤面エリア（マット）のレンダリング
@@ -590,34 +592,65 @@ async function executeFlowchartAction(act, context) {
       return;
     }
 
+    // AIに開示する盤面エリアの絞り込み（指定があればそのエリアのみ、未指定なら全可視エリア）
+    const targetContextAreaRefs = (Array.isArray(act.contextAreas) && act.contextAreas.length > 0)
+      ? act.contextAreas
+      : null;
+
     // AIが見てよい可視盤面情報の整理
     const visibleContext = {
       areas: {}
     };
 
     DEV_AREAS.forEach(area => {
-      const areaCards = allCards.filter(c => isCardInArea(c, area));
       const isOpponentHand = area.owner && area.owner !== cpuPlayerId && area.areaType === 'hand';
-      if (!isOpponentHand) {
-        const ownHand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
-        visibleContext.areas[area.name || area.id] = areaCards.map(c => {
-          const isOwnCard = ownHand && isCardInArea(c, ownHand);
-          if (c.faceUp || isOwnCard) {
-            return {
-              id: c.id,
-              name: c.name || c.id,
-              tags: c.tags || c.tagValues || {}
-            };
+      if (isOpponentHand) return;
+
+      if (targetContextAreaRefs) {
+        const isTargetArea = targetContextAreaRefs.some(refStr => {
+          if (refStr.startsWith('own:')) {
+            const resolved = resolveAreaRef(valueToRef(refStr), cpuPlayerId);
+            return resolved && resolved.id === area.id;
           }
-          return { id: c.id, status: '裏向きカード' };
+          if (refStr.startsWith('area:')) {
+            return refStr === `area:${area.id}`;
+          }
+          if (refStr === 'any:hand') {
+            return area.areaType === 'hand';
+          }
+          return refStr === area.id;
         });
+        if (!isTargetArea) return;
       }
+
+      const areaCards = allCards.filter(c => isCardInArea(c, area));
+      const ownHand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, cpuPlayerId);
+      visibleContext.areas[area.name || area.id] = areaCards.map(c => {
+        const isOwnCard = ownHand && isCardInArea(c, ownHand);
+        if (c.faceUp || isOwnCard) {
+          return {
+            id: c.id,
+            name: c.name || c.id,
+            tags: c.tags || c.tagValues || {}
+          };
+        }
+        return { id: c.id, status: '裏向きカード' };
+      });
     });
+
+    let effectiveRuleText = '';
+    const nodeRule = (act.ruleText || '').trim();
+    const commonRule = (COMMON_AI_RULE || '').trim();
+    if (nodeRule && commonRule) {
+      effectiveRuleText = `【基本ゲームルール】\n${commonRule}\n\n【このターンの個別指示】\n${nodeRule}`;
+    } else {
+      effectiveRuleText = nodeRule || commonRule || '場に出ているカードの数字より大きいカードを手札から1枚出してください。出せるカードがなければパス（選択なし）してください。';
+    }
 
     try {
       showToast(`🤖 ${getOwnerLabel(cpuPlayerId)}: AIがカードを思考中...`);
       const { selectedCardIds, reason } = await queryAiCardSelection({
-        ruleText: act.ruleText,
+        ruleText: effectiveRuleText,
         candidateCards,
         visibleContext,
         cpuPlayerLabel: getOwnerLabel(cpuPlayerId)

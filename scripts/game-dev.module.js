@@ -4807,6 +4807,10 @@ async function executeDevFlowchartNodeList(nodeList, context) {
             ? act.contextAreas
             : null;
 
+          const visibleContext = {
+            areas: {}
+          };
+
           AREAS.forEach(area => {
             const isOpponentHand = area.owner && area.owner !== context.cpuPlayerId && area.areaType === 'hand';
             if (isOpponentHand) return;
