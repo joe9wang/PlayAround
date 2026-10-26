@@ -12,8 +12,8 @@ import {
   serverTimestamp, onSnapshot,
   ref, uploadString, getDownloadURL
 } from './firebase.init.js';
-import { CpuFlowchartEditor } from './game-dev-flowchart.js?v=20261026-5';
-import { queryAiCardSelection } from './game-dev-ai.js?v=20261026-5';
+import { CpuFlowchartEditor } from './game-dev-flowchart.js?v=20261026-6';
+import { queryAiCardSelection } from './game-dev-ai.js?v=20261026-6';
 
 // === State ===
 let CURRENT_ROOM = null;

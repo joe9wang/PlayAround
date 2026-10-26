@@ -757,6 +757,8 @@ export class CpuFlowchartEditor {
     };
     typeSelect.addEventListener('change', updateVisibility);
     selectFilter.addEventListener('change', updateVisibility);
+    updateVisibility();
+
     // AIインプットエリアのチップ管理
     const contextAreaSelect = overlay.querySelector('#dialog-ai-context-area-select');
     const btnAddContextArea = overlay.querySelector('#btn-add-ai-context-area');
