@@ -3208,6 +3208,62 @@ function isPointInArea(px, py, area) {
   return px >= area.x && px <= area.x + area.w && py >= area.y && py <= area.y + area.h;
 }
 
+// カードが重なっているエリアのうち、最も内側（面積が最小）のエリアを取得（親エリアとの二重判定防止）
+function getEntityPrimaryArea(ent) {
+  const overlapping = AREAS.filter(a => isEntityOverlappingArea(ent, a));
+  if (overlapping.length === 0) return null;
+  if (overlapping.length === 1) return overlapping[0];
+  // 面積が最小のエリアを優先
+  overlapping.sort((a, b) => ((a.w || 0) * (a.h || 0)) - ((b.w || 0) * (b.h || 0)));
+  return overlapping[0];
+}
+
+// AI思考向けにカード情報を整形（内部IDキーを人間・AI用タグ名に変換、わかりやすいカード名を付与）
+function formatCardForAi(card) {
+  if (!card) return null;
+  const schema = card.cardTypeId ? CARD_SCHEMAS[card.cardTypeId] : null;
+  const rawTags = card.tagValues || card.tags || {};
+  const humanTags = {};
+
+  if (schema && Array.isArray(schema.tags)) {
+    schema.tags.forEach(t => {
+      if (rawTags[t.id] !== undefined) {
+        humanTags[t.name] = rawTags[t.id];
+      } else if (rawTags[t.name] !== undefined) {
+        humanTags[t.name] = rawTags[t.name];
+      }
+    });
+  }
+
+  // スキーマ定義外のタグも保持
+  Object.entries(rawTags).forEach(([k, v]) => {
+    const matchingDef = schema?.tags?.find(t => t.id === k);
+    const resolvedKey = matchingDef ? matchingDef.name : k;
+    if (humanTags[resolvedKey] === undefined) {
+      humanTags[resolvedKey] = v;
+    }
+  });
+
+  // カード表示名
+  let displayName = (card.name || '').trim();
+  if (!displayName || displayName === card.id || displayName.startsWith('entity_')) {
+    const mark = humanTags.Mark || humanTags.mark || humanTags['マーク'] || '';
+    const num = humanTags.Number || humanTags.number || humanTags['数字'] || humanTags['値'] || '';
+    if (mark || num) {
+      displayName = `${mark} ${num}`.trim();
+    } else {
+      const tagParts = Object.entries(humanTags).map(([k, v]) => `${k}:${v}`).join(' ');
+      displayName = tagParts ? `カード (${tagParts})` : `カード (${card.id.slice(-6)})`;
+    }
+  }
+
+  return {
+    id: card.id,
+    name: displayName,
+    tags: humanTags
+  };
+}
+
 // ============================================================================
 // CPU & Automation Management (CPU座席設定・動作ルール・自動ターン実行)
 // ============================================================================
@@ -4728,42 +4784,40 @@ async function executeDevFlowchartNodeList(nodeList, context) {
           context.selectedCards = [];
           console.warn(`[CPU Debug]   │    └─ 候補カードが0枚のため選択スキップ`);
         } else {
-          // AIに開示してよい可視盤面情報の整理
+          // AIに開示してよい可視盤面情報の整理（最も内側のエリアにのみ所属させ、親エリアとの重複を防止）
           const visibleContext = {
             areas: {}
           };
 
           AREAS.forEach(area => {
-            const areaCards = ENTITIES.filter(e => e.type === 'card' && isEntityOverlappingArea(e, area));
             const isOpponentHand = area.owner && area.owner !== context.cpuPlayerId && area.areaType === 'hand';
             if (!isOpponentHand) {
+              const areaCards = ENTITIES.filter(e => e.type === 'card' && getEntityPrimaryArea(e)?.id === area.id);
               const ownHand = resolveAreaRef({ kind: 'own', areaType: 'hand' }, context.cpuPlayerId);
               visibleContext.areas[area.name || area.id] = areaCards.map(c => {
                 const isOwnCard = ownHand && isEntityOverlappingArea(c, ownHand);
                 if (!c.isFaceDown || isOwnCard) {
-                  return {
-                    id: c.id,
-                    name: c.name || c.id,
-                    tags: c.tags || c.tagValues || {}
-                  };
+                  return formatCardForAi(c);
                 }
-                return { id: c.id, status: '裏向きカード' };
+                return { id: c.id, name: '裏向きカード', status: '裏向きカード' };
               });
             }
           });
+
+          const formattedCandidates = candidateCards.map(formatCardForAi);
 
           try {
             showToast(`🤖 ${getOwnerLabel(context.cpuPlayerId)}: AIがカードを思考中...`);
 
             console.groupCollapsed(`[CPU Debug]   │    📤 [AI Request: 送信データ]`);
             console.log('思考指示ルール (ruleText):', act.ruleText || '（指定なし・デフォルト）');
-            console.log(`選択候補カード (${candidateCards.length}枚):`, candidateCards.map(c => ({ id: c.id, name: c.name || c.id, tags: c.tags || c.tagValues || {} })));
+            console.log(`選択候補カード (${formattedCandidates.length}枚):`, formattedCandidates);
             console.log('盤面可視状況 (visibleContext):', visibleContext);
             console.groupEnd();
 
             const { selectedCardIds, reason, elapsedMs, rawResponse } = await queryAiCardSelection({
               ruleText: act.ruleText,
-              candidateCards,
+              candidateCards: formattedCandidates,
               visibleContext,
               cpuPlayerLabel: getOwnerLabel(context.cpuPlayerId)
             });
