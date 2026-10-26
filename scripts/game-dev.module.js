@@ -4772,6 +4772,12 @@ async function executeDevFlowchartNodeList(nodeList, context) {
             context.selectedCards = selected;
             context.stepsSummary.push(`AI選択(${selected.length}枚: ${reason || '判断完了'})`);
 
+            if (selected.length === 0) {
+              context.actedAny = true;
+              context.isAiPassed = true;
+              console.log(`[CPU Debug]   │    ℹ AIがパス(0枚選択)と判断したため、手番をパスとして成立させます`);
+            }
+
             console.groupCollapsed(`[CPU Debug]   │    📥 [AI Response: 受信データ] (${elapsedMs}ms)`);
             console.log('選択されたカード:', selected.map(c => ({ id: c.id, name: c.name || c.id, tags: c.tags || c.tagValues || {} })));
             console.log('AI思考理由 (reason):', reason);
@@ -4819,6 +4825,8 @@ async function executeDevFlowchartNodeList(nodeList, context) {
             console.warn(`[CPU Debug]   │    └─ 失敗: 移動先エリアが見つかりません`);
             context.failureReasons.push('移動先エリアが見つかりません');
           }
+        } else if (context.isAiPassed) {
+          console.log(`[CPU Debug]   │    ℹ AI判断によりパス済みのため、カード移動をスキップします`);
         } else {
           console.warn(`[CPU Debug]   │    └─ 失敗: 移動対象のカードがありません`);
           context.failureReasons.push('移動対象のカードがありません');
