@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8" />
+  <title>TRPG Studio｜BatriTable（バトライテーブル）</title>
+  <meta name="description" content="BatriTable TRPG Studio。ココフォリア準拠の直感的な盤面操作、キャラクターコマ管理、ダイスロール演出、そして将来的なAI GM/NPC統合を見据えた次世代バーチャルテーブルトップ。">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Favicon -->
+  <link href="/favicon.ico" rel="icon" sizes="any" />
+  <link href="/favicon-32.png?v=3" rel="icon" sizes="32x32" type="image/png" />
+  <link href="/favicon-16.png?v=3" rel="icon" sizes="16x16" type="image/png" />
+  <link href="/apple-touch-icon.png?v=3" rel="apple-touch-icon" sizes="180x180" />
+  <link href="/site.webmanifest" rel="manifest" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="assets/trpg.css?v=20261027-1">
+</head>
+
+<body>
+  <div id="trpg-app">
+    <!-- Header Bar -->
+    <header id="trpg-header">
+      <div class="header-left">
+        <span class="trpg-brand-badge">🎲 TRPG Studio</span>
+        <div class="room-id-chip">
+          <span>ROOM:</span>
+          <span id="room-id-display">------</span>
+          <button id="btn-copy-room-id" title="ルームIDをコピー">📋</button>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <!-- Scene Selector -->
+        <div class="scene-select-wrap">
+          <span>🎬</span>
+          <select id="scene-selector" title="現在のシーンを選択・切り替え">
+            <option value="scene-default">メインシーン</option>
+            <option value="scene-battle">戦闘シーン</option>
+            <option value="scene-tavern">酒場・日常</option>
+          </select>
+          <button id="btn-manage-scenes" style="background:none; border:none; color:var(--text-muted); cursor:pointer;" title="シーンの追加・編集">⚙</button>
+        </div>
+
+        <!-- BGM Audio Player Bar -->
+        <div class="bgm-player-bar">
+          <button class="bgm-play-btn" id="bgm-toggle-btn" title="BGM 再生/一時停止">▶</button>
+          <span class="bgm-title-text" id="bgm-current-title">♪ BGM未設定</span>
+          <input type="range" class="bgm-volume-slider" id="bgm-volume" min="0" max="100" value="50" title="音量" />
+          <button id="btn-set-bgm" style="background:none; border:none; color:var(--text-sub); cursor:pointer; font-size:11px;" title="BGMの音源URLを設定">変更</button>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button class="top-action-btn" id="btn-open-notes">
+          <span>📝 共有メモ</span>
+        </button>
+        <button class="top-action-btn primary" id="btn-open-char-modal">
+          <span>♟ コマ・キャラ管理</span>
+        </button>
+        <button class="top-action-btn" id="btn-open-settings" title="盤面設定">
+          <span>⚙</span>
+        </button>
+        <button class="top-action-btn" id="btn-exit-lobby" style="color:var(--accent-rose);" title="ロビーへ退出">
+          <span>🚪 退出</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main id="trpg-workspace">
+      <!-- Infinite Canvas Viewport -->
+      <div id="trpg-viewport">
+        <!-- Floating Toolbox -->
+        <div id="trpg-toolbox">
+          <button class="tool-btn active" id="tool-select" title="選択・移動 (V)">↖</button>
+          <button class="tool-btn" id="tool-piece" title="キャラクター駒を置く (C)">♟</button>
+          <button class="tool-btn" id="tool-marker" title="マーカー・タイル配置 (M)">🖼</button>
+          <button class="tool-btn" id="tool-ruler" title="距離測定ルーラー (R)">📏</button>
+          <button class="tool-btn" id="tool-grid-toggle" title="グリッド表示切替">▦</button>
+          <button class="tool-btn" id="tool-reset-view" title="視点をリセット">🎯</button>
+        </div>
+
+        <!-- Transform World -->
+        <div id="trpg-world">
+          <div id="trpg-table-surface">
+            <!-- Background Image -->
+            <img id="trpg-table-bg-img" src="" alt="" style="display:none;" />
+            <!-- Pieces Layer -->
+            <div id="trpg-pieces-layer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Dock Panel (Chat & Dice) -->
+      <aside id="trpg-dock">
+        <!-- Tabs -->
+        <div class="dock-tabs">
+          <button class="dock-tab active" data-tab="main">メイン</button>
+          <button class="dock-tab" data-tab="chat">雑談</button>
+          <button class="dock-tab" data-tab="info">情報</button>
+          <button class="dock-tab" data-tab="dice">ダイス</button>
+        </div>
+
+        <!-- Chat Log Scroll Area -->
+        <div id="trpg-chat-log">
+          <!-- Welcome message -->
+          <div class="chat-msg">
+            <div class="chat-msg-avatar">
+              <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1e293b; color:#38bdf8; font-weight:700;">🎲</div>
+            </div>
+            <div class="chat-msg-body">
+              <div class="chat-msg-header">
+                <span class="chat-msg-sender is-gm">システム</span>
+                <span class="chat-msg-time">00:00</span>
+              </div>
+              <div class="chat-msg-text">TRPG Studioへようこそ！<br>ココフォリア準拠の盤面・コマ・ダイス操作が可能です。「1D100<=50」「2D6」などのダイスコマンドに対応しています。</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Dock Footer -->
+        <div id="trpg-chat-footer">
+          <!-- Sender & Expression -->
+          <div class="chat-sender-row">
+            <select class="chat-sender-select" id="chat-sender-select">
+              <option value="__gm__">GM（ナレーション）</option>
+              <option value="__player__">プレイヤー</option>
+            </select>
+            <select class="chat-diff-select" id="chat-diff-select">
+              <option value="normal">通常</option>
+              <option value="smile">笑顔</option>
+              <option value="angry">怒り</option>
+              <option value="panic">焦り / 恐怖</option>
+              <option value="damage">ダメージ</option>
+            </select>
+          </div>
+
+          <!-- Quick Palette Shortcuts -->
+          <div class="chat-palette-row" id="chat-palette-container">
+            <button class="palette-btn" data-cmd="1D100">🎲 1D100</button>
+            <button class="palette-btn" data-cmd="2D6">🎲 2D6</button>
+            <button class="palette-btn" data-cmd="1D100<=50 【目星】">🎲 目星 (50)</button>
+            <button class="palette-btn" data-cmd="1D100<=70 【聞き耳】">🎲 聞き耳 (70)</button>
+            <button class="palette-btn" data-cmd="CC<=60 【正気度】">🎲 SAN値 (60)</button>
+            <button class="palette-btn" data-cmd="1D3 【SAN減少】">🎲 1D3</button>
+            <button class="palette-btn" data-cmd="1D6 【SAN減少】">🎲 1D6</button>
+          </div>
+
+          <!-- Input row -->
+          <div class="chat-input-row">
+            <input type="text" id="chat-input-text" placeholder="メッセージを入力、または 1D100<=50..." autocomplete="off" />
+            <button id="chat-send-btn">送信</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Modal: Character Management -->
+    <div class="trpg-modal-backdrop" id="modal-char-manage">
+      <div class="trpg-modal-card">
+        <div class="trpg-modal-header">
+          <span class="trpg-modal-title">♟ キャラクター駒・立ち絵管理</span>
+          <button class="trpg-modal-close" data-close="modal-char-manage">✕</button>
+        </div>
+        <div class="trpg-modal-body">
+          <!-- Clipboard JSON Import helper -->
+          <div style="background:rgba(56, 189, 248, 0.1); border:1px dashed var(--accent-cyan); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700; color:var(--accent-cyan); font-size:12px;">📋 キャラシートJSONから一括作成</div>
+              <div style="font-size:11px; color:var(--text-muted);">「いあきゃら」「キャラクター保管所」等のココフォリア用JSONを自動読み込み</div>
+            </div>
+            <button class="top-action-btn primary" id="btn-import-char-json" style="padding:4px 10px; font-size:11px;">クリップボード読込</button>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label" for="char-name">キャラクター名</label>
+            <input type="text" class="form-input" id="char-name" placeholder="例: 探索者 太郎" />
+          </div>
+
+          <div style="display:flex; gap:10px;">
+            <div class="form-row" style="flex:1;">
+              <label class="form-label" for="char-hp">HP (現在 / 最大)</label>
+              <div style="display:flex; gap:4px; align-items:center;">
+                <input type="number" class="form-input" id="char-hp-cur" value="12" style="width:100%;" />
+                <span style="color:var(--text-sub);">/</span>
+                <input type="number" class="form-input" id="char-hp-max" value="12" style="width:100%;" />
+              </div>
+            </div>
+            <div class="form-row" style="flex:1;">
+              <label class="form-label" for="char-mp">MP (現在 / 最大)</label>
+              <div style="display:flex; gap:4px; align-items:center;">
+                <input type="number" class="form-input" id="char-mp-cur" value="10" style="width:100%;" />
+                <span style="color:var(--text-sub);">/</span>
+                <input type="number" class="form-input" id="char-mp-max" value="10" style="width:100%;" />
+              </div>
+            </div>
+            <div class="form-row" style="flex:1;">
+              <label class="form-label" for="char-san">SAN (現在 / 最大)</label>
+              <div style="display:flex; gap:4px; align-items:center;">
+                <input type="number" class="form-input" id="char-san-cur" value="65" style="width:100%;" />
+                <span style="color:var(--text-sub);">/</span>
+                <input type="number" class="form-input" id="char-san-max" value="99" style="width:100%;" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label" for="char-avatar-url">立ち絵 / アイコン画像URL</label>
+            <input type="text" class="form-input" id="char-avatar-url" placeholder="https://... (空欄の場合はデフォルトアイコン)" />
+          </div>
+
+          <div class="form-row">
+            <label class="form-label" for="char-palette-text">チャットパレット（1行に1つのコマンド）</label>
+            <textarea class="form-textarea" id="char-palette-text" rows="4" placeholder="1D100<=70 【目星】&#10;1D100<=60 【聞き耳】&#10;1D100<=50 【図書館】&#10;CC<=65 【正気度】"></textarea>
+          </div>
+        </div>
+        <div class="trpg-modal-footer">
+          <button class="top-action-btn" data-close="modal-char-manage">閉じる</button>
+          <button class="top-action-btn primary" id="btn-save-spawn-char">盤面に駒を配置する</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Shared Notes -->
+    <div class="trpg-modal-backdrop" id="modal-notes">
+      <div class="trpg-modal-card">
+        <div class="trpg-modal-header">
+          <span class="trpg-modal-title">📝 共有メモ・ハンドアウト</span>
+          <button class="trpg-modal-close" data-close="modal-notes">✕</button>
+        </div>
+        <div class="trpg-modal-body">
+          <div class="form-row">
+            <label class="form-label" for="shared-note-title">メモのタイトル</label>
+            <input type="text" class="form-input" id="shared-note-title" value="共有情報" />
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="shared-note-content">メモ内容（参加者全員に同期されます）</label>
+            <textarea class="form-textarea" id="shared-note-content" rows="8" placeholder="事件の概要、共有の手がかり、ハウスルールなどをメモできます..."></textarea>
+          </div>
+        </div>
+        <div class="trpg-modal-footer">
+          <button class="top-action-btn" data-close="modal-notes">キャンセル</button>
+          <button class="top-action-btn primary" id="btn-save-note">メモを保存・同期</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Settings (Board, Grid, Background) -->
+    <div class="trpg-modal-backdrop" id="modal-settings">
+      <div class="trpg-modal-card">
+        <div class="trpg-modal-header">
+          <span class="trpg-modal-title">⚙ 盤面・ルーム設定</span>
+          <button class="trpg-modal-close" data-close="modal-settings">✕</button>
+        </div>
+        <div class="trpg-modal-body">
+          <div class="form-row">
+            <label class="form-label" for="setting-bg-url">テーブル背景画像URL</label>
+            <input type="text" class="form-input" id="setting-bg-url" placeholder="https://... （マップ画像や情景画像）" />
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="setting-grid-size">グリッドマス目サイズ (px)</label>
+            <input type="number" class="form-input" id="setting-grid-size" value="50" min="20" max="200" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">
+              <input type="checkbox" id="setting-snap-grid" checked />
+              コマ移動時にグリッドマスへ自動吸着（スナップ）
+            </label>
+          </div>
+        </div>
+        <div class="trpg-modal-footer">
+          <button class="top-action-btn" data-close="modal-settings">キャンセル</button>
+          <button class="top-action-btn primary" id="btn-save-settings">設定を保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: BGM URL Setter -->
+    <div class="trpg-modal-backdrop" id="modal-bgm">
+      <div class="trpg-modal-card">
+        <div class="trpg-modal-header">
+          <span class="trpg-modal-title">🎵 BGM音源の設定</span>
+          <button class="trpg-modal-close" data-close="modal-bgm">✕</button>
+        </div>
+        <div class="trpg-modal-body">
+          <div class="form-row">
+            <label class="form-label" for="bgm-input-title">曲名・シーン名</label>
+            <input type="text" class="form-input" id="bgm-input-title" placeholder="例: 通常戦闘曲 / 洋館の探索" />
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="bgm-input-url">オーディオファイルURL (mp3/ogg)</label>
+            <input type="text" class="form-input" id="bgm-input-url" placeholder="https://...mp3" />
+          </div>
+        </div>
+        <div class="trpg-modal-footer">
+          <button class="top-action-btn" data-close="modal-bgm">キャンセル</button>
+          <button class="top-action-btn primary" id="btn-save-bgm">BGMを適用</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Element for BGM -->
+  <audio id="trpg-audio-el" loop></audio>
+
+  <!-- Polyfills & Scripts -->
+  <script src="scripts/polyfills.js"></script>
+  <script type="module" src="scripts/trpg.module.js?v=20261027-1"></script>
+</body>
+
+</html>

@@ -99,6 +99,7 @@ const pickModeCardBtn = document.getElementById('pick-mode-card');
 const pickModeBoardBtn = document.getElementById('pick-mode-board');
 const pickModeOfficialBtn = document.getElementById('pick-mode-official');
 const pickModeDevBtn = document.getElementById('pick-mode-dev');
+const pickModeTrpgBtn = document.getElementById('pick-mode-trpg');
 
 // === Initialization ===
 async function init() {
@@ -145,7 +146,7 @@ async function init() {
       
       whoamiSpan.textContent = user.displayName || user.email || 'Anonymous';
       
-      // 開発者モード利用可能アカウント（先行開発用。完成後は全非匿名ユーザーに開放予定）
+      // 開発者モード・TRPGモード利用可能アカウント（先行開発用。完成後は全非匿名ユーザーに開放予定）
       const DEV_ACCOUNTS = ['joe9bk@gmail.com'];
       const isDevUser = !user.isAnonymous && DEV_ACCOUNTS.includes(user.email);
 
@@ -154,7 +155,8 @@ async function init() {
         authFormArea.style.display = 'flex';
         authLoggedinArea.style.display = 'none';
         if (pickModeDevBtn) pickModeDevBtn.style.display = 'none';
-        if (CREATE_FIELD_MODE === 'dev') {
+        if (pickModeTrpgBtn) pickModeTrpgBtn.style.display = 'none';
+        if (CREATE_FIELD_MODE === 'dev' || CREATE_FIELD_MODE === 'trpg') {
           CREATE_FIELD_MODE = 'card';
           updateModePickButtons();
         }
@@ -162,7 +164,8 @@ async function init() {
         authFormArea.style.display = 'none';
         authLoggedinArea.style.display = 'block';
         if (pickModeDevBtn) pickModeDevBtn.style.display = isDevUser ? 'inline-block' : 'none';
-        if (!isDevUser && CREATE_FIELD_MODE === 'dev') {
+        if (pickModeTrpgBtn) pickModeTrpgBtn.style.display = isDevUser ? 'inline-block' : 'none';
+        if (!isDevUser && (CREATE_FIELD_MODE === 'dev' || CREATE_FIELD_MODE === 'trpg')) {
           CREATE_FIELD_MODE = 'card';
           updateModePickButtons();
         }
@@ -191,7 +194,8 @@ async function init() {
       authFormArea.style.display = 'flex';
       authLoggedinArea.style.display = 'none';
       if (pickModeDevBtn) pickModeDevBtn.style.display = 'none';
-      if (CREATE_FIELD_MODE === 'dev') {
+      if (pickModeTrpgBtn) pickModeTrpgBtn.style.display = 'none';
+      if (CREATE_FIELD_MODE === 'dev' || CREATE_FIELD_MODE === 'trpg') {
         CREATE_FIELD_MODE = 'card';
         updateModePickButtons();
       }
@@ -217,6 +221,10 @@ async function init() {
   });
   pickModeDevBtn?.addEventListener('click', () => {
     CREATE_FIELD_MODE = 'dev';
+    updateModePickButtons();
+  });
+  pickModeTrpgBtn?.addEventListener('click', () => {
+    CREATE_FIELD_MODE = 'trpg';
     updateModePickButtons();
   });
   
@@ -308,6 +316,7 @@ function updateModePickButtons() {
   set(pickModeBoardBtn, CREATE_FIELD_MODE === 'board');
   set(pickModeOfficialBtn, CREATE_FIELD_MODE === 'official' || CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess' || CREATE_FIELD_MODE === 'reversi' || CREATE_FIELD_MODE === 'shogi');
   set(pickModeDevBtn, CREATE_FIELD_MODE === 'dev');
+  set(pickModeTrpgBtn, CREATE_FIELD_MODE === 'trpg');
 }
 
 window.selectOfficialOption = function(type) {
@@ -713,6 +722,18 @@ function showLayoutModal() {
     executeRoomCreation('dev');
     return;
   }
+  if (CREATE_FIELD_MODE === 'trpg') {
+    const user = auth.currentUser;
+    const DEV_ACCOUNTS = ['joe9bk@gmail.com'];
+    if (!user || user.isAnonymous || !DEV_ACCOUNTS.includes(user.email)) {
+      alert('TRPGモードは現在、特定のアカウントのみ先行公開されています。');
+      CREATE_FIELD_MODE = 'card';
+      updateModePickButtons();
+      return;
+    }
+    executeRoomCreation('trpg');
+    return;
+  }
   if (CREATE_FIELD_MODE === 'official' || CREATE_FIELD_MODE === 'trump' || CREATE_FIELD_MODE === 'chess' || CREATE_FIELD_MODE === 'reversi' || CREATE_FIELD_MODE === 'shogi') {
     document.getElementById('official-game-modal').style.display = 'flex';
     window.selectOfficialOption(CURRENT_OFFICIAL_SELECTION || 'trump');
@@ -843,6 +864,9 @@ async function executeRoomCreation(layoutType) {
     } else if (CREATE_FIELD_MODE === 'dev') {
       payload.boardWidth = 3200;
       payload.boardHeight = 2400;
+    } else if (CREATE_FIELD_MODE === 'trpg') {
+      payload.boardWidth = 4000;
+      payload.boardHeight = 3000;
     }
 
     // 匿名ユーザー（ゲスト）の場合のみ、24時間で削除される有効期限を設定 & 24時間作成制限のタイムスタンプ記録
@@ -894,7 +918,9 @@ async function executeRoomCreation(layoutType) {
     // In a real app we might want to call a function to clear subcollections.
     
     // Redirect to game
-    const targetHtml = (CREATE_FIELD_MODE === 'dev') ? 'game-dev.html' : 'game.html';
+    let targetHtml = 'game.html';
+    if (CREATE_FIELD_MODE === 'dev') targetHtml = 'game-dev.html';
+    else if (CREATE_FIELD_MODE === 'trpg') targetHtml = 'trpg.html';
     window.location.href = `${targetHtml}?id=${encodeURIComponent(id)}`;
 
   } catch (e) {
@@ -942,7 +968,9 @@ async function handleJoinRoom() {
     }
 
     // Redirect to game
-    const targetHtml = (meta && meta.fieldMode === 'dev') ? 'game-dev.html' : 'game.html';
+    let targetHtml = 'game.html';
+    if (meta && meta.fieldMode === 'dev') targetHtml = 'game-dev.html';
+    else if (meta && meta.fieldMode === 'trpg') targetHtml = 'trpg.html';
     window.location.href = `${targetHtml}?id=${encodeURIComponent(id)}`;
   } catch (e) {
     console.error('Join failed', e);
